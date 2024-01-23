@@ -278,7 +278,7 @@ func TestExternalNameService(t *testing.T) {
 		),
 	})
 
-	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	// Create TCPProxy with upstream protocol 'tls' to an externalName type service
 	// and verify that the SNI on the upstream request matches the externalName value.

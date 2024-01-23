@@ -49,8 +49,8 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 	})
 	defer done()
 
-	clientSecret := featuretests.TLSSecret("envoyclientsecret", &featuretests.ClientCertificate)
-	caSecret := featuretests.CASecret("backendcacert", &featuretests.CACertificate)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
 	rh.OnAdd(clientSecret)
 	rh.OnAdd(caSecret)
 
@@ -156,7 +156,7 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 
 	// Add common test fixtures.
 
-	rh.OnAdd(featuretests.CASecret("ns/cacert", &featuretests.CACertificate))
+	rh.OnAdd(featuretests.CASecret(t, "ns/cacert", &featuretests.CACertificate))
 
 	rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
 
@@ -194,7 +194,7 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 					ValidationContext: &envoy_v3_tls.CertificateValidationContext{
 						TrustedCa: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: featuretests.PEMBytes(&featuretests.CACertificate),
+								InlineBytes: featuretests.PEMBytes(t, &featuretests.CACertificate),
 							},
 						},
 						MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{

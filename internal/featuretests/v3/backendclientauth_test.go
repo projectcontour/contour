@@ -66,8 +66,8 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
-	clientSecret := featuretests.TLSSecret("envoyclientsecret", &featuretests.ClientCertificate)
-	caSecret := featuretests.CASecret("backendcacert", &featuretests.CACertificate)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
 	rh.OnAdd(clientSecret)
 	rh.OnAdd(caSecret)
 
@@ -113,8 +113,8 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
-	clientSecret := featuretests.TLSSecret("envoyclientsecret", &featuretests.ClientCertificate)
-	caSecret := featuretests.CASecret("backendcacert", &featuretests.CACertificate)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
 	rh.OnAdd(clientSecret)
 	rh.OnAdd(caSecret)
 
@@ -150,8 +150,8 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
-	clientSecret := featuretests.TLSSecret("envoyclientsecret", &featuretests.ClientCertificate)
-	caSecret := featuretests.CASecret("backendcacert", &featuretests.CACertificate)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
 	rh.OnAdd(clientSecret)
 	rh.OnAdd(caSecret)
 
@@ -177,7 +177,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: featuretests.CASecret("secret", &featuretests.CACertificate)},
+				CACertificate: &dag.Secret{Object: featuretests.CASecret(t, "secret", &featuretests.CACertificate)},
 				SubjectNames:  []string{"subjname"},
 			},
 			"subjname",

@@ -189,7 +189,7 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 
 	rh.OnAdd(svc1)
 
-	sec1 := featuretests.TLSSecret("projectcontour/tlscert", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{

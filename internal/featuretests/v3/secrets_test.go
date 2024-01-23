@@ -32,7 +32,7 @@ func TestSDSVisibility(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(s1)
 
 	// assert that the secret is _not_ visible as it is
@@ -96,7 +96,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(s1)
 
 	// i1 is a tls ingress

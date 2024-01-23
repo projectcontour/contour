@@ -32,7 +32,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("backend").

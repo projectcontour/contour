@@ -41,7 +41,7 @@ func TestJWTVerification(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("s1").
@@ -716,7 +716,7 @@ func TestJWTVerification(t *testing.T) {
 		),
 	})
 
-	rh.OnAdd(featuretests.CASecret("cacert", &featuretests.CACertificate))
+	rh.OnAdd(featuretests.CASecret(t, "cacert", &featuretests.CACertificate))
 
 	// JWKS with upstream validation
 	proxy7 := fixture.NewProxy("simple").WithSpec(
@@ -842,7 +842,7 @@ func TestJWTVerification(t *testing.T) {
 									ValidationContext: &envoy_tls_v3.CertificateValidationContext{
 										TrustedCa: &envoy_core_v3.DataSource{
 											Specifier: &envoy_core_v3.DataSource_InlineBytes{
-												InlineBytes: featuretests.PEMBytes(&featuretests.CACertificate),
+												InlineBytes: featuretests.PEMBytes(t, &featuretests.CACertificate),
 											},
 										},
 										MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
@@ -1179,7 +1179,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("s1").

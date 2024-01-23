@@ -100,7 +100,7 @@ func TestGateway_TLS(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
-	sec1 := featuretests.TLSSecret("projectcontour/tlscert", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 
 	rh.OnAdd(sec1)
 

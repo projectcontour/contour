@@ -86,7 +86,7 @@ func authzResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Conto
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn, featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -167,7 +167,7 @@ func authzFailOpen(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn, featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -477,7 +477,7 @@ func authzInvalidReference(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn, featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -536,7 +536,7 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh ResourceEventHandlerWra
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn, featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -611,7 +611,7 @@ func TestAuthorization(t *testing.T) {
 				Ports:     featuretests.Ports(featuretests.Port("", 80)),
 			}))
 
-			rh.OnAdd(featuretests.TLSSecret("certificate", &featuretests.ServerCertificate))
+			rh.OnAdd(featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate))
 			f(t, rh, c)
 		})
 	}

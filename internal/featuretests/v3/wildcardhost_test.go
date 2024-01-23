@@ -175,7 +175,7 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec := featuretests.TLSSecret("wildcard-tls-secret", &featuretests.ServerCertificate)
+	sec := featuretests.TLSSecret(t, "wildcard-tls-secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec)
 
 	svc := fixture.NewService("svc").

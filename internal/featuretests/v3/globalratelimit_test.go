@@ -839,8 +839,8 @@ func TestGlobalRateLimiting(t *testing.T) {
 			// Add common test fixtures.
 			rh.OnAdd(fixture.NewService("s1").WithPorts(corev1.ServicePort{Port: 80}))
 			rh.OnAdd(fixture.NewService("s2").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(featuretests.TLSSecret("tls-cert", &featuretests.ServerCertificate))
-			rh.OnAdd(featuretests.TLSSecret("fallback-cert", &featuretests.ServerCertificate))
+			rh.OnAdd(featuretests.TLSSecret(t, "tls-cert", &featuretests.ServerCertificate))
+			rh.OnAdd(featuretests.TLSSecret(t, "fallback-cert", &featuretests.ServerCertificate))
 
 			f(t, rh, c)
 		})

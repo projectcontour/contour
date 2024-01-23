@@ -38,7 +38,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	sec1 := featuretests.TLSSecret("secret/wildcard", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "secret/wildcard", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("kuard").

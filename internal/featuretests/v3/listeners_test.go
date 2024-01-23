@@ -153,7 +153,7 @@ func TestTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -274,7 +274,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	secret1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -426,7 +426,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	})
 	defer done()
 
-	secret1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -502,7 +502,7 @@ func TestLDSFilter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -640,7 +640,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	})
 	defer done()
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -727,7 +727,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	})
 	defer done()
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -808,7 +808,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	})
 	defer done()
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -903,7 +903,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Nonce:   "0",
 	})
 
-	s1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	// p1 is a httpproxy that has TLS
 	p1 := &contour_api_v1.HTTPProxy{
@@ -975,7 +975,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 
 	defer done()
 
-	secret1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
 	rh.OnAdd(fixture.NewService("backend").
@@ -1279,7 +1279,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc1").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
-	tlssecret := featuretests.TLSSecret("projectcontour/tlscert", &featuretests.ServerCertificate)
+	tlssecret := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(tlssecret)
 
 	rh.OnAdd(gc)
@@ -1484,7 +1484,7 @@ func TestSocketOptions(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
-	secret1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
 	// p1 is a tls httpproxy

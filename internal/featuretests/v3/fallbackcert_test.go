@@ -48,10 +48,10 @@ func TestFallbackCertificate(t *testing.T) {
 	})
 	defer done()
 
-	sec1 := featuretests.TLSSecret("secret", &featuretests.ServerCertificate)
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
-	fallbackSecret := featuretests.TLSSecret("admin/fallbacksecret", &featuretests.ServerCertificate)
+	fallbackSecret := featuretests.TLSSecret(t, "admin/fallbacksecret", &featuretests.ServerCertificate)
 	rh.OnAdd(fallbackSecret)
 
 	s1 := fixture.NewService("backend").

@@ -154,7 +154,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 		}),
 	)
 
-	rh.OnAdd(featuretests.TLSSecret("foo", &featuretests.ServerCertificate))
+	rh.OnAdd(featuretests.TLSSecret(t, "foo", &featuretests.ServerCertificate))
 
 	// Proxy with SNI
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
@@ -267,7 +267,7 @@ func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
 		}),
 	)
 
-	rh.OnAdd(featuretests.TLSSecret("foo", &featuretests.ServerCertificate))
+	rh.OnAdd(featuretests.TLSSecret(t, "foo", &featuretests.ServerCertificate))
 
 	// Proxy with SNI
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(

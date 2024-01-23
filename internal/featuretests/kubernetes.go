@@ -16,6 +16,8 @@ package featuretests
 // kubernetes helpers
 
 import (
+	"testing"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/tsaarni/certyaml"
@@ -54,10 +56,10 @@ var CRL = certyaml.CRL{
 	Issuer: &CACertificate,
 }
 
-func TLSSecret(name string, credential *certyaml.Certificate) *v1.Secret {
+func TLSSecret(t *testing.T, name string, credential *certyaml.Certificate) *v1.Secret {
 	cert, key, err := credential.PEM()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return &v1.Secret{
 		ObjectMeta: fixture.ObjectMeta(name),
@@ -69,10 +71,10 @@ func TLSSecret(name string, credential *certyaml.Certificate) *v1.Secret {
 	}
 }
 
-func CASecret(name string, credential *certyaml.Certificate) *v1.Secret {
+func CASecret(t *testing.T, name string, credential *certyaml.Certificate) *v1.Secret {
 	cert, _, err := credential.PEM()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return &v1.Secret{
 		ObjectMeta: fixture.ObjectMeta(name),
@@ -83,12 +85,11 @@ func CASecret(name string, credential *certyaml.Certificate) *v1.Secret {
 	}
 }
 
-func CRLSecret(name string, credential *certyaml.CRL) *v1.Secret {
+func CRLSecret(t *testing.T, name string, credential *certyaml.CRL) *v1.Secret {
 	crl, err := credential.PEM()
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-
 	return &v1.Secret{
 		ObjectMeta: fixture.ObjectMeta(name),
 		Type:       v1.SecretTypeOpaque,
@@ -98,8 +99,11 @@ func CRLSecret(name string, credential *certyaml.CRL) *v1.Secret {
 	}
 }
 
-func PEMBytes(cert *certyaml.Certificate) []byte {
-	c, _, _ := cert.PEM()
+func PEMBytes(t *testing.T, cert *certyaml.Certificate) []byte {
+	c, _, err := cert.PEM()
+	if err != nil {
+		t.Fatal(err)
+	}
 	return c
 }
 

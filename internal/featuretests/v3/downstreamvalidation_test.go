@@ -31,10 +31,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	serverTLSSecret := featuretests.TLSSecret("serverTLSSecret", &featuretests.ServerCertificate)
+	serverTLSSecret := featuretests.TLSSecret(t, "serverTLSSecret", &featuretests.ServerCertificate)
 	rh.OnAdd(serverTLSSecret)
 
-	clientCASecret := featuretests.CASecret("clientCASecret", &featuretests.CACertificate)
+	clientCASecret := featuretests.CASecret(t, "clientCASecret", &featuretests.CACertificate)
 	rh.OnAdd(clientCASecret)
 
 	service := fixture.NewService("kuard").
@@ -190,7 +190,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		TypeUrl: listenerType,
 	}).Status(proxy3).IsValid()
 
-	crlSecret := featuretests.CRLSecret("crl", &featuretests.CRL)
+	crlSecret := featuretests.CRLSecret(t, "crl", &featuretests.CRL)
 	rh.OnAdd(crlSecret)
 
 	proxy4 := fixture.NewProxy("example.com").

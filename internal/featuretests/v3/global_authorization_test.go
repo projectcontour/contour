@@ -115,7 +115,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHa
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+				featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 				authzFilterFor(
 					"foo.com",
 					&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -185,7 +185,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+				featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 				httpsFilterFor("foo.com"),
 				nil, "h2", "http/1.1"),
 		},
@@ -319,7 +319,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+				featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 				authzFilterFor(
 					"foo.com",
 					&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -436,7 +436,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 		),
 		FilterChains: []*envoy_listener_v3.FilterChain{
 			filterchaintls("foo.com",
-				featuretests.TLSSecret("certificate", &featuretests.ServerCertificate),
+				featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 				authzFilterFor(
 					"foo.com",
 					&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -554,7 +554,7 @@ func TestGlobalAuthorization(t *testing.T) {
 				Ports:     featuretests.Ports(featuretests.Port("", 80)),
 			}))
 
-			rh.OnAdd(featuretests.TLSSecret("certificate", &featuretests.ServerCertificate))
+			rh.OnAdd(featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate))
 
 			f(t, rh, c)
 		})

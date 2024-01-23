@@ -28,7 +28,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	caSecret := featuretests.CASecret("foo", &featuretests.CACertificate)
+	caSecret := featuretests.CASecret(t, "foo", &featuretests.CACertificate)
 
 	svc := fixture.NewService("default/kuard").
 		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend,443").

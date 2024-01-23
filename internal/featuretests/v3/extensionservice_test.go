@@ -122,7 +122,7 @@ func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 					ValidationContext: &envoy_v3_tls.CertificateValidationContext{
 						TrustedCa: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: featuretests.PEMBytes(&featuretests.CACertificate),
+								InlineBytes: featuretests.PEMBytes(t, &featuretests.CACertificate),
 							},
 						},
 						MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
@@ -171,7 +171,7 @@ func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 	})
 
 	// Create a secret for the CA certificate that can be delegated
-	rh.OnAdd(featuretests.CASecret("otherNs/cacert", &featuretests.CACertificate))
+	rh.OnAdd(featuretests.CASecret(t, "otherNs/cacert", &featuretests.CACertificate))
 
 	// Update the validation spec to reference a secret that is not delegated.
 	rh.OnUpdate(ext, &v1alpha1.ExtensionService{
@@ -422,7 +422,7 @@ func TestExtensionService(t *testing.T) {
 
 			// Add common test fixtures.
 
-			rh.OnAdd(featuretests.CASecret("ns/cacert", &featuretests.CACertificate))
+			rh.OnAdd(featuretests.CASecret(t, "ns/cacert", &featuretests.CACertificate))
 			rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
 			rh.OnAdd(fixture.NewService("ns/svc2").WithPorts(corev1.ServicePort{Port: 8082}))
 
