@@ -29,8 +29,8 @@ import (
 
 // EnsureClusterRole ensures a ClusterRole resource exists with the provided name
 // and contour namespace/name for the owning contour labels.
-func EnsureClusterRole(ctx context.Context, cli client.Client, name string, contour *model.Contour, gatewayClassOnly bool) error {
-	desired := desiredClusterRole(name, contour, gatewayClassOnly)
+func EnsureClusterRole(ctx context.Context, cli client.Client, name string, contour *model.Contour, clusterScopedResourceOnly bool) error {
+	desired := desiredClusterRole(name, contour, clusterScopedResourceOnly)
 
 	// Enclose contour.
 	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.ClusterRole) error {
@@ -42,7 +42,7 @@ func EnsureClusterRole(ctx context.Context, cli client.Client, name string, cont
 
 // desiredClusterRole constructs an instance of the desired ClusterRole resource with
 // the provided name and contour namespace/name for the owning contour labels.
-func desiredClusterRole(name string, contour *model.Contour, gatewayClassOnly bool) *rbacv1.ClusterRole {
+func desiredClusterRole(name string, contour *model.Contour, clusterScopedResourceOnly bool) *rbacv1.ClusterRole {
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Role",
@@ -54,7 +54,7 @@ func desiredClusterRole(name string, contour *model.Contour, gatewayClassOnly bo
 		},
 		Rules: util.ClusterScopedResourcePolicyRules(),
 	}
-	if gatewayClassOnly {
+	if clusterScopedResourceOnly {
 		return role
 	}
 

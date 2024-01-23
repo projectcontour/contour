@@ -490,9 +490,9 @@ var _ = Describe("Gateway provisioner", func() {
 		})
 	})
 	f.NamespacedTest("gateway-with-envoy-in-watch-namespaces", func(namespace string) {
-		Specify("A gateway with Envoy as a deployment can be provisioned, only routes in watch namespace can be reconciled", func() {
+		objectTestName := "contour-params-with-watch-namespaces"
+		BeforeEach(func() {
 			By("create gatewayclass that reference contourDeployment with watchNamespace value")
-			objectTestName := "contour-params-with-watch-namespaces"
 			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: objectTestName,
@@ -534,7 +534,16 @@ var _ = Describe("Gateway provisioner", func() {
 
 				return e2e.GatewayClassAccepted(gc)
 			}, time.Minute, time.Second)
-
+		})
+		AfterEach(func() {
+			require.NoError(f.T(), f.DeleteGatewayClass(&gatewayapi_v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: objectTestName,
+				},
+			}, false))
+		})
+		Specify("A gateway with Envoy as a deployment can be provisioned, only routes in watch namespace can be reconciled", func() {
+			By("This tests deploy 3 dev namespaces testns-1, testns-2, testns-3")
 			By("Deploy gateway that referencing above gatewayclass")
 			gateway := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -550,7 +559,9 @@ var _ = Describe("Gateway provisioner", func() {
 							Port:     gatewayapi_v1beta1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									// TODO: set to from all for now
+									// The correct way would be label the testns-1, testns-2, testns-3, then select by label
+									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -558,27 +569,26 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok = f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
+			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok)
-
 			type testObj struct {
-				expectWatch bool
-				namespace   string
+				expectReconcile bool
+				namespace       string
 			}
 			testcases := []testObj{
 				{
-					expectWatch: true,
-					namespace:   "testns-1",
+					expectReconcile: true,
+					namespace:       "testns-1",
 				},
 				{
-					expectWatch: true,
-					namespace:   "testns-2",
+					expectReconcile: true,
+					namespace:       "testns-2",
 				},
 				{
-					expectWatch: false,
-					namespace:   "testns-3",
+					expectReconcile: false,
+					namespace:       "testns-3",
 				},
 			}
 
@@ -592,7 +602,7 @@ var _ = Describe("Gateway provisioner", func() {
 						Name:      "httproute-1",
 					},
 					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						Hostnames: []gatewayapi_v1beta1.Hostname{"'provisioner'.projectcontour.io"},
+						Hostnames: []gatewayapi_v1beta1.Hostname{"provisioner.projectcontour.io"},
 						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1beta1.ParentReference{
 								gatewayapi.GatewayParentRef("", gateway.Name),
@@ -607,11 +617,13 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				}
 
-				if t.expectWatch {
+				if t.expectReconcile {
+					// set route's parentRef's namespace to the gateway's namespace
+					route.Spec.CommonRouteSpec.ParentRefs[0].Namespace = (*gatewayapi_v1.Namespace)(&namespace)
 					By(fmt.Sprintf("Expect namespace %s to be watched by contour", t.namespace))
-					_, ok = f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
-					By("Expect Routed is accepted")
-					require.True(f.T(), ok)
+					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+					By(fmt.Sprintf("Expect httproute under namespace %s is accepted", t.namespace))
+					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 					res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 						OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
 						Host:        string(route.Spec.Hostnames[0]),
@@ -622,21 +634,19 @@ var _ = Describe("Gateway provisioner", func() {
 					require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 
 					body := f.GetEchoResponseBody(res.Body)
-					assert.Equal(f.T(), namespace, body.Namespace)
+					assert.Equal(f.T(), t.namespace, body.Namespace)
 					assert.Equal(f.T(), "echo", body.Service)
 
-					require.NoError(f.T(), f.DeleteHTTPRoute(route, false))
+					require.NoError(f.T(), f.DeleteHTTPRoute(route, true))
 				} else {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
-					_, ok = f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteNotAccepted)
-					By("Expect Routed is not accepted")
-					require.True(f.T(), ok)
-					require.NoError(f.T(), f.DeleteHTTPRoute(route, false))
+					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIngnoredByContour)
+					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted", t.namespace))
+					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
+					require.NoError(f.T(), f.DeleteHTTPRoute(route, true))
 				}
 			}
-
-			require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, false))
 		})
 	}, "testns-1", "testns-2", "testns-3")
 })

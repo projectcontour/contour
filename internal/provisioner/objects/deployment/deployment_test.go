@@ -256,7 +256,7 @@ func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
 			cntr.Spec.WatchNamespaces = tc.namespaces
 			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
 			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
-			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(tc.namespaces, ","))
+			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(append(tc.namespaces, cntr.Namespace), ","))
 			if tc.expectArgExist {
 				checkContainerHasArg(t, container, arg)
 			} else {

@@ -44,10 +44,11 @@ func checkClusterRoleLabels(t *testing.T, cr *rbacv1.ClusterRole, expected map[s
 	t.Errorf("cluster role has unexpected %q labels", cr.Labels)
 }
 
-func clusterRoleRulesContainOnlyGatewayClass(cr *rbacv1.ClusterRole) bool {
+func clusterRoleRulesContainOnlyClusterScopeRules(cr *rbacv1.ClusterRole) bool {
 	for _, r := range cr.Rules {
 		if !slices.Contains(r.Resources, "gatewayclasses") &&
-			!slices.Contains(r.Resources, "gatewayclasses/status") {
+			!slices.Contains(r.Resources, "gatewayclasses/status") &&
+			!slices.Contains(r.Resources, "namespaces") {
 			return false
 		}
 	}
@@ -58,15 +59,15 @@ func clusterRoleRulesContainOnlyGatewayClass(cr *rbacv1.ClusterRole) bool {
 func TestDesiredClusterRole(t *testing.T) {
 	testCases := []struct {
 		description      string
-		gatewayclassOnly bool
+		clusterScopeOnly bool
 	}{
 		{
 			description:      "gateway class rule only role",
-			gatewayclassOnly: true,
+			clusterScopeOnly: true,
 		},
 		{
 			description:      "generic cluster role include all rules",
-			gatewayclassOnly: false,
+			clusterScopeOnly: false,
 		},
 	}
 
@@ -74,7 +75,7 @@ func TestDesiredClusterRole(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			name := "test-cr"
 			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
-			cr := desiredClusterRole(name, cntr, tc.gatewayclassOnly)
+			cr := desiredClusterRole(name, cntr, tc.clusterScopeOnly)
 			checkClusterRoleName(t, cr, name)
 			ownerLabels := map[string]string{
 				model.ContourOwningGatewayNameLabel:    cntr.Name,
@@ -82,9 +83,9 @@ func TestDesiredClusterRole(t *testing.T) {
 			}
 			checkClusterRoleLabels(t, cr, ownerLabels)
 			fmt.Println(cr.Rules)
-			if tc.gatewayclassOnly != clusterRoleRulesContainOnlyGatewayClass(cr) {
-				t.Errorf("expect gateayClassOnly to be %v, but clusterRoleRulesContainGatewayClass shows %v",
-					tc.gatewayclassOnly, clusterRoleRulesContainOnlyGatewayClass(cr))
+			if tc.clusterScopeOnly != clusterRoleRulesContainOnlyClusterScopeRules(cr) {
+				t.Errorf("expect clusterScopeOnly to be %v, but clusterRoleRulesContainOnlyClusterScopeRules shows %v",
+					tc.clusterScopeOnly, clusterRoleRulesContainOnlyClusterScopeRules(cr))
 			}
 		})
 	}

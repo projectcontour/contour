@@ -47,7 +47,7 @@ func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbacv1.
 func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
 		// Core Contour-watched resources.
-		PolicyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services", "namespaces"),
+		PolicyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services"),
 
 		// Discovery Contour-watched resources.
 		PolicyRuleFor(discoveryv1.GroupName, getListWatch, "endpointslices"),
@@ -71,9 +71,12 @@ func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
 // cluster-scoped resources.
 func ClusterScopedResourcePolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
-		// GatewayClass only.
+		// GatewayClass.
 		PolicyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gatewayclasses"),
 		PolicyRuleFor(gatewayv1alpha2.GroupName, update, "gatewayclasses/status"),
+
+		// Namespaces
+		PolicyRuleFor(corev1.GroupName, getListWatch, "namespaces"),
 	}
 }
 

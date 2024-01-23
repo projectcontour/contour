@@ -67,9 +67,8 @@ func TestDesiredControllerRole(t *testing.T) {
 
 func TestDesiredRoleForContourInNamespace(t *testing.T) {
 	testCases := []struct {
-		description      string
-		namespace        string
-		gatewayclassOnly bool
+		description string
+		namespace   string
 	}{
 		{
 			description: "namespace 1",

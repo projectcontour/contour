@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -102,7 +103,11 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	}
 
 	if !contour.WatchAllNamespaces() {
-		args = append(args, fmt.Sprintf("--watch-namespaces=%s", strings.Join(contour.Spec.WatchNamespaces, ",")))
+		ns := contour.Spec.WatchNamespaces
+		if !slices.Contains(contour.Spec.WatchNamespaces, contour.Namespace) {
+			ns = append(ns, contour.Namespace)
+		}
+		args = append(args, fmt.Sprintf("--watch-namespaces=%s", strings.Join(ns, ",")))
 	}
 
 	// Pass the insecure/secure flags to Contour if using non-default ports.

@@ -120,20 +120,13 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	return false
 }
 
-// HTTPRouteNotAccepted returns true if the route doesn't has a .status.conditions
-// entry of "Accepted: true".
-func HTTPRouteNotAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
+// HTTPRouteIngnoredByContour returns true if the route has an empty .status.parents.conditions list
+func HTTPRouteIngnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
-	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
-			return false
-		}
-	}
-
-	return true
+	return len(route.Status.Parents) == 0
 }
 
 // TCPRouteAccepted returns true if the route has a .status.conditions
