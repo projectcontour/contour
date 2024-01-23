@@ -28,7 +28,6 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -63,38 +62,14 @@ func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
 	}
 }
 
-func clientSecret() *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "envoyclientsecret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-}
-
-func caSecret() *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "backendcacert",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-		},
-	}
-}
-
 func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
-	sec1 := clientSecret()
-	sec2 := caSecret()
-	rh.OnAdd(sec1)
-	rh.OnAdd(sec2)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
+	rh.OnAdd(clientSecret)
+	rh.OnAdd(caSecret)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 443})
@@ -111,7 +86,7 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 					Port:     443,
 					Protocol: ref.To("tls"),
 					UpstreamValidation: &projcontour.UpstreamValidation{
-						CACertificate: sec2.Name,
+						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -121,13 +96,13 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1, nil),
+			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), caSecret, "subjname", "", clientSecret, nil),
 		),
 		TypeUrl: clusterType,
 	})
 
 	// Test the error branch when Envoy client certificate secret does not exist.
-	rh.OnDelete(sec1)
+	rh.OnDelete(clientSecret)
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   clusterType,
@@ -138,10 +113,10 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
-	sec1 := clientSecret()
-	sec2 := caSecret()
-	rh.OnAdd(sec1)
-	rh.OnAdd(sec2)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
+	rh.OnAdd(clientSecret)
+	rh.OnAdd(caSecret)
 
 	svc := fixture.NewService("backend").
 		Annotate("projectcontour.io/upstream-protocol.tls", "443").
@@ -158,13 +133,13 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsClusterWithoutValidation(cluster("default/backend/443/4929fca9d4", "default/backend/http", "default_backend_443"), "", sec1, nil),
+			tlsClusterWithoutValidation(cluster("default/backend/443/4929fca9d4", "default/backend/http", "default_backend_443"), "", clientSecret, nil),
 		),
 		TypeUrl: clusterType,
 	})
 
 	// Test the error branch when Envoy client certificate secret does not exist.
-	rh.OnDelete(sec1)
+	rh.OnDelete(clientSecret)
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   clusterType,
@@ -175,10 +150,10 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
-	sec1 := clientSecret()
-	sec2 := caSecret()
-	rh.OnAdd(sec1)
-	rh.OnAdd(sec2)
+	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
+	rh.OnAdd(clientSecret)
+	rh.OnAdd(caSecret)
 
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "grpc", Port: 6001})
@@ -191,7 +166,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 				{Name: svc.Name, Port: 6001},
 			},
 			UpstreamValidation: &projcontour.UpstreamValidation{
-				CACertificate: sec2.Name,
+				CACertificate: caSecret.Name,
 				SubjectName:   "subjname",
 			},
 		},
@@ -202,18 +177,11 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: map[string][]byte{dag.CACertificateKey: []byte(featuretests.CERTIFICATE)},
-				}},
-				SubjectNames: []string{"subjname"},
+				CACertificate: &dag.Secret{Object: featuretests.CASecret(t, "secret", &featuretests.CACertificate)},
+				SubjectNames:  []string{"subjname"},
 			},
 			"subjname",
-			&dag.Secret{Object: sec1},
+			&dag.Secret{Object: clientSecret},
 			nil,
 			"h2",
 		),
@@ -229,7 +197,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	})
 
 	// Test the error branch when Envoy client certificate secret does not exist.
-	rh.OnDelete(sec1)
+	rh.OnDelete(clientSecret)
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   clusterType,

@@ -175,14 +175,7 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "wildcard-tls-secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec := featuretests.TLSSecret(t, "wildcard-tls-secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec)
 
 	svc := fixture.NewService("svc").
