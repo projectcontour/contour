@@ -542,7 +542,7 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}, false))
 		})
-		Specify("A gateway with Envoy as a deployment can be provisioned, only routes in watch namespace can be reconciled", func() {
+		Specify("A gateway can be provisioned that only reconciles routes in a subset of namespaces", func() {
 			By("This tests deploy 3 dev namespaces testns-1, testns-2, testns-3")
 			By("Deploy gateway that referencing above gatewayclass")
 			gateway := &gatewayapi_v1beta1.Gateway{
@@ -620,6 +620,9 @@ var _ = Describe("Gateway provisioner", func() {
 				if t.expectReconcile {
 					// set route's parentRef's namespace to the gateway's namespace
 					route.Spec.CommonRouteSpec.ParentRefs[0].Namespace = (*gatewayapi_v1.Namespace)(&namespace)
+					// set the route's hostnames to custom name with namespace inside
+					route.Spec.Hostnames = []gatewayapi_v1beta1.Hostname{gatewayapi_v1beta1.Hostname("provisioner.projectcontour.io." + t.namespace)}
+
 					By(fmt.Sprintf("Expect namespace %s to be watched by contour", t.namespace))
 					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 					By(fmt.Sprintf("Expect httproute under namespace %s is accepted", t.namespace))
@@ -636,15 +639,22 @@ var _ = Describe("Gateway provisioner", func() {
 					body := f.GetEchoResponseBody(res.Body)
 					assert.Equal(f.T(), t.namespace, body.Namespace)
 					assert.Equal(f.T(), "echo", body.Service)
-
-					require.NoError(f.T(), f.DeleteHTTPRoute(route, true))
 				} else {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
 					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIngnoredByContour)
 					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted", t.namespace))
 					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
-					require.NoError(f.T(), f.DeleteHTTPRoute(route, true))
+
+					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted for a period of time", t.namespace))
+					require.Never(f.T(), func() bool {
+						r := &gatewayapi_v1beta1.HTTPRoute{}
+						if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(hr), r); err != nil {
+							return false
+						}
+						return e2e.HTTPRouteAccepted(r)
+					}, 10*time.Second, time.Second)
+					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 				}
 			}
 		})

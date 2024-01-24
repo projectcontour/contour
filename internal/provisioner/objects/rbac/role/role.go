@@ -50,7 +50,7 @@ func EnsureControllerRole(ctx context.Context, cli client.Client, name string, c
 func EnsureRolesInNamespaces(ctx context.Context, cli client.Client, name string, contour *model.Contour, namespaces []string) error {
 	errs := []error{}
 	for _, ns := range namespaces {
-		desired := desiredRoleForResourceInNamespace(util.ContourResourceName(name), ns, contour)
+		desired := desiredRoleForResourceInNamespace(name, ns, contour)
 
 		updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.Role) error {
 			err := updateRoleIfNeeded(ctx, cli, contour, current, desired)

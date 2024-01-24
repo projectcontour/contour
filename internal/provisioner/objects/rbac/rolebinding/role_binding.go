@@ -21,7 +21,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +48,7 @@ func EnsureControllerRoleBinding(ctx context.Context, cli client.Client, name, s
 func EnsureRoleBindingsInNamespaces(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour, namespaces []string) error {
 	errs := []error{}
 	for _, ns := range namespaces {
-		desired := desiredRoleBindingInNamespace(util.ContourResourceName(name), svcAct, util.ContourResourceName(role), ns, contour)
+		desired := desiredRoleBindingInNamespace(name, svcAct, role, ns, contour)
 
 		// Enclose contour.
 		updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.RoleBinding) error {

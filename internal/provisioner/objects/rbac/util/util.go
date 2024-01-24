@@ -14,8 +14,6 @@
 package util
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -78,9 +76,4 @@ func ClusterScopedResourcePolicyRules() []rbacv1.PolicyRule {
 		// Namespaces
 		PolicyRuleFor(corev1.GroupName, getListWatch, "namespaces"),
 	}
-}
-
-// ContourResourceName returns names for roles/rolebindings for contour resources
-func ContourResourceName(name string) string {
-	return fmt.Sprintf("contour-resource-%s", name)
 }

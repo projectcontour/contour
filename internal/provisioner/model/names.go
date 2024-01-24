@@ -67,7 +67,9 @@ func (c *Contour) ContourRBACNames() RBACNames {
 		Role:               fmt.Sprintf("contour-%s", c.Name),
 
 		// this one has a different prefix to differentiate from the certgen role binding (see below).
-		RoleBinding: fmt.Sprintf("contour-rolebinding-%s", c.Name),
+		RoleBinding:                        fmt.Sprintf("contour-rolebinding-%s", c.Name),
+		NamespaceScopedResourceRole:        fmt.Sprintf("contour-resource-%s-%s", c.Namespace, c.Name),
+		NamespaceScopedResourceRoleBinding: fmt.Sprintf("contour-resource-%s-%s", c.Namespace, c.Name),
 	}
 }
 
@@ -129,9 +131,11 @@ func (c *Contour) CommonAnnotations() map[string]string {
 
 // RBACNames holds a set of names of related RBAC resources.
 type RBACNames struct {
-	ServiceAccount     string
-	ClusterRole        string
-	ClusterRoleBinding string
-	Role               string
-	RoleBinding        string
+	ServiceAccount                     string
+	ClusterRole                        string
+	ClusterRoleBinding                 string
+	Role                               string
+	RoleBinding                        string
+	NamespaceScopedResourceRole        string
+	NamespaceScopedResourceRoleBinding string
 }
