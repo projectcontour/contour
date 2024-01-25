@@ -126,6 +126,10 @@ type ContourSettings struct {
 	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
 	// to only watch this subset of namespaces.
 	// +optional
+	// +kubebuilder:validation:Type=array
+	// +kubebuilder:validation:Items=string
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=42
 	WatchNamespaces []string `json:"watchNamespaces,omitempty"`
 }
 

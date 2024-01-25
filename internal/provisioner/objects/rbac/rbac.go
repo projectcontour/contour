@@ -28,7 +28,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,6 +68,10 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 			return fmt.Errorf("failed to ensure cluster role binding %s: %w", names.ClusterRoleBinding, err)
 		}
 	} else {
+		// validate whether all namespaces exist
+		if err := validateNamespacesExist(ctx, cli, contour.Spec.WatchNamespaces); err != nil {
+			return fmt.Errorf("failed when validating watchNamespaces:%w", err)
+		}
 		// Ensure cluster role & cluster binding for gatewayclass and other cluster scope resource first since it's cluster scope variables
 		if err := clusterrole.EnsureClusterRole(ctx, cli, names.ClusterRole, contour, clusterRoleForClusterScopedResourcesOnly); err != nil {
 			return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
@@ -169,4 +176,22 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 	}
 
 	return nil
+}
+
+func validateNamespacesExist(ctx context.Context, cli client.Client, ns []string) error {
+	errs := []error{}
+	for _, n := range ns {
+		namespace := &corev1.Namespace{}
+		// Check if the namespace exists
+		err := cli.Get(ctx, types.NamespacedName{Name: n}, namespace)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				errs = append(errs, fmt.Errorf("failed to find namespace %s in watchNamespace. Please make sure it exist", n))
+			} else {
+				errs = append(errs, fmt.Errorf("failed to get namespace %s because of: %w", n, err))
+			}
+		}
+	}
+
+	return kerrors.NewAggregate(errs)
 }

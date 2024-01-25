@@ -14,8 +14,6 @@
 package model
 
 import (
-	"slices"
-
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/ref"
 
@@ -137,7 +135,7 @@ func (c *Contour) EnvoyTolerationsExist() bool {
 }
 
 func (c *Contour) WatchAllNamespaces() bool {
-	return c.Spec.WatchNamespaces == nil || slices.Contains(c.Spec.WatchNamespaces, corev1.NamespaceAll)
+	return c.Spec.WatchNamespaces == nil || len(c.Spec.WatchNamespaces) == 0
 }
 
 // ContourSpec defines the desired state of Contour.

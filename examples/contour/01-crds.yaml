@@ -1626,6 +1626,8 @@ spec:
                       to only watch this subset of namespaces.
                     items:
                       type: string
+                    maxItems: 42
+                    minItems: 1
                     type: array
                 type: object
               envoy:
