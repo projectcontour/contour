@@ -1636,6 +1636,19 @@ spec:
                       WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
                       to only watch this subset of namespaces.
                     items:
+                      description: |-
+                        Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.
+                        This validation is based off of the corresponding Kubernetes validation:
+                        https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187
+                        This is used for Namespace name validation here:
+                        https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63
+                        Valid values include:
+                        * "example"
+                        Invalid values include:
+                        * "example.com" - "." is an invalid character
+                      maxLength: 63
+                      minLength: 1
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                       type: string
                     maxItems: 42
                     minItems: 1

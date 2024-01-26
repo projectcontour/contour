@@ -519,7 +519,7 @@ var _ = Describe("Gateway provisioner", func() {
 				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
 					Contour: &contour_api_v1alpha1.ContourSettings{
-						WatchNamespaces: []string{"testns-1", "testns-2"},
+						WatchNamespaces: []contour_api_v1alpha1.Namespace{"testns-1", "testns-2"},
 					},
 				},
 			}
@@ -572,7 +572,7 @@ var _ = Describe("Gateway provisioner", func() {
 			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 			})
-			require.True(f.T(), ok)
+			require.True(f.T(), ok, fmt.Sprintf("gateway is %v", gateway))
 			type testObj struct {
 				expectReconcile bool
 				namespace       string
@@ -626,7 +626,7 @@ var _ = Describe("Gateway provisioner", func() {
 					By(fmt.Sprintf("Expect namespace %s to be watched by contour", t.namespace))
 					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 					By(fmt.Sprintf("Expect httproute under namespace %s is accepted", t.namespace))
-					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
+					require.True(f.T(), ok, fmt.Sprintf("httproute is %v", hr))
 					res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 						OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
 						Host:        string(route.Spec.Hostnames[0]),

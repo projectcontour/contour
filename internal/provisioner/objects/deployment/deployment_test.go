@@ -236,13 +236,8 @@ func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
 		},
 		{
 			description:    "single valid namespace",
-			namespaces:     []string{"ns1", "ns2"},
+			namespaces:     []string{"ns1"},
 			expectArgExist: true,
-		},
-		{
-			description:    "include empty namespace",
-			namespaces:     []string{"ns1", ""},
-			expectArgExist: false,
 		},
 	}
 

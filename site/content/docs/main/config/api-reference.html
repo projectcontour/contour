@@ -6252,7 +6252,9 @@ the annotations for Prometheus will be appended or overwritten with predefined v
 <code>watchNamespaces</code>
 <br>
 <em>
-[]string
+<a href="#projectcontour.io/v1alpha1.Namespace">
+[]Namespace
+</a>
 </em>
 </td>
 <td>
@@ -8094,6 +8096,27 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.Namespace">Namespace
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
+<p>
+<p>Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.</p>
+<p>This validation is based off of the corresponding Kubernetes validation:
+<a href="https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187">https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187</a></p>
+<p>This is used for Namespace name validation here:
+<a href="https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63">https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63</a></p>
+<p>Valid values include:</p>
+<ul>
+<li>&ldquo;example&rdquo;</li>
+</ul>
+<p>Invalid values include:</p>
+<ul>
+<li>&ldquo;example.com&rdquo; - &ldquo;.&rdquo; is an invalid character</li>
+</ul>
+</p>
 <h3 id="projectcontour.io/v1alpha1.NamespacedName">NamespacedName
 </h3>
 <p>
