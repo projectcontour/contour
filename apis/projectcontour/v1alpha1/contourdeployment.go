@@ -14,6 +14,7 @@
 package v1alpha1
 
 import (
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,27 +76,6 @@ type ContourDeploymentSpec struct {
 	ResourceLabels map[string]string `json:"resourceLabels,omitempty"`
 }
 
-// Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.
-//
-// This validation is based off of the corresponding Kubernetes validation:
-// https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187
-//
-// This is used for Namespace name validation here:
-// https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63
-//
-// Valid values include:
-//
-// * "example"
-//
-// Invalid values include:
-//
-// * "example.com" - "." is an invalid character
-//
-// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
-// +kubebuilder:validation:MinLength=1
-// +kubebuilder:validation:MaxLength=63
-type Namespace string
-
 // ContourSettings contains settings for the Contour part of the installation,
 // i.e. the xDS server/control plane and associated resources.
 type ContourSettings struct {
@@ -150,7 +130,7 @@ type ContourSettings struct {
 	// +kubebuilder:validation:Type=array
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=42
-	WatchNamespaces []Namespace `json:"watchNamespaces,omitempty"`
+	WatchNamespaces []contour_api_v1.Namespace `json:"watchNamespaces,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

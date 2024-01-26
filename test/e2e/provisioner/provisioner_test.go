@@ -25,6 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -519,7 +520,7 @@ var _ = Describe("Gateway provisioner", func() {
 				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
 					Contour: &contour_api_v1alpha1.ContourSettings{
-						WatchNamespaces: []contour_api_v1alpha1.Namespace{"testns-1", "testns-2"},
+						WatchNamespaces: []contour_api_v1.Namespace{"testns-1", "testns-2"},
 					},
 				},
 			}
@@ -643,17 +644,15 @@ var _ = Describe("Gateway provisioner", func() {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
 					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIngnoredByContour)
-					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted", t.namespace))
-					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 
 					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted for a period of time", t.namespace))
 					require.Never(f.T(), func() bool {
-						r := &gatewayapi_v1beta1.HTTPRoute{}
-						if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(hr), r); err != nil {
+						hr = &gatewayapi_v1beta1.HTTPRoute{}
+						if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(hr), hr); err != nil {
 							return false
 						}
-						return e2e.HTTPRouteAccepted(r)
-					}, 10*time.Second, time.Second)
+						return e2e.HTTPRouteAccepted(hr)
+					}, 10*time.Second, time.Second, hr)
 					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 				}
 			}

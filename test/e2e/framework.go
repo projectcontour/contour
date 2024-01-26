@@ -472,21 +472,6 @@ func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1beta1.GatewayClass, wai
 	return nil
 }
 
-// DeleteHTTPRoute deletes the provided HTTPROUTE in the
-// Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) DeleteHTTPRoute(r *gatewayapi_v1beta1.HTTPRoute, waitForDeletion bool) error {
-	require.NoError(f.t, f.Client.Delete(context.TODO(), r))
-
-	if waitForDeletion {
-		require.Eventually(f.t, func() bool {
-			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(r), r)
-			return api_errors.IsNotFound(err)
-		}, time.Minute*3, time.Millisecond*50)
-	}
-
-	return nil
-}
-
 // GetEchoResponseBody decodes an HTTP response body that is
 // expected to have come from ingress-conformance-echo into an
 // EchoResponseBody, or fails the test if it encounters an error.

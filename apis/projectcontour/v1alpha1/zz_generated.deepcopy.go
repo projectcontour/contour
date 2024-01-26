@@ -389,7 +389,7 @@ func (in *ContourSettings) DeepCopyInto(out *ContourSettings) {
 	}
 	if in.WatchNamespaces != nil {
 		in, out := &in.WatchNamespaces, &out.WatchNamespaces
-		*out = make([]Namespace, len(*in))
+		*out = make([]v1.Namespace, len(*in))
 		copy(*out, *in)
 	}
 }

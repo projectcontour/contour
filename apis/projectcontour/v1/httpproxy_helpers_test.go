@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package v1
 
 import (
 	"reflect"
 	"testing"
 )
 
-func TestDesiredRoleBindingInNamespace(t *testing.T) {
+func TestNamespacesToStrings(t *testing.T) {
 	testCases := []struct {
 		description   string
 		namespaces    []Namespace
