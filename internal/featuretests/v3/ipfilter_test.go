@@ -69,7 +69,7 @@ func TestIPFilterPolicy(t *testing.T) {
 					Match:  routePrefix("/"),
 					Action: routeCluster("default/backend/80/da39a3ee5e"),
 				},
-			), withFilterConfig("envoy.filters.http.rbac", &envoy_rbac_v3.RBACPerRoute{Rbac: &envoy_rbac_v3.RBAC{
+			), withFilterConfig(envoy_v3.RBACFilterName, &envoy_rbac_v3.RBACPerRoute{Rbac: &envoy_rbac_v3.RBAC{
 				Rules: &envoy_config_rbac_v3.RBAC{
 					Action: envoy_config_rbac_v3.RBAC_ALLOW,
 					Policies: map[string]*envoy_config_rbac_v3.Policy{
@@ -131,7 +131,7 @@ func TestIPFilterPolicy(t *testing.T) {
 				&envoy_route_v3.Route{
 					Match:  routePrefix("/"),
 					Action: routeCluster("default/backend/80/da39a3ee5e"),
-					TypedPerFilterConfig: withFilterConfig("envoy.filters.http.rbac", &envoy_rbac_v3.RBACPerRoute{
+					TypedPerFilterConfig: withFilterConfig(envoy_v3.RBACFilterName, &envoy_rbac_v3.RBACPerRoute{
 						Rbac: &envoy_rbac_v3.RBAC{
 							Rules: &envoy_config_rbac_v3.RBAC{
 								Action: envoy_config_rbac_v3.RBAC_DENY,
@@ -156,7 +156,7 @@ func TestIPFilterPolicy(t *testing.T) {
 						},
 					}),
 				},
-			), withFilterConfig("envoy.filters.http.rbac", &envoy_rbac_v3.RBACPerRoute{Rbac: &envoy_rbac_v3.RBAC{
+			), withFilterConfig(envoy_v3.RBACFilterName, &envoy_rbac_v3.RBACPerRoute{Rbac: &envoy_rbac_v3.RBAC{
 				Rules: &envoy_config_rbac_v3.RBAC{
 					Action: envoy_config_rbac_v3.RBAC_ALLOW,
 					Policies: map[string]*envoy_config_rbac_v3.Policy{

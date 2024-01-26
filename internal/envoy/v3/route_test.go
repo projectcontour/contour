@@ -1254,7 +1254,7 @@ func TestCORSVirtualHost(t *testing.T) {
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com"},
 				TypedPerFilterConfig: map[string]*anypb.Any{
-					"envoy.filters.http.cors": protobuf.MustMarshalAny(&envoy_cors_v3.CorsPolicy{
+					CORSFilterName: protobuf.MustMarshalAny(&envoy_cors_v3.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{
 							{
 								MatchPattern: &matcher.StringMatcher_Exact{

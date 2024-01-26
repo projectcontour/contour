@@ -514,7 +514,7 @@ func authzFilterFor(
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.ext_authz",
+			Name: envoy_v3.ExtAuthzFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(authz),
 			},
@@ -533,7 +533,7 @@ func jwtAuthnFilterFor(
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.jwt_authn",
+			Name: envoy_v3.JWTAuthnFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(jwt),
 			},

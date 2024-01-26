@@ -567,7 +567,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 func TestHTTPConnectionManager(t *testing.T) {
 	defaultHTTPFilters := []*http.HttpFilter{
 		{
-			Name: "compressor",
+			Name: CompressorFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
@@ -584,12 +584,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 				}),
 			},
 		}, {
-			Name: "grpcweb",
+			Name: GRPCWebFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 			},
 		}, {
-			Name: "grpc_stats",
+			Name: GRPCStatsFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
@@ -599,12 +599,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 				),
 			},
 		}, {
-			Name: "cors",
+			Name: CORSFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 			},
 		}, {
-			Name: "local_ratelimit",
+			Name: LocalRateLimitFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
@@ -613,7 +613,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				),
 			},
 		}, {
-			Name: "envoy.filters.http.lua",
+			Name: LuaFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
 					DefaultSourceCode: &envoy_core_v3.DataSource{
@@ -624,7 +624,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				}),
 			},
 		}, {
-			Name: "envoy.filters.http.rbac",
+			Name: RBACFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 			},
@@ -1744,20 +1744,20 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	grpcWebFilter := &http.HttpFilter{
-		Name: "grpcweb",
+		Name: GRPCWebFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 		},
 	}
 	corsFilter := &http.HttpFilter{
-		Name: "cors",
+		Name: CORSFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 		},
 	}
 
 	grpcStatsFilter := &http.HttpFilter{
-		Name: "grpc_stats",
+		Name: GRPCStatsFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(
 				&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
@@ -1768,7 +1768,7 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	luaFilter := &http.HttpFilter{
-		Name: "envoy.filters.http.lua",
+		Name: LuaFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
 				DefaultSourceCode: &envoy_core_v3.DataSource{
@@ -1780,14 +1780,14 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	rbacFilter := &http.HttpFilter{
-		Name: "envoy.filters.http.rbac",
+		Name: RBACFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 		},
 	}
 
 	localRateLimitFilter := &http.HttpFilter{
-		Name: "local_ratelimit",
+		Name: LocalRateLimitFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
@@ -1798,7 +1798,7 @@ func TestAddFilter(t *testing.T) {
 	}
 
 	compressFilter := &http.HttpFilter{
-		Name: "compressor",
+		Name: CompressorFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 				CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
