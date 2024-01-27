@@ -278,14 +278,7 @@ func TestExternalNameService(t *testing.T) {
 		),
 	})
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	// Create TCPProxy with upstream protocol 'tls' to an externalName type service
 	// and verify that the SNI on the upstream request matches the externalName value.
