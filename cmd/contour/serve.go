@@ -530,6 +530,10 @@ func (s *Server) doServe() error {
 	if contourConfiguration.Gateway != nil {
 		gatewayControllerName = contourConfiguration.Gateway.ControllerName
 
+		if len(gatewayControllerName) > 0 {
+			s.log.Warnf("DEPRECATED: gateway.controllerName is deprecated and will be removed in a future release. Use gateway.gatewayRef or the Gateway provisioner instead.")
+		}
+
 		if contourConfiguration.Gateway.GatewayRef != nil {
 			gatewayRef = &types.NamespacedName{
 				Namespace: contourConfiguration.Gateway.GatewayRef.Namespace,
