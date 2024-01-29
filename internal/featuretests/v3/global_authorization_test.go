@@ -254,7 +254,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEv
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/s1/80/da39a3ee5e"),
 						TypedPerFilterConfig: map[string]*anypb.Any{
-							"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(
+							envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(
 								&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
 										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
@@ -355,7 +355,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/s1/80/da39a3ee5e"),
 						TypedPerFilterConfig: map[string]*anypb.Any{
-							"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(
+							envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(
 								&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
 										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{

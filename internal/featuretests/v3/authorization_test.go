@@ -266,7 +266,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 	// same authorization enablement as the root proxy, and
 	// the other path should have the opposite enablement.
 
-	disabledConfig := withFilterConfig("envoy.filters.http.ext_authz",
+	disabledConfig := withFilterConfig(envoy_v3.ExtAuthzFilterName,
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
 				Disabled: true,
@@ -390,7 +390,7 @@ func authzMergeRouteContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
-						TypedPerFilterConfig: withFilterConfig("envoy.filters.http.ext_authz",
+						TypedPerFilterConfig: withFilterConfig(envoy_v3.ExtAuthzFilterName,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 								Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
 									CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
