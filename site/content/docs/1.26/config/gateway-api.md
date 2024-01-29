@@ -64,7 +64,7 @@ To dynamically provision Contour with Gateway API enabled:
 
 The Contour Gateway Provisioner will deploy an instance of Contour in the Gateway's namespace implementing the Gateway spec.
 
-**Note:** Gateway names must be 63 characters or shorter, to avoid issues when generating dependent resources. See [projectcontour/contour#5970][13] and [kubernetes-sigs/gatewayapi#2592][14] for more information.
+**Note:** Gateway names must be 63 characters or shorter, to avoid issues when generating dependent resources. See [projectcontour/contour#5970][13] and [kubernetes-sigs/gateway-api#2592][14] for more information.
 
 ## Gateway Listeners
 
