@@ -951,17 +951,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var uv *PeerValidationContext
 			if (protocol == "tls" || protocol == "h2") && service.UpstreamValidation != nil {
-				caCertNamespacedName := k8s.NamespacedNameFrom(service.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName, proxy.Namespace)
-				if err != nil {
-					if _, ok := err.(DelegationNotPermittedError); ok {
-						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
-							"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
-					} else {
-						validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
-							"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
-					}
+				uv = p.peerValidationContext(validCond, proxy, service)
+				if uv == nil {
 					return nil
 				}
 			}
@@ -1212,6 +1203,25 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				return false
 			}
 
+			var uv *PeerValidationContext
+			if (protocol == "tls" || protocol == "h2") && service.UpstreamValidation != nil {
+				uv = p.peerValidationContext(validCond, httpproxy, service)
+				if uv == nil {
+					return false
+				}
+			}
+
+			var clientCertSecret *Secret
+			if p.ClientCertificate != nil {
+				// Since the client certificate is configured by admin, explicit delegation is not required.
+				clientCertSecret, err = p.source.LookupTLSSecretInsecure(*p.ClientCertificate)
+				if err != nil {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
+						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
+					return false
+				}
+			}
+
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
 				Weight:               uint32(service.Weight),
@@ -1220,6 +1230,9 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				TCPHealthCheckPolicy: healthPolicy,
 				SNI:                  s.ExternalName,
 				TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+				UpstreamTLS:          p.UpstreamTLS,
+				UpstreamValidation:   uv,
+				ClientCertificate:    clientCertSecret,
 			})
 		}
 
@@ -1480,6 +1493,23 @@ func (p *HTTPProxyProcessor) GlobalAuthorizationContext() map[string]string {
 		return p.GlobalExternalAuthorization.AuthPolicy.Context
 	}
 	return nil
+}
+
+func (p *HTTPProxyProcessor) peerValidationContext(validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, service contour_api_v1.Service) *PeerValidationContext {
+	caCertNamespacedName := k8s.NamespacedNameFrom(service.UpstreamValidation.CACertificate, k8s.DefaultNamespace(httpproxy.Namespace))
+	// we can only validate TLS connections to services that talk TLS
+	uv, err := p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName, httpproxy.Namespace)
+	if err != nil {
+		if _, ok := err.(DelegationNotPermittedError); ok {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+				"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+		} else {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
+				"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
+		}
+		return nil
+	}
+	return uv
 }
 
 // expandPrefixMatches adds new Routes to account for the difference

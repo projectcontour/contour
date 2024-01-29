@@ -67,8 +67,10 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 	defer done()
 
 	clientSecret := featuretests.TLSSecret(t, "envoyclientsecret", &featuretests.ClientCertificate)
+	serverSecret := featuretests.TLSSecret(t, "envoyserversecret", &featuretests.ServerCertificate)
 	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
 	rh.OnAdd(clientSecret)
+	rh.OnAdd(serverSecret)
 	rh.OnAdd(caSecret)
 
 	svc := fixture.NewService("backend").
@@ -94,12 +96,40 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 		})
 	rh.OnAdd(proxy)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	expectedResponse := &envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"), caSecret, "subjname", "", clientSecret, nil),
 		),
 		TypeUrl: clusterType,
-	})
+	}
+
+	c.Request(clusterType).Equals(expectedResponse)
+
+	rh.OnDelete(proxy)
+
+	tcpproxy := fixture.NewProxy("tcpproxy").WithSpec(
+		projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &projcontour.TLS{
+					SecretName: serverSecret.Name,
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{
+				Services: []projcontour.Service{{
+					Name:     svc.Name,
+					Port:     443,
+					Protocol: ref.To("tls"),
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: caSecret.Name,
+						SubjectName:   "subjname",
+					},
+				}},
+			},
+		})
+	rh.OnAdd(tcpproxy)
+
+	c.Request(clusterType).Equals(expectedResponse)
 
 	// Test the error branch when Envoy client certificate secret does not exist.
 	rh.OnDelete(clientSecret)

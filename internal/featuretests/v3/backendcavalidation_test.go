@@ -20,6 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -100,13 +101,15 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// assert that the cluster now has a certificate and subject name.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	expectedResponse := &envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), caSecret, "subjname", "", nil, nil),
 		),
 		TypeUrl: clusterType,
-	})
+	}
+
+	// assert that the cluster now has a certificate and subject name.
+	c.Request(clusterType).Equals(expectedResponse)
 
 	// Contour does not use SDS to transmit the CA for upstream validation, issue 1405,
 	// assert that SDS is empty.
@@ -163,4 +166,33 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Resources: nil,
 		TypeUrl:   secretType,
 	})
+
+	rh.OnDelete(hp1)
+
+	serverSecret := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+	rh.OnAdd(serverSecret)
+
+	tcpproxy := fixture.NewProxy("tcpproxy").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: serverSecret.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name:     svc.Name,
+					Port:     443,
+					Protocol: ref.To("tls"),
+					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+						CACertificate: caSecret.Name,
+						SubjectName:   "subjname",
+					},
+				}},
+			},
+		})
+	rh.OnAdd(tcpproxy)
+
+	c.Request(clusterType).Equals(expectedResponse)
 }
