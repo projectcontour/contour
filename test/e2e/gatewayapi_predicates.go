@@ -120,8 +120,8 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	return false
 }
 
-// HTTPRouteIngnoredByContour returns true if the route has an empty .status.parents.conditions list
-func HTTPRouteIngnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
+// HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
+func HTTPRouteIgnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}

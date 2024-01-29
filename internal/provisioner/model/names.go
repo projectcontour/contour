@@ -68,8 +68,8 @@ func (c *Contour) ContourRBACNames() RBACNames {
 
 		// this one has a different prefix to differentiate from the certgen role binding (see below).
 		RoleBinding:                        fmt.Sprintf("contour-rolebinding-%s", c.Name),
-		NamespaceScopedResourceRole:        fmt.Sprintf("contour-resource-%s-%s", c.Namespace, c.Name),
-		NamespaceScopedResourceRoleBinding: fmt.Sprintf("contour-resource-%s-%s", c.Namespace, c.Name),
+		NamespaceScopedResourceRole:        fmt.Sprintf("contour-resources-%s-%s", c.Namespace, c.Name),
+		NamespaceScopedResourceRoleBinding: fmt.Sprintf("contour-resources-%s-%s", c.Namespace, c.Name),
 	}
 }
 

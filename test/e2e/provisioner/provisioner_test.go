@@ -643,7 +643,7 @@ var _ = Describe("Gateway provisioner", func() {
 				} else {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
-					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIngnoredByContour)
+					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIgnoredByContour)
 
 					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted for a period of time", t.namespace))
 					require.Never(f.T(), func() bool {
