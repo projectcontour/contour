@@ -528,6 +528,7 @@ func (s *Server) doServe() error {
 	var gatewayRef *types.NamespacedName
 
 	if contourConfiguration.Gateway != nil {
+		// nolint:staticcheck
 		gatewayControllerName = contourConfiguration.Gateway.ControllerName
 
 		if len(gatewayControllerName) > 0 {
@@ -1009,6 +1010,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
+	// nolint:staticcheck
 	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayRef != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
 		switch {
 		// If a specific gateway was specified, we don't need to run the
@@ -1028,6 +1030,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		// the appropriate gateway class and gateway to process.
 		default:
 			// Create and register the gatewayclass controller with the manager.
+			// nolint:staticcheck
 			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
 			gwClass, err := controller.RegisterGatewayClassController(
 				s.log.WithField("context", "gatewayclass-controller"),

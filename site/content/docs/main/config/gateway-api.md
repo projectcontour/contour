@@ -28,9 +28,11 @@ With static provisioning, Contour can be configured with either a [controller na
 If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
 If configured with a specific gateway, Contour will process that `Gateway` and its routes.
 
+**Note:** configuring Contour with a controller name is deprecated and will be removed in a future release. Use a specific gateway reference or dynamic provisioning instead.
+
 In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
 
-Static provisioning makes sense for users who: 
+Static provisioning makes sense for users who:
 - prefer the traditional model of deploying Contour
 - have only a single Gateway
 - want to use just the standard listener ports (80/443)
@@ -180,7 +182,7 @@ When the Contour Gateway Provisioner is upgraded to a new version, it will upgra
 ## Disabling Experimental Resources
 
 Some users may want to use Contour with the [Gateway API standard channel][4] instead of the experimental channel, to avoid installing alpha resources into their clusters.
-To do this, Contour must be told to disable informers for the experimental resources. 
+To do this, Contour must be told to disable informers for the experimental resources.
 In the Contour (control plane) deployment, use the `--disable-feature` flag for `contour serve` to disable informers for the experimental resources:
 
 ```yaml
