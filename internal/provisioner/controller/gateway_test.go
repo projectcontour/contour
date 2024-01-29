@@ -367,7 +367,6 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contour_v1alpha1.ContourConfigurationSpec{
 						Gateway: &contour_v1alpha1.GatewayConfig{
-							ControllerName: "some-controller",
 							GatewayRef: &contour_v1alpha1.NamespacedName{
 								Namespace: "some-other-namespace",
 								Name:      "some-other-gateway",

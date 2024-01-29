@@ -19,7 +19,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -37,18 +36,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-// ReconcileModeController means Contour should be configured
-// to reconcile based on a Gateway controller string.
-const ReconcileModeController = "controller"
-
-// ReconcileModeGateway means Contour should be configured
-// to reconcile a specific named Gateway.
-const ReconcileModeGateway = "gateway"
-
-var (
-	f             = e2e.NewFramework(false)
-	reconcileMode string
-)
+var f = e2e.NewFramework(false)
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -56,12 +44,6 @@ func TestGatewayAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	var found bool
-	reconcileMode, found = os.LookupEnv("CONTOUR_E2E_GATEWAY_RECONCILE_MODE")
-	if !found {
-		reconcileMode = ReconcileModeGateway
-	}
-
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 
@@ -94,27 +76,19 @@ var _ = Describe("Gateway API", func() {
 					// Ensure gateway created in this test's namespace.
 					gateway.Namespace = namespace
 					// Update contour config to point to specified gateway.
-					contourConfig.GatewayConfig = &config.GatewayParameters{}
-					if reconcileMode == ReconcileModeGateway {
-						contourConfig.GatewayConfig.GatewayRef = &config.NamespacedName{
+					contourConfig.GatewayConfig = &config.GatewayParameters{
+						GatewayRef: &config.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
-						}
-					} else {
-						// nolint:staticcheck
-						contourConfig.GatewayConfig.ControllerName = string(gatewayClass.Spec.ControllerName)
+						},
 					}
 
 					// Update contour configuration to point to specified gateway.
-					contourConfiguration.Spec.Gateway = &contour_v1alpha1.GatewayConfig{}
-					if reconcileMode == ReconcileModeGateway {
-						contourConfiguration.Spec.Gateway.GatewayRef = &contour_v1alpha1.NamespacedName{
+					contourConfiguration.Spec.Gateway = &contour_v1alpha1.GatewayConfig{
+						GatewayRef: &contour_v1alpha1.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
-						}
-					} else {
-						// nolint:staticcheck
-						contourConfiguration.Spec.Gateway.ControllerName = string(gatewayClass.Spec.ControllerName)
+						},
 					}
 
 					contourGatewayClass = gatewayClass
@@ -155,13 +129,10 @@ var _ = Describe("Gateway API", func() {
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
-		gatewayClassCond := e2e.GatewayClassAccepted
-		// If we're reconciling a specific Gateway,
+		// Since we're reconciling a specific Gateway,
 		// we don't expect GatewayClasses to be reconciled
 		// or become valid.
-		if reconcileMode == ReconcileModeGateway {
-			gatewayClassCond = func(*gatewayapi_v1.GatewayClass) bool { return true }
-		}
+		gatewayClassCond := func(*gatewayapi_v1.GatewayClass) bool { return true }
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
 		f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed)

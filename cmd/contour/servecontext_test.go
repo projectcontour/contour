@@ -563,20 +563,6 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
-		"gatewayapi - controller": {
-			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.GatewayConfig = &config.GatewayParameters{
-					ControllerName: "projectcontour.io/gateway-controller",
-				}
-				return ctx
-			},
-			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
-				cfg.Gateway = &contour_v1alpha1.GatewayConfig{
-					ControllerName: "projectcontour.io/gateway-controller",
-				}
-				return cfg
-			},
-		},
 		"gatewayapi - specific gateway": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.GatewayConfig = &config.GatewayParameters{

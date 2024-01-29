@@ -133,7 +133,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{
-			gatewayControllerName:        "projectcontour.io/gateway-controller",
+			gatewayRef:                   &types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			rootNamespaces:               []string{},
 			dnsLookupFamily:              contour_v1alpha1.AutoClusterDNSFamily,
 			globalCircuitBreakerDefaults: &g,

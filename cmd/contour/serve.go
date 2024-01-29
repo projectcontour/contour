@@ -547,29 +547,18 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	var gatewayControllerName string
 	var gatewayRef *types.NamespacedName
 
-	if contourConfiguration.Gateway != nil {
-		// nolint:staticcheck
-		gatewayControllerName = contourConfiguration.Gateway.ControllerName
-
-		if len(gatewayControllerName) > 0 {
-			s.log.Warnf("DEPRECATED: gateway.controllerName is deprecated and will be removed in a future release. Use gateway.gatewayRef or the Gateway provisioner instead.")
-		}
-
-		if contourConfiguration.Gateway.GatewayRef != nil {
-			gatewayRef = &types.NamespacedName{
-				Namespace: contourConfiguration.Gateway.GatewayRef.Namespace,
-				Name:      contourConfiguration.Gateway.GatewayRef.Name,
-			}
+	if contourConfiguration.Gateway != nil && contourConfiguration.Gateway.GatewayRef != nil {
+		gatewayRef = &types.NamespacedName{
+			Namespace: contourConfiguration.Gateway.GatewayRef.Namespace,
+			Name:      contourConfiguration.Gateway.GatewayRef.Name,
 		}
 	}
 
 	builder := s.getDAGBuilder(dagBuilderConfig{
 		ingressClassNames:                  ingressClassNames,
 		rootNamespaces:                     contourConfiguration.HTTPProxy.RootNamespaces,
-		gatewayControllerName:              gatewayControllerName,
 		gatewayRef:                         gatewayRef,
 		disablePermitInsecure:              *contourConfiguration.HTTPProxy.DisablePermitInsecure,
 		enableExternalNameService:          *contourConfiguration.EnableExternalNameService,
@@ -653,7 +642,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	needsNotification := s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, sh)
+	needsNotification := s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler)
 
 	// Inform on secrets, filtering by root namespaces.
 	var handler cache.ResourceEventHandler = eventHandler
@@ -706,13 +695,12 @@ func (s *Server) doServe() error {
 
 	// Set up ingress load balancer status writer.
 	lbsw := &loadBalancerStatusWriter{
-		log:                   s.log.WithField("context", "loadBalancerStatusWriter"),
-		cache:                 s.mgr.GetCache(),
-		lbStatus:              make(chan core_v1.LoadBalancerStatus, 1),
-		ingressClassNames:     ingressClassNames,
-		gatewayControllerName: gatewayControllerName,
-		gatewayRef:            gatewayRef,
-		statusUpdater:         sh.Writer(),
+		log:               s.log.WithField("context", "loadBalancerStatusWriter"),
+		cache:             s.mgr.GetCache(),
+		lbStatus:          make(chan core_v1.LoadBalancerStatus, 1),
+		ingressClassNames: ingressClassNames,
+		gatewayRef:        gatewayRef,
+		statusUpdater:     sh.Writer(),
 	}
 	if err := s.mgr.Add(lbsw); err != nil {
 		return err
@@ -1028,57 +1016,20 @@ func (s *Server) setupHealth(healthConfig contour_v1alpha1.HealthConfig,
 }
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler,
+	mgr manager.Manager, eventHandler *contour.EventRecorder,
 ) []leadership.NeedLeaderElectionNotification {
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
-	// nolint:staticcheck
-	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayRef != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
-		switch {
-		// If a specific gateway was specified, we don't need to run the
-		// GatewayClass and Gateway controllers to determine which gateway
-		// to process, we just need informers to get events.
-		case contourConfiguration.Gateway.GatewayRef != nil:
-			// Inform on GatewayClasses.
-			if err := s.informOnResource(&gatewayapi_v1.GatewayClass{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")
-			}
+	if contourConfiguration.Gateway != nil && contourConfiguration.Gateway.GatewayRef != nil {
+		// Inform on GatewayClasses.
+		if err := s.informOnResource(&gatewayapi_v1.GatewayClass{}, eventHandler); err != nil {
+			s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")
+		}
 
-			// Inform on Gateways.
-			if err := s.informOnResource(&gatewayapi_v1.Gateway{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "gateways").Fatal("failed to create informer")
-			}
-		// Otherwise, run the GatewayClass and Gateway controllers to determine
-		// the appropriate gateway class and gateway to process.
-		default:
-			// Create and register the gatewayclass controller with the manager.
-			// nolint:staticcheck
-			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
-			gwClass, err := controller.RegisterGatewayClassController(
-				s.log.WithField("context", "gatewayclass-controller"),
-				mgr,
-				eventHandler,
-				sh.Writer(),
-				gatewayClassControllerName,
-			)
-			if err != nil {
-				s.log.WithError(err).Fatal("failed to create gatewayclass-controller")
-			}
-			needLeadershipNotification = append(needLeadershipNotification, gwClass)
-
-			// Create and register the NewGatewayController controller with the manager.
-			gw, err := controller.RegisterGatewayController(
-				s.log.WithField("context", "gateway-controller"),
-				mgr,
-				eventHandler,
-				sh.Writer(),
-				gatewayClassControllerName,
-			)
-			if err != nil {
-				s.log.WithError(err).Fatal("failed to create gateway-controller")
-			}
-			needLeadershipNotification = append(needLeadershipNotification, gw)
+		// Inform on Gateways.
+		if err := s.informOnResource(&gatewayapi_v1.Gateway{}, eventHandler); err != nil {
+			s.log.WithError(err).WithField("resource", "gateways").Fatal("failed to create informer")
 		}
 
 		// Some features may be disabled.
@@ -1146,7 +1097,6 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourCo
 type dagBuilderConfig struct {
 	ingressClassNames                  []string
 	rootNamespaces                     []string
-	gatewayControllerName              string
 	gatewayRef                         *types.NamespacedName
 	disablePermitInsecure              bool
 	enableExternalNameService          bool
@@ -1266,7 +1216,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		},
 	}
 
-	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayRef != nil {
+	if dbc.gatewayRef != nil {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService:     dbc.enableExternalNameService,
 			FieldLogger:                   s.log.WithField("context", "GatewayAPIProcessor"),

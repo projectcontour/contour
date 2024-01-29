@@ -168,15 +168,10 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Gateway: &contour_v1alpha1.GatewayConfig{},
 		}
 
-		c.Gateway.ControllerName = "foo"
-		require.NoError(t, c.Validate())
-
-		c.Gateway.ControllerName = ""
 		c.Gateway.GatewayRef = &contour_v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
 		require.NoError(t, c.Validate())
 
-		c.Gateway.ControllerName = "foo"
-		c.Gateway.GatewayRef = &contour_v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
+		c.Gateway.GatewayRef = nil
 		require.Error(t, c.Validate())
 	})
 

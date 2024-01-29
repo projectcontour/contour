@@ -49,16 +49,8 @@ func (s ServerType) Validate() error {
 
 // Validate the GatewayConfig.
 func (g *GatewayParameters) Validate() error {
-	if g == nil {
-		return nil
-	}
-
-	if len(g.ControllerName) == 0 && g.GatewayRef == nil {
-		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
-	}
-
-	if len(g.ControllerName) > 0 && g.GatewayRef != nil {
-		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
+	if g != nil && g.GatewayRef == nil {
+		return fmt.Errorf("invalid Gateway parameters specified: gateway ref must be provided")
 	}
 
 	return nil
@@ -255,20 +247,10 @@ type ServerParameters struct {
 
 // GatewayParameters holds the configuration for Gateway API controllers.
 type GatewayParameters struct {
-	// ControllerName is used to determine whether Contour should reconcile a
-	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-	// If unset, the gatewayclass controller will not be started.
-	// Exactly one of ControllerName or GatewayRef must be set.
-	//
-	// Deprecated: users should use GatewayRef, or the Gateway provisioner,
-	// in place of this field. This field will be removed in a future release.
-	ControllerName string `yaml:"controllerName,omitempty"`
-
 	// GatewayRef defines a specific Gateway that this Contour
 	// instance corresponds to. If set, Contour will reconcile
 	// only this gateway, and will not reconcile any gateway
 	// classes.
-	// Exactly one of ControllerName or GatewayRef must be set.
 	GatewayRef *NamespacedName `yaml:"gatewayRef,omitempty"`
 }
 

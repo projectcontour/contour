@@ -194,7 +194,7 @@ func TestValidateGatewayParameters(t *testing.T) {
 	require.NoError(t, gw.Validate())
 
 	// ControllerName is required.
-	gw = &GatewayParameters{ControllerName: "controller"}
+	gw = &GatewayParameters{GatewayRef: &NamespacedName{Namespace: "foo", Name: "bar"}}
 	require.NoError(t, gw.Validate())
 }
 

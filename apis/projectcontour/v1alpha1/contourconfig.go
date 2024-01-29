@@ -154,21 +154,10 @@ type XDSServerConfig struct {
 
 // GatewayConfig holds the config for Gateway API controllers.
 type GatewayConfig struct {
-	// ControllerName is used to determine whether Contour should reconcile a
-	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-	// If unset, the gatewayclass controller will not be started.
-	// Exactly one of ControllerName or GatewayRef must be set.
-	//
-	// Deprecated: users should use GatewayRef, or the Gateway provisioner,
-	// in place of this field. This field will be removed in a future release.
-	// +optional
-	ControllerName string `json:"controllerName,omitempty"`
-
 	// GatewayRef defines a specific Gateway that this Contour
 	// instance corresponds to. If set, Contour will reconcile
 	// only this gateway, and will not reconcile any gateway
 	// classes.
-	// Exactly one of ControllerName or GatewayRef must be set.
 	// +optional
 	GatewayRef *NamespacedName `json:"gatewayRef,omitempty"`
 }

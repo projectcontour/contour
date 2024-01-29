@@ -14,7 +14,6 @@
 package k8s
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
@@ -39,13 +38,12 @@ import (
 // Note that this is intended to handle updating the status.loadBalancer struct only,
 // not more general status updates. That's a job for the StatusUpdater.
 type StatusAddressUpdater struct {
-	Logger                logrus.FieldLogger
-	Cache                 cache.Cache
-	LBStatus              core_v1.LoadBalancerStatus
-	IngressClassNames     []string
-	GatewayControllerName string
-	GatewayRef            *types.NamespacedName
-	StatusUpdater         StatusUpdater
+	Logger            logrus.FieldLogger
+	Cache             cache.Cache
+	LBStatus          core_v1.LoadBalancerStatus
+	IngressClassNames []string
+	GatewayRef        *types.NamespacedName
+	StatusUpdater     StatusUpdater
 
 	// mu guards the LBStatus field, which can be updated dynamically.
 	mu sync.Mutex
@@ -133,37 +131,14 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 		))
 
 	case *gatewayapi_v1.Gateway:
-		switch {
-		// Specific Gateway configured: check if the added Gateway
-		// matches.
-		case s.GatewayRef != nil:
+		if s.GatewayRef != nil {
+			// Specific Gateway configured: check if the added Gateway
+			// matches.
 			if NamespacedNameOf(o) != *s.GatewayRef {
 				s.Logger.
 					WithField("name", o.Name).
 					WithField("namespace", o.Namespace).
 					Debug("Gateway is not for this Contour, not setting address")
-				return
-			}
-		// Otherwise, check if the added Gateway's class is controlled
-		// by us.
-		default:
-			gc := &gatewayapi_v1.GatewayClass{}
-			if err := s.Cache.Get(context.Background(), client.ObjectKey{Name: string(o.Spec.GatewayClassName)}, gc); err != nil {
-				s.Logger.
-					WithField("name", o.Name).
-					WithField("namespace", o.Namespace).
-					WithField("gatewayclass-name", o.Spec.GatewayClassName).
-					WithError(err).
-					Error("error getting gateway class for gateway")
-				return
-			}
-			if string(gc.Spec.ControllerName) != s.GatewayControllerName {
-				s.Logger.
-					WithField("name", o.Name).
-					WithField("namespace", o.Namespace).
-					WithField("gatewayclass-name", o.Spec.GatewayClassName).
-					WithField("gatewayclass-controller-name", gc.Spec.ControllerName).
-					Debug("Gateway's class is not controlled by this Contour, not setting address")
 				return
 			}
 		}
