@@ -21,9 +21,7 @@ import (
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-const (
-	ContourV1GroupName = "projectcontour.io"
-)
+const contourV1GroupName = "projectcontour.io"
 
 var (
 	createGetUpdate = []string{"create", "get", "update"}
@@ -60,8 +58,8 @@ func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
 		PolicyRuleFor(networkingv1.GroupName, createGetUpdate, "ingresses/status"),
 
 		// Contour CRDs.
-		PolicyRuleFor(ContourV1GroupName, getListWatch, "httpproxies", "tlscertificatedelegations", "extensionservices", "contourconfigurations"),
-		PolicyRuleFor(ContourV1GroupName, createGetUpdate, "httpproxies/status", "extensionservices/status", "contourconfigurations/status"),
+		PolicyRuleFor(contourV1GroupName, getListWatch, "httpproxies", "tlscertificatedelegations", "extensionservices", "contourconfigurations"),
+		PolicyRuleFor(contourV1GroupName, createGetUpdate, "httpproxies/status", "extensionservices/status", "contourconfigurations/status"),
 	}
 }
 
