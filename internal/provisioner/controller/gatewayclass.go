@@ -151,7 +151,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	// setConditions.
 	statusConditions := map[string]metav1.Condition{}
 
-	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion)] = r.getSupportedVersionCondition(ctx, *gatewayClass)
+	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion)] = r.getSupportedVersionCondition(ctx)
 
 	ok, params, err := r.isValidParametersRef(ctx, gatewayClass.Spec.ParametersRef)
 	if err != nil {
@@ -291,6 +291,7 @@ func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass
 		updatedConds = append(updatedConds, c)
 	}
 
+	// nolint:gocritic
 	gatewayClass.Status.Conditions = append(unchangedConds, updatedConds...)
 
 	if err := r.client.Status().Update(ctx, gatewayClass); err != nil {
@@ -299,7 +300,7 @@ func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass
 	return nil
 }
 
-func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Context, gatewayClass gatewayapi_v1beta1.GatewayClass) metav1.Condition {
+func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Context) metav1.Condition {
 	cond := metav1.Condition{
 		Type: string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion),
 		// Assume false until we get to the happy case.
