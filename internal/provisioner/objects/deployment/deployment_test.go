@@ -15,6 +15,7 @@ package deployment
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -210,6 +211,37 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasTolerations(t, deploy, nil)
 	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourDeploymentStrategy)
+}
+
+func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
+	testCases := []struct {
+		description string
+		namespaces  []string
+	}{
+		{
+			description: "several valid namespaces",
+			namespaces:  []string{"ns1", "ns2"},
+		},
+		{
+			description: "single valid namespace",
+			namespaces:  []string{"ns1"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "deploy-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			icName := "test-ic"
+			cntr.Spec.IngressClassName = &icName
+			// Change the Contour watch namespaces flag
+			cntr.Spec.WatchNamespaces = tc.namespaces
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
+			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(append(tc.namespaces, cntr.Namespace), ","))
+			checkContainerHasArg(t, container, arg)
+		})
+	}
 }
 
 func TestNodePlacementDeployment(t *testing.T) {

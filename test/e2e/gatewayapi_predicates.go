@@ -120,6 +120,15 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	return false
 }
 
+// HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
+func HTTPRouteIgnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	return len(route.Status.Parents) == 0
+}
+
 // TCPRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
 func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
