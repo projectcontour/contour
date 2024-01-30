@@ -43,6 +43,7 @@ import (
 	controller_runtime_metrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -50,7 +51,6 @@ import (
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
-	"github.com/projectcontour/contour/internal/controller"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -642,7 +642,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	needsNotification := s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler)
+	needsNotification := s.setupGatewayAPI(contourConfiguration, eventHandler)
 
 	// Inform on secrets, filtering by root namespaces.
 	var handler cache.ResourceEventHandler = eventHandler
@@ -1015,9 +1015,7 @@ func (s *Server) setupHealth(healthConfig contour_v1alpha1.HealthConfig,
 	return nil
 }
 
-func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder,
-) []leadership.NeedLeaderElectionNotification {
+func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourConfigurationSpec, eventHandler *contour.EventRecorder) []leadership.NeedLeaderElectionNotification {
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
@@ -1032,6 +1030,21 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourCo
 			s.log.WithError(err).WithField("resource", "gateways").Fatal("failed to create informer")
 		}
 
+		// Inform on HTTPRoutes.
+		if err := s.informOnResource(&gatewayapi_v1.HTTPRoute{}, eventHandler); err != nil {
+			s.log.WithError(err).WithField("resource", "httproutes").Fatal("failed to create informer")
+		}
+
+		// Inform on ReferenceGrants.
+		if err := s.informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler); err != nil {
+			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
+		}
+
+		// Inform on Namespaces.
+		if err := s.informOnResource(&core_v1.Namespace{}, eventHandler); err != nil {
+			s.log.WithError(err).WithField("resource", "namespaces").Fatal("failed to create informer")
+		}
+
 		// Some features may be disabled.
 		features := map[string]struct{}{
 			"tlsroutes":          {},
@@ -1043,52 +1056,37 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourCo
 			delete(features, f)
 		}
 
-		// Create and register the HTTPRoute controller with the manager.
-		if err := controller.RegisterHTTPRouteController(s.log.WithField("context", "httproute-controller"), mgr, eventHandler); err != nil {
-			s.log.WithError(err).Fatal("failed to create httproute-controller")
-		}
-
-		// Create and register the TLSRoute controller with the manager, if enabled.
+		// Inform on TLSRoutes, if enabled.
 		if _, enabled := features["tlsroutes"]; enabled {
-			if err := controller.RegisterTLSRouteController(s.log.WithField("context", "tlsroute-controller"), mgr, eventHandler); err != nil {
-				s.log.WithError(err).Fatal("failed to create tlsroute-controller")
+			if err := s.informOnResource(&gatewayapi_v1alpha2.TLSRoute{}, eventHandler); err != nil {
+				s.log.WithError(err).WithField("resource", "tlsroutes").Fatal("failed to create informer")
 			}
 		}
 
-		// Create and register the GRPCRoute controller with the manager, if enabled.
+		// Inform on GRPCRoutes, if enabled.
 		if _, enabled := features["grpcroutes"]; enabled {
-			if err := controller.RegisterGRPCRouteController(s.log.WithField("context", "grpcroute-controller"), mgr, eventHandler); err != nil {
-				s.log.WithError(err).Fatal("failed to create grpcroute-controller")
+			if err := s.informOnResource(&gatewayapi_v1alpha2.GRPCRoute{}, eventHandler); err != nil {
+				s.log.WithError(err).WithField("resource", "grpcroutes").Fatal("failed to create informer")
 			}
 		}
 
-		// Create and register the TCPRoute controller with the manager.
+		// Inform on TCPRoutes, if enabled.
 		if _, enabled := features["tcproutes"]; enabled {
-			if err := controller.RegisterTCPRouteController(s.log.WithField("context", "tcproute-controller"), mgr, eventHandler); err != nil {
-				s.log.WithError(err).Fatal("failed to create tcproute-controller")
+			if err := s.informOnResource(&gatewayapi_v1alpha2.TCPRoute{}, eventHandler); err != nil {
+				s.log.WithError(err).WithField("resource", "tcproutes").Fatal("failed to create informer")
 			}
 		}
 
-		// Create and register the BackendTLSPolicy controller with the manager.
+		// Inform on BackendTLSPolicies, if enabled, along with ConfigMaps.
 		if _, enabled := features["backendtlspolicies"]; enabled {
-			// Inform on ConfigMap if BackendTLSPolicy is enabled
+			if err := s.informOnResource(&gatewayapi_v1alpha2.BackendTLSPolicy{}, eventHandler); err != nil {
+				s.log.WithError(err).WithField("resource", "backendtlspolicies").Fatal("failed to create informer")
+			}
+
 			if err := s.informOnResource(&core_v1.ConfigMap{}, eventHandler); err != nil {
 				s.log.WithError(err).WithField("resource", "configmaps").Fatal("failed to create informer")
 			}
 
-			if err := controller.RegisterBackendTLSPolicyController(s.log.WithField("context", "backendtlspolicy-controller"), mgr, eventHandler); err != nil {
-				s.log.WithError(err).Fatal("failed to create backendtlspolicy-controller")
-			}
-		}
-
-		// Inform on ReferenceGrants.
-		if err := s.informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
-		}
-
-		// Inform on Namespaces.
-		if err := s.informOnResource(&core_v1.Namespace{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "namespaces").Fatal("failed to create informer")
 		}
 	}
 	return needLeadershipNotification
