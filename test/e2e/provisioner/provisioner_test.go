@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -139,6 +140,28 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Gateway provisioner", func() {
+	Specify("GatewayClass status condition SupportedVersion is set to True", func() {
+		// This test will fail if we bump the Gateway API module and CRDs but
+		// forget to update the supported version we check for.
+		require.Eventually(f.T(), func() bool {
+			gc := &gatewayapi_v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour",
+				},
+			}
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gc), gc); err != nil {
+				return false
+			}
+			for _, cond := range gc.Status.Conditions {
+				if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion) &&
+					cond.Status == metav1.ConditionTrue {
+					return true
+				}
+			}
+			return false
+		}, f.RetryTimeout, f.RetryInterval)
+	})
+
 	f.NamespacedTest("provisioner-gatewayclass-params", func(namespace string) {
 		Specify("GatewayClass parameters are handled correctly", func() {
 			// Create GatewayClass with a reference to a nonexistent ContourDeployment,
@@ -229,6 +252,7 @@ var _ = Describe("Gateway provisioner", func() {
 			require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, false))
 		})
 	})
+
 	f.NamespacedTest("gateway-with-envoy-deployment", func(namespace string) {
 		Specify("A gateway with Envoy as a deployment can be provisioned and routes traffic correctly", func() {
 			gateway := &gatewayapi_v1beta1.Gateway{
@@ -297,6 +321,7 @@ var _ = Describe("Gateway provisioner", func() {
 			assert.Equal(f.T(), "echo", body.Service)
 		})
 	})
+
 	f.NamespacedTest("gateway-with-many-listeners", func(namespace string) {
 		Specify("A gateway with many Listeners for different protocols can be provisioned and routes correctly", func() {
 			f.Certs.CreateSelfSignedCert(namespace, "https-1-cert", "https-1-cert", "https-1.provisioner.projectcontour.io")
