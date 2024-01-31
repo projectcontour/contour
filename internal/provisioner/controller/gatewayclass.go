@@ -332,7 +332,7 @@ func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Contex
 	// No errors found, we can return true.
 	cond.Status = metav1.ConditionTrue
 	cond.Reason = string(gatewayapi_v1.GatewayClassReasonSupportedVersion)
-	cond.Message = fmt.Sprintf("Gateway API CRD bundle version %s is supported", gatewayAPICRDBundleSupportedVersion)
+	cond.Message = fmt.Sprintf("Gateway API CRD bundle version %s is supported.", gatewayAPICRDBundleSupportedVersion)
 	return cond
 }
 
