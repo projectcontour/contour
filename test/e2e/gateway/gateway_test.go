@@ -102,6 +102,7 @@ var _ = Describe("Gateway API", func() {
 							Name:      gateway.Name,
 						}
 					} else {
+						// nolint:staticcheck
 						contourConfig.GatewayConfig.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
 
@@ -113,6 +114,7 @@ var _ = Describe("Gateway API", func() {
 							Name:      gateway.Name,
 						}
 					} else {
+						// nolint:staticcheck
 						contourConfiguration.Spec.Gateway.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
 

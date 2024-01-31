@@ -214,7 +214,7 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 
 | Field Name     | Type           | Default | Description                                                                    |
 | -------------- | -------------- | ------- | ------------------------------------------------------------------------------ |
-| controllerName | string         |         | Gateway Class controller name (i.e. projectcontour.io/gateway-controller). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayRef` must be set. |
+| controllerName | string         |         | **DEPRECATED**: Use `gatewayRef` or the Gateway provisioner instead. This field will be removed in a future release. Gateway Class controller name (i.e. projectcontour.io/gateway-controller). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayRef` must be set. |
 | gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). If set, Contour will reconcile this specific Gateway. Only one of `controllerName` or `gatewayRef` must be set. |
 
 ### Gateway Ref

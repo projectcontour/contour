@@ -28,6 +28,8 @@ With static provisioning, Contour can be configured with either a [controller na
 If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
 If configured with a specific gateway, Contour will process that `Gateway` and its routes.
 
+**Note:** configuring Contour with a controller name is deprecated and will be removed in a future release. Use a specific gateway reference or dynamic provisioning instead.
+
 In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
 
 Static provisioning makes sense for users who:

@@ -158,6 +158,9 @@ type GatewayConfig struct {
 	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
 	// If unset, the gatewayclass controller will not be started.
 	// Exactly one of ControllerName or GatewayRef must be set.
+	//
+	// Deprecated: users should use GatewayRef, or the Gateway provisioner,
+	// in place of this field. This field will be removed in a future release.
 	// +optional
 	ControllerName string `json:"controllerName,omitempty"`
 
