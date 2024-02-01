@@ -1479,6 +1479,21 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabledFeatures:
+                    description: |-
+                      DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
+                      contour reconciler.
+                    items:
+                      enum:
+                      - grpcroutes
+                      - tlsroutes
+                      - extensionservices
+                      - backendtlspolicies
+                      type: string
+                    maxItems: 42
+                    minItems: 1
+                    type: array
+                    uniqueItems: true
                   kubernetesLogLevel:
                     description: |-
                       KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
@@ -1644,6 +1659,7 @@ spec:
                     maxItems: 42
                     minItems: 1
                     type: array
+                    uniqueItems: true
                 type: object
               envoy:
                 description: |-

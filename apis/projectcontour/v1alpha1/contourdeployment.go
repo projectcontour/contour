@@ -130,7 +130,18 @@ type ContourSettings struct {
 	// +kubebuilder:validation:Type=array
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=42
+	// +kubebuilder:validation:UniqueItems=true
 	WatchNamespaces []contour_api_v1.Namespace `json:"watchNamespaces,omitempty"`
+
+
+	// DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
+	// contour reconciler.
+	// +optional
+	// +kubebuilder:validation:Type=array
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=42
+	// +kubebuilder:validation:UniqueItems=true
+	DisabledFeatures []contour_api_v1.Feature `json:"disabledFeatures,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

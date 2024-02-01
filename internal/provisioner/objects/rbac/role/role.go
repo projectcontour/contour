@@ -108,7 +108,7 @@ func desiredRoleForResourceInNamespace(name, namespace string, contour *model.Co
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Rules: util.NamespacedResourcePolicyRules(),
+		Rules: util.NamespacedResourcePolicyRules(contour.Spec.DisabledFeatures),
 	}
 }
 

@@ -14,6 +14,7 @@
 package model
 
 import (
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/ref"
 
@@ -254,6 +255,18 @@ type ContourSpec struct {
 	// to only watch these set of namespaces
 	// default is nil, contour will watch resource of all namespaces
 	WatchNamespaces []string
+
+	// DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
+	// contour reconciler.
+	DisabledFeatures []contourv1.Feature
+}
+
+func FeaturesToStrings(fs []contourv1.Feature) []string {
+	res := make([]string, len(fs))
+	for i := range fs {
+		res[i] = string(fs[i])
+	}
+	return res
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

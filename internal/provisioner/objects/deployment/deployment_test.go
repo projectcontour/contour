@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 
@@ -269,4 +270,35 @@ func TestNodePlacementDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, selectors)
 	checkDeploymentHasTolerations(t, deploy, tolerations)
+}
+
+func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
+	testCases := []struct {
+		description      string
+		disabledFeatures []contour_v1.Feature
+	}{
+		{
+			description:      "several disabled features",
+			disabledFeatures: []contour_v1.Feature{"ns1", "ns2"},
+		},
+		{
+			description:      "single disabled features",
+			disabledFeatures: []contour_v1.Feature{"ns1"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "deploy-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			icName := "test-ic"
+			cntr.Spec.IngressClassName = &icName
+			cntr.Spec.DisabledFeatures = tc.disabledFeatures
+			// Change the Contour watch namespaces flag
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
+			arg := fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(tc.disabledFeatures), ","))
+			checkContainerHasArg(t, container, arg)
+		})
+	}
 }

@@ -110,6 +110,10 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		args = append(args, fmt.Sprintf("--watch-namespaces=%s", strings.Join(ns, ",")))
 	}
 
+	if contour.Spec.DisabledFeatures != nil && len(contour.Spec.DisabledFeatures) > 0 {
+		args = append(args, fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(contour.Spec.DisabledFeatures), ",")))
+	}
+
 	// Pass the insecure/secure flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
 		switch {
