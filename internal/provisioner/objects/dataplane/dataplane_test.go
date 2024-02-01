@@ -265,10 +265,13 @@ func checkEnvoyDeploymentHasAffinity(t *testing.T, d *appsv1.Deployment, contour
 	if apiequality.Semantic.DeepEqual(*d.Spec.Template.Spec.Affinity,
 		corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
 					{
-						LabelSelector: EnvoyPodSelector(contour),
-						TopologyKey:   "kubernetes.io/hostname",
+						Weight: int32(100),
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: EnvoyPodSelector(contour),
+							TopologyKey:   "kubernetes.io/hostname",
+						},
 					},
 				},
 			},
