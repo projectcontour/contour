@@ -287,7 +287,7 @@ type EchoSecure struct {
 // fails the test if it encounters an error. Namespace is defaulted to "default"
 // and name is defaulted to "ingress-conformance-echo-tls" if not provided. Returns
 // a cleanup function.
-func (e *EchoSecure) Deploy(ns, name string) func() {
+func (e *EchoSecure) Deploy(ns, name string, preApplyHook func(deployment *appsv1.Deployment, service *corev1.Service)) func() {
 	ns = valOrDefault(ns, "default")
 	name = valOrDefault(name, "ingress-conformance-echo-tls")
 
@@ -388,7 +388,6 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 			},
 		},
 	}
-	require.NoError(e.t, e.client.Create(context.TODO(), deployment))
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -414,6 +413,12 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 			Selector: map[string]string{"app.kubernetes.io/name": name},
 		},
 	}
+
+	if preApplyHook != nil {
+		preApplyHook(deployment, service)
+	}
+
+	require.NoError(e.t, e.client.Create(context.TODO(), deployment))
 	require.NoError(e.t, e.client.Create(context.TODO(), service))
 
 	return func() {

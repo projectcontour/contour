@@ -43,15 +43,15 @@ func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbacv1.
 func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
 		// Core Contour-watched resources.
-		PolicyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services"),
+		PolicyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services", "configmaps"),
 
 		// Discovery Contour-watched resources.
 		PolicyRuleFor(discoveryv1.GroupName, getListWatch, "endpointslices"),
 
 		// Gateway API resources.
 		// Note, ReferenceGrant does not currently have a .status field so it's omitted from the status rule.
-		PolicyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gateways", "httproutes", "tlsroutes", "grpcroutes", "tcproutes", "referencegrants"),
-		PolicyRuleFor(gatewayv1alpha2.GroupName, update, "gateways/status", "httproutes/status", "tlsroutes/status", "grpcroutes/status", "tcproutes/status"),
+		PolicyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gateways", "httproutes", "tlsroutes", "grpcroutes", "tcproutes", "referencegrants", "backendtlspolicies"),
+		PolicyRuleFor(gatewayv1alpha2.GroupName, update, "gateways/status", "httproutes/status", "tlsroutes/status", "grpcroutes/status", "tcproutes/status", "backendtlspolicies/status"),
 
 		// Ingress resources.
 		PolicyRuleFor(networkingv1.GroupName, getListWatch, "ingresses"),

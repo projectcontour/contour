@@ -145,6 +145,14 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	return false
 }
 
+// BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
+// entry of "Accepted: true".
+func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
+	// TODO (christianang): Right now this always returns true if a backendtlspolicy is
+	// provided since status conditions are not implemented yet for BackendTLSPolicy
+	return btp != nil
+}
+
 func conditionExists(conditions []metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) bool {
 	for _, cond := range conditions {
 		if cond.Type == conditionType && cond.Status == conditionStatus {

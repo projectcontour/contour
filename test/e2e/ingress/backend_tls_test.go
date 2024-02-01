@@ -53,7 +53,7 @@ func testBackendTLS(namespace string) {
 			},
 		}
 		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
-		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure")
+		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 
 		i := &networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{

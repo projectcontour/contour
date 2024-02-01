@@ -50,7 +50,7 @@ func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
 			},
 		}
 		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
-		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure")
+		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{

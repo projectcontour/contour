@@ -72,8 +72,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			filterchaintls("example.com", serverTLSSecret,
 				httpsFilterFor("example.com"),
 				&dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: clientCASecret,
+					CACertificates: []*dag.Secret{
+						{
+							Object: clientCASecret,
+						},
 					},
 				},
 				"h2", "http/1.1",
@@ -171,8 +173,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				httpsFilterFor("example.com"),
 				&dag.PeerValidationContext{
 					SkipClientCertValidation: true,
-					CACertificate: &dag.Secret{
-						Object: clientCASecret,
+					CACertificates: []*dag.Secret{
+						{
+							Object: clientCASecret,
+						},
 					},
 				},
 				"h2", "http/1.1",
@@ -224,8 +228,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			filterchaintls("example.com", serverTLSSecret,
 				httpsFilterFor("example.com"),
 				&dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: clientCASecret,
+					CACertificates: []*dag.Secret{
+						{
+							Object: clientCASecret,
+						},
 					},
 					CRL: &dag.Secret{
 						Object: crlSecret,
@@ -276,8 +282,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			filterchaintls("example.com", serverTLSSecret,
 				httpsFilterFor("example.com"),
 				&dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: clientCASecret,
+					CACertificates: []*dag.Secret{
+						{
+							Object: clientCASecret,
+						},
 					},
 					CRL: &dag.Secret{
 						Object: crlSecret,
@@ -328,8 +336,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			filterchaintls("example.com", serverTLSSecret,
 				httpsFilterFor("example.com"),
 				&dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: clientCASecret,
+					CACertificates: []*dag.Secret{
+						{
+							Object: clientCASecret,
+						},
 					},
 					OptionalClientCertificate: true,
 				},
@@ -389,8 +399,10 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 					URI:     true,
 				}),
 				&dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: clientCASecret,
+					CACertificates: []*dag.Secret{
+						{
+							Object: clientCASecret,
+						},
 					},
 				},
 				"h2", "http/1.1",

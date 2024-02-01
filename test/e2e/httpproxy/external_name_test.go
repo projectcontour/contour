@@ -101,7 +101,7 @@ func testExternalNameServiceTLS(namespace string) {
 
 		f.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "backend-server-cert", "echo")
 
-		f.Fixtures.EchoSecure.Deploy(namespace, "echo-tls")
+		f.Fixtures.EchoSecure.Deploy(namespace, "echo-tls", nil)
 
 		externalNameService := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
