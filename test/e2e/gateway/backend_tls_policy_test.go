@@ -163,7 +163,8 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 			},
 		}
 
-		f.CreateBackendTLSPolicyAndWaitFor(backendTLSPolicy, e2e.BackendTLSPolicyAccepted)
+		_, ok := f.CreateBackendTLSPolicyAndWaitFor(backendTLSPolicy, e2e.BackendTLSPolicyAccepted)
+		assert.Truef(t, ok, "expected policy condition accepted on backend tls policy")
 
 		type responseTLSDetails struct {
 			TLS struct {

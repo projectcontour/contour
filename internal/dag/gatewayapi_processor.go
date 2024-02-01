@@ -262,7 +262,7 @@ func (p *GatewayAPIProcessor) processRoute(
 
 			switch route := route.(type) {
 			case *gatewayapi_v1beta1.HTTPRoute:
-				p.computeHTTPRouteForListener(route, routeParentStatus, listener, hosts)
+				p.computeHTTPRouteForListener(route, routeParentStatus, routeParentRef, listener, hosts)
 			case *gatewayapi_v1alpha2.TLSRoute:
 				p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
 			case *gatewayapi_v1alpha2.GRPCRoute:
@@ -1147,6 +1147,7 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 	route *gatewayapi_v1beta1.HTTPRoute,
 	routeAccessor *status.RouteParentStatusUpdate,
+	routeParentRef gatewayapi_v1beta1.ParentReference,
 	listener *listenerInfo,
 	hosts sets.Set[string],
 ) {
@@ -1407,7 +1408,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 			)
 		} else {
 			// Get clusters from rule backendRefs
-			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor)
+			clusters, totalWeight, ok := p.httpClusters(route.Namespace, rule.BackendRefs, routeAccessor, routeParentRef)
 			if !ok {
 				continue
 			}
@@ -1963,7 +1964,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 }
 
 // httpClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate) ([]*Cluster, uint32, bool) {
+func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, routeParentRef gatewayapi_v1beta1.ParentReference) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
@@ -1981,73 +1982,9 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 			continue
 		}
 
-		var upstreamValidation *PeerValidationContext
-		var backendRefGroup gatewayapi_v1alpha2.Group
-		if backendRef.Group != nil {
-			backendRefGroup = *backendRef.Group
-		}
-
-		var backendRefKind gatewayapi_v1alpha2.Kind
-		if backendRef.Kind != nil {
-			backendRefKind = *backendRef.Kind
-		}
-
-		var backendNamespace *gatewayapi_v1.Namespace
-		if backendRef.Namespace != nil && *backendRef.Namespace != "" {
-			backendNamespace = backendRef.Namespace
-		} else {
-			backendNamespace = ptr.To(gatewayapi_v1.Namespace(routeNamespace))
-		}
-
-		policyTargetRef := gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
-			PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
-				Group:     backendRefGroup,
-				Kind:      backendRefKind,
-				Name:      backendRef.Name,
-				Namespace: backendNamespace,
-			},
-			SectionName: ptr.To(gatewayapi_v1alpha2.SectionName(service.Weighted.ServicePort.Name)),
-		}
-
-		var upstreamTLS *UpstreamTLS
-		// Check to see if there is any BackendTLSPolicy matching this service and service port
-		backendTLSPolicy, found := p.source.LookupBackendTLSPolicyByTargetRef(policyTargetRef)
-		if found {
-			var caSecrets []*Secret
-			for _, certRef := range backendTLSPolicy.Spec.TLS.CACertRefs {
-				switch certRef.Kind {
-				case "Secret":
-					caSecret, err := p.source.LookupCASecret(types.NamespacedName{
-						Name:      string(certRef.Name),
-						Namespace: backendTLSPolicy.Namespace,
-					}, backendTLSPolicy.Namespace)
-					if err != nil {
-						continue
-					}
-					caSecrets = append(caSecrets, caSecret)
-				case "ConfigMap":
-					caSecret, err := p.source.LookupCAConfigMap(types.NamespacedName{
-						Name:      string(certRef.Name),
-						Namespace: backendTLSPolicy.Namespace,
-					})
-					if err != nil {
-						continue
-					}
-					caSecrets = append(caSecrets, caSecret)
-				default:
-					continue
-				}
-			}
-
-			if len(caSecrets) != 0 {
-				upstreamValidation = &PeerValidationContext{
-					CACertificates: caSecrets,
-					SubjectNames:   []string{string(backendTLSPolicy.Spec.TLS.Hostname)},
-				}
-
-				service.Protocol = "tls"
-				upstreamTLS = p.UpstreamTLS
-			}
+		upstreamValidation, upstreamTLS := p.computeBackendTLSPolicies(routeNamespace, backendRef, service, routeParentRef)
+		if upstreamValidation != nil {
+			service.Protocol = "tls"
 		}
 
 		var clusterRequestHeaderPolicy *HeadersPolicy
@@ -2116,6 +2053,121 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 		})
 	}
 	return clusters, totalWeight, true
+}
+
+// computeBackendTLSPolicies returns the upstreamValidation and upstreamTLS
+// fields for the cluster that is being calculated if there is an associated
+// BackendTLSPolicy for the service being referenced.
+//
+// If no BackendTLSPolicy is found or the BackendTLSPolicy is invalid then nil
+// is returned for both fields.
+func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, backendRef gatewayapi_v1beta1.HTTPBackendRef, service *Service, routeParentRef gatewayapi_v1beta1.ParentReference) (*PeerValidationContext, *UpstreamTLS) {
+	var upstreamValidation *PeerValidationContext
+	var upstreamTLS *UpstreamTLS
+
+	var backendRefGroup gatewayapi_v1alpha2.Group
+	if backendRef.Group != nil {
+		backendRefGroup = *backendRef.Group
+	}
+
+	var backendRefKind gatewayapi_v1alpha2.Kind
+	if backendRef.Kind != nil {
+		backendRefKind = *backendRef.Kind
+	}
+
+	var backendNamespace *gatewayapi_v1.Namespace
+	if backendRef.Namespace != nil && *backendRef.Namespace != "" {
+		backendNamespace = backendRef.Namespace
+	} else {
+		backendNamespace = ptr.To(gatewayapi_v1.Namespace(routeNamespace))
+	}
+
+	policyTargetRef := gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+		PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+			Group:     backendRefGroup,
+			Kind:      backendRefKind,
+			Name:      backendRef.Name,
+			Namespace: backendNamespace,
+		},
+		SectionName: ptr.To(gatewayapi_v1alpha2.SectionName(service.Weighted.ServicePort.Name)),
+	}
+
+	// Check to see if there is any BackendTLSPolicy matching this service and service port
+	backendTLSPolicy, found := p.source.LookupBackendTLSPolicyByTargetRef(policyTargetRef)
+	if found {
+		backendTLSPolicyAccessor, commit := p.dag.StatusCache.BackendTLSPolicyConditionsAccessor(
+			k8s.NamespacedNameOf(backendTLSPolicy),
+			backendTLSPolicy.GetGeneration(),
+			backendTLSPolicy,
+		)
+		defer commit()
+		backendTLSPolicyAncestorStatus := backendTLSPolicyAccessor.StatusUpdateFor(routeParentRef)
+
+		if backendTLSPolicy.Spec.TLS.WellKnownCACerts != nil && *backendTLSPolicy.Spec.TLS.WellKnownCACerts != "" {
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, "BackendTLSPolicy.Spec.TLS.WellKnownCACerts is unsupported.")
+			return nil, nil
+		}
+
+		if err := gatewayapi.IsValidHostname(string(backendTLSPolicy.Spec.TLS.Hostname)); err != nil {
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.TLS.Hostname %q is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed", backendTLSPolicy.Spec.TLS.Hostname))
+			return nil, nil
+		}
+
+		if strings.Contains(string(backendTLSPolicy.Spec.TLS.Hostname), "*") {
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.TLS.Hostname %q is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed", backendTLSPolicy.Spec.TLS.Hostname))
+			return nil, nil
+		}
+
+		var isInvalidCertChain bool
+		var caSecrets []*Secret
+		for _, certRef := range backendTLSPolicy.Spec.TLS.CACertRefs {
+			switch certRef.Kind {
+			case "Secret":
+				caSecret, err := p.source.LookupCASecret(types.NamespacedName{
+					Name:      string(certRef.Name),
+					Namespace: backendTLSPolicy.Namespace,
+				}, backendTLSPolicy.Namespace)
+				if err != nil {
+					backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("Could not find CACertRef Secret: %s/%s", backendTLSPolicy.Namespace, certRef.Name))
+					isInvalidCertChain = true
+					continue
+				}
+				caSecrets = append(caSecrets, caSecret)
+			case "ConfigMap":
+				caSecret, err := p.source.LookupCAConfigMap(types.NamespacedName{
+					Name:      string(certRef.Name),
+					Namespace: backendTLSPolicy.Namespace,
+				})
+				if err != nil {
+					backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("Could not find CACertRef ConfigMap: %s/%s", backendTLSPolicy.Namespace, certRef.Name))
+					isInvalidCertChain = true
+					continue
+				}
+				caSecrets = append(caSecrets, caSecret)
+			default:
+				backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.TLS.CACertRef.Kind %q is unsupported. Only ConfigMap or Secret Kind is supported.", certRef.Kind))
+				isInvalidCertChain = true
+				continue
+			}
+		}
+
+		if isInvalidCertChain {
+			return nil, nil
+		}
+
+		if len(caSecrets) != 0 {
+			upstreamValidation = &PeerValidationContext{
+				CACertificates: caSecrets,
+				SubjectNames:   []string{string(backendTLSPolicy.Spec.TLS.Hostname)},
+			}
+
+			upstreamTLS = p.UpstreamTLS
+
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, metav1.ConditionTrue, gatewayapi_v1alpha2.PolicyReasonAccepted, "Accepted BackendTLSPolicy")
+		}
+	}
+
+	return upstreamValidation, upstreamTLS
 }
 
 // grpcClusters builds clusters from backendRef.
