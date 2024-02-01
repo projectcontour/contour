@@ -1,4 +1,4 @@
-We are delighted to present version v1.29.0-rc.1 of Contour, our layer 7 HTTP reverse proxy for Kubernetes clusters.
+We are delighted to present version v1.28.0-rc.1 of Contour, our layer 7 HTTP reverse proxy for Kubernetes clusters.
 
 A big thank you to everyone who contributed to the release.
 
@@ -157,22 +157,22 @@ Instead, either use a specific Gateway reference (`gateway.gatewayRef`), or use 
 
 # Installing and Upgrading
 
-The simplest way to install v1.29.0-rc.1 is to apply one of the example configurations:
+The simplest way to install v1.28.0-rc.1 is to apply one of the example configurations:
 
 With Gateway API:
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.29.0-rc.1/examples/render/contour-gateway.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.28.0-rc.1/examples/render/contour-gateway.yaml
 ```
 
 Without Gateway API:
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.29.0-rc.1/examples/render/contour.yaml
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.28.0-rc.1/examples/render/contour.yaml
 ```
 
 
 # Compatible Kubernetes Versions
 
-Contour v1.29.0-rc.1 is tested against Kubernetes 1.27 through 1.29.
+Contour v1.28.0-rc.1 is tested against Kubernetes 1.27 through 1.29.
 
 # Community Thanks!
 We’re immensely grateful for all the community contributions that help make Contour even better! For this release, special thanks go out to the following contributors:
