@@ -233,7 +233,6 @@ func (f FeatureFlags) Validate() error {
 }
 
 func (f FeatureFlags) IsEndpointSliceEnabled() bool {
-
 	// only when the flag: 'useEndpointSlices=false' is exists, return false
 	for _, flag := range f {
 		if !strings.HasPrefix(flag, featureFlagUseEndpointSlices) {

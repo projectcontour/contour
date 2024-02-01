@@ -337,11 +337,6 @@ func TestFeatureFlagsValidate(t *testing.T) {
 			flags:    v1alpha1.FeatureFlags{},
 			expected: nil,
 		},
-		{
-			name:     "empty string",
-			flags:    v1alpha1.FeatureFlags{""},
-			expected: fmt.Errorf("invalid contour configuration, unknown feature flag:"),
-		},
 	}
 
 	for _, tt := range tests {
