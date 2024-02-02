@@ -15,6 +15,14 @@ Contour currently only tests sequential upgrades, i.e. without skipping any mino
 This approach is recommended for users in order to minimize downtime and avoid any potential issues.
 If you choose to skip versions while upgrading, please note that this may lead to additional downtime.
 
+# Known issues
+
+1. Envoy pod stuck in pending state
+
+    If number of envoy instances is no less than number of kubernetes nodes in the clusters, during rolling upgrade, new envoy pod will be stuck in pending stage because old envoy pod is occupying host pod.
+
+    Workaround: Delete the envoy instance of older version manually. This will cause a little bit of downtime but it's pretty short.
+
 # The easy way to upgrade
 
 If the following are true for you:
@@ -525,7 +533,7 @@ If your version of Contour is older than v1.22.0, please upgrade to v1.22.0 firs
 1. Update the Contour RBAC resources:
 
     ```bash
-    $ kubectl apply -f examples/contour/02-rbac.yaml 
+    $ kubectl apply -f examples/contour/02-rbac.yaml
     $ kubectl apply -f examples/contour/02-role-contour.yaml
     ```
 
@@ -591,7 +599,7 @@ If your version of Contour is older than v1.21.3, please upgrade to v1.21.3 firs
 1. Update the Contour RBAC resources:
 
     ```bash
-    $ kubectl apply -f examples/contour/02-rbac.yaml 
+    $ kubectl apply -f examples/contour/02-rbac.yaml
     $ kubectl apply -f examples/contour/02-role-contour.yaml
     ```
 
@@ -790,7 +798,7 @@ If your version of Contour is older than v1.21.0, please upgrade to v1.21.0 firs
 1. Update the Contour RBAC resources:
 
     ```bash
-    $ kubectl apply -f examples/contour/02-rbac.yaml 
+    $ kubectl apply -f examples/contour/02-rbac.yaml
     $ kubectl apply -f examples/contour/02-role-contour.yaml
     ```
 
@@ -856,7 +864,7 @@ If your version of Contour is older than v1.20.2, please upgrade to v1.20.2 firs
 1. Update the Contour RBAC resources:
 
     ```bash
-    $ kubectl apply -f examples/contour/02-rbac.yaml 
+    $ kubectl apply -f examples/contour/02-rbac.yaml
     $ kubectl apply -f examples/contour/02-role-contour.yaml
     ```
 
