@@ -1480,10 +1480,10 @@ func TestOutlierDetectionPolicy(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got, gotErr := outlierDetectionPolicy(nil, tc.in)
 			if tc.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			} else {
 				assert.Equal(t, tc.want, got)
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
 		})
 	}
