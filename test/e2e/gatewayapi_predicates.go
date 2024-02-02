@@ -120,6 +120,15 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	return false
 }
 
+// HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
+func HTTPRouteIgnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	return len(route.Status.Parents) == 0
+}
+
 // TCPRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
 func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
@@ -134,6 +143,14 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	}
 
 	return false
+}
+
+// BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
+// entry of "Accepted: true".
+func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
+	// TODO (christianang): Right now this always returns true if a backendtlspolicy is
+	// provided since status conditions are not implemented yet for BackendTLSPolicy
+	return btp != nil
 }
 
 func conditionExists(conditions []metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) bool {

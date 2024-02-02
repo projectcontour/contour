@@ -18,11 +18,10 @@ import (
 
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ref"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -30,16 +29,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "foo",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
-		},
-	}
+	caSecret := featuretests.CASecret(t, "foo", &featuretests.CACertificate)
 
 	svc := fixture.NewService("default/kuard").
 		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend,443").
@@ -60,7 +50,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			}},
 		},
 	}
-	rh.OnAdd(secret)
+	rh.OnAdd(caSecret)
 	rh.OnAdd(svc)
 	rh.OnAdd(p1)
 
@@ -93,7 +83,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 					Name: svc.Name,
 					Port: 443,
 					UpstreamValidation: &contour_api_v1.UpstreamValidation{
-						CACertificate: secret.Name,
+						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -111,13 +101,15 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// assert that the cluster now has a certificate and subject name.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	expectedResponse := &envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil, nil),
+			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), caSecret, "subjname", "", nil, nil),
 		),
 		TypeUrl: clusterType,
-	})
+	}
+
+	// assert that the cluster now has a certificate and subject name.
+	c.Request(clusterType).Equals(expectedResponse)
 
 	// Contour does not use SDS to transmit the CA for upstream validation, issue 1405,
 	// assert that SDS is empty.
@@ -140,7 +132,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 					Name: svc.Name,
 					Port: 443,
 					UpstreamValidation: &contour_api_v1.UpstreamValidation{
-						CACertificate: secret.Name,
+						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
 				}},
@@ -161,7 +153,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the cluster now has a certificate and subject name.
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil, nil),
+			tlsCluster(cluster("default/kuard/443/c6ccd34de5", "default/kuard/securebackend", "default_kuard_443"), caSecret, "subjname", "", nil, nil),
 		),
 		TypeUrl: clusterType,
 	})
@@ -175,4 +167,32 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl:   secretType,
 	})
 
+	rh.OnDelete(hp1)
+
+	serverSecret := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+	rh.OnAdd(serverSecret)
+
+	tcpproxy := fixture.NewProxy("tcpproxy").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: serverSecret.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name:     svc.Name,
+					Port:     443,
+					Protocol: ref.To("tls"),
+					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+						CACertificate: caSecret.Name,
+						SubjectName:   "subjname",
+					},
+				}},
+			},
+		})
+	rh.OnAdd(tcpproxy)
+
+	c.Request(clusterType).Equals(expectedResponse)
 }

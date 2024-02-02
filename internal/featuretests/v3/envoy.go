@@ -43,7 +43,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DefaultCluster returns a copy of the default Cluster, with each
@@ -184,24 +183,24 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 	})
 }
 
-func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsCluster(c *envoy_cluster_v3.Cluster, ca *v1.Secret, subjectName, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
 	}
 
+	// Secret for validation is optional.
+	var s []*dag.Secret
+	if ca != nil {
+		s = []*dag.Secret{{Object: ca}}
+	}
+
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: map[string][]byte{dag.CACertificateKey: ca},
-				}},
-				SubjectNames: []string{subjectName}},
+				CACertificates: s,
+				SubjectNames:   []string{subjectName},
+			},
 			sni,
 			secret,
 			upstreamTLS,
@@ -295,7 +294,8 @@ func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string, weight i
 				Numerator:   uint32(weight),
 				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 			},
-		}}}
+		},
+	}}
 	return route
 }
 
@@ -514,7 +514,7 @@ func authzFilterFor(
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.ext_authz",
+			Name: envoy_v3.ExtAuthzFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(authz),
 			},
@@ -533,7 +533,7 @@ func jwtAuthnFilterFor(
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.jwt_authn",
+			Name: envoy_v3.JWTAuthnFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(jwt),
 			},

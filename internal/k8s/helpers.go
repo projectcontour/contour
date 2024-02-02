@@ -95,7 +95,6 @@ func isStatusEqual(objA, objB any) bool {
 // Make an attempt to avoid comparing full objects since it can be very CPU intensive.
 // Prefer comparing Generation when only interested in spec changes.
 func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
-
 	// Fast path for any object: when ResourceVersions are equal, the objects are equal.
 	// NOTE: This optimizes the case when controller-runtime executes full sync and sends updates for all objects.
 	if isResourceVersionEqual(oldObj, newObj) {
@@ -117,7 +116,8 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 		*gatewayapi_v1beta1.HTTPRoute,
 		*gatewayapi_v1alpha2.TLSRoute,
 		*gatewayapi_v1alpha2.GRPCRoute,
-		*gatewayapi_v1alpha2.TCPRoute:
+		*gatewayapi_v1alpha2.TCPRoute,
+		*gatewayapi_v1alpha2.BackendTLSPolicy:
 		return isGenerationEqual(oldObj, newObj), nil
 
 	// Slow path: compare the content of the objects.
@@ -127,6 +127,10 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 			apiequality.Semantic.DeepEqual(oldObj.GetAnnotations(), newObj.GetAnnotations()), nil
 	case *v1.Secret:
 		if newObj, ok := newObj.(*v1.Secret); ok {
+			return reflect.DeepEqual(oldObj.Data, newObj.Data), nil
+		}
+	case *v1.ConfigMap:
+		if newObj, ok := newObj.(*v1.ConfigMap); ok {
 			return reflect.DeepEqual(oldObj.Data, newObj.Data), nil
 		}
 	case *v1.Service:

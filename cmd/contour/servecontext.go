@@ -295,6 +295,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	var gatewayConfig *contour_api_v1alpha1.GatewayConfig
 	if ctx.Config.GatewayConfig != nil {
 		gatewayConfig = &contour_api_v1alpha1.GatewayConfig{
+			// nolint:staticcheck
 			ControllerName: ctx.Config.GatewayConfig.ControllerName,
 		}
 
@@ -530,6 +531,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				MaxRequestsPerConnection:      ctx.Config.Listener.MaxRequestsPerConnection,
 				MaxRequestsPerIOCycle:         ctx.Config.Listener.MaxRequestsPerIOCycle,
 				HTTP2MaxConcurrentStreams:     ctx.Config.Listener.HTTP2MaxConcurrentStreams,
+				MaxConnectionsPerListener:     ctx.Config.Listener.MaxConnectionsPerListener,
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,

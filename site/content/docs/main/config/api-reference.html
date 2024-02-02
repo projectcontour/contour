@@ -277,7 +277,7 @@ TLSCertificateDelegationStatus
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>,
 <a href="#projectcontour.io/v1.Route">Route</a>)
 </p>
 <p>
@@ -328,7 +328,7 @@ outer scope.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>, 
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>,
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
@@ -812,7 +812,7 @@ For now this is required.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
 <a href="#projectcontour.io/v1.Service">Service</a>)
 </p>
 <p>
@@ -903,9 +903,9 @@ If not set, SameSite attribute will not be rewritten.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HTTPProxyStatus">HTTPProxyStatus</a>, 
-<a href="#projectcontour.io/v1.TLSCertificateDelegationStatus">TLSCertificateDelegationStatus</a>, 
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus</a>, 
+<a href="#projectcontour.io/v1.HTTPProxyStatus">HTTPProxyStatus</a>,
+<a href="#projectcontour.io/v1.TLSCertificateDelegationStatus">TLSCertificateDelegationStatus</a>,
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus</a>,
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceStatus">ExtensionServiceStatus</a>)
 </p>
 <p>
@@ -1226,7 +1226,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>, 
+<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>,
 <a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
 </p>
 <p>
@@ -1880,7 +1880,7 @@ request, no hash will be produced.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.MatchCondition">MatchCondition</a>, 
+<a href="#projectcontour.io/v1.MatchCondition">MatchCondition</a>,
 <a href="#projectcontour.io/v1.RequestHeaderValueMatchDescriptor">RequestHeaderValueMatchDescriptor</a>)
 </p>
 <p>
@@ -2048,7 +2048,7 @@ negative matches (e.g. NotContains, NotExact).</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HeadersPolicy">HeadersPolicy</a>, 
+<a href="#projectcontour.io/v1.HeadersPolicy">HeadersPolicy</a>,
 <a href="#projectcontour.io/v1.LocalRateLimitPolicy">LocalRateLimitPolicy</a>)
 </p>
 <p>
@@ -2092,7 +2092,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
 <a href="#projectcontour.io/v1.Service">Service</a>)
 </p>
 <p>
@@ -2144,7 +2144,7 @@ If the header does not exist it will be added, otherwise it will be overwritten 
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
 <a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
 </p>
 <p>
@@ -2440,8 +2440,8 @@ JWT provider for the HTTPProxy. At most one of this field or the
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
-<a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
+<a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>,
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec</a>)
 </p>
 <p>
@@ -2588,7 +2588,7 @@ set when a request is rate-limited.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Include">Include</a>, 
+<a href="#projectcontour.io/v1.Include">Include</a>,
 <a href="#projectcontour.io/v1.Route">Route</a>)
 </p>
 <p>
@@ -2676,166 +2676,27 @@ QueryParameterMatchCondition
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.OutlierDetection">OutlierDetection
-</h3>
+<h3 id="projectcontour.io/v1.Namespace">Namespace
+(<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Service">Service</a>, 
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
 </p>
 <p>
-<p>OutlierDetection defines the configuration for outlier detection on a service.</p>
+<p>Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.</p>
+<p>This validation is based off of the corresponding Kubernetes validation:
+<a href="https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187">https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187</a></p>
+<p>This is used for Namespace name validation here:
+<a href="https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63">https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63</a></p>
+<p>Valid values include:</p>
+<ul>
+<li>&ldquo;example&rdquo;</li>
+</ul>
+<p>Invalid values include:</p>
+<ul>
+<li>&ldquo;example.com&rdquo; - &ldquo;.&rdquo; is an invalid character</li>
+</ul>
 </p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>disabled</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Disabled configures the Service to not use
-the default global OutlierDetection policy defined by the Contour configuration.
-Defaults to false.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>consecutiveServerErrors</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
-When the backend host encounters consecutive
-errors greater than or equal to ConsecutiveServerErrors, it will be
-ejected from the load balancing pool.
-for HTTP services, a 5xx counts as an error and for TCP services
-connection failures and connection timeouts count as an error.
-It can be disabled by setting the value to 0.
-Defaults to 5.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>interval</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Interval is the interval at which host status is evaluated.
-Defaults to 10s.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>baseEjectionTime</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>BaseEjectionTime is the base time that a host is ejected for.
-A host will remain ejected for a period of time equal to the
-product of the ejection base duration and the number of times the host has been ejected.
-Defaults to 30s.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>maxEjectionTime</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>MaxEjectionTime is the maximum time a host will be ejected for.
-After this amount of time, a host will be returned to normal operation.
-If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
-Defaults to 300s.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>splitExternalLocalOriginErrors</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
-Defaults to false.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>consecutiveLocalOriginFailure</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
-Parameters take effect only when SplitExternalLocalOriginErrors is true.
-Defaults to 5.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>maxEjectionPercent</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
-But will eject at least one host regardless of the value here.
-Defaults to 10%.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>maxEjectionTimeJitter</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time,
-in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
-Defaults to 0s.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1.PathRewritePolicy">PathRewritePolicy
 </h3>
 <p>
@@ -3162,7 +3023,7 @@ and a value equal to the client&rsquo;s IP address (from x-forwarded-for).</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
 <a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
 </p>
 <p>
@@ -4023,7 +3884,7 @@ The rules defined here override any rules set on the root HTTPProxy.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
 <a href="#projectcontour.io/v1.TCPProxy">TCPProxy</a>)
 </p>
 <p>
@@ -4194,22 +4055,6 @@ SlowStartPolicy
 <td>
 <em>(Optional)</em>
 <p>Slow start will gradually increase amount of traffic to a newly added endpoint.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>outlierDetection</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.OutlierDetection">
-OutlierDetection
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>The policy for managing outlier detection on a service.
-If not specified, the global OutlierDetection policy will be used.</p>
 </td>
 </tr>
 </tbody>
@@ -4774,7 +4619,7 @@ namespace your condition with a label, like <code>controller.domain.com\Conditio
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>,
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec</a>)
 </p>
 <p>
@@ -4843,8 +4688,8 @@ If not supplied, Envoy&rsquo;s default value of 1h applies.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.RemoteJWKS">RemoteJWKS</a>, 
-<a href="#projectcontour.io/v1.Service">Service</a>, 
+<a href="#projectcontour.io/v1.RemoteJWKS">RemoteJWKS</a>,
+<a href="#projectcontour.io/v1.Service">Service</a>,
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec</a>)
 </p>
 <p>
@@ -5323,22 +5168,6 @@ TracingConfig
 </td>
 <td>
 <p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>outlierDetection</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.OutlierDetection">
-OutlierDetection
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GlobalOutlierDetection defines the configuration for outlier detection on all services.
-If defined, this will be used as the default for all services.</p>
 </td>
 </tr>
 <tr>
@@ -5918,7 +5747,7 @@ EnvoyTLS
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>,
 <a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
 </p>
 <p>
@@ -6132,22 +5961,6 @@ TracingConfig
 </td>
 <td>
 <p>Tracing defines properties for exporting trace data to OpenTelemetry.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>outlierDetection</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.OutlierDetection">
-OutlierDetection
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GlobalOutlierDetection defines the configuration for outlier detection on all services.
-If defined, this will be used as the default for all services.</p>
 </td>
 </tr>
 <tr>
@@ -6455,6 +6268,22 @@ map[string]string
 the annotations for Prometheus will be appended or overwritten with predefined value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>watchNamespaces</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Namespace">
+[]Namespace
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
+to only watch this subset of namespaces.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
@@ -6599,7 +6428,7 @@ int
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>,
 <a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
 </p>
 <p>
@@ -7114,6 +6943,20 @@ and mitigate attacks like CVE-2023-44487. The default value when this is not set
 unlimited.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxConnectionsPerListener</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the limit on number of active connections to a listener. The limit is applied
+per listener. The default value when this is not set is unlimited.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging
@@ -7428,7 +7271,7 @@ More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>, 
+<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>,
 <a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
 </p>
 <p>
@@ -7801,6 +7644,8 @@ string
 GatewayClass. The string takes the form of &ldquo;projectcontour.io/<namespace>/contour&rdquo;.
 If unset, the gatewayclass controller will not be started.
 Exactly one of ControllerName or GatewayRef must be set.</p>
+<p>Deprecated: users should use GatewayRef, or the Gateway provisioner,
+in place of this field. This field will be removed in a future release.</p>
 </td>
 </tr>
 <tr>
@@ -8027,7 +7872,7 @@ map[string]string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>,
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
@@ -8118,7 +7963,7 @@ string
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>,
 <a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
 </p>
 <p>
@@ -8158,7 +8003,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>,
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
@@ -8278,10 +8123,10 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>,
+<a href="#projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig</a>,
+<a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>,
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>,
 <a href="#projectcontour.io/v1alpha1.TracingConfig">TracingConfig</a>)
 </p>
 <p>
@@ -8518,7 +8363,7 @@ NodePort Service.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>,
 <a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
 </p>
 <p>

@@ -38,8 +38,10 @@ type pair struct {
 	a, b any
 }
 
-type nodeCollection map[any]bool
-type edgeCollection map[pair]bool
+type (
+	nodeCollection map[any]bool
+	edgeCollection map[pair]bool
+)
 
 func (dw *dotWriter) writeDot(w io.Writer) {
 	nodes, edges := collectDag(dw.Builder)

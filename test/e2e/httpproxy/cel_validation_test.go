@@ -64,6 +64,5 @@ func testCELValidation(namespace string) {
 			return strings.Contains(err.Error(), "subjectNames[0] must equal subjectName if set")
 		}
 		assert.True(t, isExpectedErr(err))
-
 	})
 }

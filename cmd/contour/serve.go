@@ -91,7 +91,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	ctx := newServeContext()
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
-
 		if ctx.contourConfigurationName != "" && configFile != "" {
 			return fmt.Errorf("cannot specify both %s and %s", "--contour-config", "-c/--config-path")
 		}
@@ -134,7 +133,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.debugAddr)
 	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.debugPort)
-	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes,tcproutes>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes", "tcproutes")
+	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes,tcproutes,backendtlspolicies>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes", "tcproutes", "backendtlspolicies")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
@@ -200,7 +199,6 @@ type EndpointsTranslator interface {
 // NewServer returns a Server object which contains the initial configuration
 // objects required to start an instance of Contour.
 func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
-
 	var restConfigOpts []func(*rest.Config)
 
 	if qps := ctx.Config.KubeClientQPS; qps > 0 {
@@ -260,7 +258,30 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 						secret.SetAnnotations(nil)
 
 						return secret, nil
-					}},
+					},
+				},
+				&corev1.ConfigMap{}: {
+					Transform: func(obj any) (any, error) {
+						configMap, ok := obj.(*corev1.ConfigMap)
+						// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
+						if !ok {
+							return obj, nil
+						}
+
+						// Keep ConfigMaps that have the ca.crt key because they may be necessary
+						if _, ok := configMap.Data[dag.CACertificateKey]; ok {
+							return obj, nil
+						}
+
+						// Other types of ConfigMaps will never be referred to, so we can remove all data.
+						// Last-applied-configuration annotation might contain a copy of the complete data.
+						configMap.Data = map[string]string{}
+						configMap.SetManagedFields(nil)
+						configMap.SetAnnotations(nil)
+
+						return configMap, nil
+					},
+				},
 			},
 			// DefaultTransform is called for objects that do not have a TransformByObject function.
 			DefaultTransform: func(obj any) (any, error) {
@@ -478,7 +499,8 @@ func (s *Server) doServe() error {
 		&xdscache_v3.ClusterCache{},
 		endpointHandler,
 		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
-			MaxRequestsPerIOCycle: contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
+			MaxRequestsPerIOCycle:     contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
+			MaxConnectionsPerListener: contourConfiguration.Envoy.Listener.MaxConnectionsPerListener,
 		}),
 	}
 
@@ -528,7 +550,12 @@ func (s *Server) doServe() error {
 	var gatewayRef *types.NamespacedName
 
 	if contourConfiguration.Gateway != nil {
+		// nolint:staticcheck
 		gatewayControllerName = contourConfiguration.Gateway.ControllerName
+
+		if len(gatewayControllerName) > 0 {
+			s.log.Warnf("DEPRECATED: gateway.controllerName is deprecated and will be removed in a future release. Use gateway.gatewayRef or the Gateway provisioner instead.")
+		}
 
 		if contourConfiguration.Gateway.GatewayRef != nil {
 			gatewayRef = &types.NamespacedName{
@@ -742,7 +769,7 @@ func (s *Server) doServe() error {
 	return s.mgr.Start(signals.SetupSignalHandler())
 }
 
-func (s *Server) getExtensionSvcConfig(name string, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
+func (s *Server) getExtensionSvcConfig(name, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
 	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
 	key := client.ObjectKey{
 		Namespace: namespace,
@@ -822,7 +849,6 @@ func (s *Server) setupTracingService(tracingConfig *contour_api_v1alpha1.Tracing
 		MaxPathTagLength:       ref.Val(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:             customTags,
 	}, nil
-
 }
 
 func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.RateLimitConfig, error) {
@@ -954,8 +980,8 @@ func (x *xdsServer) Start(ctx context.Context) error {
 
 // setupMetrics creates metrics service for Contour.
 func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
-	registry *prometheus.Registry) error {
-
+	registry *prometheus.Registry,
+) error {
 	// Create metrics service and register with mgr.
 	metricsvc := &httpsvc.Service{
 		Addr:        metricsConfig.Address,
@@ -982,8 +1008,8 @@ func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, 
 }
 
 func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
-	metricsConfig contour_api_v1alpha1.MetricsConfig) error {
-
+	metricsConfig contour_api_v1alpha1.MetricsConfig,
+) error {
 	if healthConfig.Address != metricsConfig.Address || healthConfig.Port != metricsConfig.Port {
 		healthsvc := &httpsvc.Service{
 			Addr:        healthConfig.Address,
@@ -1002,11 +1028,12 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 }
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler) []leadership.NeedLeaderElectionNotification {
-
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler,
+) []leadership.NeedLeaderElectionNotification {
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
+	// nolint:staticcheck
 	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayRef != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
 		switch {
 		// If a specific gateway was specified, we don't need to run the
@@ -1026,6 +1053,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		// the appropriate gateway class and gateway to process.
 		default:
 			// Create and register the gatewayclass controller with the manager.
+			// nolint:staticcheck
 			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
 			gwClass, err := controller.RegisterGatewayClassController(
 				s.log.WithField("context", "gatewayclass-controller"),
@@ -1055,9 +1083,10 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 
 		// Some features may be disabled.
 		features := map[string]struct{}{
-			"tlsroutes":  {},
-			"grpcroutes": {},
-			"tcproutes":  {},
+			"tlsroutes":          {},
+			"grpcroutes":         {},
+			"tcproutes":          {},
+			"backendtlspolicies": {},
 		}
 		for _, f := range s.ctx.disabledFeatures {
 			delete(features, f)
@@ -1086,6 +1115,18 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		if _, enabled := features["tcproutes"]; enabled {
 			if err := controller.RegisterTCPRouteController(s.log.WithField("context", "tcproute-controller"), mgr, eventHandler); err != nil {
 				s.log.WithError(err).Fatal("failed to create tcproute-controller")
+			}
+		}
+
+		// Create and register the BackendTLSPolicy controller with the manager.
+		if _, enabled := features["backendtlspolicies"]; enabled {
+			// Inform on ConfigMap if BackendTLSPolicy is enabled
+			if err := s.informOnResource(&corev1.ConfigMap{}, eventHandler); err != nil {
+				s.log.WithError(err).WithField("resource", "configmaps").Fatal("failed to create informer")
+			}
+
+			if err := controller.RegisterBackendTLSPolicyController(s.log.WithField("context", "backendtlspolicy-controller"), mgr, eventHandler); err != nil {
+				s.log.WithError(err).Fatal("failed to create backendtlspolicy-controller")
 			}
 		}
 
@@ -1130,7 +1171,6 @@ type dagBuilderConfig struct {
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
-
 	var (
 		requestHeadersPolicy       dag.HeadersPolicy
 		responseHeadersPolicy      dag.HeadersPolicy
@@ -1237,6 +1277,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
 			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
+			UpstreamTLS:                   dbc.upstreamTLS,
 		})
 	}
 
@@ -1275,7 +1316,6 @@ func (s *Server) informOnResource(obj client.Object, handler cache.ResourceEvent
 	}
 
 	registration, err := inf.AddEventHandler(handler)
-
 	if err != nil {
 		return err
 	}

@@ -340,7 +340,8 @@ func TestParseHTTPVersions(t *testing.T) {
 		"http/1.1+http/2 duplicated": {
 			versions: []contour_api_v1alpha1.HTTPVersionType{
 				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
-				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
+				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
+			},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 	}
@@ -903,11 +904,13 @@ func TestConvertServeContext(t *testing.T) {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
 				ctx.Config.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
+				ctx.Config.Listener.MaxConnectionsPerListener = ref.To(uint32(50))
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
 				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
+				cfg.Envoy.Listener.MaxConnectionsPerListener = ref.To(uint32(50))
 				return cfg
 			},
 		},

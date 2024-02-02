@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.28.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.29.0
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -44,7 +44,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.21.5
+BUILD_BASE_IMAGE ?= golang:1.21.6@sha256:acab8ef05990e50fe0bc8446398d93d91fa89b3608661529dbd6744b77fcea90
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -222,6 +222,11 @@ lint-flags:
 		echo "ERROR: CLI flag help strings must start with a capital and end with a period."; \
 		exit 2; \
 	fi
+
+.PHONY: format
+format: ## Run gofumpt to format the codebase.
+	@echo Running gofumpt...
+	@./hack/gofumpt -l -w -extra .
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation

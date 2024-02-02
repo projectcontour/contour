@@ -99,7 +99,8 @@ func TestNonTLSListener(t *testing.T) {
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("default/simple", map[string]string{
-			"kubernetes.io/ingress.allow-http": "false"}),
+			"kubernetes.io/ingress.allow-http": "false",
+		}),
 		Spec: networking_v1.IngressSpec{
 			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
@@ -152,15 +153,7 @@ func TestTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -281,15 +274,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -441,15 +426,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	})
 	defer done()
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -525,15 +502,7 @@ func TestLDSFilter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -671,15 +640,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	})
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -766,15 +727,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	})
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -855,15 +808,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	})
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
@@ -958,15 +903,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Nonce:   "0",
 	})
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	// p1 is a httpproxy that has TLS
 	p1 := &contour_api_v1.HTTPProxy{
@@ -1038,15 +975,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 
 	defer done()
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
 	rh.OnAdd(fixture.NewService("backend").
@@ -1350,14 +1279,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc1").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
-	tlssecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tlscert",
-			Namespace: "projectcontour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	tlssecret := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(tlssecret)
 
 	rh.OnAdd(gc)
@@ -1562,15 +1484,7 @@ func TestSocketOptions(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
 	// p1 is a tls httpproxy

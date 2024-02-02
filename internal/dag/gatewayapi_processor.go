@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -78,6 +79,10 @@ type GatewayAPIProcessor struct {
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
 	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+
+	// UpstreamTLS defines the TLS settings like min/max version
+	// and cipher suites for upstream connections.
+	UpstreamTLS *UpstreamTLS
 }
 
 // matchConditions holds match rules.
@@ -309,7 +314,6 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	attachedRoutes map[string]int,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
 ) []*listenerInfo {
-
 	// Find the set of valid listeners that are relevant given this
 	// parent ref (either all of them, if the ref is to the entire
 	// gateway, or one of them, if the ref is to a specific listener,
@@ -434,7 +438,6 @@ func (p *GatewayAPIProcessor) computeListener(
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
 ) *listenerInfo {
-
 	info := &listenerInfo{
 		listener:        listener,
 		dagListenerName: validateListenersResult.ListenerNames[string(listener.Name)],
@@ -613,7 +616,6 @@ func (p *GatewayAPIProcessor) computeListener(
 	info.tlsSecret = listenerSecret
 	info.ready = true
 	return info
-
 }
 
 // getListenerRouteKinds gets a list of the valid route kinds that
@@ -926,7 +928,6 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.Ro
 	case gatewayapi_v1.NamespacesFromSelector:
 		// Look up the route's namespace in the list of cached namespaces.
 		if ns := p.source.namespaces[routeNamespace]; ns != nil {
-
 			// Check that the route's namespace is included in the Gateway's
 			// namespace selector.
 			return namespaceSelector.Matches(labels.Set(ns.Labels))
@@ -1142,12 +1143,13 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 		ResponseTimeout: requestTimeout,
 	}, nil
 }
+
 func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 	route *gatewayapi_v1beta1.HTTPRoute,
 	routeAccessor *status.RouteParentStatusUpdate,
 	listener *listenerInfo,
-	hosts sets.Set[string]) {
-
+	hosts sets.Set[string],
+) {
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
@@ -1764,8 +1766,8 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 	backendObjectRef gatewayapi_v1beta1.BackendObjectReference,
 	field string,
 	routeKind string,
-	routeNamespace string) (*Service, *metav1.Condition) {
-
+	routeNamespace string,
+) (*Service, *metav1.Condition) {
 	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
 		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
 	}
@@ -1979,6 +1981,75 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 			continue
 		}
 
+		var upstreamValidation *PeerValidationContext
+		var backendRefGroup gatewayapi_v1alpha2.Group
+		if backendRef.Group != nil {
+			backendRefGroup = *backendRef.Group
+		}
+
+		var backendRefKind gatewayapi_v1alpha2.Kind
+		if backendRef.Kind != nil {
+			backendRefKind = *backendRef.Kind
+		}
+
+		var backendNamespace *gatewayapi_v1.Namespace
+		if backendRef.Namespace != nil && *backendRef.Namespace != "" {
+			backendNamespace = backendRef.Namespace
+		} else {
+			backendNamespace = ptr.To(gatewayapi_v1.Namespace(routeNamespace))
+		}
+
+		policyTargetRef := gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+			PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+				Group:     backendRefGroup,
+				Kind:      backendRefKind,
+				Name:      backendRef.Name,
+				Namespace: backendNamespace,
+			},
+			SectionName: ptr.To(gatewayapi_v1alpha2.SectionName(service.Weighted.ServicePort.Name)),
+		}
+
+		var upstreamTLS *UpstreamTLS
+		// Check to see if there is any BackendTLSPolicy matching this service and service port
+		backendTLSPolicy, found := p.source.LookupBackendTLSPolicyByTargetRef(policyTargetRef)
+		if found {
+			var caSecrets []*Secret
+			for _, certRef := range backendTLSPolicy.Spec.TLS.CACertRefs {
+				switch certRef.Kind {
+				case "Secret":
+					caSecret, err := p.source.LookupCASecret(types.NamespacedName{
+						Name:      string(certRef.Name),
+						Namespace: backendTLSPolicy.Namespace,
+					}, backendTLSPolicy.Namespace)
+					if err != nil {
+						continue
+					}
+					caSecrets = append(caSecrets, caSecret)
+				case "ConfigMap":
+					caSecret, err := p.source.LookupCAConfigMap(types.NamespacedName{
+						Name:      string(certRef.Name),
+						Namespace: backendTLSPolicy.Namespace,
+					})
+					if err != nil {
+						continue
+					}
+					caSecrets = append(caSecrets, caSecret)
+				default:
+					continue
+				}
+			}
+
+			if len(caSecrets) != 0 {
+				upstreamValidation = &PeerValidationContext{
+					CACertificates: caSecrets,
+					SubjectNames:   []string{string(backendTLSPolicy.Spec.TLS.Hostname)},
+				}
+
+				service.Protocol = "tls"
+				upstreamTLS = p.UpstreamTLS
+			}
+		}
+
 		var clusterRequestHeaderPolicy *HeadersPolicy
 		var clusterResponseHeaderPolicy *HeadersPolicy
 
@@ -2040,6 +2111,8 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
+			UpstreamValidation:            upstreamValidation,
+			UpstreamTLS:                   upstreamTLS,
 		})
 	}
 	return clusters, totalWeight, true
@@ -2147,7 +2220,6 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	pathRewritePolicy *PathRewritePolicy,
 	timeoutPolicy *RouteTimeoutPolicy,
 ) []*Route {
-
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,

@@ -134,7 +134,7 @@ func TestControllerRuntimeLoggerLogsToLogrus(t *testing.T) {
 
 	controller_runtime_log.Log.Info("some message")
 	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
-	assert.Equal(t, logHook.AllEntries()[0].Message, "some message")
+	assert.Equal(t, "some message", logHook.AllEntries()[0].Message)
 }
 
 // Last LogWriterOption passed in should be used.

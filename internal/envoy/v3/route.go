@@ -57,13 +57,13 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
-		evh.TypedPerFilterConfig["envoy.filters.http.cors"] = protobuf.MustMarshalAny(corsPolicy(vh.CORSPolicy))
+		evh.TypedPerFilterConfig[CORSFilterName] = protobuf.MustMarshalAny(corsPolicy(vh.CORSPolicy))
 	}
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
-		evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
+		evh.TypedPerFilterConfig[LocalRateLimitFilterName] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 	}
 
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
@@ -74,7 +74,7 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
-		evh.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+		evh.TypedPerFilterConfig[RBACFilterName] = protobuf.MustMarshalAny(
 			ipFilterConfig(vh.IPFilterAllow, vh.IPFilterRules),
 		)
 	}
@@ -142,32 +142,32 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 
 		// Apply per-route local rate limit policy.
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
-			route.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
+			route.TypedPerFilterConfig[LocalRateLimitFilterName] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
 
 		if dagRoute.RateLimitPerRoute != nil {
-			route.TypedPerFilterConfig["envoy.filters.http.ratelimit"] = rateLimitPerRoute(dagRoute.RateLimitPerRoute)
+			route.TypedPerFilterConfig[GlobalRateLimitFilterName] = rateLimitPerRoute(dagRoute.RateLimitPerRoute)
 		}
 
 		// Apply per-route authorization policy modifications.
 		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		// If JWT verification is enabled, add per-route filter
 		// config referencing a requirement in the main filter
 		// config.
 		if len(dagRoute.JWTProvider) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.jwt_authn"] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
+			route.TypedPerFilterConfig[JWTAuthnFilterName] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
 				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
 			})
 		}
 
 		// If IP filtering is enabled, add per-route filtering
 		if len(dagRoute.IPFilterRules) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.rbac"] = protobuf.MustMarshalAny(
+			route.TypedPerFilterConfig[RBACFilterName] = protobuf.MustMarshalAny(
 				ipFilterConfig(dagRoute.IPFilterAllow, dagRoute.IPFilterRules),
 			)
 		}
@@ -638,7 +638,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 			if c.TypedPerFilterConfig == nil {
 				c.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
-			c.TypedPerFilterConfig["envoy.filters.http.lua"] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
+			c.TypedPerFilterConfig[LuaFilterName] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
 		}
 		wc.Clusters = append(wc.Clusters, c)
 	}
@@ -667,7 +667,7 @@ func CORSVirtualHost(hostname string, corspolicy *envoy_cors_v3.CorsPolicy, rout
 	vh := VirtualHost(hostname, routes...)
 	if corspolicy != nil {
 		vh.TypedPerFilterConfig = map[string]*anypb.Any{
-			"envoy.filters.http.cors": protobuf.MustMarshalAny(corspolicy),
+			CORSFilterName: protobuf.MustMarshalAny(corspolicy),
 		}
 	}
 	return vh

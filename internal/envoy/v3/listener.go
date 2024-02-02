@@ -153,6 +153,19 @@ func Listener(name, address string, port int, perConnectionBufferLimitBytes *uin
 	return l
 }
 
+const (
+	CORSFilterName            string = "envoy.filters.http.cors"
+	LocalRateLimitFilterName  string = "envoy.filters.http.local_ratelimit"
+	GlobalRateLimitFilterName string = "envoy.filters.http.ratelimit"
+	RBACFilterName            string = "envoy.filters.http.rbac"
+	ExtAuthzFilterName        string = "envoy.filters.http.ext_authz"
+	JWTAuthnFilterName        string = "envoy.filters.http.jwt_authn"
+	LuaFilterName             string = "envoy.filters.http.lua"
+	CompressorFilterName      string = "envoy.filters.http.compressor"
+	GRPCWebFilterName         string = "envoy.filters.http.grpc_web"
+	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
+)
+
 type httpConnectionManagerBuilder struct {
 	routeConfigName               string
 	metricsPrefix                 string
@@ -291,13 +304,12 @@ func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurr
 }
 
 func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
-
 	// Add a default set of ordered http filters.
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
 	b.filters = append(b.filters,
 		&http.HttpFilter{
-			Name: "compressor",
+			Name: CompressorFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
@@ -324,13 +336,13 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&http.HttpFilter{
-			Name: "grpcweb",
+			Name: GRPCWebFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 			},
 		},
 		&http.HttpFilter{
-			Name: "grpc_stats",
+			Name: GRPCStatsFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
@@ -341,13 +353,13 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&http.HttpFilter{
-			Name: "cors",
+			Name: CORSFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 			},
 		},
 		&http.HttpFilter{
-			Name: "local_ratelimit",
+			Name: LocalRateLimitFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
@@ -359,7 +371,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&http.HttpFilter{
-			Name: "envoy.filters.http.lua",
+			Name: LuaFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
 					DefaultSourceCode: &envoy_core_v3.DataSource{
@@ -371,7 +383,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&http.HttpFilter{
-			Name: "envoy.filters.http.rbac",
+			Name: RBACFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 			},
@@ -442,7 +454,6 @@ func (b *httpConnectionManagerBuilder) Tracing(tracing *http.HttpConnectionManag
 
 // Validate runs builtin validation rules against the current builder state.
 func (b *httpConnectionManagerBuilder) Validate() error {
-
 	// It's not OK for the filters to be empty.
 	if len(b.filters) == 0 {
 		return errors.New("filter list is empty")
@@ -665,7 +676,7 @@ func UnixSocketAddress(address string) *envoy_core_v3.Address {
 		Address: &envoy_core_v3.Address_Pipe{
 			Pipe: &envoy_core_v3.Pipe{
 				Path: address,
-				Mode: 0644,
+				Mode: 0o644,
 			},
 		},
 	}
@@ -763,7 +774,7 @@ end
 	`
 
 	return &http.HttpFilter{
-		Name: "envoy.filters.http.lua",
+		Name: LuaFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
 				DefaultSourceCode: &envoy_core_v3.DataSource{
@@ -804,11 +815,10 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *http
 			AllowPartialMessage: externalAuthorization.AuthorizationServerWithRequestBody.AllowPartialMessage,
 			PackAsBytes:         externalAuthorization.AuthorizationServerWithRequestBody.PackAsBytes,
 		}
-
 	}
 
 	return &http.HttpFilter{
-		Name: "envoy.filters.http.ext_authz",
+		Name: ExtAuthzFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&authConfig),
 		},
@@ -866,7 +876,7 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *http.HttpFilter {
 	}
 
 	return &http.HttpFilter{
-		Name: "envoy.filters.http.jwt_authn",
+		Name: JWTAuthnFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&jwtConfig),
 		},
@@ -895,7 +905,6 @@ func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext
 	// Attach TLS data to this listener if provided.
 	if downstream != nil {
 		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
-
 	}
 	return fc
 }

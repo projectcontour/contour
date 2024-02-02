@@ -14,6 +14,7 @@
 package v1alpha1
 
 import (
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -122,6 +123,14 @@ type ContourSettings struct {
 	// the annotations for Prometheus will be appended or overwritten with predefined value.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+
+	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
+	// to only watch this subset of namespaces.
+	// +optional
+	// +kubebuilder:validation:Type=array
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=42
+	WatchNamespaces []contour_api_v1.Namespace `json:"watchNamespaces,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

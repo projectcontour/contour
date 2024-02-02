@@ -24,10 +24,10 @@ import (
 func TestSocketOptions(t *testing.T) {
 	// No options shall be set when value 0 is set.
 	so := NewSocketOptions().TOS(0).TrafficClass(0)
-	assert.Equal(t, len(so.options), 0)
+	assert.Empty(t, so.options)
 
 	so.TOS(64)
-	assert.Equal(t, so.Build(),
+	assert.Equal(t,
 		[]*envoy_core_v3.SocketOption{
 			{
 				Description: "Set IPv4 TOS field",
@@ -37,10 +37,11 @@ func TestSocketOptions(t *testing.T) {
 				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 			},
 		},
+		so.Build(),
 	)
 
 	so.TrafficClass(64)
-	assert.Equal(t, so.Build(),
+	assert.Equal(t,
 		[]*envoy_core_v3.SocketOption{
 			{
 				Description: "Set IPv4 TOS field",
@@ -57,5 +58,6 @@ func TestSocketOptions(t *testing.T) {
 				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 			},
 		},
+		so.Build(),
 	)
 }

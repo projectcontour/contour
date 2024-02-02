@@ -668,7 +668,7 @@ type ClientCertificateDetails struct {
 type PeerValidationContext struct {
 	// CACertificate holds a reference to the Secret containing the CA to be used to
 	// verify the upstream connection.
-	CACertificate *Secret
+	CACertificates []*Secret
 	// SubjectNames holds optional subject names which Envoy will check against the
 	// certificate presented by the upstream. The first entry must match the value of SubjectName
 	SubjectNames []string
@@ -691,11 +691,18 @@ type PeerValidationContext struct {
 
 // GetCACertificate returns the CA certificate from PeerValidationContext.
 func (pvc *PeerValidationContext) GetCACertificate() []byte {
-	if pvc == nil || pvc.CACertificate == nil {
+	if pvc == nil || len(pvc.CACertificates) == 0 {
 		// No validation required.
 		return nil
 	}
-	return pvc.CACertificate.Object.Data[CACertificateKey]
+	var certs []byte
+	for _, cert := range pvc.CACertificates {
+		if cert == nil {
+			continue
+		}
+		certs = append(certs, cert.Object.Data[CACertificateKey]...)
+	}
+	return certs
 }
 
 // GetSubjectName returns the SubjectNames from PeerValidationContext.

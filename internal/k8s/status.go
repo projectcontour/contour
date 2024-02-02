@@ -161,9 +161,7 @@ func (suh *StatusUpdateHandler) Start(ctx context.Context) error {
 
 			suh.apply(upd)
 		}
-
 	}
-
 }
 
 // Writer retrieves the interface that should be used to write to the StatusUpdateHandler.

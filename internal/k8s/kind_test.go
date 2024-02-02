@@ -49,11 +49,13 @@ func TestKindOf(t *testing.T) {
 		{"Gateway", &gatewayapi_v1beta1.Gateway{}},
 		{"GatewayClass", &gatewayapi_v1beta1.GatewayClass{}},
 		{"ReferenceGrant", &gatewayapi_v1beta1.ReferenceGrant{}},
-		{"Foo", &unstructured.Unstructured{
-			Object: map[string]any{
-				"apiVersion": "test.projectcontour.io/v1",
-				"kind":       "Foo",
-			}},
+		{
+			"Foo", &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "test.projectcontour.io/v1",
+					"kind":       "Foo",
+				},
+			},
 		},
 	}
 
@@ -74,11 +76,13 @@ func TestVersionOf(t *testing.T) {
 		{"projectcontour.io/v1", &contour_api_v1.HTTPProxy{}},
 		{"projectcontour.io/v1", &contour_api_v1.TLSCertificateDelegation{}},
 		{"projectcontour.io/v1alpha1", &v1alpha1.ExtensionService{}},
-		{"test.projectcontour.io/v1", &unstructured.Unstructured{
-			Object: map[string]any{
-				"apiVersion": "test.projectcontour.io/v1",
-				"kind":       "Foo",
-			}},
+		{
+			"test.projectcontour.io/v1", &unstructured.Unstructured{
+				Object: map[string]any{
+					"apiVersion": "test.projectcontour.io/v1",
+					"kind":       "Foo",
+				},
+			},
 		},
 	}
 

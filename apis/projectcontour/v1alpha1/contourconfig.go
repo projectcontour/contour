@@ -163,6 +163,9 @@ type GatewayConfig struct {
 	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
 	// If unset, the gatewayclass controller will not be started.
 	// Exactly one of ControllerName or GatewayRef must be set.
+	//
+	// Deprecated: users should use GatewayRef, or the Gateway provisioner,
+	// in place of this field. This field will be removed in a future release.
 	// +optional
 	ControllerName string `json:"controllerName,omitempty"`
 
@@ -443,6 +446,13 @@ type EnvoyListenerConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	HTTP2MaxConcurrentStreams *uint32 `json:"httpMaxConcurrentStreams,omitempty"`
+
+	// Defines the limit on number of active connections to a listener. The limit is applied
+	// per listener. The default value when this is not set is unlimited.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxConnectionsPerListener *uint32 `json:"maxConnectionsPerListener,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

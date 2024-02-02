@@ -33,6 +33,16 @@ func checkRoleBindingName(t *testing.T, rb *rbacv1.RoleBinding, expected string)
 	t.Errorf("role binding %q has unexpected name", rb.Name)
 }
 
+func checkRoleBindingNamespace(t *testing.T, rb *rbacv1.RoleBinding, expected string) {
+	t.Helper()
+
+	if rb.Namespace == expected {
+		return
+	}
+
+	t.Errorf("role binding %q has unexpected namespace", rb.Namespace)
+}
+
 func checkRoleBindingLabels(t *testing.T, rb *rbacv1.RoleBinding, expected map[string]string) {
 	t.Helper()
 
@@ -63,19 +73,38 @@ func checkRoleBindingRole(t *testing.T, rb *rbacv1.RoleBinding, expected string)
 	t.Errorf("role binding has unexpected %q role reference", rb.Subjects[0].Name)
 }
 
-func TestDesiredRoleBinding(t *testing.T) {
-	name := "job-test"
-	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
-	rbName := "test-rb"
-	svcAcct := "test-svc-acct-ref"
-	roleRef := "test-role-ref"
-	rb := desiredRoleBinding(rbName, svcAcct, roleRef, cntr)
-	checkRoleBindingName(t, rb, rbName)
-	ownerLabels := map[string]string{
-		model.ContourOwningGatewayNameLabel:    cntr.Name,
-		model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
+func TestDesiredRoleBindingInNamespace(t *testing.T) {
+	testCases := []struct {
+		description string
+		namespace   string
+	}{
+		{
+			description: "namespace 1",
+			namespace:   "ns1",
+		},
+		{
+			description: "namespace 2",
+			namespace:   "ns2",
+		},
 	}
-	checkRoleBindingLabels(t, rb, ownerLabels)
-	checkRoleBindingSvcAcct(t, rb, svcAcct, cntr.Namespace)
-	checkRoleBindingRole(t, rb, roleRef)
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "job-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			rbName := "test-rb"
+			svcAcct := "test-svc-acct-ref"
+			roleRef := "test-role-ref"
+			rb := desiredRoleBindingInNamespace(rbName, svcAcct, roleRef, tc.namespace, cntr)
+			checkRoleBindingName(t, rb, rbName)
+			checkRoleBindingNamespace(t, rb, tc.namespace)
+			ownerLabels := map[string]string{
+				model.ContourOwningGatewayNameLabel:    cntr.Name,
+				model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
+			}
+			checkRoleBindingLabels(t, rb, ownerLabels)
+			checkRoleBindingSvcAcct(t, rb, svcAcct, cntr.Namespace)
+			checkRoleBindingRole(t, rb, roleRef)
+		})
+	}
 }

@@ -42,6 +42,27 @@ type HTTPProxySpec struct {
 	IngressClassName string `json:"ingressClassName,omitempty"`
 }
 
+// Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.
+//
+// This validation is based off of the corresponding Kubernetes validation:
+// https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187
+//
+// This is used for Namespace name validation here:
+// https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63
+//
+// Valid values include:
+//
+// * "example"
+//
+// Invalid values include:
+//
+// * "example.com" - "." is an invalid character
+//
+// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+// +kubebuilder:validation:MinLength=1
+// +kubebuilder:validation:MaxLength=63
+type Namespace string
+
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
 type Include struct {
 	// Name of the HTTPProxy

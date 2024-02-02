@@ -86,12 +86,7 @@ func authzResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Conto
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn,
-						&corev1.Secret{
-							ObjectMeta: fixture.ObjectMeta("certificate"),
-							Type:       "kubernetes.io/tls",
-							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-						},
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -172,12 +167,7 @@ func authzFailOpen(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn,
-						&corev1.Secret{
-							ObjectMeta: fixture.ObjectMeta("certificate"),
-							Type:       "kubernetes.io/tls",
-							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-						},
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -229,7 +219,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 	const enabled = "enabled.projectcontour.io"
 	const disabled = "disabled.projectcontour.io"
 
-	var extensionRef = contour_api_v1.ExtensionServiceReference{
+	extensionRef := contour_api_v1.ExtensionServiceReference{
 		Namespace: "auth",
 		Name:      "extension",
 	}
@@ -276,7 +266,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 	// same authorization enablement as the root proxy, and
 	// the other path should have the opposite enablement.
 
-	disabledConfig := withFilterConfig("envoy.filters.http.ext_authz",
+	disabledConfig := withFilterConfig(envoy_v3.ExtAuthzFilterName,
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
 				Disabled: true,
@@ -400,7 +390,7 @@ func authzMergeRouteContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
-						TypedPerFilterConfig: withFilterConfig("envoy.filters.http.ext_authz",
+						TypedPerFilterConfig: withFilterConfig(envoy_v3.ExtAuthzFilterName,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 								Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
 									CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
@@ -487,12 +477,7 @@ func authzInvalidReference(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn,
-						&corev1.Secret{
-							ObjectMeta: fixture.ObjectMeta("certificate"),
-							Type:       "kubernetes.io/tls",
-							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-						},
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -551,12 +536,7 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh ResourceEventHandlerWra
 					envoy_v3.TLSInspector(),
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
-					filterchaintls(fqdn,
-						&corev1.Secret{
-							ObjectMeta: fixture.ObjectMeta("certificate"),
-							Type:       "kubernetes.io/tls",
-							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-						},
+					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
 						authzFilterFor(
 							fqdn,
 							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -631,12 +611,7 @@ func TestAuthorization(t *testing.T) {
 				Ports:     featuretests.Ports(featuretests.Port("", 80)),
 			}))
 
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("certificate"),
-				Type:       "kubernetes.io/tls",
-				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-			})
-
+			rh.OnAdd(featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate))
 			f(t, rh, c)
 		})
 	}

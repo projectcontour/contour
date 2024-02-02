@@ -244,7 +244,7 @@ func parseGRPCWebResponse(body []byte) grpcWebResponse {
 	currentPos += 4
 
 	if trailersLen > 0 {
-		require.Equal(t, len(body), currentPos+trailersLen)
+		require.Len(t, body, currentPos+trailersLen)
 
 		trailersKV := strings.Split(strings.TrimSpace(string(body[currentPos:])), "\r\n")
 		for _, kv := range trailersKV {

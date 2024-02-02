@@ -37,7 +37,8 @@ func TestBootstrap(t *testing.T) {
 		"default configuration": {
 			config: envoy.BootstrapConfig{
 				Path:      "envoy.json",
-				Namespace: "testing-ns"},
+				Namespace: "testing-ns",
+			},
 			wantedBootstrapConfig: `{
   "static_resources": {
     "clusters": [
@@ -182,13 +183,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -369,13 +363,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -554,13 +541,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -742,13 +722,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -929,13 +902,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -1115,13 +1081,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -1304,13 +1263,6 @@ func TestBootstrap(t *testing.T) {
   },
   "layered_runtime": {
     "layers": [
-      {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
       {
         "name": "dynamic",
         "rtds_layer": {
@@ -1528,13 +1480,6 @@ func TestBootstrap(t *testing.T) {
   "layered_runtime": {
     "layers": [
       {
-        "name": "base",
-        "static_layer": {
-          "re2.max_program_size.error_level": 1048576,
-          "re2.max_program_size.warn_level": 1000
-        }
-      },
-      {
         "name": "dynamic",
         "rtds_layer": {
           "name": "dynamic",
@@ -1749,13 +1694,6 @@ func TestBootstrap(t *testing.T) {
         "layered_runtime": {
           "layers": [
             {
-              "name": "base",
-              "static_layer": {
-                "re2.max_program_size.error_level": 1048576,
-                "re2.max_program_size.warn_level": 1000
-              }
-            },
-            {
               "name": "dynamic",
               "rtds_layer": {
                 "name": "dynamic",
@@ -1965,13 +1903,6 @@ func TestBootstrap(t *testing.T) {
         "layered_runtime": {
           "layers": [
             {
-              "name": "base",
-              "static_layer": {
-                "re2.max_program_size.error_level": 1048576,
-                "re2.max_program_size.warn_level": 1000
-              }
-            },
-            {
               "name": "dynamic",
               "rtds_layer": {
                 "name": "dynamic",
@@ -2051,14 +1982,15 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         }
-      }`},
+      }`,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tc := tc
 			steps, gotError := bootstrap(&tc.config)
-			assert.Equal(t, gotError != nil, tc.wantedError)
+			assert.Equal(t, tc.wantedError, gotError != nil)
 
 			gotConfigs := map[string]proto.Message{}
 			for _, step := range steps {

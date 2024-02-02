@@ -26,6 +26,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -276,13 +277,12 @@ func TestTimeoutPolicy(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			gotRouteTimeoutPolicy, gotClusterTimeoutPolicy, gotErr := timeoutPolicy(tc.tp, tc.clusterConnectTimeout)
 			if tc.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			} else {
 				assert.Equal(t, tc.wantRouteTimeoutPolicy, gotRouteTimeoutPolicy)
 				assert.Equal(t, tc.wantClusterTimeoutPolicy, gotClusterTimeoutPolicy)
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
-
 		})
 	}
 }
@@ -649,10 +649,10 @@ func TestHeadersPolicy(t *testing.T) {
 			tc := tc
 			got, gotErr := headersPolicyService(&tc.dhp, tc.hp, true, dynamicHeaders)
 			if tc.wantErr {
-				assert.Error(t, gotErr)
+				require.Error(t, gotErr)
 			} else {
 				assert.Equal(t, tc.want, *got)
-				assert.NoError(t, gotErr)
+				require.NoError(t, gotErr)
 			}
 		})
 	}
@@ -1001,7 +1001,7 @@ func TestRateLimitPolicy(t *testing.T) {
 			rlp, err := rateLimitPolicy(tc.in)
 
 			if tc.wantErr != "" {
-				assert.EqualError(t, err, tc.wantErr)
+				require.EqualError(t, err, tc.wantErr)
 			} else {
 				assert.Equal(t, tc.want, rlp)
 			}

@@ -79,7 +79,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	f, err := os.OpenFile("table.md", os.O_CREATE|os.O_RDWR, 0644)
+	f, err := os.OpenFile("table.md", os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}

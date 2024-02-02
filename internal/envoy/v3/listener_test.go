@@ -62,19 +62,19 @@ var compressorContentTypes = []string{
 }
 
 func TestCodecForVersions(t *testing.T) {
-	assert.Equal(t, CodecForVersions(HTTPVersionAuto), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1, HTTPVersion2), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1), HTTPVersion1)
-	assert.Equal(t, CodecForVersions(HTTPVersion2), HTTPVersion2)
+	assert.Equal(t, HTTPVersionAuto, CodecForVersions(HTTPVersionAuto))
+	assert.Equal(t, HTTPVersionAuto, CodecForVersions(HTTPVersion1, HTTPVersion2))
+	assert.Equal(t, HTTPVersion1, CodecForVersions(HTTPVersion1))
+	assert.Equal(t, HTTPVersion2, CodecForVersions(HTTPVersion2))
 }
 
 func TestProtoNamesForVersions(t *testing.T) {
-	assert.Equal(t, ProtoNamesForVersions(), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersionAuto), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1), []string{"http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion2), []string{"h2"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
+	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions())
+	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions(HTTPVersionAuto))
+	assert.Equal(t, []string{"http/1.1"}, ProtoNamesForVersions(HTTPVersion1))
+	assert.Equal(t, []string{"h2"}, ProtoNamesForVersions(HTTPVersion2))
+	assert.Equal(t, []string(nil), ProtoNamesForVersions(HTTPVersion3))
+	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2))
 }
 
 func TestListener(t *testing.T) {
@@ -302,14 +302,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 
 	peerValidationContext := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -317,14 +319,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 
 	// Negative test case: downstream validation should not contain subjectname.
 	peerValidationContextWithSubjectName := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -340,14 +344,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 	peerValidationContextSkipClientCertValidationWithCA := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -364,28 +370,32 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 	peerValidationContextOptionalClientCertValidationWithCA := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
 		OptionalClientCertificate: true,
 	}
 	peerValidationContextWithCRLCheck := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -417,14 +427,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 
 	peerValidationContextWithCRLCheckOnlyLeaf := &dag.PeerValidationContext{
-		CACertificate: &dag.Secret{
-			Object: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "secret",
-					Namespace: "default",
-				},
-				Data: map[string][]byte{
-					dag.CACertificateKey: ca,
+		CACertificates: []*dag.Secret{
+			{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: ca,
+					},
 				},
 			},
 		},
@@ -567,7 +579,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 func TestHTTPConnectionManager(t *testing.T) {
 	defaultHTTPFilters := []*http.HttpFilter{
 		{
-			Name: "compressor",
+			Name: CompressorFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
@@ -584,12 +596,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 				}),
 			},
 		}, {
-			Name: "grpcweb",
+			Name: GRPCWebFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 			},
 		}, {
-			Name: "grpc_stats",
+			Name: GRPCStatsFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
@@ -599,12 +611,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 				),
 			},
 		}, {
-			Name: "cors",
+			Name: CORSFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 			},
 		}, {
-			Name: "local_ratelimit",
+			Name: LocalRateLimitFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
@@ -613,7 +625,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				),
 			},
 		}, {
-			Name: "envoy.filters.http.lua",
+			Name: LuaFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
 					DefaultSourceCode: &envoy_core_v3.DataSource{
@@ -624,7 +636,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				}),
 			},
 		}, {
-			Name: "envoy.filters.http.rbac",
+			Name: RBACFilterName,
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 			},
@@ -1673,7 +1685,6 @@ func TestTCPProxy(t *testing.T) {
 }
 
 func TestFilterChainTLS_Match(t *testing.T) {
-
 	tests := map[string]struct {
 		domain     string
 		downstream *envoy_tls_v3.DownstreamTlsContext
@@ -1709,11 +1720,10 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
-
-	assert.Error(t, HTTPConnectionManagerBuilder().Validate(),
+	require.Error(t, HTTPConnectionManagerBuilder().Validate(),
 		"ConnectionManager with no filters should not pass validation")
 
-	assert.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+	require.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
 		Name: "foo",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: &anypb.Any{
@@ -1723,7 +1733,7 @@ func TestBuilderValidation(t *testing.T) {
 	}).Validate(),
 		"ConnectionManager with only non-router filter should not pass validation")
 
-	assert.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
+	require.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
 		"ConnectionManager with default filters failed validation")
 
 	badBuilder := HTTPConnectionManagerBuilder().DefaultFilters()
@@ -1735,7 +1745,7 @@ func TestBuilderValidation(t *testing.T) {
 			},
 		},
 	})
-	assert.Errorf(t, badBuilder.Validate(), "Adding a filter after the Router filter should fail")
+	require.Errorf(t, badBuilder.Validate(), "Adding a filter after the Router filter should fail")
 }
 
 func TestAddFilter(t *testing.T) {
@@ -1746,20 +1756,20 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	grpcWebFilter := &http.HttpFilter{
-		Name: "grpcweb",
+		Name: GRPCWebFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_grpc_web_v3.GrpcWeb{}),
 		},
 	}
 	corsFilter := &http.HttpFilter{
-		Name: "cors",
+		Name: CORSFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_cors_v3.Cors{}),
 		},
 	}
 
 	grpcStatsFilter := &http.HttpFilter{
-		Name: "grpc_stats",
+		Name: GRPCStatsFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(
 				&envoy_config_filter_http_grpc_stats_v3.FilterConfig{
@@ -1770,7 +1780,7 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	luaFilter := &http.HttpFilter{
-		Name: "envoy.filters.http.lua",
+		Name: LuaFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
 				DefaultSourceCode: &envoy_core_v3.DataSource{
@@ -1782,14 +1792,14 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	rbacFilter := &http.HttpFilter{
-		Name: "envoy.filters.http.rbac",
+		Name: RBACFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_rbac_v3.RBAC{}),
 		},
 	}
 
 	localRateLimitFilter := &http.HttpFilter{
-		Name: "local_ratelimit",
+		Name: LocalRateLimitFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
@@ -1800,7 +1810,7 @@ func TestAddFilter(t *testing.T) {
 	}
 
 	compressFilter := &http.HttpFilter{
-		Name: "compressor",
+		Name: CompressorFilterName,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 				CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{

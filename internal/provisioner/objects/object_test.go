@@ -46,7 +46,7 @@ func TestEnsureObject_ErrorGettingObject(t *testing.T) {
 		},
 	}
 
-	assert.ErrorContains(t, EnsureObject(context.Background(), client, want, nil, &corev1.Service{}), "failed to get resource obj-ns/obj-name")
+	require.ErrorContains(t, EnsureObject(context.Background(), client, want, nil, &corev1.Service{}), "failed to get resource obj-ns/obj-name")
 }
 
 func TestEnsureObject_NonExistentObjectIsCreated(t *testing.T) {
@@ -161,7 +161,7 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 		return errors.New("update error")
 	}
 
-	assert.ErrorContains(t, EnsureObject(context.Background(), client, desired, updater, &corev1.Service{}), "update error")
+	require.ErrorContains(t, EnsureObject(context.Background(), client, desired, updater, &corev1.Service{}), "update error")
 }
 
 func TestEnsureObjectDeleted_ObjectNotFound(t *testing.T) {

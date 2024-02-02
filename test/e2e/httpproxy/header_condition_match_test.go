@@ -167,7 +167,6 @@ func testHeaderConditionMatch(namespace string) {
 					{
 						Services: []contourv1.Service{
 							{
-
 								Name: "echo-header-exact-case-insensitive",
 								Port: 80,
 							},

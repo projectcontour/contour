@@ -365,20 +365,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	cfg := c.Config
 	listeners := map[string]*envoy_listener_v3.Listener{}
 
-	max := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
-		if a > b {
-			return a
-		}
-		return b
-	}
-
-	min := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
-		if a < b {
-			return a
-		}
-		return b
-	}
-
 	socketOptions := envoy_v3.NewSocketOptions().TCPKeepalive()
 	if cfg.SocketOptions != nil {
 		socketOptions = socketOptions.TOS(cfg.SocketOptions.TOS).TrafficClass(cfg.SocketOptions.TrafficClass)
@@ -626,7 +612,6 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFi
 		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
-
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
@@ -665,7 +650,7 @@ func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
 	if tags == nil {
 		return nil
 	}
-	var customTags = make([]*envoy_v3.CustomTag, len(tags))
+	customTags := make([]*envoy_v3.CustomTag, len(tags))
 	for i, tag := range tags {
 		customTags[i] = &envoy_v3.CustomTag{
 			TagName:           tag.TagName,

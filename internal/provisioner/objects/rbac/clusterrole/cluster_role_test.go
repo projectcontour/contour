@@ -15,6 +15,7 @@ package clusterrole
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -43,14 +44,49 @@ func checkClusterRoleLabels(t *testing.T, cr *rbacv1.ClusterRole, expected map[s
 	t.Errorf("cluster role has unexpected %q labels", cr.Labels)
 }
 
-func TestDesiredClusterRole(t *testing.T) {
-	name := "test-cr"
-	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
-	cr := desiredClusterRole(name, cntr)
-	checkClusterRoleName(t, cr, name)
-	ownerLabels := map[string]string{
-		model.ContourOwningGatewayNameLabel:    cntr.Name,
-		model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
+func clusterRoleRulesContainOnlyClusterScopeRules(cr *rbacv1.ClusterRole) bool {
+	for _, r := range cr.Rules {
+		if !slices.Contains(r.Resources, "gatewayclasses") &&
+			!slices.Contains(r.Resources, "gatewayclasses/status") &&
+			!slices.Contains(r.Resources, "namespaces") {
+			return false
+		}
 	}
-	checkClusterRoleLabels(t, cr, ownerLabels)
+
+	return true
+}
+
+func TestDesiredClusterRole(t *testing.T) {
+	testCases := []struct {
+		description      string
+		clusterScopeOnly bool
+	}{
+		{
+			description:      "gateway class rule only role",
+			clusterScopeOnly: true,
+		},
+		{
+			description:      "generic cluster role include all rules",
+			clusterScopeOnly: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "test-cr"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			cr := desiredClusterRole(name, cntr, tc.clusterScopeOnly)
+			checkClusterRoleName(t, cr, name)
+			ownerLabels := map[string]string{
+				model.ContourOwningGatewayNameLabel:    cntr.Name,
+				model.GatewayAPIOwningGatewayNameLabel: cntr.Name,
+			}
+			checkClusterRoleLabels(t, cr, ownerLabels)
+			fmt.Println(cr.Rules)
+			if tc.clusterScopeOnly != clusterRoleRulesContainOnlyClusterScopeRules(cr) {
+				t.Errorf("expect clusterScopeOnly to be %v, but clusterRoleRulesContainOnlyClusterScopeRules shows %v",
+					tc.clusterScopeOnly, clusterRoleRulesContainOnlyClusterScopeRules(cr))
+			}
+		})
+	}
 }

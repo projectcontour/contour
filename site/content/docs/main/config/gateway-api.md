@@ -28,9 +28,11 @@ With static provisioning, Contour can be configured with either a [controller na
 If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
 If configured with a specific gateway, Contour will process that `Gateway` and its routes.
 
+**Note:** configuring Contour with a controller name is deprecated and will be removed in a future release. Use a specific gateway reference or dynamic provisioning instead.
+
 In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
 
-Static provisioning makes sense for users who: 
+Static provisioning makes sense for users who:
 - prefer the traditional model of deploying Contour
 - have only a single Gateway
 - want to use just the standard listener ports (80/443)
@@ -63,6 +65,8 @@ To dynamically provision Contour with Gateway API enabled:
 1. Create a Gateway using the above GatewayClass.
 
 The Contour Gateway Provisioner will deploy an instance of Contour in the Gateway's namespace implementing the Gateway spec.
+
+**Note:** Gateway names must be 63 characters or shorter, to avoid issues when generating dependent resources. See [projectcontour/contour#5970][13] and [kubernetes-sigs/gateway-api#2592][14] for more information.
 
 ## Gateway Listeners
 
@@ -180,7 +184,7 @@ When the Contour Gateway Provisioner is upgraded to a new version, it will upgra
 ## Disabling Experimental Resources
 
 Some users may want to use Contour with the [Gateway API standard channel][4] instead of the experimental channel, to avoid installing alpha resources into their clusters.
-To do this, Contour must be told to disable informers for the experimental resources. 
+To do this, Contour must be told to disable informers for the experimental resources.
 In the Contour (control plane) deployment, use the `--disable-feature` flag for `contour serve` to disable informers for the experimental resources:
 
 ```yaml
@@ -213,3 +217,5 @@ containers:
 [10]: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.GatewayClass
 [11]: https://gateway-api.sigs.k8s.io/concepts/api-overview/#route-resources
 [12]: /docs/{{< param version >}}/guides/gateway-api
+[13]: https://github.com/projectcontour/contour/issues/5970
+[14]: https://github.com/kubernetes-sigs/gateway-api/issues/2592

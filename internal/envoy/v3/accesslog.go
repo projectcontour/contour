@@ -26,7 +26,7 @@ import (
 )
 
 // FileAccessLogEnvoy returns a new file based access log filter
-func FileAccessLogEnvoy(path string, format string, extensions []string, level contour_api_v1alpha1.AccessLogLevel) []*envoy_accesslog_v3.AccessLog {
+func FileAccessLogEnvoy(path, format string, extensions []string, level contour_api_v1alpha1.AccessLogLevel) []*envoy_accesslog_v3.AccessLog {
 	if level == contour_api_v1alpha1.LogLevelDisabled {
 		return nil
 	}
@@ -99,7 +99,8 @@ func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogJSONFie
 						Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
 							JsonFormat: jsonformat,
 						},
-						Formatters: extensionConfig(extensions),
+						OmitEmptyValues: true,
+						Formatters:      extensionConfig(extensions),
 					},
 				},
 			}),
@@ -164,7 +165,8 @@ func filterOnlyErrors(respCodeMin uint32) *envoy_accesslog_v3.AccessLogFilter {
 						FilterSpecifier: &envoy_accesslog_v3.AccessLogFilter_ResponseFlagFilter{
 							ResponseFlagFilter: &envoy_accesslog_v3.ResponseFlagFilter{
 								// Left empty to match all response flags, they all represent errors.
-							}},
+							},
+						},
 					},
 				},
 			},

@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/genproto/googleapis/rpc/status"
 )
@@ -168,7 +169,7 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 				}
 			}
 			assert.NotNil(t, logEntry, fmt.Sprintf("no log line with expected message %q", tc.expectedLogMsg))
-			assert.Equal(t, logEntry.Data, tc.expectedLogData)
+			assert.Equal(t, tc.expectedLogData, logEntry.Data)
 			logHook.Reset()
 		})
 	}
@@ -181,7 +182,7 @@ func TestOnStreamRequestCallbackLogs(t *testing.T) {
 	callbacks := NewRequestLoggingCallbacks(log)
 
 	err := callbacks.OnStreamOpen(context.TODO(), 999, "a-type")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, logHook.AllEntries())
 	logHook.Reset()
 
@@ -195,7 +196,7 @@ func TestOnStreamRequestCallbackLogs(t *testing.T) {
 		ResourceNames: []string{"some", "resources"},
 		TypeUrl:       "some-type-url",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, logHook.AllEntries())
 	logHook.Reset()
 }

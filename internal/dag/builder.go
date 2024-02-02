@@ -56,7 +56,6 @@ type Builder struct {
 // Build builds and returns a new DAG by running the
 // configured DAG processors, in order.
 func (b *Builder) Build() *DAG {
-
 	gatewayNSName := types.NamespacedName{}
 	if b.Source.gateway != nil {
 		gatewayNSName = k8s.NamespacedNameOf(b.Source.gateway)

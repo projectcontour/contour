@@ -251,6 +251,5 @@ var _ = Describe("Ingress", func() {
 
 			f.NamespacedTest("global-headers-policy-apply-to-ingress-true", testGlobalHeadersPolicy(true))
 		})
-
 	})
 })

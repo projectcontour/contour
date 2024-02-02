@@ -703,7 +703,8 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
 									DescriptorKey:   "generic-key-key",
-									DescriptorValue: "generic-key-value-2"},
+									DescriptorValue: "generic-key-value-2",
+								},
 							},
 						},
 					},
@@ -716,7 +717,6 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 		TypeUrl:   routeType,
 		Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", envoy_v3.VirtualHost("foo.com", route))),
 	})
-
 }
 
 type tlsConfig struct {
@@ -839,16 +839,8 @@ func TestGlobalRateLimiting(t *testing.T) {
 			// Add common test fixtures.
 			rh.OnAdd(fixture.NewService("s1").WithPorts(corev1.ServicePort{Port: 80}))
 			rh.OnAdd(fixture.NewService("s2").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("tls-cert"),
-				Type:       "kubernetes.io/tls",
-				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-			})
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("fallback-cert"),
-				Type:       "kubernetes.io/tls",
-				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-			})
+			rh.OnAdd(featuretests.TLSSecret(t, "tls-cert", &featuretests.ServerCertificate))
+			rh.OnAdd(featuretests.TLSSecret(t, "fallback-cert", &featuretests.ServerCertificate))
 
 			f(t, rh, c)
 		})

@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,6 +36,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+)
+
+const (
+	gatewayAPIBundleVersionAnnotation   = "gateway.networking.k8s.io/bundle-version"
+	gatewayAPICRDBundleSupportedVersion = "v1.0.0"
 )
 
 // gatewayClassReconciler reconciles GatewayClass objects.
@@ -141,19 +147,25 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
+	// Collect various status conditions here so we can update using
+	// setConditions.
+	statusConditions := map[string]metav1.Condition{}
+
+	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion)] = r.getSupportedVersionCondition(ctx)
+
 	ok, params, err := r.isValidParametersRef(ctx, gatewayClass.Spec.ParametersRef)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error checking gateway class's parametersRef: %w", err)
 	}
 	if !ok {
-		if err := r.setAcceptedCondition(
-			ctx,
-			gatewayClass,
-			metav1.ConditionFalse,
-			gatewayapi_v1.GatewayClassReasonInvalidParameters,
-			"Invalid ParametersRef, must be a reference to an existing namespaced projectcontour.io/ContourDeployment resource",
-		); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
+		statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = metav1.Condition{
+			Type:    string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+			Status:  metav1.ConditionFalse,
+			Reason:  string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
+			Message: "Invalid ParametersRef, must be a reference to an existing namespaced projectcontour.io/ContourDeployment resource",
+		}
+		if err := r.setConditions(ctx, gatewayClass, statusConditions); err != nil {
+			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{}, nil
@@ -227,68 +239,101 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 
 		if len(invalidParamsMessages) > 0 {
-			if err := r.setAcceptedCondition(
-				ctx,
-				gatewayClass,
-				metav1.ConditionFalse,
-				gatewayapi_v1.GatewayClassReasonInvalidParameters,
-				strings.Join(invalidParamsMessages, "; "),
-			); err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
+			statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = metav1.Condition{
+				Type:    string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+				Status:  metav1.ConditionFalse,
+				Reason:  string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
+				Message: strings.Join(invalidParamsMessages, "; "),
+			}
+			if err := r.setConditions(ctx, gatewayClass, statusConditions); err != nil {
+				return ctrl.Result{}, err
 			}
 
 			return ctrl.Result{}, nil
 		}
 	}
 
-	if err := r.setAcceptedCondition(ctx, gatewayClass, metav1.ConditionTrue, gatewayapi_v1.GatewayClassReasonAccepted, "GatewayClass has been accepted by the controller"); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to set gateway class %s Accepted condition: %w", req, err)
+	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = metav1.Condition{
+		Type:    string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+		Status:  metav1.ConditionTrue,
+		Reason:  string(gatewayapi_v1.GatewayClassReasonAccepted),
+		Message: "GatewayClass has been accepted by the controller",
+	}
+	if err := r.setConditions(ctx, gatewayClass, statusConditions); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayClassReconciler) setAcceptedCondition(
-	ctx context.Context,
-	gatewayClass *gatewayapi_v1beta1.GatewayClass,
-	status metav1.ConditionStatus,
-	reason gatewayapi_v1beta1.GatewayClassConditionReason,
-	message string,
-) error {
-	currentAcceptedCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-		Status:             status,
-		ObservedGeneration: gatewayClass.Generation,
-		LastTransitionTime: metav1.Now(),
-		Reason:             string(reason),
-		Message:            message,
-	}
-	var newConds []metav1.Condition
-	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) {
-			if cond.Status == status {
+func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass *gatewayapi_v1beta1.GatewayClass, newConds map[string]metav1.Condition) error {
+	var unchangedConds, updatedConds []metav1.Condition
+	for _, existing := range gatewayClass.Status.Conditions {
+		if cond, ok := newConds[existing.Type]; ok {
+			if existing.Status == cond.Status {
 				// If status hasn't changed, don't change the condition, just
 				// update the generation.
-				currentAcceptedCondition = cond
-				currentAcceptedCondition.ObservedGeneration = gatewayClass.Generation
+				changed := existing
+				changed.ObservedGeneration = gatewayClass.Generation
+				updatedConds = append(updatedConds, changed)
+				delete(newConds, cond.Type)
 			}
-
-			continue
+		} else {
+			unchangedConds = append(unchangedConds, existing)
 		}
-
-		newConds = append(newConds, cond)
 	}
 
-	r.log.WithValues("gatewayclass-name", gatewayClass.Name).Info(fmt.Sprintf("setting gateway class's Accepted condition to %s", status))
+	transitionTime := metav1.Now()
+	for _, c := range newConds {
+		r.log.WithValues("gatewayclass-name", gatewayClass.Name).Info(fmt.Sprintf("setting gateway class's %s condition to %s", c.Type, c.Status))
+		c.ObservedGeneration = gatewayClass.Generation
+		c.LastTransitionTime = transitionTime
+		updatedConds = append(updatedConds, c)
+	}
 
 	// nolint:gocritic
-	gatewayClass.Status.Conditions = append(newConds, currentAcceptedCondition)
+	gatewayClass.Status.Conditions = append(unchangedConds, updatedConds...)
 
 	if err := r.client.Status().Update(ctx, gatewayClass); err != nil {
-		return fmt.Errorf("failed to set gatewayclass %s accepted condition: %w", gatewayClass.Name, err)
+		return fmt.Errorf("failed to update gateway class %s status: %w", gatewayClass.Name, err)
+	}
+	return nil
+}
+
+func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Context) metav1.Condition {
+	cond := metav1.Condition{
+		Type: string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion),
+		// Assume false until we get to the happy case.
+		Status: metav1.ConditionFalse,
+		Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
+	}
+	gatewayClassCRD := &apiextensions_v1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "gatewayclasses." + gatewayapi_v1.GroupName,
+		},
+	}
+	if err := r.client.Get(ctx, client.ObjectKeyFromObject(gatewayClassCRD), gatewayClassCRD); err != nil {
+		errorMsg := "Error fetching gatewayclass CRD resource to validate supported version"
+		r.log.Error(err, errorMsg)
+		cond.Message = fmt.Sprintf("%s: %s. Resources will be reconciled with best-effort.", errorMsg, err)
+		return cond
 	}
 
-	return nil
+	version, ok := gatewayClassCRD.Annotations[gatewayAPIBundleVersionAnnotation]
+	if !ok {
+		cond.Message = fmt.Sprintf("Bundle version annotation %s not found. Resources will be reconciled with best-effort.", gatewayAPIBundleVersionAnnotation)
+		return cond
+	}
+	if version != gatewayAPICRDBundleSupportedVersion {
+		cond.Message = fmt.Sprintf("Gateway API CRD bundle version %s is not supported. Resources will be reconciled with best-effort.", version)
+		return cond
+	}
+
+	// No errors found, we can return true.
+	cond.Status = metav1.ConditionTrue
+	cond.Reason = string(gatewayapi_v1.GatewayClassReasonSupportedVersion)
+	cond.Message = fmt.Sprintf("Gateway API CRD bundle version %s is supported.", gatewayAPICRDBundleSupportedVersion)
+	return cond
 }
 
 // isValidParametersRef returns true if the provided ParametersReference is

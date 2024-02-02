@@ -17,6 +17,8 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
@@ -100,6 +102,14 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		args = append(args, "--debug")
 	}
 
+	if !contour.WatchAllNamespaces() {
+		ns := contour.Spec.WatchNamespaces
+		if !slices.Contains(contour.Spec.WatchNamespaces, contour.Namespace) {
+			ns = append(ns, contour.Namespace)
+		}
+		args = append(args, fmt.Sprintf("--watch-namespaces=%s", strings.Join(ns, ",")))
+	}
+
 	// Pass the insecure/secure flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
 		switch {
@@ -176,11 +186,10 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 					},
 				},
 			},
-			TimeoutSeconds:      int32(1),
-			InitialDelaySeconds: int32(15),
-			PeriodSeconds:       int32(10),
-			SuccessThreshold:    int32(1),
-			FailureThreshold:    int32(3),
+			TimeoutSeconds:   int32(1),
+			PeriodSeconds:    int32(10),
+			SuccessThreshold: int32(1),
+			FailureThreshold: int32(3),
 		},
 		TerminationMessagePath:   "/dev/termination-log",
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,

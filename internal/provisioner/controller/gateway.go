@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -261,6 +262,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			contourModel.Spec.KubernetesLogLevel = contourParams.KubernetesLogLevel
 
+			contourModel.Spec.WatchNamespaces = contour_api_v1.NamespacesToStrings(contourParams.WatchNamespaces)
+
 			if contourParams.Deployment != nil &&
 				contourParams.Deployment.Strategy != nil {
 				contourModel.Spec.ContourDeploymentStrategy = *contourParams.Deployment.Strategy
@@ -494,5 +497,4 @@ func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayCl
 	}
 
 	return gcParams, nil
-
 }

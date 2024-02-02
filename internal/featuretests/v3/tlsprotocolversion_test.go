@@ -26,21 +26,13 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTLSProtocolVersion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("backend").
@@ -190,5 +182,4 @@ func TestTLSProtocolVersion(t *testing.T) {
 		Resources: nil,
 		TypeUrl:   listenerType,
 	})
-
 }

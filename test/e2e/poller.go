@@ -34,7 +34,7 @@ type AppPoller struct {
 	successfulRequests uint
 }
 
-func StartAppPoller(address string, hostName string, expectedStatus int, errorWriter io.Writer) (*AppPoller, error) {
+func StartAppPoller(address, hostName string, expectedStatus int, errorWriter io.Writer) (*AppPoller, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	poller := &AppPoller{

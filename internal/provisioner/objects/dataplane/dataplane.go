@@ -76,7 +76,6 @@ var defContainerResources = corev1.ResourceRequirements{
 
 // EnsureDataPlane ensures an Envoy data plane (daemonset or deployment) exists for the given contour.
 func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
-
 	switch contour.Spec.EnvoyWorkloadType {
 	// If a Deployment was specified, provision a Deployment.
 	case model.WorkloadTypeDeployment:
@@ -151,7 +150,6 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		if contour.Spec.RuntimeSettings.Envoy.Metrics != nil &&
 			contour.Spec.RuntimeSettings.Envoy.Metrics.Port > 0 {
 			metricsPort = int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port)
-
 		}
 
 		if contour.Spec.RuntimeSettings.Envoy.Health != nil &&

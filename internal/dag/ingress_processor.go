@@ -267,7 +267,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 }
 
 // route builds a dag.Route for the supplied Ingress.
-func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, serviceName string, servicePort int32, log logrus.FieldLogger) (*Route, error) {
+func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, serviceName string, servicePort int32, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,

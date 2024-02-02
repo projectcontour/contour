@@ -3517,7 +3517,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 							TypedPerFilterConfig: map[string]*anypb.Any{
-								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
 										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
 											ContextExtensions: map[string]string{
@@ -3583,7 +3583,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 							TypedPerFilterConfig: map[string]*anypb.Any{
-								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
 										Disabled: true,
 									},
@@ -3671,7 +3671,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 							TypedPerFilterConfig: map[string]*anypb.Any{
-								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
 										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
 											ContextExtensions: map[string]string{
@@ -3978,7 +3978,6 @@ func routecluster(cluster string) *envoy_route_v3.Route_Route {
 			},
 		},
 	}
-
 }
 
 func websocketroute(c string) *envoy_route_v3.Route_Route {
@@ -3997,7 +3996,7 @@ func routetimeout(cluster string, timeout time.Duration) *envoy_route_v3.Route_R
 	return r
 }
 
-func routeretry(cluster string, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_route_v3.Route_Route {
+func routeretry(cluster, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_route_v3.Route_Route {
 	r := routecluster(cluster)
 	r.Route.RetryPolicy = &envoy_route_v3.RetryPolicy{
 		RetryOn: retryOn,

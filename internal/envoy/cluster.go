@@ -74,8 +74,12 @@ func Clustername(cluster *dag.Cluster) string {
 		}
 	}
 	if uv := cluster.UpstreamValidation; uv != nil {
-		buf += uv.CACertificate.Object.ObjectMeta.Name
-		buf += uv.SubjectNames[0]
+		if len(uv.CACertificates) > 0 {
+			buf += uv.CACertificates[0].Object.ObjectMeta.Name
+		}
+		if len(uv.SubjectNames) > 0 {
+			buf += uv.SubjectNames[0]
+		}
 	}
 	buf += cluster.Protocol + cluster.SNI
 	if !cluster.TimeoutPolicy.IdleConnectionTimeout.UseDefault() {
@@ -139,13 +143,6 @@ func truncate(l int, s, suffix string) string {
 		return suffix[:min(l, len(suffix))]
 	}
 	return s[:l-len(suffix)-1] + "-" + suffix
-}
-
-func min(a, b int) int {
-	if a > b {
-		return b
-	}
-	return a
 }
 
 // AnyPositive indicates if any of the values provided are greater than zero.

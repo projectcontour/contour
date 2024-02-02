@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,10 +58,10 @@ func TestGenerateCerts(t *testing.T) {
 			require.Truef(t, ok, "Failed to set up CA cert for testing, maybe it's an invalid PEM")
 
 			err = verifyCert(got.ContourCertificate, roots, tc.wantContourDNSName, currentTime)
-			assert.NoErrorf(t, err, "Validating %s failed", name)
+			require.NoErrorf(t, err, "Validating %s failed", name)
 
 			err = verifyCert(got.EnvoyCertificate, roots, tc.wantEnvoyDNSName, currentTime)
-			assert.NoErrorf(t, err, "Validating %s failed", name)
+			require.NoErrorf(t, err, "Validating %s failed", name)
 		})
 	}
 
@@ -115,7 +114,6 @@ func TestGenerateCerts(t *testing.T) {
 }
 
 func TestGeneratedCertsValid(t *testing.T) {
-
 	now := time.Now()
 	expiry := now.Add(24 * 365 * time.Hour)
 
@@ -149,10 +147,9 @@ func TestGeneratedCertsValid(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			err := verifyCert(tc.cert, roots, tc.dnsname, now)
-			assert.NoErrorf(t, err, "Validating %s failed", name)
+			require.NoErrorf(t, err, "Validating %s failed", name)
 		})
 	}
-
 }
 
 func verifyCert(certPEM []byte, roots *x509.CertPool, dnsname string, currentTime time.Time) error {

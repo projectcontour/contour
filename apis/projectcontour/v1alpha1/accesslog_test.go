@@ -17,25 +17,25 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateAccessLogType(t *testing.T) {
-	assert.Error(t, v1alpha1.AccessLogType("").Validate())
-	assert.Error(t, v1alpha1.AccessLogType("foo").Validate())
+	require.Error(t, v1alpha1.AccessLogType("").Validate())
+	require.Error(t, v1alpha1.AccessLogType("foo").Validate())
 
-	assert.NoError(t, v1alpha1.EnvoyAccessLog.Validate())
-	assert.NoError(t, v1alpha1.JSONAccessLog.Validate())
+	require.NoError(t, v1alpha1.EnvoyAccessLog.Validate())
+	require.NoError(t, v1alpha1.JSONAccessLog.Validate())
 }
 
 func TestValidateAccessLogLevel(t *testing.T) {
-	assert.Error(t, v1alpha1.AccessLogLevel("").Validate())
-	assert.Error(t, v1alpha1.AccessLogLevel("foo").Validate())
+	require.Error(t, v1alpha1.AccessLogLevel("").Validate())
+	require.Error(t, v1alpha1.AccessLogLevel("foo").Validate())
 
-	assert.NoError(t, v1alpha1.LogLevelInfo.Validate())
-	assert.NoError(t, v1alpha1.LogLevelError.Validate())
-	assert.NoError(t, v1alpha1.LogLevelCritical.Validate())
-	assert.NoError(t, v1alpha1.LogLevelDisabled.Validate())
+	require.NoError(t, v1alpha1.LogLevelInfo.Validate())
+	require.NoError(t, v1alpha1.LogLevelError.Validate())
+	require.NoError(t, v1alpha1.LogLevelCritical.Validate())
+	require.NoError(t, v1alpha1.LogLevelDisabled.Validate())
 }
 
 func TestValidateAccessLogJSONFields(t *testing.T) {
@@ -59,7 +59,7 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 	}
 
 	for _, c := range errorCases {
-		assert.Error(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
+		require.Error(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
 	}
 
 	successCases := [][]string{
@@ -82,7 +82,7 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 	}
 
 	for _, c := range successCases {
-		assert.NoError(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
+		require.NoError(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
 	}
 }
 
@@ -103,7 +103,7 @@ func TestAccessLogFormatString(t *testing.T) {
 	}
 
 	for _, c := range errorCases {
-		assert.Error(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
+		require.Error(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
 	}
 
 	successCases := []string{
@@ -135,6 +135,6 @@ func TestAccessLogFormatString(t *testing.T) {
 	}
 
 	for _, c := range successCases {
-		assert.NoError(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
+		require.NoError(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
 	}
 }

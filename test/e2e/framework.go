@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -279,9 +280,11 @@ func (f *Framework) T() ginkgo.GinkgoTInterface {
 	return f.t
 }
 
-type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
-type NamespacedTestBody func(string)
-type TestBody func()
+type (
+	NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
+	NamespacedTestBody        func(string)
+	TestBody                  func()
+)
 
 func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody, additionalNamespaces ...string) {
 	ginkgo.Context("with namespace: "+namespace, func() {
@@ -334,16 +337,19 @@ func createAndWaitFor[T client.Object](t require.TestingT, client client.Client,
 	return obj, true
 }
 
-func updateAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
-	require.NoError(t, client.Update(context.Background(), obj))
+func updateAndWaitFor[T client.Object](t require.TestingT, cli client.Client, obj T, mutate func(T), condition func(T) bool, interval, timeout time.Duration) (T, bool) {
+	key := client.ObjectKeyFromObject(obj)
 
-	key := types.NamespacedName{
-		Namespace: obj.GetNamespace(),
-		Name:      obj.GetName(),
-	}
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := cli.Get(context.TODO(), key, obj); err != nil {
+			return err
+		}
+		mutate(obj)
+		return cli.Update(context.Background(), obj)
+	}))
 
 	if err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(ctx context.Context) (bool, error) {
-		if err := client.Get(ctx, key, obj); err != nil {
+		if err := cli.Get(ctx, key, obj); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
@@ -380,6 +386,12 @@ func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute
 // CreateTCPRouteAndWaitFor creates the provided TCPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
 func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute, condition func(*gatewayapi_v1alpha2.TCPRoute) bool) (*gatewayapi_v1alpha2.TCPRoute, bool) {
+	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
+}
+
+// CreateBackendTLSPolicy creates the provided BackendTLSPolicy in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha2.BackendTLSPolicy, condition func(*gatewayapi_v1alpha2.BackendTLSPolicy) bool) (*gatewayapi_v1alpha2.BackendTLSPolicy, bool) {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
@@ -495,7 +507,6 @@ func UsingContourConfigCRD() bool {
 // HTTPProxyValid returns true if the proxy has a .status.currentStatus
 // of "valid".
 func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
-
 	if proxy == nil {
 		return false
 	}
@@ -506,7 +517,6 @@ func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
 
 	cond := proxy.Status.GetConditionFor("Valid")
 	return cond.Status == "True"
-
 }
 
 // HTTPProxyInvalid returns true if the proxy has a .status.currentStatus
