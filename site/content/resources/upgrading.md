@@ -19,7 +19,7 @@ If you choose to skip versions while upgrading, please note that this may lead t
 
 1. Envoy pod stuck in pending state
 
-    If number of envoy instances is no less than number of kubernetes nodes in the clusters, during rolling upgrade, new envoy pod will be stuck in pending stage because old envoy pod is occupying host pod.
+    If Envoy is deployed with a Deployment and the number of envoy instances is not less than number of kubernetes nodes in the clusters, during rolling upgrade, new envoy pod will be stuck in pending stage because old envoy pod is occupying host port.
 
     Workaround: Delete the envoy instance of older version manually. This will cause a little bit of downtime but it's pretty short.
 
