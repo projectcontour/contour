@@ -20,8 +20,8 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 )
@@ -32,7 +32,7 @@ type BackendTLSPolicyStatusUpdate struct {
 	FullName               types.NamespacedName
 	PolicyAncestorStatuses []*gatewayapi_v1alpha2.PolicyAncestorStatus
 	GatewayRef             types.NamespacedName
-	GatewayController      gatewayapi_v1beta1.GatewayController
+	GatewayController      gatewayapi_v1.GatewayController
 	Generation             int64
 	TransitionTime         meta_v1.Time
 }
@@ -41,12 +41,12 @@ type BackendTLSPolicyStatusUpdate struct {
 // PolicyAncestorStatus.
 type BackendTLSPolicyAncestorStatusUpdate struct {
 	*BackendTLSPolicyStatusUpdate
-	ancestorRef gatewayapi_v1beta1.ParentReference
+	ancestorRef gatewayapi_v1.ParentReference
 }
 
 // StatusUpdateFor returns a BackendTLSPolicyAncestorStatusUpdate for the given
 // ancestor ref.
-func (b *BackendTLSPolicyStatusUpdate) StatusUpdateFor(ancestorRef gatewayapi_v1beta1.ParentReference) *BackendTLSPolicyAncestorStatusUpdate {
+func (b *BackendTLSPolicyStatusUpdate) StatusUpdateFor(ancestorRef gatewayapi_v1.ParentReference) *BackendTLSPolicyAncestorStatusUpdate {
 	return &BackendTLSPolicyAncestorStatusUpdate{
 		BackendTLSPolicyStatusUpdate: b,
 		ancestorRef:                  ancestorRef,
@@ -106,7 +106,7 @@ func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewa
 
 // ConditionsForAncestorRef returns the list of conditions for a given ancestor
 // if it exists.
-func (b *BackendTLSPolicyStatusUpdate) ConditionsForAncestorRef(ancestorRef gatewayapi_v1beta1.ParentReference) []meta_v1.Condition {
+func (b *BackendTLSPolicyStatusUpdate) ConditionsForAncestorRef(ancestorRef gatewayapi_v1.ParentReference) []meta_v1.Condition {
 	for _, pas := range b.PolicyAncestorStatuses {
 		if pas.AncestorRef == ancestorRef {
 			return pas.Conditions

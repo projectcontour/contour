@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type httpRouteReconciler struct {
@@ -51,15 +51,15 @@ func RegisterHTTPRouteController(log logrus.FieldLogger, mgr manager.Manager, ev
 		return err
 	}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.HTTPRoute{}), &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &gatewayapi_v1.HTTPRoute{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the HTTPRoute from the cache.
-	httpRoute := &gatewayapi_v1beta1.HTTPRoute{}
+	httpRoute := &gatewayapi_v1.HTTPRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, httpRoute)
 	if errors.IsNotFound(err) {
-		r.eventHandler.OnDelete(&gatewayapi_v1beta1.HTTPRoute{
+		r.eventHandler.OnDelete(&gatewayapi_v1.HTTPRoute{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      request.Name,
 				Namespace: request.Namespace,

@@ -25,7 +25,6 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
@@ -153,21 +152,21 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 	// Test a Gateway API HTTPRoute route gets it source metadata set correctly.
 	rh.OnAdd(gc)
 	rh.OnAdd(gateway)
-	httpRoute := &gatewayapi_v1beta1.HTTPRoute{
+	httpRoute := &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "httproute-kuard",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 80),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"gatewayapi.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 80, 1),
 			}},

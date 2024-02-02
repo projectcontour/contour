@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -46,13 +45,13 @@ func TestTCPRoute(t *testing.T) {
 	rh.OnAdd(svc1)
 	rh.OnAdd(svc2)
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
 		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -62,15 +61,15 @@ func TestTCPRoute(t *testing.T) {
 		},
 	})
 
-	gateway := &gatewayapi_v1beta1.Gateway{
+	gateway := &gatewayapi_v1.Gateway{
 		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "tcp-1",
 				Port:     10000,
 				Protocol: gatewayapi_v1.TCPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -82,12 +81,12 @@ func TestTCPRoute(t *testing.T) {
 	route1 := &gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
-						Name:        gatewayapi_v1beta1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1beta1.SectionName("tcp-1")),
+						Namespace:   ref.To(gatewayapi_v1.Namespace("projectcontour")),
+						Name:        gatewayapi_v1.ObjectName("contour"),
+						SectionName: ref.To(gatewayapi_v1.SectionName("tcp-1")),
 					},
 				},
 			},
@@ -118,12 +117,12 @@ func TestTCPRoute(t *testing.T) {
 	// check that there is no route config
 	require.Empty(t, c.Request(routeType).Resources)
 
-	gateway.Spec.Listeners = append(gateway.Spec.Listeners, gatewayapi_v1beta1.Listener{
+	gateway.Spec.Listeners = append(gateway.Spec.Listeners, gatewayapi_v1.Listener{
 		Name:     "tcp-2",
 		Port:     10001,
 		Protocol: gatewayapi_v1.TCPProtocolType,
-		AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-			Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+		AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+			Namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromAll),
 			},
 		},
@@ -136,9 +135,9 @@ func TestTCPRoute(t *testing.T) {
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
-						Name:        gatewayapi_v1beta1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1beta1.SectionName("tcp-2")),
+						Namespace:   ref.To(gatewayapi_v1.Namespace("projectcontour")),
+						Name:        gatewayapi_v1.ObjectName("contour"),
+						SectionName: ref.To(gatewayapi_v1.SectionName("tcp-2")),
 					},
 				},
 			},
@@ -192,13 +191,13 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	sec1 := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
 		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -208,22 +207,22 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 		},
 	})
 
-	gateway := &gatewayapi_v1beta1.Gateway{
+	gateway := &gatewayapi_v1.Gateway{
 		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "tls",
 					Port:     5000,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
 						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -236,12 +235,12 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	route1 := &gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
-						Name:        gatewayapi_v1beta1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1beta1.SectionName("tls")),
+						Namespace:   ref.To(gatewayapi_v1.Namespace("projectcontour")),
+						Name:        gatewayapi_v1.ObjectName("contour"),
+						SectionName: ref.To(gatewayapi_v1.SectionName("tls")),
 					},
 				},
 			},

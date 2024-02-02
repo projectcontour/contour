@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -378,21 +377,21 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		status                     core_v1.LoadBalancerStatus
 		gatewayClassControllerName string
 		gatewayRef                 *types.NamespacedName
-		preop                      *gatewayapi_v1beta1.Gateway
-		postop                     *gatewayapi_v1beta1.Gateway
+		preop                      *gatewayapi_v1.Gateway
+		postop                     *gatewayapi_v1.Gateway
 	}{
 		"happy path (IP)": {
 			status:                     ipLBStatus,
 			gatewayClassControllerName: "projectcontour.io/contour",
-			preop: &gatewayapi_v1beta1.Gateway{
+			preop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -401,15 +400,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 				},
 			},
-			postop: &gatewayapi_v1beta1.Gateway{
+			postop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -418,11 +417,11 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
-							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 						{
-							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1.IPAddressType),
 							Value: ipLBStatus.Ingress[1].IP,
 						},
 					},
@@ -432,15 +431,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"happy path (hostname)": {
 			status:                     hostnameLBStatus,
 			gatewayClassControllerName: "projectcontour.io/contour",
-			preop: &gatewayapi_v1beta1.Gateway{
+			preop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -449,15 +448,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 				},
 			},
-			postop: &gatewayapi_v1beta1.Gateway{
+			postop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -466,7 +465,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
-							Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
+							Type:  ref.To(gatewayapi_v1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
 						},
 					},
@@ -476,15 +475,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"Gateway not controlled by this Contour": {
 			status:                     ipLBStatus,
 			gatewayClassControllerName: "projectcontour.io/some-other-controller",
-			preop: &gatewayapi_v1beta1.Gateway{
+			preop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -493,15 +492,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 				},
 			},
-			postop: &gatewayapi_v1beta1.Gateway{
+			postop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -514,15 +513,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"Specific gateway configured, gateway does not match": {
 			status:     ipLBStatus,
 			gatewayRef: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
-			preop: &gatewayapi_v1beta1.Gateway{
+			preop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "some-other-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -531,15 +530,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 				},
 			},
-			postop: &gatewayapi_v1beta1.Gateway{
+			postop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "some-other-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -552,15 +551,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 		"Specific gateway configured, gateway matches": {
 			status:     ipLBStatus,
 			gatewayRef: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
-			preop: &gatewayapi_v1beta1.Gateway{
+			preop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -569,15 +568,15 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 				},
 			},
-			postop: &gatewayapi_v1beta1.Gateway{
+			postop: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour-gateway",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("contour-gatewayclass"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("contour-gatewayclass"),
 				},
-				Status: gatewayapi_v1beta1.GatewayStatus{
+				Status: gatewayapi_v1.GatewayStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayConditionProgrammed),
@@ -586,11 +585,11 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
-							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 						{
-							Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+							Type:  ref.To(gatewayapi_v1.IPAddressType),
 							Value: ipLBStatus.Ingress[1].IP,
 						},
 					},
@@ -612,7 +611,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					// with the data from the API server; this simulates that behavior by
 					// updating the struct pointed to by the third argument with the fields
 					// we care about. See Run's godoc for more info.
-					args[2].(*gatewayapi_v1beta1.GatewayClass).Spec.ControllerName = gatewayapi_v1beta1.GatewayController(tc.gatewayClassControllerName)
+					args[2].(*gatewayapi_v1.GatewayClass).Spec.ControllerName = gatewayapi_v1.GatewayController(tc.gatewayClassControllerName)
 				}).
 				Return(nil)
 
@@ -643,7 +642,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					// with the data from the API server; this simulates that behavior by
 					// updating the struct pointed to by the third argument with the fields
 					// we care about. See Run's godoc for more info.
-					args[2].(*gatewayapi_v1beta1.GatewayClass).Spec.ControllerName = gatewayapi_v1beta1.GatewayController(tc.gatewayClassControllerName)
+					args[2].(*gatewayapi_v1.GatewayClass).Spec.ControllerName = gatewayapi_v1.GatewayController(tc.gatewayClassControllerName)
 				}).
 				Return(nil)
 

@@ -16,6 +16,7 @@ package k8s
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -34,6 +35,7 @@ func NewContourScheme() (*runtime.Scheme, error) {
 		scheme.AddToScheme,
 		gatewayapi_v1alpha2.AddToScheme,
 		gatewayapi_v1beta1.AddToScheme,
+		gatewayapi_v1.AddToScheme,
 	}
 
 	if err := b.AddToScheme(s); err != nil {

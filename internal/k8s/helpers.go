@@ -24,6 +24,7 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -59,22 +60,22 @@ func isStatusEqual(objA, objB any) bool {
 				return true
 			}
 		}
-	case *gatewayapi_v1beta1.GatewayClass:
-		if b, ok := objB.(*gatewayapi_v1beta1.GatewayClass); ok {
+	case *gatewayapi_v1.GatewayClass:
+		if b, ok := objB.(*gatewayapi_v1.GatewayClass); ok {
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
-	case *gatewayapi_v1beta1.Gateway:
-		if b, ok := objB.(*gatewayapi_v1beta1.Gateway); ok {
+	case *gatewayapi_v1.Gateway:
+		if b, ok := objB.(*gatewayapi_v1.Gateway); ok {
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
-	case *gatewayapi_v1beta1.HTTPRoute:
-		if b, ok := objB.(*gatewayapi_v1beta1.HTTPRoute); ok {
+	case *gatewayapi_v1.HTTPRoute:
+		if b, ok := objB.(*gatewayapi_v1.HTTPRoute); ok {
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
@@ -111,10 +112,10 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 		*contour_v1.TLSCertificateDelegation:
 		return isGenerationEqual(oldObj, newObj), nil
 
-	case *gatewayapi_v1beta1.GatewayClass,
-		*gatewayapi_v1beta1.Gateway,
+	case *gatewayapi_v1.GatewayClass,
+		*gatewayapi_v1.Gateway,
 		*gatewayapi_v1beta1.ReferenceGrant,
-		*gatewayapi_v1beta1.HTTPRoute,
+		*gatewayapi_v1.HTTPRoute,
 		*gatewayapi_v1alpha2.TLSRoute,
 		*gatewayapi_v1alpha2.GRPCRoute,
 		*gatewayapi_v1alpha2.TCPRoute,

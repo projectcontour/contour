@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -342,13 +341,13 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc2").
 		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
 		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -358,17 +357,17 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1beta1.Gateway{
+	rh.OnAdd(&gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -377,21 +376,21 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	})
 
 	// HTTPRoute with a single weight.
-	route1 := &gatewayapi_v1beta1.HTTPRoute{
+	route1 := &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
 			"app":  "contour",
 			"type": "controller",
 		}),
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 1),
 			}},
@@ -410,21 +409,21 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	})
 
 	// HTTPRoute with multiple weights.
-	route2 := &gatewayapi_v1beta1.HTTPRoute{
+	route2 := &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
 			"app":  "contour",
 			"type": "controller",
 		}),
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRefs(
 					gatewayapi.HTTPBackendRef("svc1", 80, 60),
@@ -459,13 +458,13 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(fixture.NewService("svc2").
 		WithPorts(core_v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
 		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -475,20 +474,20 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1beta1.Gateway{
+	rh.OnAdd(&gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},

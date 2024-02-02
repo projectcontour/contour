@@ -19,12 +19,11 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // GatewayClassAccepted returns true if the gateway has a .status.conditions
 // entry of Accepted: true".
-func GatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
+func GatewayClassAccepted(gatewayClass *gatewayapi_v1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
@@ -38,7 +37,7 @@ func GatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 
 // GatewayClassNotAccepted returns true if the gateway has a .status.conditions
 // entry of Accepted: false".
-func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
+func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
@@ -52,7 +51,7 @@ func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool
 
 // GatewayAccepted returns true if the gateway has a .status.conditions
 // entry of "Accepted: true".
-func GatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
+func GatewayAccepted(gateway *gatewayapi_v1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
@@ -66,7 +65,7 @@ func GatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 // GatewayProgrammed returns true if the gateway has a .status.conditions
 // entry of "Programmed: true".
-func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
+func GatewayProgrammed(gateway *gatewayapi_v1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
@@ -80,7 +79,7 @@ func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 // ListenerAccepted returns true if the gateway has status for the named
 // listener with a condition of "Accepted: true".
-func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v1beta1.SectionName) bool {
+func ListenerAccepted(gateway *gatewayapi_v1.Gateway, listener gatewayapi_v1.SectionName) bool {
 	for _, listenerStatus := range gateway.Status.Listeners {
 		if listenerStatus.Name == listener {
 			return conditionExists(
@@ -96,7 +95,7 @@ func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v
 
 // GatewayHasAddress returns true if the gateway has a non-empty
 // .status.addresses entry.
-func GatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
+func GatewayHasAddress(gateway *gatewayapi_v1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
@@ -106,13 +105,13 @@ func GatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 // HTTPRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
-func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
+func HTTPRouteAccepted(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), meta_v1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -121,7 +120,7 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 }
 
 // HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
-func HTTPRouteIgnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
+func HTTPRouteIgnoredByContour(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
@@ -137,7 +136,7 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), meta_v1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}

@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
@@ -41,11 +41,11 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 				Name:      "tcproute-1",
 			},
 			Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 						{
-							Namespace: ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
-							Name:      gatewayapi_v1beta1.ObjectName(gateway.Name),
+							Namespace: ref.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+							Name:      gatewayapi_v1.ObjectName(gateway.Name),
 						},
 					},
 				},

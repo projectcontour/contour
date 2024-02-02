@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -49,7 +50,7 @@ func KindOf(obj any) string {
 			return "Ingress"
 		case *contour_v1.HTTPProxy:
 			return "HTTPProxy"
-		case *gatewayapi_v1beta1.HTTPRoute:
+		case *gatewayapi_v1.HTTPRoute:
 			return "HTTPRoute"
 		case *gatewayapi_v1alpha2.GRPCRoute:
 			return "GRPCRoute"
@@ -57,12 +58,14 @@ func KindOf(obj any) string {
 			return "TLSRoute"
 		case *gatewayapi_v1alpha2.TCPRoute:
 			return "TCPRoute"
-		case *gatewayapi_v1beta1.Gateway:
+		case *gatewayapi_v1.Gateway:
 			return "Gateway"
-		case *gatewayapi_v1beta1.GatewayClass:
+		case *gatewayapi_v1.GatewayClass:
 			return "GatewayClass"
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			return "ReferenceGrant"
+		case *gatewayapi_v1alpha2.BackendTLSPolicy:
+			return "BackendTLSPolicy"
 		case *contour_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"
 		case *contour_v1alpha1.ExtensionService:

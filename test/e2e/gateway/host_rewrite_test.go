@@ -22,7 +22,6 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
@@ -35,33 +34,33 @@ func testHostRewrite(namespace string, gateway types.NamespacedName) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		route := &gatewayapi_v1beta1.HTTPRoute{
+		route := &gatewayapi_v1.HTTPRoute{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-rewrite",
 			},
-			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1beta1.Hostname{"hostrewrite.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			Spec: gatewayapi_v1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1.Hostname{"hostrewrite.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
-				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+				Rules: []gatewayapi_v1.HTTPRouteRule{
 					{
-						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{
-								Path: &gatewayapi_v1beta1.HTTPPathMatch{
+								Path: &gatewayapi_v1.HTTPPathMatch{
 									Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 									Value: ref.To("/"),
 								},
 							},
 						},
-						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+						Filters: []gatewayapi_v1.HTTPRouteFilter{
 							{
 								Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Add: []gatewayapi_v1beta1.HTTPHeader{
+								RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+									Add: []gatewayapi_v1.HTTPHeader{
 										{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "rewritten.com"},
 									},
 								},

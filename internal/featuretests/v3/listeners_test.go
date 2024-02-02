@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -1285,20 +1284,20 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 
 	rh.OnAdd(gc)
 
-	rh.OnAdd(&gatewayapi_v1beta1.Gateway{
+	rh.OnAdd(&gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(gc.Name),
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "http",
 					Port:     80,
 					Protocol: gatewayapi_v1.HTTPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -1307,14 +1306,14 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
 						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -1323,11 +1322,11 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "tls",
 					Port:     8443,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
 						Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -1336,8 +1335,8 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "tcp",
 					Port:     27017,
 					Protocol: gatewayapi_v1.TCPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -1346,22 +1345,22 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 0),
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https", 0),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
 			}},
@@ -1386,8 +1385,8 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	rh.OnAdd(&gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "tcp", 0),
 				},
 			},

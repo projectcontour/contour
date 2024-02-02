@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner"
@@ -41,16 +40,16 @@ import (
 func TestGatewayReconcile(t *testing.T) {
 	const controller = "projectcontour.io/gateway-controller"
 
-	reconcilableGatewayClass := func(name, controller string) *gatewayapi_v1beta1.GatewayClass {
-		return &gatewayapi_v1beta1.GatewayClass{
+	reconcilableGatewayClass := func(name, controller string) *gatewayapi_v1.GatewayClass {
+		return &gatewayapi_v1.GatewayClass{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name: name,
 			},
-			Spec: gatewayapi_v1beta1.GatewayClassSpec{
-				ControllerName: gatewayapi_v1beta1.GatewayController(controller),
+			Spec: gatewayapi_v1.GatewayClassSpec{
+				ControllerName: gatewayapi_v1.GatewayController(controller),
 			},
 			// the fake client lets us create resources with a status set
-			Status: gatewayapi_v1beta1.GatewayClassStatus{
+			Status: gatewayapi_v1.GatewayClassStatus{
 				Conditions: []meta_v1.Condition{
 					{
 						Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -62,63 +61,63 @@ func TestGatewayReconcile(t *testing.T) {
 		}
 	}
 
-	reconcilableGatewayClassWithParams := func(name, controller string) *gatewayapi_v1beta1.GatewayClass {
+	reconcilableGatewayClassWithParams := func(name, controller string) *gatewayapi_v1.GatewayClass {
 		gc := reconcilableGatewayClass(name, controller)
-		gc.Spec.ParametersRef = &gatewayapi_v1beta1.ParametersReference{
-			Group:     gatewayapi_v1beta1.Group(contour_v1alpha1.GroupVersion.Group),
+		gc.Spec.ParametersRef = &gatewayapi_v1.ParametersReference{
+			Group:     gatewayapi_v1.Group(contour_v1alpha1.GroupVersion.Group),
 			Kind:      "ContourDeployment",
-			Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+			Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
 	}
 
-	reconcilableGatewayClassWithInvalidParams := func(name, controller string) *gatewayapi_v1beta1.GatewayClass {
+	reconcilableGatewayClassWithInvalidParams := func(name, controller string) *gatewayapi_v1.GatewayClass {
 		gc := reconcilableGatewayClass(name, controller)
-		gc.Spec.ParametersRef = &gatewayapi_v1beta1.ParametersReference{
-			Group:     gatewayapi_v1beta1.Group(contour_v1alpha1.GroupVersion.Group),
+		gc.Spec.ParametersRef = &gatewayapi_v1.ParametersReference{
+			Group:     gatewayapi_v1.Group(contour_v1alpha1.GroupVersion.Group),
 			Kind:      "InvalidKind",
-			Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+			Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
 	}
 
-	makeGateway := func() *gatewayapi_v1beta1.Gateway {
-		return &gatewayapi_v1beta1.Gateway{
+	makeGateway := func() *gatewayapi_v1.Gateway {
+		return &gatewayapi_v1.Gateway{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: "gateway-1",
 				Name:      "gateway-1",
 			},
-			Spec: gatewayapi_v1beta1.GatewaySpec{
-				GatewayClassName: gatewayapi_v1beta1.ObjectName("gatewayclass-1"),
+			Spec: gatewayapi_v1.GatewaySpec{
+				GatewayClassName: gatewayapi_v1.ObjectName("gatewayclass-1"),
 			},
 		}
 	}
 
-	makeGatewayWithAddrs := func(addrs []gatewayapi_v1beta1.GatewayAddress) *gatewayapi_v1beta1.Gateway {
+	makeGatewayWithAddrs := func(addrs []gatewayapi_v1.GatewayAddress) *gatewayapi_v1.Gateway {
 		gtw := makeGateway()
 		gtw.Spec.Addresses = addrs
 		return gtw
 	}
 
-	makeGatewayWithListeners := func(listeners []gatewayapi_v1beta1.Listener) *gatewayapi_v1beta1.Gateway {
+	makeGatewayWithListeners := func(listeners []gatewayapi_v1.Listener) *gatewayapi_v1.Gateway {
 		gtw := makeGateway()
 		gtw.Spec.Listeners = listeners
 		return gtw
 	}
 
 	tests := map[string]struct {
-		gatewayClass       *gatewayapi_v1beta1.GatewayClass
+		gatewayClass       *gatewayapi_v1.GatewayClass
 		gatewayClassParams *contour_v1alpha1.ContourDeployment
-		gateway            *gatewayapi_v1beta1.Gateway
+		gateway            *gatewayapi_v1.Gateway
 		req                *reconcile.Request
-		assertions         func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error)
+		assertions         func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error)
 	}{
 		"A gateway for a reconcilable gatewayclass is reconciled": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway:      makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -138,14 +137,14 @@ func TestGatewayReconcile(t *testing.T) {
 			},
 		},
 		"A gateway for a non-reconcilable gatewayclass (not accepted) is not reconciled": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
-					ControllerName: gatewayapi_v1beta1.GatewayController(controller),
+				Spec: gatewayapi_v1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1.GatewayController(controller),
 				},
-				Status: gatewayapi_v1beta1.GatewayClassStatus{
+				Status: gatewayapi_v1.GatewayClassStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -156,7 +155,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify that the Gateway has not had a "Accepted: true" condition set
@@ -175,14 +174,14 @@ func TestGatewayReconcile(t *testing.T) {
 			},
 		},
 		"A gateway for a non-reconcilable gatewayclass (non-matching controller) is not reconciled": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "someothercontroller.io/controller",
 				},
-				Status: gatewayapi_v1beta1.GatewayClassStatus{
+				Status: gatewayapi_v1.GatewayClassStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -193,7 +192,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify that the Gateway has not had a "Accepted: true" condition set
@@ -214,81 +213,81 @@ func TestGatewayReconcile(t *testing.T) {
 		"A gateway with no addresses results in an Envoy service with no loadBalancerIP": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway:      makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "")
 			},
 		},
 		"A gateway with one IP address results in an Envoy service with loadBalancerIP set to that IP address": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1beta1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+					Type:  ref.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.207",
 				},
 			}),
 
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "172.18.255.207")
 			},
 		},
 		"A gateway with two IP addresses results in an Envoy service with loadBalancerIP set to the first IP address": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1beta1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+					Type:  ref.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.207",
 				},
 				{
-					Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+					Type:  ref.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.999",
 				},
 			}),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "172.18.255.207")
 			},
 		},
 		"A gateway with one Hostname address results in an Envoy service with loadBalancerIP set to that hostname": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1beta1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
+					Type:  ref.To(gatewayapi_v1.HostnameAddressType),
 					Value: "projectcontour.io",
 				},
 			}),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "projectcontour.io")
 			},
 		},
 		"A gateway with two Hostname addresses results in an Envoy service with loadBalancerIP set to the first hostname": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1beta1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
+					Type:  ref.To(gatewayapi_v1.HostnameAddressType),
 					Value: "projectcontour.io",
 				},
 				{
-					Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
+					Type:  ref.To(gatewayapi_v1.HostnameAddressType),
 					Value: "anotherhost.io",
 				},
 			}),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "projectcontour.io")
 			},
 		},
 		"A gateway with one custom address type results in an Envoy service with no loadBalancerIP": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1beta1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.AddressType("acme.io/CustomAddressType")),
+					Type:  ref.To(gatewayapi_v1.AddressType("acme.io/CustomAddressType")),
 					Value: "custom-address-types-are-not-supported",
 				},
 			}),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "")
 			},
@@ -315,7 +314,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -384,7 +383,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -439,7 +438,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -477,7 +476,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"The Envoy service's ports are derived from the Gateway's listeners (http & https)": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithListeners([]gatewayapi_v1beta1.Listener{
+			gateway: makeGatewayWithListeners([]gatewayapi_v1.Listener{
 				{
 					Name:     "listener-1",
 					Protocol: gatewayapi_v1.HTTPProtocolType,
@@ -487,7 +486,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:     "listener-2",
 					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
-					Hostname: ref.To(gatewayapi_v1beta1.Hostname("foo.bar")),
+					Hostname: ref.To(gatewayapi_v1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-3",
@@ -509,17 +508,17 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:     "listener-6",
 					Protocol: gatewayapi_v1.TLSProtocolType,
 					Port:     443,
-					Hostname: ref.To(gatewayapi_v1beta1.Hostname("foo.bar")),
+					Hostname: ref.To(gatewayapi_v1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-7",
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					Port:     8443,
-					Hostname: ref.To(gatewayapi_v1beta1.Hostname("foo.baz")),
+					Hostname: ref.To(gatewayapi_v1.Hostname("foo.baz")),
 				},
 			}),
 
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				// Get the expected Envoy service from the client.
 				envoyService := &core_v1.Service{
@@ -559,7 +558,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"The Envoy service's ports are derived from the Gateway's listeners (http only)": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithListeners([]gatewayapi_v1beta1.Listener{
+			gateway: makeGatewayWithListeners([]gatewayapi_v1.Listener{
 				{
 					Name:     "listener-1",
 					Protocol: gatewayapi_v1.HTTPProtocolType,
@@ -569,7 +568,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:     "listener-2",
 					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
-					Hostname: ref.To(gatewayapi_v1beta1.Hostname("foo.bar")),
+					Hostname: ref.To(gatewayapi_v1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-3",
@@ -583,7 +582,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Port:     82,
 				},
 			}),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 				// Get the expected Envoy service from the client.
 				envoyService := &core_v1.Service{
@@ -619,7 +618,7 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contour_v1alpha1.ContourDeploymentSpec{},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -661,7 +660,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -697,7 +696,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -742,7 +741,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -782,7 +781,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -827,7 +826,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -865,7 +864,7 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contour_v1alpha1.ContourDeploymentSpec{},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -908,32 +907,32 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				},
 			},
-			gateway: makeGatewayWithListeners([]gatewayapi_v1beta1.Listener{
+			gateway: makeGatewayWithListeners([]gatewayapi_v1.Listener{
 				{
 					Protocol: gatewayapi_v1.HTTPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					Name: gatewayapi_v1beta1.SectionName("http"),
-					Port: gatewayapi_v1beta1.PortNumber(30000),
+					Name: gatewayapi_v1.SectionName("http"),
+					Port: gatewayapi_v1.PortNumber(30000),
 				},
 				{
-					Name:     gatewayapi_v1beta1.SectionName("https"),
-					Port:     gatewayapi_v1beta1.PortNumber(30001),
+					Name:     gatewayapi_v1.SectionName("https"),
+					Port:     gatewayapi_v1.PortNumber(30001),
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
 						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 					},
 				},
 			}),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -979,7 +978,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -1031,7 +1030,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has an "Accepted: true" condition
@@ -1083,7 +1082,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -1118,7 +1117,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				ds := &apps_v1.DaemonSet{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "gateway-1",
@@ -1144,7 +1143,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				ds := &apps_v1.DaemonSet{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "gateway-1",
@@ -1168,7 +1167,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				ds := &apps_v1.DaemonSet{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "gateway-1",
@@ -1196,7 +1195,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has a "Accepted: true" condition
@@ -1238,7 +1237,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				// Verify the Gateway has an "Accepted: true" condition
@@ -1270,13 +1269,13 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"The Gateway's infrastructure labels and annotations are set on all resources": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "gateway-1",
 					Name:      "gateway-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName("gatewayclass-1"),
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName("gatewayclass-1"),
 					Infrastructure: &gatewayapi_v1.GatewayInfrastructure{
 						Labels: map[gatewayapi_v1.AnnotationKey]gatewayapi_v1.AnnotationValue{
 							gatewayapi_v1.AnnotationKey("projectcontour.io/label-1"): gatewayapi_v1.AnnotationValue("label-value-1"),
@@ -1289,7 +1288,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				for _, obj := range []client.Object{
@@ -1347,7 +1346,7 @@ func TestGatewayReconcile(t *testing.T) {
 		"Gateway owner labels are set on all resources": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway:      makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1beta1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				for _, obj := range []client.Object{
@@ -1440,7 +1439,7 @@ func TestGatewayReconcile(t *testing.T) {
 	}
 }
 
-func assertEnvoyServiceLoadBalancerIP(t *testing.T, gateway *gatewayapi_v1beta1.Gateway, client client.Client, want string) {
+func assertEnvoyServiceLoadBalancerIP(t *testing.T, gateway *gatewayapi_v1.Gateway, client client.Client, want string) {
 	// Get the expected Envoy service from the client.
 	envoyService := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
