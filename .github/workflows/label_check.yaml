@@ -61,7 +61,9 @@ jobs:
       with:
         go-version: 'stable'
         cache: false
-    - run: go run ./hack/actions/check-changefile-exists.go
+    - name: Init go workspace
+      run: make init-go-workspace
+    - run: go run ./hack/cmd/check-changefile-exists/main.go
       env:
         PR_NUMBER: ${{ github.event.number }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

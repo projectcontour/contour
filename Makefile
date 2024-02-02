@@ -200,7 +200,7 @@ lint-codespell:
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
+	@go run github.com/golangci/golangci-lint/cmd/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
 .PHONY: lint-yamllint
 lint-yamllint:
@@ -226,9 +226,15 @@ lint-flags:
 .PHONY: format
 format: ## Run gofumpt to format the codebase.
 	@echo Running gofumpt...
-	@go run mvdan.cc/gofumpt@v0.5.0 -l -w -extra .
+	@go run mvdan.cc/gofumpt -l -w -extra .
 	@echo Running gci...
-	@go run github.com/daixiang0/gci@v0.12.1 write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
+	@go run github.com/daixiang0/gci write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
+
+.PHONY: init-go-workspace
+init-go-workspace: ## Initialize go.work
+	@go work init
+	@go work use .
+	@go work use ./hack
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
@@ -271,7 +277,7 @@ generate-api-docs:
 .PHONY: generate-metrics-docs
 generate-metrics-docs:
 	@echo "Generating metrics documentation..."
-	@cd site/content/docs/main/guides/metrics && rm -f *.md && go run ../../../../../../hack/generate-metrics-doc.go
+	@cd site/content/docs/main/guides/metrics && rm -f *.md && go run ../../../../../../hack/cmd/generate-metrics-doc/main.go
 
 .PHONY: generate-go
 generate-go:
