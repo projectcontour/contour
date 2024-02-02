@@ -1715,7 +1715,6 @@ spec:
                     maxItems: 42
                     minItems: 1
                     type: array
-                    uniqueItems: true
                   kubernetesLogLevel:
                     description: |-
                       KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
@@ -1881,7 +1880,6 @@ spec:
                     maxItems: 42
                     minItems: 1
                     type: array
-                    uniqueItems: true
                 type: object
               envoy:
                 description: |-

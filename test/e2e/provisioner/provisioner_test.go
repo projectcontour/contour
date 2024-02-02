@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -540,7 +541,7 @@ var _ = Describe("Gateway provisioner", func() {
 			params := &contour_api_v1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      "contour-params-with-watch-namespaces",
+					Name:      objectTestName,
 				},
 				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
@@ -669,6 +670,7 @@ var _ = Describe("Gateway provisioner", func() {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
 					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIgnoredByContour)
+					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 
 					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted for a period of time", t.namespace))
 					require.Never(f.T(), func() bool {
@@ -678,7 +680,6 @@ var _ = Describe("Gateway provisioner", func() {
 						}
 						return e2e.HTTPRouteAccepted(hr)
 					}, 10*time.Second, time.Second, hr)
-					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 				}
 			}
 		})
@@ -708,12 +709,12 @@ var _ = Describe("Gateway provisioner", func() {
 			params := &contour_api_v1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      "contour-params-with-watch-namespaces",
+					Name:      objectTestName,
 				},
 				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
 					Contour: &contour_api_v1alpha1.ContourSettings{
-						DisabledFeatures: []contour_api_v1.Feature{"tcproute"},
+						DisabledFeatures: []contour_api_v1.Feature{"tlsroutes"},
 					},
 				},
 			}
@@ -736,20 +737,23 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}, false))
 		})
-		Specify("A gateway can be provisioned that only reconciles routes in a subset of namespaces", func() {
+		Specify("A gateway can be provisioned that ignore CRDs in disabledFeatures", func() {
 			By("Deploy gateway that referencing above gatewayclass")
 			gateway := &gatewayapi_v1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "http-for-watchnamespaces",
+					Name:      "tlsroute",
 					Namespace: namespace,
 				},
 				Spec: gatewayapi_v1beta1.GatewaySpec{
 					GatewayClassName: gatewayapi_v1beta1.ObjectName(objectTestName),
 					Listeners: []gatewayapi_v1beta1.Listener{
 						{
-							Name:     "http",
-							Protocol: gatewayapi_v1.HTTPProtocolType,
-							Port:     gatewayapi_v1beta1.PortNumber(80),
+							Name:     "https",
+							Protocol: gatewayapi_v1.TLSProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(443),
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
+							},
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 									// TODO: set to from all for now
@@ -769,42 +773,38 @@ var _ = Describe("Gateway provisioner", func() {
 			By("Skip reconciling TCPRoute if disabledFeatures includes it")
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
-			route := &gatewayapi_v1alpha2.TCPRoute{
+			route := &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      "tcproute-1",
+					Name:      "tlsroute-1",
 				},
-				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
 					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
 						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							{
-								Namespace: ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
-								Name:      gatewayapi_v1beta1.ObjectName(gateway.Name),
+								Namespace: ref.To(gatewayapi_v1alpha2.Namespace(gateway.Namespace)),
+								Name:      gatewayapi_v1alpha2.ObjectName(gateway.Name),
 							},
 						},
 					},
-					Rules: []gatewayapi_v1alpha2.TCPRouteRule{
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
 						{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ref.To(int32(1))),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 443, ref.To(int32(1))),
 						},
 					},
 				},
 			}
-			route, ok = f.CreateTCPRouteAndWaitFor(route, e2e.TCPRouteAccepted)
-			require.True(f.T(), ok)
-			require.NotNil(f.T(), route)
-
-			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-				Condition: e2e.HasStatusCode(200),
-			})
-			assert.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
-			assert.Equal(f.T(), "echo", f.GetEchoResponseBody(res.Body).Service)
-
-			// Envoy is expected to add the "server: envoy" and
-			// "x-envoy-upstream-service-time" HTTP headers when
-			// proxying HTTP; this ensures we are proxying TCP only.
-			assert.Equal(f.T(), "", res.Headers.Get("server"))
-			assert.Equal(f.T(), "", res.Headers.Get("x-envoy-upstream-service-time"))
+			tr, ok := f.CreateTLSRouteAndWaitFor(route, e2e.TLSRouteIgnoredByContour)
+			require.True(f.T(), ok, fmt.Sprintf("tlsroute's is %v", tr))
+			By("Expect tlsroute not to be accepted")
+			require.Never(f.T(), func() bool {
+				tr = &gatewayapi_v1alpha2.TLSRoute{}
+				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(tr), tr); err != nil {
+					return false
+				}
+				return e2e.TLSRouteAccepted(tr)
+			}, 10*time.Second, time.Second, tr)
 		})
 	})
 })
