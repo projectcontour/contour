@@ -10,6 +10,7 @@
 #       examples/contour/02-role-contour.yaml
 #       examples/contour/02-service-contour.yaml
 #       examples/contour/02-service-envoy.yaml
+#       examples/contour/03-contour-gateway.yaml
 #       examples/contour/03-contour.yaml
 #       examples/contour/03-envoy.yaml
 #       examples/gateway/00-crds.yaml
@@ -1029,72 +1030,76 @@ spec:
                     type: object
                 type: object
               outlierDetection:
-                description: GlobalOutlierDetection defines the configuration for
-                  outlier detection on all services. If defined, this will be used
-                  as the default for all services.
+                description: |-
+                  GlobalOutlierDetection defines the configuration for outlier detection on all services.
+                  If defined, this will be used as the default for all services.
                 properties:
                   baseEjectionTime:
-                    description: BaseEjectionTime is the base time that a host is
-                      ejected for. A host will remain ejected for a period of time
-                      equal to the product of the ejection base duration and the number
-                      of times the host has been ejected. Defaults to 30s.
+                    description: |-
+                      BaseEjectionTime is the base time that a host is ejected for.
+                      A host will remain ejected for a period of time equal to the
+                      product of the ejection base duration and the number of times the host has been ejected.
+                      Defaults to 30s.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                     type: string
                   consecutiveLocalOriginFailure:
-                    description: ConsecutiveLocalOriginFailure defines the number
-                      of consecutive local origin failures before a consecutive local
-                      origin ejection occurs. Parameters take effect only when SplitExternalLocalOriginErrors
-                      is true. Defaults to 5.
+                    description: |-
+                      ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
+                      Parameters take effect only when SplitExternalLocalOriginErrors is true.
+                      Defaults to 5.
                     format: int32
                     type: integer
                   consecutiveServerErrors:
-                    description: ConsecutiveServerErrors defines The number of consecutive
-                      server-side error responses before a consecutive 5xx ejection
-                      occurs. When the backend host encounters consecutive errors
-                      greater than or equal to ConsecutiveServerErrors, it will be
-                      ejected from the load balancing pool. for HTTP services, a 5xx
-                      counts as an error and for TCP services connection failures
-                      and connection timeouts count as an error. It can be disabled
-                      by setting the value to 0. Defaults to 5.
+                    description: |-
+                      ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
+                      When the backend host encounters consecutive
+                      errors greater than or equal to ConsecutiveServerErrors, it will be
+                      ejected from the load balancing pool.
+                      for HTTP services, a 5xx counts as an error and for TCP services
+                      connection failures and connection timeouts count as an error.
+                      It can be disabled by setting the value to 0.
+                      Defaults to 5.
                     format: int32
                     type: integer
                   disabled:
-                    description: Disabled configures the Service to not use the default
-                      global OutlierDetection policy defined by the Contour configuration.
+                    description: |-
+                      Disabled configures the Service to not use
+                      the default global OutlierDetection policy defined by the Contour configuration.
                       Defaults to false.
                     type: boolean
                   interval:
-                    description: Interval is the interval at which host status is
-                      evaluated. Defaults to 10s.
+                    description: |-
+                      Interval is the interval at which host status is evaluated.
+                      Defaults to 10s.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                     type: string
                   maxEjectionPercent:
-                    description: MaxEjectionPercent is the max percentage of hosts
-                      in the load balancing pool for the upstream service that can
-                      be ejected. But will eject at least one host regardless of the
-                      value here. Defaults to 10%.
+                    description: |-
+                      MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
+                      But will eject at least one host regardless of the value here.
+                      Defaults to 10%.
                     format: int32
                     maximum: 100
                     type: integer
                   maxEjectionTime:
-                    description: MaxEjectionTime is the maximum time a host will be
-                      ejected for. After this amount of time, a host will be returned
-                      to normal operation. If not specified, the default value (300s)
-                      or BaseEjectionTime value is applied, whatever is larger. Defaults
-                      to 300s.
+                    description: |-
+                      MaxEjectionTime is the maximum time a host will be ejected for.
+                      After this amount of time, a host will be returned to normal operation.
+                      If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
+                      Defaults to 300s.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                     type: string
                   maxEjectionTimeJitter:
-                    description: MaxEjectionTimeJitter is The maximum amount of jitter
-                      to add to the ejection time, in order to prevent a ‘thundering
-                      herd’ effect where all proxies try to reconnect to host at the
-                      same time. Defaults to 0s.
+                    description: |-
+                      MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time,
+                      in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
+                      Defaults to 0s.
                     pattern: ^(((\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                     type: string
                   splitExternalLocalOriginErrors:
                     default: false
-                    description: SplitExternalLocalOriginErrors defines whether to
-                      split the local origin errors from the external origin errors.
+                    description: |-
+                      SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
                       Defaults to false.
                     type: boolean
                 type: object
@@ -4780,76 +4785,77 @@ spec:
                         type: object
                     type: object
                   outlierDetection:
-                    description: GlobalOutlierDetection defines the configuration
-                      for outlier detection on all services. If defined, this will
-                      be used as the default for all services.
+                    description: |-
+                      GlobalOutlierDetection defines the configuration for outlier detection on all services.
+                      If defined, this will be used as the default for all services.
                     properties:
                       baseEjectionTime:
-                        description: BaseEjectionTime is the base time that a host
-                          is ejected for. A host will remain ejected for a period
-                          of time equal to the product of the ejection base duration
-                          and the number of times the host has been ejected. Defaults
-                          to 30s.
+                        description: |-
+                          BaseEjectionTime is the base time that a host is ejected for.
+                          A host will remain ejected for a period of time equal to the
+                          product of the ejection base duration and the number of times the host has been ejected.
+                          Defaults to 30s.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                         type: string
                       consecutiveLocalOriginFailure:
-                        description: ConsecutiveLocalOriginFailure defines the number
-                          of consecutive local origin failures before a consecutive
-                          local origin ejection occurs. Parameters take effect only
-                          when SplitExternalLocalOriginErrors is true. Defaults to
-                          5.
+                        description: |-
+                          ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
+                          Parameters take effect only when SplitExternalLocalOriginErrors is true.
+                          Defaults to 5.
                         format: int32
                         type: integer
                       consecutiveServerErrors:
-                        description: ConsecutiveServerErrors defines The number of
-                          consecutive server-side error responses before a consecutive
-                          5xx ejection occurs. When the backend host encounters consecutive
-                          errors greater than or equal to ConsecutiveServerErrors,
-                          it will be ejected from the load balancing pool. for HTTP
-                          services, a 5xx counts as an error and for TCP services
-                          connection failures and connection timeouts count as an
-                          error. It can be disabled by setting the value to 0. Defaults
-                          to 5.
+                        description: |-
+                          ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
+                          When the backend host encounters consecutive
+                          errors greater than or equal to ConsecutiveServerErrors, it will be
+                          ejected from the load balancing pool.
+                          for HTTP services, a 5xx counts as an error and for TCP services
+                          connection failures and connection timeouts count as an error.
+                          It can be disabled by setting the value to 0.
+                          Defaults to 5.
                         format: int32
                         type: integer
                       disabled:
-                        description: Disabled configures the Service to not use the
-                          default global OutlierDetection policy defined by the Contour
-                          configuration. Defaults to false.
+                        description: |-
+                          Disabled configures the Service to not use
+                          the default global OutlierDetection policy defined by the Contour configuration.
+                          Defaults to false.
                         type: boolean
                       interval:
-                        description: Interval is the interval at which host status
-                          is evaluated. Defaults to 10s.
+                        description: |-
+                          Interval is the interval at which host status is evaluated.
+                          Defaults to 10s.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                         type: string
                       maxEjectionPercent:
-                        description: MaxEjectionPercent is the max percentage of hosts
-                          in the load balancing pool for the upstream service that
-                          can be ejected. But will eject at least one host regardless
-                          of the value here. Defaults to 10%.
+                        description: |-
+                          MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
+                          But will eject at least one host regardless of the value here.
+                          Defaults to 10%.
                         format: int32
                         maximum: 100
                         type: integer
                       maxEjectionTime:
-                        description: MaxEjectionTime is the maximum time a host will
-                          be ejected for. After this amount of time, a host will be
-                          returned to normal operation. If not specified, the default
-                          value (300s) or BaseEjectionTime value is applied, whatever
-                          is larger. Defaults to 300s.
+                        description: |-
+                          MaxEjectionTime is the maximum time a host will be ejected for.
+                          After this amount of time, a host will be returned to normal operation.
+                          If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
+                          Defaults to 300s.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                         type: string
                       maxEjectionTimeJitter:
-                        description: MaxEjectionTimeJitter is The maximum amount of
-                          jitter to add to the ejection time, in order to prevent
-                          a ‘thundering herd’ effect where all proxies try to reconnect
-                          to host at the same time. Defaults to 0s.
+                        description: |-
+                          MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time,
+                          in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
+                          Defaults to 0s.
                         pattern: ^(((\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                         type: string
                       splitExternalLocalOriginErrors:
                         default: false
-                        description: SplitExternalLocalOriginErrors defines whether
-                          to split the local origin errors from the external origin
-                          errors. Defaults to false.
+                        description: |-
+                          SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
+                          Defaults to false.
                         type: boolean
                     type: object
                   policy:
@@ -7028,80 +7034,77 @@ spec:
                               Names defined here will be used to look up corresponding endpoints which contain the ips to route.
                             type: string
                           outlierDetection:
-                            description: The policy for managing outlier detection
-                              on a service. If not specified, the global OutlierDetection
-                              policy will be used.
+                            description: |-
+                              The policy for managing outlier detection on a service.
+                              If not specified, the global OutlierDetection policy will be used.
                             properties:
                               baseEjectionTime:
-                                description: BaseEjectionTime is the base time that
-                                  a host is ejected for. A host will remain ejected
-                                  for a period of time equal to the product of the
-                                  ejection base duration and the number of times the
-                                  host has been ejected. Defaults to 30s.
+                                description: |-
+                                  BaseEjectionTime is the base time that a host is ejected for.
+                                  A host will remain ejected for a period of time equal to the
+                                  product of the ejection base duration and the number of times the host has been ejected.
+                                  Defaults to 30s.
                                 pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                                 type: string
                               consecutiveLocalOriginFailure:
-                                description: ConsecutiveLocalOriginFailure defines
-                                  the number of consecutive local origin failures
-                                  before a consecutive local origin ejection occurs.
-                                  Parameters take effect only when SplitExternalLocalOriginErrors
-                                  is true. Defaults to 5.
+                                description: |-
+                                  ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
+                                  Parameters take effect only when SplitExternalLocalOriginErrors is true.
+                                  Defaults to 5.
                                 format: int32
                                 type: integer
                               consecutiveServerErrors:
-                                description: ConsecutiveServerErrors defines The number
-                                  of consecutive server-side error responses before
-                                  a consecutive 5xx ejection occurs. When the backend
-                                  host encounters consecutive errors greater than
-                                  or equal to ConsecutiveServerErrors, it will be
-                                  ejected from the load balancing pool. for HTTP services,
-                                  a 5xx counts as an error and for TCP services connection
-                                  failures and connection timeouts count as an error.
-                                  It can be disabled by setting the value to 0. Defaults
-                                  to 5.
+                                description: |-
+                                  ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
+                                  When the backend host encounters consecutive
+                                  errors greater than or equal to ConsecutiveServerErrors, it will be
+                                  ejected from the load balancing pool.
+                                  for HTTP services, a 5xx counts as an error and for TCP services
+                                  connection failures and connection timeouts count as an error.
+                                  It can be disabled by setting the value to 0.
+                                  Defaults to 5.
                                 format: int32
                                 type: integer
                               disabled:
-                                description: Disabled configures the Service to not
-                                  use the default global OutlierDetection policy defined
-                                  by the Contour configuration. Defaults to false.
+                                description: |-
+                                  Disabled configures the Service to not use
+                                  the default global OutlierDetection policy defined by the Contour configuration.
+                                  Defaults to false.
                                 type: boolean
                               interval:
-                                description: Interval is the interval at which host
-                                  status is evaluated. Defaults to 10s.
+                                description: |-
+                                  Interval is the interval at which host status is evaluated.
+                                  Defaults to 10s.
                                 pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                                 type: string
                               maxEjectionPercent:
-                                description: MaxEjectionPercent is the max percentage
-                                  of hosts in the load balancing pool for the upstream
-                                  service that can be ejected. But will eject at least
-                                  one host regardless of the value here. Defaults
-                                  to 10%.
+                                description: |-
+                                  MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
+                                  But will eject at least one host regardless of the value here.
+                                  Defaults to 10%.
                                 format: int32
                                 maximum: 100
                                 type: integer
                               maxEjectionTime:
-                                description: MaxEjectionTime is the maximum time a
-                                  host will be ejected for. After this amount of time,
-                                  a host will be returned to normal operation. If
-                                  not specified, the default value (300s) or BaseEjectionTime
-                                  value is applied, whatever is larger. Defaults to
-                                  300s.
+                                description: |-
+                                  MaxEjectionTime is the maximum time a host will be ejected for.
+                                  After this amount of time, a host will be returned to normal operation.
+                                  If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
+                                  Defaults to 300s.
                                 pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                                 type: string
                               maxEjectionTimeJitter:
-                                description: MaxEjectionTimeJitter is The maximum
-                                  amount of jitter to add to the ejection time, in
-                                  order to prevent a ‘thundering herd’ effect where
-                                  all proxies try to reconnect to host at the same
-                                  time. Defaults to 0s.
+                                description: |-
+                                  MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time,
+                                  in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
+                                  Defaults to 0s.
                                 pattern: ^(((\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                                 type: string
                               splitExternalLocalOriginErrors:
                                 default: false
-                                description: SplitExternalLocalOriginErrors defines
-                                  whether to split the local origin errors from the
-                                  external origin errors. Defaults to false.
+                                description: |-
+                                  SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
+                                  Defaults to false.
                                 type: boolean
                             type: object
                           port:
@@ -7513,80 +7516,77 @@ spec:
                             Names defined here will be used to look up corresponding endpoints which contain the ips to route.
                           type: string
                         outlierDetection:
-                          description: The policy for managing outlier detection on
-                            a service. If not specified, the global OutlierDetection
-                            policy will be used.
+                          description: |-
+                            The policy for managing outlier detection on a service.
+                            If not specified, the global OutlierDetection policy will be used.
                           properties:
                             baseEjectionTime:
-                              description: BaseEjectionTime is the base time that
-                                a host is ejected for. A host will remain ejected
-                                for a period of time equal to the product of the ejection
-                                base duration and the number of times the host has
-                                been ejected. Defaults to 30s.
+                              description: |-
+                                BaseEjectionTime is the base time that a host is ejected for.
+                                A host will remain ejected for a period of time equal to the
+                                product of the ejection base duration and the number of times the host has been ejected.
+                                Defaults to 30s.
                               pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                               type: string
                             consecutiveLocalOriginFailure:
-                              description: ConsecutiveLocalOriginFailure defines the
-                                number of consecutive local origin failures before
-                                a consecutive local origin ejection occurs. Parameters
-                                take effect only when SplitExternalLocalOriginErrors
-                                is true. Defaults to 5.
+                              description: |-
+                                ConsecutiveLocalOriginFailure defines the number of consecutive local origin failures before a consecutive local origin ejection occurs.
+                                Parameters take effect only when SplitExternalLocalOriginErrors is true.
+                                Defaults to 5.
                               format: int32
                               type: integer
                             consecutiveServerErrors:
-                              description: ConsecutiveServerErrors defines The number
-                                of consecutive server-side error responses before
-                                a consecutive 5xx ejection occurs. When the backend
-                                host encounters consecutive errors greater than or
-                                equal to ConsecutiveServerErrors, it will be ejected
-                                from the load balancing pool. for HTTP services, a
-                                5xx counts as an error and for TCP services connection
-                                failures and connection timeouts count as an error.
-                                It can be disabled by setting the value to 0. Defaults
-                                to 5.
+                              description: |-
+                                ConsecutiveServerErrors defines The number of consecutive server-side error responses before a consecutive 5xx ejection occurs.
+                                When the backend host encounters consecutive
+                                errors greater than or equal to ConsecutiveServerErrors, it will be
+                                ejected from the load balancing pool.
+                                for HTTP services, a 5xx counts as an error and for TCP services
+                                connection failures and connection timeouts count as an error.
+                                It can be disabled by setting the value to 0.
+                                Defaults to 5.
                               format: int32
                               type: integer
                             disabled:
-                              description: Disabled configures the Service to not
-                                use the default global OutlierDetection policy defined
-                                by the Contour configuration. Defaults to false.
+                              description: |-
+                                Disabled configures the Service to not use
+                                the default global OutlierDetection policy defined by the Contour configuration.
+                                Defaults to false.
                               type: boolean
                             interval:
-                              description: Interval is the interval at which host
-                                status is evaluated. Defaults to 10s.
+                              description: |-
+                                Interval is the interval at which host status is evaluated.
+                                Defaults to 10s.
                               pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                               type: string
                             maxEjectionPercent:
-                              description: MaxEjectionPercent is the max percentage
-                                of hosts in the load balancing pool for the upstream
-                                service that can be ejected. But will eject at least
-                                one host regardless of the value here. Defaults to
-                                10%.
+                              description: |-
+                                MaxEjectionPercent is the max percentage of hosts in the load balancing pool for the upstream service that can be ejected.
+                                But will eject at least one host regardless of the value here.
+                                Defaults to 10%.
                               format: int32
                               maximum: 100
                               type: integer
                             maxEjectionTime:
-                              description: MaxEjectionTime is the maximum time a host
-                                will be ejected for. After this amount of time, a
-                                host will be returned to normal operation. If not
-                                specified, the default value (300s) or BaseEjectionTime
-                                value is applied, whatever is larger. Defaults to
-                                300s.
+                              description: |-
+                                MaxEjectionTime is the maximum time a host will be ejected for.
+                                After this amount of time, a host will be returned to normal operation.
+                                If not specified, the default value (300s) or BaseEjectionTime value is applied, whatever is larger.
+                                Defaults to 300s.
                               pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                               type: string
                             maxEjectionTimeJitter:
-                              description: MaxEjectionTimeJitter is The maximum amount
-                                of jitter to add to the ejection time, in order to
-                                prevent a ‘thundering herd’ effect where all proxies
-                                try to reconnect to host at the same time. Defaults
-                                to 0s.
+                              description: |-
+                                MaxEjectionTimeJitter is The maximum amount of jitter to add to the ejection time,
+                                in order to prevent a ‘thundering herd’ effect where all proxies try to reconnect to host at the same time.
+                                Defaults to 0s.
                               pattern: ^(((\d*(\.\d*)?s)|(\d*(\.\d*)?ms))+)$
                               type: string
                             splitExternalLocalOriginErrors:
                               default: false
-                              description: SplitExternalLocalOriginErrors defines
-                                whether to split the local origin errors from the
-                                external origin errors. Defaults to false.
+                              description: |-
+                                SplitExternalLocalOriginErrors defines whether to split the local origin errors from the external origin errors.
+                                Defaults to false.
                               type: boolean
                           type: object
                         port:
@@ -9314,6 +9314,421 @@ spec:
   selector:
     app: envoy
   type: LoadBalancer
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gateway-contour-test
+  namespace: gateway-contour-test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gateway-contour-test
+  namespace: gateway-contour-test
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - get
+      - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gateway-contour-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gateway-contour-test
+subjects:
+  - kind: ServiceAccount
+    name: gateway-contour-test
+    namespace: gateway-contour-test
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gateway-contour-test-rolebinding
+  namespace: gateway-contour-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: gateway-contour-test
+subjects:
+  - kind: ServiceAccount
+    name: gateway-contour-test
+    namespace: gateway-contour-test
+---
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gateway-contour-test
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+      - namespaces
+      - secrets
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - gatewayclasses
+      - gateways
+      - grpcroutes
+      - httproutes
+      - referencegrants
+      - tcproutes
+      - tlsroutes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - gatewayclasses/status
+      - gateways/status
+      - grpcroutes/status
+      - httproutes/status
+      - tcproutes/status
+      - tlsroutes/status
+    verbs:
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses/status
+    verbs:
+      - create
+      - get
+      - update
+  - apiGroups:
+      - projectcontour.io
+    resources:
+      - contourconfigurations
+      - extensionservices
+      - httpproxies
+      - tlscertificatedelegations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - projectcontour.io
+    resources:
+      - contourconfigurations/status
+      - extensionservices/status
+      - httpproxies/status
+    verbs:
+      - create
+      - get
+      - update
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: contour
+  name: contour
+  namespace: gateway-contour-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contour
+  template:
+    metadata:
+      labels:
+        app: contour
+    spec:
+      containers:
+      - args:
+        - serve
+        - --incluster
+        - --xds-address=0.0.0.0
+        - --xds-port=8001
+        - --insecure
+        - --ingress-class-name=gateway-contour-up
+        - --root-namespaces=gateway-contour-test
+        - --config-path=/config/contour.yaml
+        command: ["contour"]
+        image: ghcr.io/projectcontour/contour:main
+        imagePullPolicy: Always
+        name: contour
+        ports:
+        - containerPort: 8001
+          name: xds
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+        readinessProbe:
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        volumeMounts:
+          - name: contour-config
+            mountPath: /config
+            readOnly: true
+        env:
+        - name: CONTOUR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+      dnsPolicy: ClusterFirst
+      serviceAccountName: gateway-contour-test
+      volumes:
+        - name: contour-config
+          configMap:
+            name: contour
+            defaultMode: 0644
+            items:
+            - key: contour.yaml
+              path: contour.yaml
+---
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: gateway-contour-test
+data:
+  contour.yaml: |
+    #
+    # server:
+    #   determine which XDS Server implementation to utilize in Contour.
+    #   xds-server-type: contour
+    #
+    # Specify the Gateway API configuration.
+    gateway:
+      controllerName: projectcontour.io/gateway-controller-test
+    #
+    # should contour expect to be running inside a k8s cluster
+    # incluster: true
+    #
+    # path to kubeconfig (if not running inside a k8s cluster)
+    # kubeconfig: /path/to/.kube/config
+    #
+    # Disable RFC-compliant behavior to strip "Content-Length" header if
+    # "Tranfer-Encoding: chunked" is also set.
+    # disableAllowChunkedLength: false
+    #
+    # Disable Envoy's non-standard merge_slashes path transformation option
+    # that strips duplicate slashes from request URLs.
+    # disableMergeSlashes: false
+    #
+    # Disable HTTPProxy permitInsecure field
+    disablePermitInsecure: false
+    tls:
+    # minimum TLS version that Contour will negotiate
+    # minimum-protocol-version: "1.2"
+    # TLS ciphers to be supported by Envoy TLS listeners when negotiating
+    # TLS 1.2.
+    # cipher-suites:
+    # - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+    # - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+    # - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+    # - 'ECDHE-RSA-AES256-GCM-SHA384'
+    # Defines the Kubernetes name/namespace matching a secret to use
+    # as the fallback certificate when requests which don't match the
+    # SNI defined for a vhost.
+      fallback-certificate:
+    #   name: fallback-secret-name
+    #   namespace: projectcontour
+      envoy-client-certificate:
+    #   name: envoy-client-cert-secret-name
+    #   namespace: projectcontour
+    ####
+    # ExternalName Services are disabled by default due to CVE-2021-XXXXX
+    # You can re-enable them by setting this setting to `true`.
+    # This is not recommended without understanding the security implications.
+    # Please see the advisory at https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for the details.
+    # enableExternalNameService: false
+    ##
+    # Address to be placed in status.loadbalancer field of Ingress objects.
+    # May be either a literal IP address or a host name.
+    # The value will be placed directly into the relevant field inside the status.loadBalancer struct.
+    # ingress-status-address: local.projectcontour.io
+    ### Logging options
+    # Default setting
+    accesslog-format: envoy
+    # The default access log format is defined by Envoy but it can be customized by setting following variable.
+    # accesslog-format-string: "...\n"
+    # To enable JSON logging in Envoy
+    # accesslog-format: json
+    # accesslog-level: info
+    # The default fields that will be logged are specified below.
+    # To customise this list, just add or remove entries.
+    # The canonical list is available at
+    # https://godoc.org/github.com/projectcontour/contour/internal/envoy#JSONFields
+    # json-fields:
+    #   - "@timestamp"
+    #   - "authority"
+    #   - "bytes_received"
+    #   - "bytes_sent"
+    #   - "downstream_local_address"
+    #   - "downstream_remote_address"
+    #   - "duration"
+    #   - "method"
+    #   - "path"
+    #   - "protocol"
+    #   - "request_id"
+    #   - "requested_server_name"
+    #   - "response_code"
+    #   - "response_flags"
+    #   - "uber_trace_id"
+    #   - "upstream_cluster"
+    #   - "upstream_host"
+    #   - "upstream_local_address"
+    #   - "upstream_service_time"
+    #   - "user_agent"
+    #   - "x_forwarded_for"
+    #   - "grpc_status"
+    #   - "grpc_status_number"
+    #
+    # default-http-versions:
+    # - "HTTP/2"
+    # - "HTTP/1.1"
+    #
+    # The following shows the default proxy timeout settings.
+    # timeouts:
+    #   request-timeout: infinity
+    #   connection-idle-timeout: 60s
+    #   stream-idle-timeout: 5m
+    #   max-connection-duration: infinity
+    #   delayed-close-timeout: 1s
+    #   connection-shutdown-grace-period: 5s
+    #   connect-timeout: 2s
+    #
+    # Envoy cluster settings.
+    # cluster:
+    #   configure the cluster dns lookup family
+    #   valid options are: auto (default), v4, v6
+    #   dns-lookup-family: auto
+    #
+    # Envoy network settings.
+    # network:
+    #   Configure the number of additional ingress proxy hops from the
+    #   right side of the x-forwarded-for HTTP header to trust.
+    #   num-trusted-hops: 0
+    #   Configure the port used to access the Envoy Admin interface.
+    #   admin-port: 9001
+    #
+    # Configure an optional global rate limit service.
+    # rateLimitService:
+    #   Identifies the extension service defining the rate limit service,
+    #   formatted as <namespace>/<name>.
+    #   extensionService: projectcontour/ratelimit
+    #   Defines the rate limit domain to pass to the rate limit service.
+    #   Acts as a container for a set of rate limit definitions within
+    #   the RLS.
+    #   domain: contour
+    #   Defines whether to allow requests to proceed when the rate limit
+    #   service fails to respond with a valid rate limit decision within
+    #   the timeout defined on the extension service.
+    #   failOpen: false
+    #   Defines whether to include the X-RateLimit headers X-RateLimit-Limit,
+    #   X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF
+    #   Internet-Draft linked below), on responses to clients when the Rate
+    #   Limit Service is consulted for a request.
+    #   ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
+    #   enableXRateLimitHeaders: false
+    #   Defines whether to translate status code 429 to grpc code RESOURCE_EXHAUSTED
+    #   instead of the default UNAVAILABLE
+    #   enableResourceExhaustedCode: false
+    #
+    # Global Policy settings.
+    # policy:
+    #   # Default headers to set on all requests (unless set/removed on the HTTPProxy object itself)
+    #   request-headers:
+    #     set:
+    #       # example: the hostname of the Envoy instance that proxied the request
+    #       X-Envoy-Hostname: %HOSTNAME%
+    #       # example: add a l5d-dst-override header to instruct Linkerd what service the request is destined for
+    #       l5d-dst-override: %CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%
+    #   # default headers to set on all responses (unless set/removed on the HTTPProxy object itself)
+    #   response-headers:
+    #     set:
+    #       # example: Envoy flags that provide additional details about the response or connection
+    #       X-Envoy-Response-Flags: %RESPONSE_FLAGS%
+    #
+    # metrics:
+    #  contour:
+    #    address: 0.0.0.0
+    #    port: 8000
+    #    server-certificate-path: /path/to/server-cert.pem
+    #    server-key-path: /path/to/server-private-key.pem
+    #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
+    #  envoy:
+    #    address: 0.0.0.0
+    #    port: 8002
+    #    server-certificate-path: /path/to/server-cert.pem
+    #    server-key-path: /path/to/server-private-key.pem
+    #    ca-certificate-path: /path/to/root-ca-for-client-validation.pem
+    #
+    # listener:
+    #  connection-balancer: exact
+    #  socket-options:
+    #    tos: 64
+    #    traffic-class: 64
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: contour
+  namespace: gateway-contour-test
+spec:
+  ports:
+    - port: 8001
+      name: xds
+      protocol: TCP
+      targetPort: 8001
+  selector:
+    app: contour
+  type: ClusterIP
 
 ---
 apiVersion: apps/v1
