@@ -90,7 +90,7 @@ func ClusterScopedResourcePolicyRules() []rbacv1.PolicyRule {
 }
 
 func filterResources(resourcesToSkip []contourv1.Feature, resources ...string) []string {
-	if resourcesToSkip == nil || len(resourcesToSkip) == 0 {
+	if len(resourcesToSkip) == 0 {
 		return resources
 	}
 	filteredResources := []string{}

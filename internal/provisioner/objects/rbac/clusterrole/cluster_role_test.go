@@ -20,6 +20,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
+	"github.com/projectcontour/contour/internal/provisioner/slice"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -141,8 +142,8 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 			disabledFeatures:          []contourv1.Feature{"tlsroutes"},
 			clusterScopedResourceOnly: false,
 			expectedGateway: [][]string{
-				{"gateways", "httproutes", "grpcroutes", "tcproutes", "referencegrants", "backendtlspolicies"},
-				{"gateways/status", "httproutes/status", "grpcroutes/status", "tcproutes/status", "backendtlspolicies/status"},
+				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes"),
+				removeFromStringArray(util.GatewayGroupNamespacedResourceStatus, "tlsroutes/status"),
 			},
 			expectedContour: [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
 		},
@@ -153,19 +154,9 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 			clusterScopedResourceOnly: false,
 			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
 			expectedContour: [][]string{
-				{"httpproxies", "tlscertificatedelegations", "contourconfigurations"},
-				{"httpproxies/status", "contourconfigurations/status"},
+				removeFromStringArray(util.ContourGroupNamespacedResource, "extensionservices"),
+				removeFromStringArray(util.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
 			},
-		},
-		{
-			description:               "disable 2 features",
-			disabledFeatures:          []contourv1.Feature{"tlsroutes", "grpcroutes"},
-			clusterScopedResourceOnly: false,
-			expectedGateway: [][]string{
-				{"gateways", "httproutes", "tcproutes", "referencegrants", "backendtlspolicies"},
-				{"gateways/status", "httproutes/status", "tcproutes/status", "backendtlspolicies/status"},
-			},
-			expectedContour: [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
 		},
 		{
 			description:               "disable non-existent features",
@@ -179,12 +170,12 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 			disabledFeatures:          []contourv1.Feature{"grpcroutes", "tlsroutes", "extensionservices", "backendtlspolicies"},
 			clusterScopedResourceOnly: false,
 			expectedGateway: [][]string{
-				{"gateways", "httproutes", "tcproutes", "referencegrants"},
-				{"gateways/status", "httproutes/status", "tcproutes/status"},
+				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes", "grpcroutes", "backendtlspolicies"),
+				removeFromStringArray(util.GatewayGroupNamespacedResourceStatus, "tlsroutes/status", "grpcroutes/status", "backendtlspolicies/status"),
 			},
 			expectedContour: [][]string{
-				{"httpproxies", "tlscertificatedelegations", "contourconfigurations"},
-				{"httpproxies/status", "contourconfigurations/status"},
+				removeFromStringArray(util.ContourGroupNamespacedResource, "extensionservices"),
+				removeFromStringArray(util.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
 			},
 		},
 		{
@@ -220,4 +211,14 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 			}
 		})
 	}
+}
+
+func removeFromStringArray(arr []string, s ...string) []string {
+	res := []string{}
+	for _, a := range arr {
+		if !slice.ContainsString(s, a) {
+			res = append(res, a)
+		}
+	}
+	return res
 }
