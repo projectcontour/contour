@@ -756,9 +756,7 @@ var _ = Describe("Gateway provisioner", func() {
 							},
 							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									// TODO: set to from all for now
-									// The correct way would be label the testns-1, testns-2, testns-3, then select by label
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
