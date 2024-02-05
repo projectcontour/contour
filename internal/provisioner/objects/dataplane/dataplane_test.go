@@ -260,6 +260,27 @@ func checkDaemonSetHasMetricsPort(t *testing.T, ds *appsv1.DaemonSet, port int32
 	t.Errorf("container has unexpected metrics port %d", port)
 }
 
+func checkEnvoyDeploymentHasAffinity(t *testing.T, d *appsv1.Deployment, contour *model.Contour) {
+	t.Helper()
+	if apiequality.Semantic.DeepEqual(*d.Spec.Template.Spec.Affinity,
+		corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					{
+						Weight: int32(100),
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: EnvoyPodSelector(contour),
+							TopologyKey:   "kubernetes.io/hostname",
+						},
+					},
+				},
+			},
+		}) {
+		return
+	}
+	t.Errorf("container has unexpected affinity %v", d.Spec.Template.Spec.Affinity)
+}
+
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -360,6 +381,7 @@ func TestDesiredDeployment(t *testing.T) {
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	deploy := desiredDeployment(cntr, testContourImage, testEnvoyImage)
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.EnvoyDeploymentStrategy)
+	checkEnvoyDeploymentHasAffinity(t, deploy, cntr)
 }
 
 func TestNodePlacementDaemonSet(t *testing.T) {

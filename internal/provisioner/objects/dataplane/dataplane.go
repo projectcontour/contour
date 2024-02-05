@@ -431,8 +431,19 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 					Labels:      envoyPodLabels(contour),
 				},
 				Spec: corev1.PodSpec{
-					// TODO anti-affinity
-					Affinity:       nil,
+					Affinity: &corev1.Affinity{
+						PodAntiAffinity: &corev1.PodAntiAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+								{
+									Weight: int32(100),
+									PodAffinityTerm: corev1.PodAffinityTerm{
+										LabelSelector: EnvoyPodSelector(contour),
+										TopologyKey:   "kubernetes.io/hostname",
+									},
+								},
+							},
+						},
+					},
 					Containers:     containers,
 					InitContainers: initContainers,
 					Volumes: []corev1.Volume{
