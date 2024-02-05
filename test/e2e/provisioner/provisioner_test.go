@@ -770,7 +770,7 @@ var _ = Describe("Gateway provisioner", func() {
 			require.True(f.T(), ok, fmt.Sprintf("gateway is %v", gateway))
 			By("Skip reconciling TCPRoute if disabledFeatures includes it")
 
-			f.Fixtures.Echo.Deploy(namespace, "echo")
+			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 			route := &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -788,7 +788,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
 						{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 443, ref.To(int32(1))),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("echo-secure", 443, ref.To(int32(1))),
 						},
 					},
 				},
