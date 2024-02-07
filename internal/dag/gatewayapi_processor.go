@@ -221,6 +221,8 @@ func (p *GatewayAPIProcessor) processRoute(
 			p.resolveRouteRefs(route, routeParentStatus)
 		}
 
+		// Collect other Listeners with configured hostnames so we can
+		// calculate Listener/Route hostname intersection properly.
 		otherListenerHostnames := []string{}
 		for _, listener := range listeners {
 			name := string(listener.listener.Name)
