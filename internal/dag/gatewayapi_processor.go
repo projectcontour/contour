@@ -221,6 +221,14 @@ func (p *GatewayAPIProcessor) processRoute(
 			p.resolveRouteRefs(route, routeParentStatus)
 		}
 
+		otherListenerHostnames := []string{}
+		for _, listener := range listeners {
+			name := string(listener.listener.Name)
+			if _, ok := allowedListeners[name]; !ok && listener.listener.Hostname != nil && len(*listener.listener.Hostname) > 0 {
+				otherListenerHostnames = append(otherListenerHostnames, string(*listener.listener.Hostname))
+			}
+		}
+
 		// Keep track of the number of intersecting hosts
 		// between the route and all allowed listeners for
 		// this parent ref so that we can set the appropriate
@@ -244,7 +252,7 @@ func (p *GatewayAPIProcessor) processRoute(
 					routeHostnames = route.Spec.Hostnames
 				}
 
-				hosts, errs = p.computeHosts(routeHostnames, string(ptr.Deref(listener.listener.Hostname, "")))
+				hosts, errs = p.computeHosts(routeHostnames, string(ptr.Deref(listener.listener.Hostname, "")), otherListenerHostnames)
 				for _, err := range errs {
 					// The Gateway API spec does not indicate what to do if syntactically
 					// invalid hostnames make it through, we're using our best judgment here.
@@ -313,7 +321,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	listeners []*listenerInfo,
 	attachedRoutes map[string]int,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
-) []*listenerInfo {
+) map[string]*listenerInfo {
 	// Find the set of valid listeners that are relevant given this
 	// parent ref (either all of them, if the ref is to the entire
 	// gateway, or one of them, if the ref is to a specific listener,
@@ -331,7 +339,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 
 	// Now find the subset of those listeners that allow this route
 	// to select them, based on route kind and namespace.
-	var allowedListeners []*listenerInfo
+	allowedListeners := map[string]*listenerInfo{}
 
 	readyListenerCount := 0
 
@@ -356,7 +364,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 		attachedRoutes[string(selectedListener.listener.Name)]++
 
 		if selectedListener.ready {
-			allowedListeners = append(allowedListeners, selectedListener)
+			allowedListeners[string(selectedListener.listener.Name)] = selectedListener
 		}
 
 	}
@@ -836,7 +844,7 @@ func isSecretRef(certificateRef gatewayapi_v1.SecretObjectReference) bool {
 //     invalid and some condition should be added to the route. This shouldn't be
 //     possible because of kubebuilder+admission webhook validation but we're being
 //     defensive here.
-func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1.Hostname, listenerHostname string) (sets.Set[string], []error) {
+func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1.Hostname, listenerHostname string, otherListenerHosts []string) (sets.Set[string], []error) {
 	// The listener hostname is assumed to be valid because it's been run
 	// through the `gatewayapi.ValidateListeners` logic, so we don't need
 	// to validate it here.
@@ -854,6 +862,21 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1.Hostna
 	hostnames := sets.New[string]()
 	var errs []error
 
+	otherListenerIntersection := func(routeHostname, actualListenerHostname string) bool {
+		for _, listenerHostname := range otherListenerHosts {
+			if routeHostname == listenerHostname {
+				return true
+			}
+			if strings.HasPrefix(listenerHostname, "*") &&
+				hostnameMatchesWildcardHostname(routeHostname, listenerHostname) &&
+				len(listenerHostname) > len(actualListenerHostname) {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	for i := range routeHostnames {
 		routeHostname := string(routeHostnames[i])
 
@@ -864,17 +887,21 @@ func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1.Hostna
 		}
 
 		switch {
-		// No listener hostname: use the route hostname.
+		// No listener hostname: use the route hostname if
+		// it does not also intersect with another Listener.
 		case len(listenerHostname) == 0:
-			hostnames.Insert(routeHostname)
+			if !otherListenerIntersection(routeHostname, listenerHostname) {
+				hostnames.Insert(routeHostname)
+			}
 
 		// Listener hostname matches the route hostname: use it.
 		case listenerHostname == routeHostname:
 			hostnames.Insert(routeHostname)
 
-		// Listener has a wildcard hostname: check if the route hostname matches.
+		// Listener has a wildcard hostname: check if the route hostname matches
+		// but do not use it if it intersects with a more specific other Listener.
 		case strings.HasPrefix(listenerHostname, "*"):
-			if hostnameMatchesWildcardHostname(routeHostname, listenerHostname) {
+			if hostnameMatchesWildcardHostname(routeHostname, listenerHostname) && !otherListenerIntersection(routeHostname, listenerHostname) {
 				hostnames.Insert(routeHostname)
 			}
 

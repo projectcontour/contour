@@ -35,10 +35,11 @@ import (
 
 func TestComputeHosts(t *testing.T) {
 	tests := map[string]struct {
-		listenerHost string
-		hostnames    []gatewayapi_v1.Hostname
-		want         sets.Set[string]
-		wantError    []error
+		listenerHost       string
+		otherListenerHosts []string
+		hostnames          []gatewayapi_v1.Hostname
+		want               sets.Set[string]
+		wantError          []error
 	}{
 		"single host": {
 			listenerHost: "",
@@ -230,6 +231,75 @@ func TestComputeHosts(t *testing.T) {
 			want:      nil,
 			wantError: nil,
 		},
+		"empty listener host with other listener specific hosts that match route hostnames": {
+			listenerHost: "",
+			otherListenerHosts: []string{
+				"foo",
+			},
+			hostnames: []gatewayapi_v1.Hostname{
+				"foo",
+				"bar",
+				"*.foo",
+			},
+			want:      sets.New("bar", "*.foo"),
+			wantError: nil,
+		},
+		"empty listener host with other listener wildcard hosts that match route hostnames": {
+			listenerHost: "",
+			otherListenerHosts: []string{
+				"*.foo",
+			},
+			hostnames: []gatewayapi_v1.Hostname{
+				"a.bar",
+				"foo",
+				"a.foo",
+				"*.foo",
+			},
+			want:      sets.New("a.bar", "foo"),
+			wantError: nil,
+		},
+		"wildcard listener host with other listener specific hosts that match route hostnames": {
+			listenerHost: "*.foo",
+			otherListenerHosts: []string{
+				"a.foo",
+			},
+			hostnames: []gatewayapi_v1.Hostname{
+				"a.foo",
+				"c.b.foo",
+				"*.foo",
+			},
+			want:      sets.New("c.b.foo", "*.foo"),
+			wantError: nil,
+		},
+		"wildcard listener host with other listener more specific wildcard hosts that match route hostnames": {
+			listenerHost: "*.foo",
+			otherListenerHosts: []string{
+				"*.a.foo",
+			},
+			hostnames: []gatewayapi_v1.Hostname{
+				"a.foo",
+				"b.a.foo",
+				"d.c.foo",
+				"*.foo",
+				"*.b.a.foo",
+			},
+			want:      sets.New("a.foo", "d.c.foo", "*.foo"),
+			wantError: nil,
+		},
+		"wildcard listener host with other listener less specific wildcard hosts that match route hostnames": {
+			listenerHost: "*.a.foo",
+			otherListenerHosts: []string{
+				"*.foo",
+			},
+			hostnames: []gatewayapi_v1.Hostname{
+				"a.foo",
+				"b.a.foo",
+				"d.c.foo",
+				"*.a.foo",
+			},
+			want:      sets.New("b.a.foo", "*.a.foo"),
+			wantError: nil,
+		},
 	}
 
 	for name, tc := range tests {
@@ -238,7 +308,7 @@ func TestComputeHosts(t *testing.T) {
 				FieldLogger: fixture.NewTestLogger(t),
 			}
 
-			got, gotError := processor.computeHosts(tc.hostnames, tc.listenerHost)
+			got, gotError := processor.computeHosts(tc.hostnames, tc.listenerHost, tc.otherListenerHosts)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantError, gotError)
 		})
