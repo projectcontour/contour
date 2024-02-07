@@ -831,9 +831,13 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 				map[string]int{},
 				rpsu)
 
-			var want []*listenerInfo
-			for _, i := range tc.want {
-				want = append(want, tc.listeners[i])
+			var want map[string]*listenerInfo
+			if len(tc.want) > 0 {
+				want = map[string]*listenerInfo{}
+				for _, i := range tc.want {
+					listener := tc.listeners[i]
+					want[string(listener.listener.Name)] = listener
+				}
 			}
 
 			assert.Equal(t, want, got)
