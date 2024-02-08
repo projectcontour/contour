@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 
@@ -217,15 +217,15 @@ func TestDesiredDeployment(t *testing.T) {
 func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
 	testCases := []struct {
 		description string
-		namespaces  []string
+		namespaces  []contourv1.Namespace
 	}{
 		{
 			description: "several valid namespaces",
-			namespaces:  []string{"ns1", "ns2"},
+			namespaces:  []contourv1.Namespace{"ns1", "ns2"},
 		},
 		{
 			description: "single valid namespace",
-			namespaces:  []string{"ns1"},
+			namespaces:  []contourv1.Namespace{"ns1"},
 		},
 	}
 
@@ -239,7 +239,7 @@ func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
 			cntr.Spec.WatchNamespaces = tc.namespaces
 			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
 			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
-			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(append(tc.namespaces, cntr.Namespace), ","))
+			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(append(model.NamespacesToStrings(tc.namespaces), cntr.Namespace), ","))
 			checkContainerHasArg(t, container, arg)
 		})
 	}
@@ -275,15 +275,15 @@ func TestNodePlacementDeployment(t *testing.T) {
 func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
 	testCases := []struct {
 		description      string
-		disabledFeatures []contour_v1.Feature
+		disabledFeatures []contourv1.Feature
 	}{
 		{
-			description:      "several disabled features",
-			disabledFeatures: []contour_v1.Feature{"ns1", "ns2"},
+			description:      "disable 2 featuers",
+			disabledFeatures: []contourv1.Feature{"tlsroutes", "grpcroutes"},
 		},
 		{
-			description:      "single disabled features",
-			disabledFeatures: []contour_v1.Feature{"ns1"},
+			description:      "disable single feature",
+			disabledFeatures: []contourv1.Feature{"tlsroutes"},
 		},
 	}
 

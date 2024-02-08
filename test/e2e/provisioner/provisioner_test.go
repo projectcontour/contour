@@ -679,7 +679,7 @@ var _ = Describe("Gateway provisioner", func() {
 							return false
 						}
 						return e2e.HTTPRouteAccepted(hr)
-					}, 10*time.Second, time.Second, hr)
+					}, 20*time.Second, time.Second, hr)
 				}
 			}
 		})
@@ -768,8 +768,8 @@ var _ = Describe("Gateway provisioner", func() {
 				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 			})
 			require.True(f.T(), ok, fmt.Sprintf("gateway is %v", gateway))
-			By("Skip reconciling TCPRoute if disabledFeatures includes it")
 
+			By("Skip reconciling the TLSRoute if disabledFeatures includes it")
 			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 			route := &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -802,7 +802,7 @@ var _ = Describe("Gateway provisioner", func() {
 					return false
 				}
 				return e2e.TLSRouteAccepted(tr)
-			}, 10*time.Second, time.Second, tr)
+			}, 20*time.Second, time.Second, tr)
 		})
 	})
 })

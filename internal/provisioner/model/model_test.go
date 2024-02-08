@@ -11,27 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1
+package model
 
 import (
 	"reflect"
 	"testing"
+
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 func TestNamespacesToStrings(t *testing.T) {
 	testCases := []struct {
 		description   string
-		namespaces    []Namespace
+		namespaces    []contourv1.Namespace
 		expectStrings []string
 	}{
 		{
-			description:   "namespace 1",
-			namespaces:    []Namespace{},
+			description:   "no namespaces",
+			namespaces:    []contourv1.Namespace{},
 			expectStrings: []string{},
 		},
 		{
-			description:   "namespace 2",
-			namespaces:    []Namespace{"ns1", "ns2"},
+			description:   "2 namespaces",
+			namespaces:    []contourv1.Namespace{"ns1", "ns2"},
 			expectStrings: []string{"ns1", "ns2"},
 		},
 	}
@@ -40,6 +42,33 @@ func TestNamespacesToStrings(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			if !reflect.DeepEqual(NamespacesToStrings(tc.namespaces), tc.expectStrings) {
 				t.Errorf("expect converted strings %v is the same as %v", NamespacesToStrings(tc.namespaces), tc.expectStrings)
+			}
+		})
+	}
+}
+
+func TestFeaturesToStrings(t *testing.T) {
+	testCases := []struct {
+		description   string
+		features      []contourv1.Feature
+		expectStrings []string
+	}{
+		{
+			description:   "no features",
+			features:      []contourv1.Feature{},
+			expectStrings: []string{},
+		},
+		{
+			description:   "2 features",
+			features:      []contourv1.Feature{"tlsroutes", "grpcroutes"},
+			expectStrings: []string{"tlsroutes", "grpcroutes"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			if !reflect.DeepEqual(FeaturesToStrings(tc.features), tc.expectStrings) {
+				t.Errorf("expect converted strings %v is the same as %v", FeaturesToStrings(tc.features), tc.expectStrings)
 			}
 		})
 	}

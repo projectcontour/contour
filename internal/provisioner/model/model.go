@@ -254,11 +254,19 @@ type ContourSpec struct {
 	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
 	// to only watch these set of namespaces
 	// default is nil, contour will watch resource of all namespaces
-	WatchNamespaces []string
+	WatchNamespaces []contourv1.Namespace
 
 	// DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
 	// contour reconciler.
 	DisabledFeatures []contourv1.Feature
+}
+
+func NamespacesToStrings(ns []contourv1.Namespace) []string {
+	res := make([]string, len(ns))
+	for i, n := range ns {
+		res[i] = string(n)
+	}
+	return res
 }
 
 func FeaturesToStrings(fs []contourv1.Feature) []string {
