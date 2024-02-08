@@ -16,12 +16,14 @@ package dag
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -765,6 +767,245 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			}
 
 			assert.Equal(t, want, got)
+		})
+	}
+}
+
+func TestSortRoutes(t *testing.T) {
+	time1 := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+	time2 := time.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+	time3 := time.Date(2023, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+	tests := []struct {
+		name     string
+		m        map[types.NamespacedName]*gatewayapi_v1.HTTPRoute
+		expected []*gatewayapi_v1.HTTPRoute
+	}{
+		{
+			name: "3 httproutes, with different timestamp, earlier one should be first ",
+			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
+				{
+					Namespace: "ns", Name: "name1",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time3),
+					},
+				},
+				{
+					Namespace: "ns", Name: "name2",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time2),
+					},
+				},
+				{
+					Namespace: "ns", Name: "name3",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name1",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+			expected: []*gatewayapi_v1.HTTPRoute{
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name1",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time2),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time3),
+					},
+				},
+			},
+		},
+		{
+			name: "3 httproutes with same creation timestamp, smaller name comes first ",
+			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
+				{
+					Namespace: "ns", Name: "name3",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns", Name: "name2",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns", Name: "name1",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name1",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+			expected: []*gatewayapi_v1.HTTPRoute{
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name1",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+		},
+		{
+			name: "mixed order, two with same creation timestamp, two with same name",
+			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
+				{
+					Namespace: "ns1", Name: "name2",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time2),
+					},
+				},
+				{
+					Namespace: "ns2", Name: "name2",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns2",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns1", Name: "name1",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name1",
+						CreationTimestamp: meta_v1.NewTime(time2),
+					},
+				},
+			},
+			expected: []*gatewayapi_v1.HTTPRoute{
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns2",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name1",
+						CreationTimestamp: meta_v1.NewTime(time2),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time2),
+					},
+				},
+			},
+		},
+		{
+			name: "same name, same timestamp, different namespace",
+			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
+				{
+					Namespace: "ns3", Name: "name",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns3",
+						Name:              "name",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns2", Name: "name",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns2",
+						Name:              "name",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns1", Name: "name",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+			expected: []*gatewayapi_v1.HTTPRoute{
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns2",
+						Name:              "name",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns3",
+						Name:              "name",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			res := sortRoutes(tc.m)
+			assert.Equal(t, tc.expected, res)
 		})
 	}
 }

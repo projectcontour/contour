@@ -1517,3 +1517,7 @@ type SlowStartPolicy struct {
 
 // +kubebuilder:validation:Enum=grpcroutes;tlsroutes;extensionservices;backendtlspolicies
 type Feature string
+
+const (
+	KindHTTPProxy = "HTTPProxy"
+)

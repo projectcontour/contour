@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -153,8 +154,10 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
 
+	// sort httproutes based on age/name first
+	sortedHTTPRoutes := sortRoutes(p.source.httproutes)
 	// Process HTTPRoutes.
-	for _, httpRoute := range p.source.httproutes {
+	for _, httpRoute := range sortedHTTPRoutes {
 		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1.HTTPRoute{})
 	}
 
@@ -2409,4 +2412,25 @@ func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *
 	}
 
 	return p
+}
+
+// sort routes based on age in ascending order
+// if creation times are the same, sort based on name in ascending order
+func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewayapi_v1.HTTPRoute {
+	routes := []*gatewayapi_v1.HTTPRoute{}
+	for _, r := range m {
+		routes = append(routes, r)
+	}
+	sort.SliceStable(routes, func(i, j int) bool {
+		// if the creation time is the same, compare the route name
+		if routes[i].CreationTimestamp.Equal(&routes[j].CreationTimestamp) {
+			if routes[i].Name == routes[j].Name {
+				return routes[i].Namespace < routes[j].Namespace
+			}
+			return routes[i].Name < routes[j].Name
+		}
+		return routes[i].CreationTimestamp.Before(&routes[j].CreationTimestamp)
+	})
+
+	return routes
 }
