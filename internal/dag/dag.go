@@ -27,6 +27,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -394,6 +395,23 @@ func (r *Route) HasPathRegex() bool {
 	return ok
 }
 
+const KindHTTPProxy = "HTTPProxy"
+
+// SameRoute returns whether the route is the same as passed in route
+func (r *Route) SameRoute(route *Route) bool {
+	if r == nil && route == nil {
+		return true
+	}
+	if r == nil || route == nil {
+		return false
+	}
+	return r.Name == route.Name && r.Namespace == route.Namespace
+}
+
+func (r *Route) IsHTTPProxy() bool {
+	return r.Kind == contour_v1.KindHTTPProxy
+}
+
 // RouteTimeoutPolicy defines the timeout policy for a route.
 type RouteTimeoutPolicy struct {
 	// ResponseTimeout is the timeout applied to the response
@@ -749,13 +767,83 @@ type VirtualHost struct {
 	IPFilterRules []IPFilterRule
 
 	Routes map[string]*Route
+
+	// key is path + headerKey
+	RouteHeaderMatchMap map[string]*Route
+
+	// key is path + queryParamsKey
+	RouteQueryParamMatchMap map[string]*Route
 }
 
 func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
 		v.Routes = make(map[string]*Route)
 	}
+	// check if it's HTTPProxy type and there is existing RouteHeader or RouteQueryParams match this route candidate
+	if route.IsHTTPProxy() && v.hasMatchConflict(route) {
+		return
+	}
 	v.Routes[conditionsToString(route)] = route
+}
+
+func (v *VirtualHost) hasMatchConflict(route *Route) bool {
+	if v.hasHeaderMatchConflict(route) || v.hasQueryParamMatchConflict(route) {
+		return true
+	}
+	// first clean up maps in case there are stale match that were removed from Route CR, but not from the map
+	for k, r := range v.RouteHeaderMatchMap {
+		if r.SameRoute(route) {
+			delete(v.RouteHeaderMatchMap, k)
+		}
+	}
+	for k, r := range v.RouteQueryParamMatchMap {
+		if r.SameRoute(route) {
+			delete(v.RouteQueryParamMatchMap, k)
+		}
+	}
+	// add headerMatchCondition and QueryParamMatchCondition to maps
+	for _, hmc := range route.HeaderMatchConditions {
+		v.RouteHeaderMatchMap[route.PathMatchCondition.String()+","+hmc.String()] = route
+	}
+	for _, rqmc := range route.QueryParamMatchConditions {
+		v.RouteQueryParamMatchMap[route.PathMatchCondition.String()+","+rqmc.String()] = route
+	}
+
+	return false
+}
+
+// check if there is already a route with same header match exist
+func (v *VirtualHost) hasHeaderMatchConflict(route *Route) bool {
+	if v.RouteHeaderMatchMap == nil {
+		v.RouteHeaderMatchMap = make(map[string]*Route)
+		return false
+	}
+	for _, hmc := range route.HeaderMatchConditions {
+		if r, ok := v.RouteHeaderMatchMap[route.PathMatchCondition.String()+","+hmc.String()]; ok {
+			// if it's not the same route, then it's conflict
+			if r.SameRoute(route) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// check if there is already a route with same header match exist
+func (v *VirtualHost) hasQueryParamMatchConflict(route *Route) bool {
+	if v.RouteQueryParamMatchMap == nil {
+		v.RouteQueryParamMatchMap = make(map[string]*Route)
+		return false
+	}
+	for _, qpmc := range route.QueryParamMatchConditions {
+		if r, ok := v.RouteQueryParamMatchMap[route.PathMatchCondition.String()+","+qpmc.String()]; ok {
+			// if it's not the same route, then it's conflict
+			if r.SameRoute(route) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func conditionsToString(r *Route) string {
