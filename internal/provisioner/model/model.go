@@ -256,7 +256,7 @@ type ContourSpec struct {
 	// default is nil, contour will watch resource of all namespaces
 	WatchNamespaces []contourv1.Namespace
 
-	// DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
+	// DisabledFeatures defines an array of resources that will be ignored by
 	// contour reconciler.
 	DisabledFeatures []contourv1.Feature
 }

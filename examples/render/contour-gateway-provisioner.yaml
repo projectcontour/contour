@@ -1492,7 +1492,7 @@ spec:
                     type: object
                   disabledFeatures:
                     description: |-
-                      DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
+                      DisabledFeatures defines an array of resources that will be ignored by
                       contour reconciler.
                     items:
                       enum:

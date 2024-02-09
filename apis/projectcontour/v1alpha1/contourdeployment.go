@@ -132,7 +132,7 @@ type ContourSettings struct {
 	// +kubebuilder:validation:MaxItems=42
 	WatchNamespaces []contour_api_v1.Namespace `json:"watchNamespaces,omitempty"`
 
-	// DisabledFeatures defines an array of Gateway API CRDs that will be ignored by
+	// DisabledFeatures defines an array of resources that will be ignored by
 	// contour reconciler.
 	// +optional
 	// +kubebuilder:validation:Type=array
