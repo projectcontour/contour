@@ -1,4 +1,4 @@
-# Troubleshooting common errors
+# Troubleshooting Common Proxy Errors
 
 ## Unexpected HTTP errors
 

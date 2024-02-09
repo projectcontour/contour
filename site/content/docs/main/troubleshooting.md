@@ -2,7 +2,7 @@
 
 If you encounter issues, follow the guides below for help. For topics not covered here, you can [file an issue][0], or talk to us on the [#contour channel][1] on Kubernetes Slack.
 
-### [Troubleshooting Common Errors][2]
+### [Troubleshooting Common Proxy Errors][2]
 A guide on how to investigate common errors with Contour and Envoy.
 
 ### [Envoy Administration Access][3]
@@ -28,7 +28,7 @@ Read the linked document if you have Envoy containers stuck in an unready/draini
 
 [0]: {{< param github_url >}}/issues
 [1]: {{< param slack_url >}}
-[2]: /docs/{{< param latest_version >}}/troubleshooting/common-errors/
+[2]: /docs/{{< param latest_version >}}/troubleshooting/common-proxy-errors/
 [3]: /docs/{{< param latest_version >}}/troubleshooting/envoy-admin-interface/
 [4]: /docs/{{< param latest_version >}}/troubleshooting/contour-debug-log/
 [5]: /docs/{{< param latest_version >}}/troubleshooting/envoy-debug-log/
