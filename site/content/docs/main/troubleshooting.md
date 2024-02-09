@@ -28,14 +28,14 @@ Read the linked document if you have Envoy containers stuck in an unready/draini
 
 [0]: {{< param github_url >}}/issues
 [1]: {{< param slack_url >}}
-[2]: /docs/{{< param latest_version >}}/troubleshooting/common-proxy-errors/
-[3]: /docs/{{< param latest_version >}}/troubleshooting/envoy-admin-interface/
-[4]: /docs/{{< param latest_version >}}/troubleshooting/contour-debug-log/
-[5]: /docs/{{< param latest_version >}}/troubleshooting/envoy-debug-log/
-[6]: /docs/{{< param latest_version >}}/troubleshooting/contour-graph/
-[7]: /docs/{{< param latest_version >}}/troubleshooting/contour-xds-resources/
-[8]: /docs/{{< param latest_version >}}/troubleshooting/profiling-contour/
+[2]: /docs/{{< param version >}}/troubleshooting/common-proxy-errors/
+[3]: /docs/{{< param version >}}/troubleshooting/envoy-admin-interface/
+[4]: /docs/{{< param version >}}/troubleshooting/contour-debug-log/
+[5]: /docs/{{< param version >}}/troubleshooting/envoy-debug-log/
+[6]: /docs/{{< param version >}}/troubleshooting/contour-graph/
+[7]: /docs/{{< param version >}}/troubleshooting/contour-xds-resources/
+[8]: /docs/{{< param version >}}/troubleshooting/profiling-contour/
 [9]: https://en.wikipedia.org/wiki/Dot
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol
 [11]: https://golang.org/pkg/net/http/pprof/
-[12]: /docs/{{< param latest_version >}}/troubleshooting/envoy-container-draining/
+[12]: /docs/{{< param version >}}/troubleshooting/envoy-container-draining/
