@@ -58,8 +58,8 @@ func desiredClusterRole(name string, contour *model.Contour, clusterScopedResour
 		return role
 	}
 
-	// add basic rules to role
-	role.Rules = append(role.Rules, util.NamespacedResourcePolicyRules()...)
+	// add other rules for namespacedResources, so that we can associated them with ClusterRole later
+	role.Rules = append(role.Rules, util.NamespacedResourcePolicyRules(contour.Spec.DisabledFeatures)...)
 	return role
 }
 

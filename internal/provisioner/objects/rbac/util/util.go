@@ -14,6 +14,11 @@
 package util
 
 import (
+	"strings"
+
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/slice"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -22,6 +27,13 @@ import (
 )
 
 const contourV1GroupName = "projectcontour.io"
+
+var (
+	GatewayGroupNamespacedResource       = []string{"gateways", "httproutes", "tlsroutes", "grpcroutes", "tcproutes", "referencegrants", "backendtlspolicies"}
+	GatewayGroupNamespacedResourceStatus = []string{"gateways/status", "httproutes/status", "tlsroutes/status", "grpcroutes/status", "tcproutes/status", "backendtlspolicies/status"}
+	ContourGroupNamespacedResource       = []string{"httpproxies", "tlscertificatedelegations", "extensionservices", "contourconfigurations"}
+	ContourGroupNamespacedResourceStatus = []string{"httpproxies/status", "extensionservices/status", "contourconfigurations/status"}
+)
 
 var (
 	createGetUpdate = []string{"create", "get", "update"}
@@ -39,8 +51,9 @@ func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbacv1.
 }
 
 // NamespacedResourcePolicyRules returns a set of policy rules for resources that are
-// namespaced-scoped
-func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
+// namespaced-scoped. If resourcesToSkip is not empty, skip creating RBAC for those
+// CRDs.
+func NamespacedResourcePolicyRules(resourcesToSkip []contourv1.Feature) []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
 		// Core Contour-watched resources.
 		PolicyRuleFor(corev1.GroupName, getListWatch, "secrets", "endpoints", "services", "configmaps"),
@@ -50,16 +63,16 @@ func NamespacedResourcePolicyRules() []rbacv1.PolicyRule {
 
 		// Gateway API resources.
 		// Note, ReferenceGrant does not currently have a .status field so it's omitted from the status rule.
-		PolicyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gateways", "httproutes", "tlsroutes", "grpcroutes", "tcproutes", "referencegrants", "backendtlspolicies"),
-		PolicyRuleFor(gatewayv1alpha2.GroupName, update, "gateways/status", "httproutes/status", "tlsroutes/status", "grpcroutes/status", "tcproutes/status", "backendtlspolicies/status"),
+		PolicyRuleFor(gatewayv1alpha2.GroupName, getListWatch, filterResources(resourcesToSkip, GatewayGroupNamespacedResource...)...),
+		PolicyRuleFor(gatewayv1alpha2.GroupName, update, filterResources(resourcesToSkip, GatewayGroupNamespacedResourceStatus...)...),
 
 		// Ingress resources.
 		PolicyRuleFor(networkingv1.GroupName, getListWatch, "ingresses"),
 		PolicyRuleFor(networkingv1.GroupName, createGetUpdate, "ingresses/status"),
 
 		// Contour CRDs.
-		PolicyRuleFor(contourV1GroupName, getListWatch, "httpproxies", "tlscertificatedelegations", "extensionservices", "contourconfigurations"),
-		PolicyRuleFor(contourV1GroupName, createGetUpdate, "httpproxies/status", "extensionservices/status", "contourconfigurations/status"),
+		PolicyRuleFor(contourV1GroupName, getListWatch, filterResources(resourcesToSkip, ContourGroupNamespacedResource...)...),
+		PolicyRuleFor(contourV1GroupName, createGetUpdate, filterResources(resourcesToSkip, ContourGroupNamespacedResourceStatus...)...),
 	}
 }
 
@@ -74,4 +87,24 @@ func ClusterScopedResourcePolicyRules() []rbacv1.PolicyRule {
 		// Namespaces
 		PolicyRuleFor(corev1.GroupName, getListWatch, "namespaces"),
 	}
+}
+
+func filterResources(resourcesToSkip []contourv1.Feature, resources ...string) []string {
+	if len(resourcesToSkip) == 0 {
+		return resources
+	}
+	filteredResources := []string{}
+	rts := model.FeaturesToStrings(resourcesToSkip)
+	for _, resource := range resources {
+		resourceCopy := resource
+		// handle status resources by splitting and using the first part
+		if strings.Contains(resourceCopy, "/") {
+			parts := strings.Split(resourceCopy, "/")
+			resourceCopy = parts[0]
+		}
+		if !slice.ContainsString(rts, resourceCopy) {
+			filteredResources = append(filteredResources, resource)
+		}
+	}
+	return filteredResources
 }

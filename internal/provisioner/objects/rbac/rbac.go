@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrole"
@@ -81,7 +82,7 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		// includes contour's namespace if it's not inside watchNamespaces
-		ns := contour.Spec.WatchNamespaces
+		ns := model.NamespacesToStrings(contour.Spec.WatchNamespaces)
 		if !slice.ContainsString(ns, contour.Namespace) {
 			ns = append(ns, contour.Namespace)
 		}
@@ -178,12 +179,12 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 	return nil
 }
 
-func validateNamespacesExist(ctx context.Context, cli client.Client, ns []string) error {
+func validateNamespacesExist(ctx context.Context, cli client.Client, ns []contourv1.Namespace) error {
 	errs := []error{}
 	for _, n := range ns {
 		namespace := &corev1.Namespace{}
 		// Check if the namespace exists
-		err := cli.Get(ctx, types.NamespacedName{Name: n}, namespace)
+		err := cli.Get(ctx, types.NamespacedName{Name: string(n)}, namespace)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("failed to find namespace %s in watchNamespace. Please make sure it exist", n))

@@ -1514,3 +1514,6 @@ type SlowStartPolicy struct {
 	// +kubebuilder:validation:Maximum=100
 	MinimumWeightPercent uint32 `json:"minWeightPercent"`
 }
+
+// +kubebuilder:validation:Enum=grpcroutes;tlsroutes;extensionservices;backendtlspolicies
+type Feature string

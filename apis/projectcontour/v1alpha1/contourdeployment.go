@@ -131,6 +131,14 @@ type ContourSettings struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=42
 	WatchNamespaces []contour_api_v1.Namespace `json:"watchNamespaces,omitempty"`
+
+	// DisabledFeatures defines an array of resources that will be ignored by
+	// contour reconciler.
+	// +optional
+	// +kubebuilder:validation:Type=array
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=42
+	DisabledFeatures []contour_api_v1.Feature `json:"disabledFeatures,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -540,7 +541,7 @@ var _ = Describe("Gateway provisioner", func() {
 			params := &contour_api_v1alpha1.ContourDeployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
-					Name:      "contour-params-with-watch-namespaces",
+					Name:      objectTestName,
 				},
 				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: contourDeploymentRuntimeSettings(),
@@ -669,6 +670,7 @@ var _ = Describe("Gateway provisioner", func() {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
 					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIgnoredByContour)
+					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
 
 					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted for a period of time", t.namespace))
 					require.Never(f.T(), func() bool {
@@ -677,12 +679,132 @@ var _ = Describe("Gateway provisioner", func() {
 							return false
 						}
 						return e2e.HTTPRouteAccepted(hr)
-					}, 10*time.Second, time.Second, hr)
-					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
+					}, 20*time.Second, time.Second, hr)
 				}
 			}
 		})
 	}, "testns-1", "testns-2", "testns-3")
+	f.NamespacedTest("gateway-with-envoy-with-disabled-features", func(namespace string) {
+		objectTestName := "contour-params-with-disabled-features"
+		BeforeEach(func() {
+			By("create gatewayclass that reference contourDeployment with disabled-features value")
+			gatewayClass := &gatewayapi_v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: objectTestName,
+				},
+				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Namespace: ref.To(gatewayapi_v1beta1.Namespace(namespace)),
+						Name:      objectTestName,
+					},
+				},
+			}
+			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted)
+			require.True(f.T(), ok)
+
+			// Now create the ContourDeployment to match the parametersRef.
+			params := &contour_api_v1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      objectTestName,
+				},
+				Spec: contour_api_v1alpha1.ContourDeploymentSpec{
+					RuntimeSettings: contourDeploymentRuntimeSettings(),
+					Contour: &contour_api_v1alpha1.ContourSettings{
+						DisabledFeatures: []contour_api_v1.Feature{"tlsroutes"},
+					},
+				},
+			}
+			require.NoError(f.T(), f.Client.Create(context.Background(), params))
+
+			// Now the GatewayClass should be accepted.
+			require.Eventually(f.T(), func() bool {
+				gc := &gatewayapi_v1beta1.GatewayClass{}
+				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(gatewayClass), gc); err != nil {
+					return false
+				}
+
+				return e2e.GatewayClassAccepted(gc)
+			}, time.Minute, time.Second)
+		})
+		AfterEach(func() {
+			require.NoError(f.T(), f.DeleteGatewayClass(&gatewayapi_v1beta1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: objectTestName,
+				},
+			}, false))
+		})
+		Specify("A gateway can be provisioned that ignore CRDs in disabledFeatures", func() {
+			By("Deploy gateway that referencing above gatewayclass")
+			gateway := &gatewayapi_v1beta1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: namespace,
+				},
+				Spec: gatewayapi_v1beta1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1beta1.ObjectName(objectTestName),
+					Listeners: []gatewayapi_v1beta1.Listener{
+						{
+							Name:     "https",
+							Protocol: gatewayapi_v1.TLSProtocolType,
+							Port:     gatewayapi_v1beta1.PortNumber(443),
+							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
+							},
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1beta1.Gateway) bool {
+				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
+			})
+			require.True(f.T(), ok, fmt.Sprintf("gateway is %v", gateway))
+
+			By("Skip reconciling the TLSRoute if disabledFeatures includes it")
+			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
+			route := &gatewayapi_v1alpha2.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "tlsroute-1",
+				},
+				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+							{
+								Namespace: ref.To(gatewayapi_v1alpha2.Namespace(gateway.Namespace)),
+								Name:      gatewayapi_v1alpha2.ObjectName(gateway.Name),
+							},
+						},
+					},
+					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
+						{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("echo-secure", 443, ref.To(int32(1))),
+						},
+					},
+				},
+			}
+			tr, ok := f.CreateTLSRouteAndWaitFor(route, e2e.TLSRouteIgnoredByContour)
+			require.True(f.T(), ok, fmt.Sprintf("tlsroute's is %v", tr))
+			By("Expect tlsroute not to be accepted")
+			require.Never(f.T(), func() bool {
+				tr = &gatewayapi_v1alpha2.TLSRoute{}
+				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(tr), tr); err != nil {
+					return false
+				}
+				return e2e.TLSRouteAccepted(tr)
+			}, 20*time.Second, time.Second, tr)
+		})
+	})
 })
 
 func contourDeploymentRuntimeSettings() *contour_api_v1alpha1.ContourConfigurationSpec {

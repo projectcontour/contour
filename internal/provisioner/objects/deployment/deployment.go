@@ -103,11 +103,15 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	}
 
 	if !contour.WatchAllNamespaces() {
-		ns := contour.Spec.WatchNamespaces
-		if !slices.Contains(contour.Spec.WatchNamespaces, contour.Namespace) {
+		ns := model.NamespacesToStrings(contour.Spec.WatchNamespaces)
+		if !slices.Contains(ns, contour.Namespace) {
 			ns = append(ns, contour.Namespace)
 		}
 		args = append(args, fmt.Sprintf("--watch-namespaces=%s", strings.Join(ns, ",")))
+	}
+
+	if contour.Spec.DisabledFeatures != nil && len(contour.Spec.DisabledFeatures) > 0 {
+		args = append(args, fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(contour.Spec.DisabledFeatures), ",")))
 	}
 
 	// Pass the insecure/secure flags to Contour if using non-default ports.

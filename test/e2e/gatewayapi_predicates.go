@@ -145,6 +145,31 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	return false
 }
 
+// TLSRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
+func TLSRouteIgnoredByContour(route *gatewayapi_v1alpha2.TLSRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	return len(route.Status.Parents) == 0
+}
+
+// TLSRouteAccepted returns true if the route has a .status.conditions
+// entry of "Accepted: true".
+func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), metav1.ConditionTrue) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
 // entry of "Accepted: true".
 func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {

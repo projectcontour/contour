@@ -1176,6 +1176,14 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.Feature">Feature
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
+<p>
+</p>
 <h3 id="projectcontour.io/v1.GenericKeyDescriptor">GenericKeyDescriptor
 </h3>
 <p>
@@ -6282,6 +6290,22 @@ the annotations for Prometheus will be appended or overwritten with predefined v
 <em>(Optional)</em>
 <p>WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
 to only watch this subset of namespaces.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disabledFeatures</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Feature">
+[]Feature
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisabledFeatures defines an array of resources that will be ignored by
+contour reconciler.</p>
 </td>
 </tr>
 </tbody>
