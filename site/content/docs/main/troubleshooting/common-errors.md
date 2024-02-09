@@ -42,7 +42,7 @@ We'll include example error cases to debug with these steps.
       * `NR`: No configured route matching the request
     * `%DURATION%`: Can correlate this with any configured timeouts
     * `%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%`: Can correlate this with any configured timeouts. If `-` then this is a hint the request was never forwarded to the upstream.
-    * `%UPSTREAM_HOST%`: Can be used to verify the exact upstream instance/pod that might be erroring.
+    * `%UPSTREAM_HOST%`: This is the IP of the upstream pod that was selected to proxy the request to and can be used to verify the exact upstream instance that might be erroring.
 
     For example in this access log:
 
@@ -55,6 +55,33 @@ We'll include example error cases to debug with these steps.
     It is likely in this case that Envoy was not able to establish a connection to the upstream.
     That is further supported by the request duration of `1998` which is approximately the default upstream connection timeout of `2s`.
 
+1. Inspect Envoy metrics
+
+   This method of debugging can be useful especially for deployments that service a large volume of traffic.
+   In this case, access logs are possibly not suitable to use, as the volume of logs may be too large to pinpoint an exact erroring request.
+
+   Metrics from individual Envoy instances can be viewed manually or scraped using Envoy's prometheus endpoints and graphed using common visualization tools.
+   See the `/stats/prometheus` endpoint of the [Envoy admin interface][3].
+
+   Metrics that may be useful to inspect:
+   * [Listener metrics][4]
+     * `downstream_cx_total`
+     * `ssl.connection_error`
+   * [HTTP metrics][5]
+     * `downstream_cx_total`
+     * `downstream_cx_protocol_error`
+     * `downstream_rq_total`
+     * `downstream_rq_rx_reset`
+     * `downstream_rq_tx_reset`
+     * `downstream_rq_timeout`
+     * `downstream_rq_5xx` (and other status code groups)
+   * [Upstream metrics][6]
+     * `upstream_cx_total`
+     * `upstream_cx_connect_fail`
+     * `upstream_cx_connect_timeout`
+     * `upstream_rq_total`
+     * `upstream_rq_timeout`
+
 1. Send a direct request to the backend app to narrow down where the error may be originating.
 
     This can be done via a port-forward to send a request to the app directly, skipping over the Envoy proxy.
@@ -63,3 +90,7 @@ We'll include example error cases to debug with these steps.
 [0]: /docs/{{< param latest_version >}}/config/access-logging/
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#default-format-string
 [2]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-response-flags
+[3]: /docs/{{< param latest_version >}}/guides/prometheus/#envoy-metrics
+[4]: https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/stats
+[5]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/stats
+[6]: https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats
