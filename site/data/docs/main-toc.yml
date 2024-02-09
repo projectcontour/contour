@@ -101,6 +101,8 @@ toc:
         url: /guides/resource-limits/
   - title: Troubleshooting
     subfolderitems:
+      - page: Troubleshooting Common Proxy Errors
+        url: /troubleshooting/common-proxy-errors
       - page: Envoy Administration Access
         url: /troubleshooting/envoy-admin-interface
       - page: Contour Debug Logging
