@@ -1,1 +1,0 @@
-Updates HTTP filter names to match between the HTTP connection manager and per-filter config on virtual hosts/routes, and to use canonical names.

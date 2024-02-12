@@ -1,1 +1,0 @@
-The `ContourDeployment.Spec.ResourceLabels` field is now deprecated. You should use `Gateway.Spec.Infrastructure.Labels` instead. The `ResourceLabels` field will be removed in a future release.
