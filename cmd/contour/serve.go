@@ -642,7 +642,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	needsNotification := s.setupGatewayAPI(contourConfiguration, eventHandler)
+	s.setupGatewayAPI(contourConfiguration, eventHandler)
 
 	// Inform on secrets, filtering by root namespaces.
 	var handler cache.ResourceEventHandler = eventHandler
@@ -744,10 +744,7 @@ func (s *Server) doServe() error {
 	}
 
 	notifier := &leadership.Notifier{
-		ToNotify: append([]leadership.NeedLeaderElectionNotification{
-			contourHandler,
-			observer,
-		}, needsNotification...),
+		ToNotify: []leadership.NeedLeaderElectionNotification{contourHandler, observer},
 	}
 	if err := s.mgr.Add(notifier); err != nil {
 		return err
@@ -1015,81 +1012,38 @@ func (s *Server) setupHealth(healthConfig contour_v1alpha1.HealthConfig,
 	return nil
 }
 
-func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourConfigurationSpec, eventHandler *contour.EventRecorder) []leadership.NeedLeaderElectionNotification {
-	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
-
-	// Check if GatewayAPI is configured.
+func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourConfigurationSpec, eventHandler *contour.EventRecorder) {
+	// Watch resources for Gateway API if enabled.
 	if contourConfiguration.Gateway != nil && contourConfiguration.Gateway.GatewayRef != nil {
-		// Inform on GatewayClasses.
-		if err := s.informOnResource(&gatewayapi_v1.GatewayClass{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")
+		resources := map[string]client.Object{
+			"gatewayclasses":     &gatewayapi_v1.GatewayClass{},
+			"gateways":           &gatewayapi_v1.Gateway{},
+			"httproutes":         &gatewayapi_v1.HTTPRoute{},
+			"referencegrants":    &gatewayapi_v1beta1.ReferenceGrant{},
+			"namespaces":         &core_v1.Namespace{},
+			"tlsroutes":          &gatewayapi_v1alpha2.TLSRoute{},
+			"grpcroutes":         &gatewayapi_v1alpha2.GRPCRoute{},
+			"tcproutes":          &gatewayapi_v1alpha2.TCPRoute{},
+			"backendtlspolicies": &gatewayapi_v1alpha2.BackendTLSPolicy{},
+			"configmaps":         &core_v1.ConfigMap{},
 		}
 
-		// Inform on Gateways.
-		if err := s.informOnResource(&gatewayapi_v1.Gateway{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "gateways").Fatal("failed to create informer")
-		}
+		for _, disabled := range s.ctx.disabledFeatures {
+			delete(resources, disabled)
 
-		// Inform on HTTPRoutes.
-		if err := s.informOnResource(&gatewayapi_v1.HTTPRoute{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "httproutes").Fatal("failed to create informer")
-		}
-
-		// Inform on ReferenceGrants.
-		if err := s.informOnResource(&gatewayapi_v1beta1.ReferenceGrant{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "referencegrants").Fatal("failed to create informer")
-		}
-
-		// Inform on Namespaces.
-		if err := s.informOnResource(&core_v1.Namespace{}, eventHandler); err != nil {
-			s.log.WithError(err).WithField("resource", "namespaces").Fatal("failed to create informer")
-		}
-
-		// Some features may be disabled.
-		features := map[string]struct{}{
-			"tlsroutes":          {},
-			"grpcroutes":         {},
-			"tcproutes":          {},
-			"backendtlspolicies": {},
-		}
-		for _, f := range s.ctx.disabledFeatures {
-			delete(features, f)
-		}
-
-		// Inform on TLSRoutes, if enabled.
-		if _, enabled := features["tlsroutes"]; enabled {
-			if err := s.informOnResource(&gatewayapi_v1alpha2.TLSRoute{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "tlsroutes").Fatal("failed to create informer")
+			if disabled == "backendtlspolicies" {
+				// ConfigMaps are only watched because they're
+				// used by BackendTLSPolicies.
+				delete(resources, "configmaps")
 			}
 		}
 
-		// Inform on GRPCRoutes, if enabled.
-		if _, enabled := features["grpcroutes"]; enabled {
-			if err := s.informOnResource(&gatewayapi_v1alpha2.GRPCRoute{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "grpcroutes").Fatal("failed to create informer")
+		for name, obj := range resources {
+			if err := s.informOnResource(obj, eventHandler); err != nil {
+				s.log.WithError(err).WithField("resource", name).Fatal("failed to create informer")
 			}
-		}
-
-		// Inform on TCPRoutes, if enabled.
-		if _, enabled := features["tcproutes"]; enabled {
-			if err := s.informOnResource(&gatewayapi_v1alpha2.TCPRoute{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "tcproutes").Fatal("failed to create informer")
-			}
-		}
-
-		// Inform on BackendTLSPolicies, if enabled, along with ConfigMaps.
-		if _, enabled := features["backendtlspolicies"]; enabled {
-			if err := s.informOnResource(&gatewayapi_v1alpha2.BackendTLSPolicy{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "backendtlspolicies").Fatal("failed to create informer")
-			}
-
-			if err := s.informOnResource(&core_v1.ConfigMap{}, eventHandler); err != nil {
-				s.log.WithError(err).WithField("resource", "configmaps").Fatal("failed to create informer")
-			}
-
 		}
 	}
-	return needLeadershipNotification
 }
 
 type dagBuilderConfig struct {
