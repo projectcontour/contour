@@ -37,12 +37,13 @@ const ValidCondition ConditionType = "Valid"
 // NewCache creates a new Cache for holding status updates.
 func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1beta1.GatewayController) Cache {
 	return Cache{
-		gatewayRef:        gateway,
-		gatewayController: gatewayController,
-		proxyUpdates:      make(map[types.NamespacedName]*ProxyUpdate),
-		gatewayUpdates:    make(map[types.NamespacedName]*GatewayStatusUpdate),
-		routeUpdates:      make(map[types.NamespacedName]*RouteStatusUpdate),
-		entries:           make(map[string]map[types.NamespacedName]CacheEntry),
+		gatewayRef:              gateway,
+		gatewayController:       gatewayController,
+		proxyUpdates:            make(map[types.NamespacedName]*ProxyUpdate),
+		gatewayUpdates:          make(map[types.NamespacedName]*GatewayStatusUpdate),
+		routeUpdates:            make(map[types.NamespacedName]*RouteStatusUpdate),
+		backendTLSPolicyUpdates: make(map[types.NamespacedName]*BackendTLSPolicyStatusUpdate),
+		entries:                 make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
 
@@ -58,9 +59,10 @@ type Cache struct {
 	gatewayRef        types.NamespacedName
 	gatewayController gatewayapi_v1beta1.GatewayController
 
-	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
-	gatewayUpdates map[types.NamespacedName]*GatewayStatusUpdate
-	routeUpdates   map[types.NamespacedName]*RouteStatusUpdate
+	proxyUpdates            map[types.NamespacedName]*ProxyUpdate
+	gatewayUpdates          map[types.NamespacedName]*GatewayStatusUpdate
+	routeUpdates            map[types.NamespacedName]*RouteStatusUpdate
+	backendTLSPolicyUpdates map[types.NamespacedName]*BackendTLSPolicyStatusUpdate
 
 	// Map of cache entry maps, keyed on Kind.
 	entries map[string]map[types.NamespacedName]CacheEntry
@@ -95,6 +97,16 @@ func (c *Cache) Put(obj metav1.Object, e CacheEntry) {
 // As more kinds are handled by Cache, we'll update this method.
 func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	var flattened []k8s.StatusUpdate
+
+	for fullname, backendTLSPolicyUpdate := range c.backendTLSPolicyUpdates {
+		update := k8s.StatusUpdate{
+			NamespacedName: fullname,
+			Resource:       backendTLSPolicyUpdate.Resource,
+			Mutator:        backendTLSPolicyUpdate,
+		}
+
+		flattened = append(flattened, update)
+	}
 
 	for fullname, pu := range c.proxyUpdates {
 		update := k8s.StatusUpdate{
@@ -160,6 +172,15 @@ func (c *Cache) GetGatewayUpdates() []*GatewayStatusUpdate {
 func (c *Cache) GetRouteUpdates() []*RouteStatusUpdate {
 	var allUpdates []*RouteStatusUpdate
 	for _, conditionsUpdate := range c.routeUpdates {
+		allUpdates = append(allUpdates, conditionsUpdate)
+	}
+	return allUpdates
+}
+
+// GetBackendTLSPolicyUpdates gets the underlying BackendTLSPolicyConditionsUpdate objects from the cache.
+func (c *Cache) GetBackendTLSPolicyUpdates() []*BackendTLSPolicyStatusUpdate {
+	var allUpdates []*BackendTLSPolicyStatusUpdate
+	for _, conditionsUpdate := range c.backendTLSPolicyUpdates {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
 	return allUpdates
@@ -240,5 +261,27 @@ func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation 
 			return
 		}
 		c.routeUpdates[pu.FullName] = pu
+	}
+}
+
+// BackendTLSPolicyConditionsAccessor returns a BackendTLSPolicyStatusUpdate that allows a client
+// to build up a list of metav1.Conditions as well as a function to commit the change back to the
+// cache when everything is done. The commit function pattern is used so that the
+// BackendTLSPolicyStatusUpdate does not need to know anything the cache internals.
+func (c *Cache) BackendTLSPolicyConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object) (*BackendTLSPolicyStatusUpdate, func()) {
+	pu := &BackendTLSPolicyStatusUpdate{
+		FullName:          nsName,
+		GatewayRef:        c.gatewayRef,
+		GatewayController: c.gatewayController,
+		Generation:        generation,
+		TransitionTime:    metav1.NewTime(time.Now()),
+		Resource:          resource,
+	}
+
+	return pu, func() {
+		if len(pu.PolicyAncestorStatuses) == 0 {
+			return
+		}
+		c.backendTLSPolicyUpdates[pu.FullName] = pu
 	}
 }

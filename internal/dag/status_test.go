@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -11387,6 +11388,573 @@ func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
 			},
 		}},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("tcp", gatewayapi_v1.TCPProtocolType, 1),
+	})
+}
+
+func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
+	type testcase struct {
+		objs                           []any
+		gateway                        *gatewayapi_v1beta1.Gateway
+		wantBackendTLSPolicyConditions []*status.BackendTLSPolicyStatusUpdate
+	}
+
+	run := func(t *testing.T, desc string, tc testcase) {
+		t.Helper()
+		t.Run(desc, func(t *testing.T) {
+			t.Helper()
+			builder := Builder{
+				Source: KubernetesCache{
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    fixture.NewTestLogger(t),
+					gatewayclass: &gatewayapi_v1beta1.GatewayClass{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-gc",
+						},
+						Spec: gatewayapi_v1beta1.GatewayClassSpec{
+							ControllerName: "projectcontour.io/contour",
+						},
+						Status: gatewayapi_v1beta1.GatewayClassStatus{
+							Conditions: []metav1.Condition{
+								{
+									Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+									Status: metav1.ConditionTrue,
+								},
+							},
+						},
+					},
+					gateway: tc.gateway,
+				},
+				Processors: []Processor{
+					&ListenerProcessor{},
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{},
+					&GatewayAPIProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+				},
+			}
+
+			// Set a default gateway if not defined by a test
+			if tc.gateway == nil {
+				builder.Source.gateway = &gatewayapi_v1beta1.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1beta1.GatewaySpec{
+						Listeners: []gatewayapi_v1beta1.Listener{{
+							Name:     "http",
+							Port:     80,
+							Protocol: gatewayapi_v1.HTTPProtocolType,
+							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+								},
+							},
+						}},
+					},
+				}
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+
+			dag := builder.Build()
+			gotBackendTLSPolicyUpdates := dag.StatusCache.GetBackendTLSPolicyUpdates()
+
+			ops := []cmp.Option{
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"),
+				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "GatewayRef"),
+				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "Resource"),
+				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
+					return i.Message < j.Message
+				}),
+				cmpopts.SortSlices(func(i, j *status.BackendTLSPolicyStatusUpdate) bool {
+					return i.FullName.String() < j.FullName.String()
+				}),
+			}
+
+			// Since we're using a single static GatewayClass,
+			// set the expected controller string here for all
+			// test cases.
+			for _, u := range tc.wantBackendTLSPolicyConditions {
+				u.GatewayController = builder.Source.gatewayclass.Spec.ControllerName
+
+				for _, pas := range u.PolicyAncestorStatuses {
+					pas.ControllerName = builder.Source.gatewayclass.Spec.ControllerName
+				}
+			}
+
+			if diff := cmp.Diff(tc.wantBackendTLSPolicyConditions, gotBackendTLSPolicyUpdates, ops...); diff != "" {
+				t.Fatalf("expected backend tls policy status: %v, got %v", tc.wantBackendTLSPolicyConditions, diff)
+			}
+		})
+	}
+
+	tlsService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlssvc",
+			Namespace: "projectcontour",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 8443)},
+		},
+	}
+
+	configMapCert1 := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "projectcontour",
+		},
+		Data: map[string]string{
+			CACertificateKey: fixture.CERTIFICATE,
+		},
+	}
+
+	run(t, "simple httproute with backendtlspolicy", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "ConfigMap",
+							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+						}},
+						Hostname: "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonAccepted),
+							Message: "Accepted BackendTLSPolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with a targetref that cannot be found does not set any conditions", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "nonexistent",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "ConfigMap",
+							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+						}},
+						Hostname: "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: nil,
+	})
+
+	run(t, "backendtlspolicy with unsupported cacertref", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "Invalid",
+							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+						}},
+						Hostname: "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "BackendTLSPolicy.Spec.TLS.CACertRef.Kind \"Invalid\" is unsupported. Only ConfigMap or Secret Kind is supported.",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with missing configmap certref", testcase{
+		objs: []any{
+			tlsService,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "ConfigMap",
+							Name: gatewayapi_v1.ObjectName("missing"),
+						}},
+						Hostname: "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "Could not find CACertRef ConfigMap: projectcontour/missing",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with missing secret certref", testcase{
+		objs: []any{
+			tlsService,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "Secret",
+							Name: gatewayapi_v1.ObjectName("missing"),
+						}},
+						Hostname: "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "Could not find CACertRef Secret: projectcontour/missing",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with multiple cacertref that are a mix of valid and invalid", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+							{
+								Kind: "Invalid",
+								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+							},
+							{
+								Kind: "ConfigMap",
+								Name: gatewayapi_v1.ObjectName("missing"),
+							},
+							{
+								Kind: "ConfigMap",
+								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+							},
+						},
+						Hostname: "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "BackendTLSPolicy.Spec.TLS.CACertRef.Kind \"Invalid\" is unsupported. Only ConfigMap or Secret Kind is supported., Could not find CACertRef ConfigMap: projectcontour/missing",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with wellknowncacerts set", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						WellKnownCACerts: ptr.To(gatewayapi_v1alpha2.WellKnownCACertSystem),
+						Hostname:         "example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "BackendTLSPolicy.Spec.TLS.WellKnownCACerts is unsupported.",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with malformed hostname", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "ConfigMap",
+							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+						}},
+						Hostname: "-bad-hostname.example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "BackendTLSPolicy.Spec.TLS.Hostname \"-bad-hostname.example.com\" is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with unsupported wildcard hostname", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "ConfigMap",
+							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+						}},
+						Hostname: "*.example.com",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "BackendTLSPolicy.Spec.TLS.Hostname \"*.example.com\" is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "backendtlspolicy with unsupported numeric ip as hostname", testcase{
+		objs: []any{
+			tlsService,
+			configMapCert1,
+			makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
+			&gatewayapi_v1alpha2.BackendTLSPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+							Kind: "Service",
+							Name: "tlssvc",
+						},
+					},
+					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+						CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							Kind: "ConfigMap",
+							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+						}},
+						Hostname: "127.0.0.1",
+					},
+				},
+			},
+		},
+		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
+			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+				{
+					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Status:  contour_api_v1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Message: "BackendTLSPolicy.Spec.TLS.Hostname \"127.0.0.1\" is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed",
+						},
+					},
+				},
+			},
+		}},
 	})
 }
 
