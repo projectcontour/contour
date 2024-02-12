@@ -1,1 +1,0 @@
-Document that Gateway names should be 63 characters or shorter to avoid issues with generating dependent resources when using the Gateway provisioner.
