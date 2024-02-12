@@ -18,18 +18,18 @@ import (
 	"slices"
 	"testing"
 
+	rbac_v1 "k8s.io/api/rbac/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/utils/diff"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
 	"github.com/projectcontour/contour/internal/provisioner/slice"
-
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/utils/diff"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-func checkClusterRoleName(t *testing.T, cr *rbacv1.ClusterRole, expected string) {
+func checkClusterRoleName(t *testing.T, cr *rbac_v1.ClusterRole, expected string) {
 	t.Helper()
 
 	if cr.Name == expected {
@@ -39,7 +39,7 @@ func checkClusterRoleName(t *testing.T, cr *rbacv1.ClusterRole, expected string)
 	t.Errorf("cluster role has unexpected name %q", cr.Name)
 }
 
-func checkClusterRoleLabels(t *testing.T, cr *rbacv1.ClusterRole, expected map[string]string) {
+func checkClusterRoleLabels(t *testing.T, cr *rbac_v1.ClusterRole, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(cr.Labels, expected) {
@@ -49,7 +49,7 @@ func checkClusterRoleLabels(t *testing.T, cr *rbacv1.ClusterRole, expected map[s
 	t.Errorf("cluster role has unexpected %q labels", cr.Labels)
 }
 
-func clusterRoleRulesContainOnlyClusterScopeRules(cr *rbacv1.ClusterRole) bool {
+func clusterRoleRulesContainOnlyClusterScopeRules(cr *rbac_v1.ClusterRole) bool {
 	for _, r := range cr.Rules {
 		if !slices.Contains(r.Resources, "gatewayclasses") &&
 			!slices.Contains(r.Resources, "gatewayclasses/status") &&
@@ -96,12 +96,12 @@ func TestDesiredClusterRole(t *testing.T) {
 }
 
 func TestDesiredClusterRoleFilterResources(t *testing.T) {
-	filterNamespacedGatewayResources := func(policyRules []rbacv1.PolicyRule) [][]string {
+	filterNamespacedGatewayResources := func(policyRules []rbac_v1.PolicyRule) [][]string {
 		gatewayResources := [][]string{}
 		for _, rule := range policyRules {
 			for _, apigroup := range rule.APIGroups {
 				// gatewayclass is in isolate rule
-				if apigroup == gatewayv1alpha2.GroupName && rule.Resources[0] != "gatewayclasses" && rule.Resources[0] != "gatewayclasses/status" {
+				if apigroup == gatewayapi_v1alpha2.GroupName && rule.Resources[0] != "gatewayclasses" && rule.Resources[0] != "gatewayclasses/status" {
 					gatewayResources = append(gatewayResources, rule.Resources)
 					break
 				}
@@ -110,11 +110,11 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 		return gatewayResources
 	}
 
-	filterContourResources := func(policyRules []rbacv1.PolicyRule) [][]string {
+	filterContourResources := func(policyRules []rbac_v1.PolicyRule) [][]string {
 		contourResources := [][]string{}
 		for _, rule := range policyRules {
 			for _, apigroup := range rule.APIGroups {
-				if apigroup == contourv1.GroupName {
+				if apigroup == contour_v1.GroupName {
 					contourResources = append(contourResources, rule.Resources)
 					break
 				}
@@ -125,7 +125,7 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 
 	tests := []struct {
 		description               string
-		disabledFeatures          []contourv1.Feature
+		disabledFeatures          []contour_v1.Feature
 		clusterScopedResourceOnly bool
 		expectedGateway           [][]string
 		expectedContour           [][]string
@@ -139,7 +139,7 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 		},
 		{
 			description:               "disable tlsroutes feature",
-			disabledFeatures:          []contourv1.Feature{"tlsroutes"},
+			disabledFeatures:          []contour_v1.Feature{"tlsroutes"},
 			clusterScopedResourceOnly: false,
 			expectedGateway: [][]string{
 				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes"),
@@ -150,7 +150,7 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 
 		{
 			description:               "disable extensionservices feature",
-			disabledFeatures:          []contourv1.Feature{"extensionservices"},
+			disabledFeatures:          []contour_v1.Feature{"extensionservices"},
 			clusterScopedResourceOnly: false,
 			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
 			expectedContour: [][]string{
@@ -160,14 +160,14 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 		},
 		{
 			description:               "disable non-existent features",
-			disabledFeatures:          []contourv1.Feature{"abc", "efg"},
+			disabledFeatures:          []contour_v1.Feature{"abc", "efg"},
 			clusterScopedResourceOnly: false,
 			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
 			expectedContour:           [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
 		},
 		{
 			description:               "disable both gateway and contour features",
-			disabledFeatures:          []contourv1.Feature{"grpcroutes", "tlsroutes", "extensionservices", "backendtlspolicies"},
+			disabledFeatures:          []contour_v1.Feature{"grpcroutes", "tlsroutes", "extensionservices", "backendtlspolicies"},
 			clusterScopedResourceOnly: false,
 			expectedGateway: [][]string{
 				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes", "grpcroutes", "backendtlspolicies"),

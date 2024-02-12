@@ -14,7 +14,7 @@
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TLSCertificateDelegationSpec defines the spec of the CRD
@@ -68,8 +68,8 @@ type TLSCertificateDelegationStatus struct {
 // +kubebuilder:resource:scope=Namespaced,path=tlscertificatedelegations,shortName=tlscerts,singular=tlscertificatedelegation
 // +kubebuilder:subresource:status
 type TLSCertificateDelegation struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
+	meta_v1.TypeMeta   `json:",inline"`
+	meta_v1.ObjectMeta `json:"metadata"`
 
 	Spec TLSCertificateDelegationSpec `json:"spec"`
 	// +optional
@@ -80,7 +80,7 @@ type TLSCertificateDelegation struct {
 
 // TLSCertificateDelegationList is a list of TLSCertificateDelegations.
 type TLSCertificateDelegationList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
-	Items           []TLSCertificateDelegation `json:"items"`
+	meta_v1.TypeMeta `json:",inline"`
+	meta_v1.ListMeta `json:"metadata"`
+	Items            []TLSCertificateDelegation `json:"items"`
 }

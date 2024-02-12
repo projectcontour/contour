@@ -24,15 +24,16 @@ import (
 	"testing"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/stretchr/testify/assert"
+	"github.com/tsaarni/certyaml"
+	"google.golang.org/grpc"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
-	"github.com/stretchr/testify/assert"
-	"github.com/tsaarni/certyaml"
-	"google.golang.org/grpc"
 )
 
 func TestServeContextProxyRootNamespaces(t *testing.T) {
@@ -84,11 +85,11 @@ func TestServeContextProxyRootNamespaces(t *testing.T) {
 
 func TestServeContextTLSParams(t *testing.T) {
 	tests := map[string]struct {
-		tls         *contour_api_v1alpha1.TLS
+		tls         *contour_v1alpha1.TLS
 		expectError bool
 	}{
 		"tls supplied correctly": {
-			tls: &contour_api_v1alpha1.TLS{
+			tls: &contour_v1alpha1.TLS{
 				CAFile:   "cacert.pem",
 				CertFile: "contourcert.pem",
 				KeyFile:  "contourkey.pem",
@@ -97,7 +98,7 @@ func TestServeContextTLSParams(t *testing.T) {
 			expectError: false,
 		},
 		"tls partially supplied": {
-			tls: &contour_api_v1alpha1.TLS{
+			tls: &contour_v1alpha1.TLS{
 				CertFile: "contourcert.pem",
 				KeyFile:  "contourkey.pem",
 				Insecure: ref.To(false),
@@ -105,7 +106,7 @@ func TestServeContextTLSParams(t *testing.T) {
 			expectError: true,
 		},
 		"tls not supplied": {
-			tls:         &contour_api_v1alpha1.TLS{},
+			tls:         &contour_v1alpha1.TLS{},
 			expectError: true,
 		},
 	}
@@ -186,7 +187,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
-	contourTLS := &contour_api_v1alpha1.TLS{
+	contourTLS := &contour_v1alpha1.TLS{
 		CAFile:   filepath.Join(configDir, "CAcert.pem"),
 		CertFile: filepath.Join(configDir, "contourcert.pem"),
 		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
@@ -252,7 +253,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 		Issuer:  &caCert,
 	}
 
-	contourTLS := &contour_api_v1alpha1.TLS{
+	contourTLS := &contour_v1alpha1.TLS{
 		CAFile:   filepath.Join(configDir, "CAcert.pem"),
 		CertFile: filepath.Join(configDir, "contourcert.pem"),
 		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
@@ -322,25 +323,25 @@ func peekError(conn net.Conn) error {
 
 func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
-		versions      []contour_api_v1alpha1.HTTPVersionType
+		versions      []contour_v1alpha1.HTTPVersionType
 		parseVersions []envoy_v3.HTTPVersionType
 	}{
 		"empty": {
-			versions:      []contour_api_v1alpha1.HTTPVersionType{},
+			versions:      []contour_v1alpha1.HTTPVersionType{},
 			parseVersions: nil,
 		},
 		"http/1.1": {
-			versions:      []contour_api_v1alpha1.HTTPVersionType{contour_api_v1alpha1.HTTPVersion1},
+			versions:      []contour_v1alpha1.HTTPVersionType{contour_v1alpha1.HTTPVersion1},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
-			versions:      []contour_api_v1alpha1.HTTPVersionType{contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
+			versions:      []contour_v1alpha1.HTTPVersionType{contour_v1alpha1.HTTPVersion1, contour_v1alpha1.HTTPVersion2},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
-			versions: []contour_api_v1alpha1.HTTPVersionType{
-				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
-				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
+			versions: []contour_v1alpha1.HTTPVersionType{
+				contour_v1alpha1.HTTPVersion1, contour_v1alpha1.HTTPVersion2,
+				contour_v1alpha1.HTTPVersion1, contour_v1alpha1.HTTPVersion2,
 			},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
@@ -375,74 +376,74 @@ func TestConvertServeContext(t *testing.T) {
 		return ctx
 	}
 
-	defaultContourConfiguration := func() contour_api_v1alpha1.ContourConfigurationSpec {
-		return contour_api_v1alpha1.ContourConfigurationSpec{
-			XDSServer: &contour_api_v1alpha1.XDSServerConfig{
-				Type:    contour_api_v1alpha1.ContourServerType,
+	defaultContourConfiguration := func() contour_v1alpha1.ContourConfigurationSpec {
+		return contour_v1alpha1.ContourConfigurationSpec{
+			XDSServer: &contour_v1alpha1.XDSServerConfig{
+				Type:    contour_v1alpha1.ContourServerType,
 				Address: "127.0.0.1",
 				Port:    8001,
-				TLS: &contour_api_v1alpha1.TLS{
+				TLS: &contour_v1alpha1.TLS{
 					CAFile:   "/certs/ca.crt",
 					CertFile: "/certs/cert.crt",
 					KeyFile:  "/certs/cert.key",
 					Insecure: ref.To(false),
 				},
 			},
-			Ingress: &contour_api_v1alpha1.IngressConfig{
+			Ingress: &contour_v1alpha1.IngressConfig{
 				ClassNames:    nil,
 				StatusAddress: "",
 			},
-			Debug: &contour_api_v1alpha1.DebugConfig{
+			Debug: &contour_v1alpha1.DebugConfig{
 				Address: "127.0.0.1",
 				Port:    6060,
 			},
-			Health: &contour_api_v1alpha1.HealthConfig{
+			Health: &contour_v1alpha1.HealthConfig{
 				Address: "0.0.0.0",
 				Port:    8000,
 			},
-			Envoy: &contour_api_v1alpha1.EnvoyConfig{
-				Service: &contour_api_v1alpha1.NamespacedName{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Service: &contour_v1alpha1.NamespacedName{
 					Name:      "envoy",
 					Namespace: "projectcontour",
 				},
-				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto:              ref.To(false),
 					DisableAllowChunkedLength:  ref.To(false),
 					DisableMergeSlashes:        ref.To(false),
-					ServerHeaderTransformation: contour_api_v1alpha1.OverwriteServerHeader,
-					TLS: &contour_api_v1alpha1.EnvoyTLS{
+					ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
+					TLS: &contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
 						MaximumProtocolVersion: "",
 					},
-					SocketOptions: &contour_api_v1alpha1.SocketOptions{
+					SocketOptions: &contour_v1alpha1.SocketOptions{
 						TOS:          0,
 						TrafficClass: 0,
 					},
 				},
-				HTTPListener: &contour_api_v1alpha1.EnvoyListener{
+				HTTPListener: &contour_v1alpha1.EnvoyListener{
 					Address:   "0.0.0.0",
 					Port:      8080,
 					AccessLog: "/dev/stdout",
 				},
-				HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
+				HTTPSListener: &contour_v1alpha1.EnvoyListener{
 					Address:   "0.0.0.0",
 					Port:      8443,
 					AccessLog: "/dev/stdout",
 				},
-				Health: &contour_api_v1alpha1.HealthConfig{
+				Health: &contour_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8002,
 				},
-				Metrics: &contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8002,
 				},
 				ClientCertificate: nil,
-				Logging: &contour_api_v1alpha1.EnvoyLogging{
-					AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+				Logging: &contour_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_v1alpha1.EnvoyAccessLog,
 					AccessLogFormatString: "",
-					AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
-					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+					AccessLogLevel:        contour_v1alpha1.LogLevelInfo,
+					AccessLogJSONFields: contour_v1alpha1.AccessLogJSONFields([]string{
 						"@timestamp",
 						"authority",
 						"bytes_received",
@@ -469,37 +470,37 @@ func TestConvertServeContext(t *testing.T) {
 					}),
 				},
 				DefaultHTTPVersions: nil,
-				Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+				Timeouts: &contour_v1alpha1.TimeoutParameters{
 					ConnectionIdleTimeout: ref.To("60s"),
 					ConnectTimeout:        ref.To("2s"),
 				},
-				Cluster: &contour_api_v1alpha1.ClusterParameters{
-					DNSLookupFamily:              contour_api_v1alpha1.AutoClusterDNSFamily,
+				Cluster: &contour_v1alpha1.ClusterParameters{
+					DNSLookupFamily:              contour_v1alpha1.AutoClusterDNSFamily,
 					GlobalCircuitBreakerDefaults: nil,
-					UpstreamTLS: &contour_api_v1alpha1.EnvoyTLS{
+					UpstreamTLS: &contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
 						MaximumProtocolVersion: "",
 					},
 				},
-				Network: &contour_api_v1alpha1.NetworkParameters{
+				Network: &contour_v1alpha1.NetworkParameters{
 					EnvoyAdminPort:    ref.To(9001),
 					XffNumTrustedHops: ref.To(uint32(0)),
 				},
 			},
 			Gateway: nil,
-			HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
+			HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
 				DisablePermitInsecure: ref.To(false),
 				FallbackCertificate:   nil,
 			},
 			EnableExternalNameService:   ref.To(false),
 			RateLimitService:            nil,
 			GlobalExternalAuthorization: nil,
-			Policy: &contour_api_v1alpha1.PolicyConfig{
-				RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
-				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+			Policy: &contour_v1alpha1.PolicyConfig{
+				RequestHeadersPolicy:  &contour_v1alpha1.HeadersPolicy{},
+				ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{},
 				ApplyToIngress:        ref.To(false),
 			},
-			Metrics: &contour_api_v1alpha1.MetricsConfig{
+			Metrics: &contour_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
 				Port:    8000,
 			},
@@ -508,13 +509,13 @@ func TestConvertServeContext(t *testing.T) {
 
 	cases := map[string]struct {
 		getServeContext         func(ctx *serveContext) *serveContext
-		getContourConfiguration func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec
+		getContourConfiguration func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec
 	}{
 		"default ServeContext": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				return cfg
 			},
 		},
@@ -533,13 +534,13 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Policy = &contour_api_v1alpha1.PolicyConfig{
-					RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Policy = &contour_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 						Set:    map[string]string{"custom-request-header-set": "foo-bar", "Host": "request-bar.com"},
 						Remove: []string{"custom-request-header-remove"},
 					},
-					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+					ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 						Set:    map[string]string{"custom-response-header-set": "foo-bar", "Host": "response-bar.com"},
 						Remove: []string{"custom-response-header-remove"},
 					},
@@ -554,8 +555,8 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.IngressStatusAddress = "1.2.3.4"
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Ingress = &contour_api_v1alpha1.IngressConfig{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Ingress = &contour_v1alpha1.IngressConfig{
 					ClassNames:    []string{"coolclass"},
 					StatusAddress: "1.2.3.4",
 				}
@@ -569,8 +570,8 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Gateway = &contour_api_v1alpha1.GatewayConfig{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Gateway = &contour_v1alpha1.GatewayConfig{
 					ControllerName: "projectcontour.io/gateway-controller",
 				}
 				return cfg
@@ -586,9 +587,9 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Gateway = &contour_api_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_api_v1alpha1.NamespacedName{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Gateway = &contour_v1alpha1.GatewayConfig{
+					GatewayRef: &contour_v1alpha1.NamespacedName{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},
@@ -604,8 +605,8 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.ClientCertificate = &contour_api_v1alpha1.NamespacedName{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.ClientCertificate = &contour_v1alpha1.NamespacedName{
 					Name:      "cert",
 					Namespace: "secretplace",
 				}
@@ -621,10 +622,10 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.HTTPProxy = &contour_api_v1alpha1.HTTPProxyConfig{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.HTTPProxy = &contour_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: ref.To(true),
-					FallbackCertificate: &contour_api_v1alpha1.NamespacedName{
+					FallbackCertificate: &contour_v1alpha1.NamespacedName{
 						Name:      "fallbackname",
 						Namespace: "fallbacknamespace",
 					},
@@ -640,12 +641,12 @@ func TestConvertServeContext(t *testing.T) {
 					FailOpen:                    true,
 					EnableXRateLimitHeaders:     true,
 					EnableResourceExhaustedCode: true,
-					DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-						Descriptors: []contour_api_v1.RateLimitDescriptor{
+					DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_v1.RateLimitDescriptor{
 							{
-								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								Entries: []contour_v1.RateLimitDescriptorEntry{
 									{
-										GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										GenericKey: &contour_v1.GenericKeyDescriptor{
 											Key:   "foo",
 											Value: "bar",
 										},
@@ -657,9 +658,9 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-					ExtensionService: contour_api_v1alpha1.NamespacedName{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.RateLimitService = &contour_v1alpha1.RateLimitServiceConfig{
+					ExtensionService: contour_v1alpha1.NamespacedName{
 						Name:      "ratelimitext",
 						Namespace: "ratens",
 					},
@@ -667,12 +668,12 @@ func TestConvertServeContext(t *testing.T) {
 					FailOpen:                    ref.To(true),
 					EnableXRateLimitHeaders:     ref.To(true),
 					EnableResourceExhaustedCode: ref.To(true),
-					DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-						Descriptors: []contour_api_v1.RateLimitDescriptor{
+					DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_v1.RateLimitDescriptor{
 							{
-								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								Entries: []contour_v1.RateLimitDescriptorEntry{
 									{
-										GenericKey: &contour_api_v1.GenericKeyDescriptor{
+										GenericKey: &contour_v1.GenericKeyDescriptor{
 											Key:   "foo",
 											Value: "bar",
 										},
@@ -692,9 +693,9 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.DefaultHTTPVersions = []contour_api_v1alpha1.HTTPVersionType{
-					contour_api_v1alpha1.HTTPVersion1,
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.DefaultHTTPVersions = []contour_v1alpha1.HTTPVersionType{
+					contour_v1alpha1.HTTPVersion1,
 				}
 				return cfg
 			},
@@ -706,12 +707,12 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.AccessLogFields = []string{"custom_field"}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
-					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_v1alpha1.JSONAccessLog,
 					AccessLogFormatString: "foo-bar-baz",
-					AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
-					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+					AccessLogLevel:        contour_v1alpha1.LogLevelInfo,
+					AccessLogJSONFields: contour_v1alpha1.AccessLogJSONFields([]string{
 						"custom_field",
 					}),
 				}
@@ -726,12 +727,12 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.AccessLogLevel = config.LogLevelError
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
-					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_v1alpha1.JSONAccessLog,
 					AccessLogFormatString: "foo-bar-baz",
-					AccessLogLevel:        contour_api_v1alpha1.LogLevelError,
-					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+					AccessLogLevel:        contour_v1alpha1.LogLevelError,
+					AccessLogJSONFields: contour_v1alpha1.AccessLogJSONFields([]string{
 						"custom_field",
 					}),
 				}
@@ -746,12 +747,12 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.AccessLogLevel = config.LogLevelCritical
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Logging = &contour_api_v1alpha1.EnvoyLogging{
-					AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Logging = &contour_v1alpha1.EnvoyLogging{
+					AccessLogFormat:       contour_v1alpha1.JSONAccessLog,
 					AccessLogFormatString: "foo-bar-baz",
-					AccessLogLevel:        contour_api_v1alpha1.LogLevelCritical,
-					AccessLogJSONFields: contour_api_v1alpha1.AccessLogJSONFields([]string{
+					AccessLogLevel:        contour_v1alpha1.LogLevelCritical,
+					AccessLogJSONFields: contour_v1alpha1.AccessLogJSONFields([]string{
 						"custom_field",
 					}),
 				}
@@ -763,7 +764,7 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.DisableMergeSlashes = true
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.DisableMergeSlashes = ref.To(true)
 				return cfg
 			},
@@ -773,14 +774,14 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.ServerHeaderTransformation = config.AppendIfAbsentServerHeader
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Listener.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.ServerHeaderTransformation = contour_v1alpha1.AppendIfAbsentServerHeader
 				return cfg
 			},
 		},
 		"global circuit breaker defaults": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.Cluster.GlobalCircuitBreakerDefaults = &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+				ctx.Config.Cluster.GlobalCircuitBreakerDefaults = &contour_v1alpha1.GlobalCircuitBreakerDefaults{
 					MaxConnections:     4,
 					MaxPendingRequests: 5,
 					MaxRequests:        6,
@@ -788,8 +789,8 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Cluster.GlobalCircuitBreakerDefaults = &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Cluster.GlobalCircuitBreakerDefaults = &contour_v1alpha1.GlobalCircuitBreakerDefaults{
 					MaxConnections:     4,
 					MaxPendingRequests: 5,
 					MaxRequests:        6,
@@ -816,20 +817,20 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.GlobalExternalAuthorization = &contour_api_v1.AuthorizationServer{
-					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.GlobalExternalAuthorization = &contour_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_v1.ExtensionServiceReference{
 						Name:      "extauthtext",
 						Namespace: "extauthns",
 					},
 					FailOpen: true,
-					AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.AuthorizationPolicy{
 						Context: map[string]string{
 							"foo": "bar",
 						},
 						Disabled: false,
 					},
-					WithRequestBody: &contour_api_v1.AuthorizationServerBufferSettings{
+					WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{
 						MaxRequestBytes:     512,
 						PackAsBytes:         true,
 						AllowPartialMessage: true,
@@ -859,13 +860,13 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_v1alpha1.TracingConfig{
 					IncludePodDetail: ref.To(false),
 					ServiceName:      ref.To("contour"),
 					OverallSampling:  ref.To("100"),
 					MaxPathTagLength: ref.To(uint32(256)),
-					CustomTags: []*contour_api_v1alpha1.CustomTag{
+					CustomTags: []*contour_v1alpha1.CustomTag{
 						{
 							TagName: "literal",
 							Literal: "this is literal",
@@ -875,7 +876,7 @@ func TestConvertServeContext(t *testing.T) {
 							RequestHeaderName: ":method",
 						},
 					},
-					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+					ExtensionService: &contour_v1alpha1.NamespacedName{
 						Name:      "otel-collector",
 						Namespace: "otel",
 					},
@@ -890,9 +891,9 @@ func TestConvertServeContext(t *testing.T) {
 				}
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
-				cfg.Tracing = &contour_api_v1alpha1.TracingConfig{
-					ExtensionService: &contour_api_v1alpha1.NamespacedName{
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Tracing = &contour_v1alpha1.TracingConfig{
+					ExtensionService: &contour_v1alpha1.NamespacedName{
 						Name:      "otel-collector",
 						Namespace: "otel",
 					},
@@ -907,7 +908,7 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.Listener.MaxConnectionsPerListener = ref.To(uint32(50))
 				return ctx
 			},
-			getContourConfiguration: func(cfg contour_api_v1alpha1.ContourConfigurationSpec) contour_api_v1alpha1.ContourConfigurationSpec {
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
 				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
 				cfg.Envoy.Listener.MaxConnectionsPerListener = ref.To(uint32(50))

@@ -14,29 +14,29 @@
 package fixture
 
 import (
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
-var SecretRootsCert = &v1.Secret{
+var SecretRootsCert = &core_v1.Secret{
 	ObjectMeta: ObjectMeta("roots/ssl-cert"),
-	Type:       v1.SecretTypeTLS,
+	Type:       core_v1.SecretTypeTLS,
 	Data: map[string][]byte{
-		v1.TLSCertKey:       []byte(CERTIFICATE),
-		v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+		core_v1.TLSCertKey:       []byte(CERTIFICATE),
+		core_v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
 	},
 }
 
-var SecretProjectContourCert = &v1.Secret{
+var SecretProjectContourCert = &core_v1.Secret{
 	ObjectMeta: ObjectMeta("projectcontour/default-ssl-cert"),
-	Type:       v1.SecretTypeTLS,
+	Type:       core_v1.SecretTypeTLS,
 	Data:       SecretRootsCert.Data,
 }
 
-var SecretRootsFallback = &v1.Secret{
+var SecretRootsFallback = &core_v1.Secret{
 	ObjectMeta: ObjectMeta("roots/fallbacksecret"),
-	Type:       v1.SecretTypeTLS,
+	Type:       core_v1.SecretTypeTLS,
 	Data: map[string][]byte{
-		v1.TLSCertKey:       []byte(CERTIFICATE),
-		v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+		core_v1.TLSCertKey:       []byte(CERTIFICATE),
+		core_v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
 	},
 }

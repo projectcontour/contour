@@ -22,21 +22,22 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testBackendTLS(namespace string) {
 	Specify("simple TLS to backends can be configured", func() {
 		// Backend server cert signed by CA.
 		backendServerCert := &certmanagerv1.Certificate{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "backend-server-cert",
 			},
@@ -55,25 +56,25 @@ func testBackendTLS(namespace string) {
 		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 
-		i := &networkingv1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+		i := &networking_v1.Ingress{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "backend-tls",
 			},
-			Spec: networkingv1.IngressSpec{
-				Rules: []networkingv1.IngressRule{
+			Spec: networking_v1.IngressSpec{
+				Rules: []networking_v1.IngressRule{
 					{
 						Host: "backend-tls.ingress.projectcontour.io",
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
+						IngressRuleValue: networking_v1.IngressRuleValue{
+							HTTP: &networking_v1.HTTPIngressRuleValue{
+								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networkingv1.PathTypePrefix),
+										PathType: ref.To(networking_v1.PathTypePrefix),
 										Path:     "/",
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
 												Name: "echo-secure",
-												Port: networkingv1.ServiceBackendPort{
+												Port: networking_v1.ServiceBackendPort{
 													Number: 443,
 												},
 											},
@@ -109,7 +110,7 @@ func testBackendTLS(namespace string) {
 
 		// Get value of client cert Envoy should have presented.
 		clientSecretKey := client.ObjectKey{Namespace: namespace, Name: "backend-client-cert"}
-		clientSecret := &corev1.Secret{}
+		clientSecret := &core_v1.Secret{}
 		require.NoError(f.T(), f.Client.Get(context.TODO(), clientSecretKey, clientSecret))
 
 		assert.Equal(f.T(), tlsInfo.TLS.PeerCertificates[0], string(clientSecret.Data["tls.crt"]))

@@ -16,23 +16,24 @@ package v3
 import (
 	"testing"
 
-	envoy_api_v3_core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUpstreamTLSContext(t *testing.T) {
 	secret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "secret",
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: map[string][]byte{dag.CACertificateKey: []byte("ca")},
 		},
 	}
@@ -42,17 +43,17 @@ func TestUpstreamTLSContext(t *testing.T) {
 		alpnProtocols []string
 		externalName  string
 		upstreamTLS   *dag.UpstreamTLS
-		want          *envoy_v3_tls.UpstreamTlsContext
+		want          *envoy_transport_socket_tls_v3.UpstreamTlsContext
 	}{
 		"no alpn, no validation, no upstreamTLS": {
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{},
 			},
 		},
 		"h2, no validation": {
 			alpnProtocols: []string{"h2c"},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					AlpnProtocols: []string{"h2c"},
 				},
 			},
@@ -63,16 +64,16 @@ func TestUpstreamTLSContext(t *testing.T) {
 					secret,
 				},
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{},
 			},
 		},
 		"no alpn, missing ca": {
 			validation: &dag.PeerValidationContext{
 				SubjectNames: []string{"www.example.com"},
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{},
 			},
 		},
 		"no alpn, ca and altname": {
@@ -82,20 +83,20 @@ func TestUpstreamTLSContext(t *testing.T) {
 				},
 				SubjectNames: []string{"www.example.com"},
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-					ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
-						ValidationContext: &envoy_v3_tls.CertificateValidationContext{
-							TrustedCa: &envoy_api_v3_core.DataSource{
-								Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+					ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContext{
+						ValidationContext: &envoy_transport_socket_tls_v3.CertificateValidationContext{
+							TrustedCa: &envoy_config_core_v3.DataSource{
+								Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 									InlineBytes: []byte("ca"),
 								},
 							},
-							MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+							MatchTypedSubjectAltNames: []*envoy_transport_socket_tls_v3.SubjectAltNameMatcher{
 								{
-									SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
-									Matcher: &matcher.StringMatcher{
-										MatchPattern: &matcher.StringMatcher_Exact{
+									SanType: envoy_transport_socket_tls_v3.SubjectAltNameMatcher_DNS,
+									Matcher: &envoy_matcher_v3.StringMatcher{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 											Exact: "www.example.com",
 										},
 									},
@@ -108,8 +109,8 @@ func TestUpstreamTLSContext(t *testing.T) {
 		},
 		"external name sni": {
 			externalName: "projectcontour.local",
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{},
 				Sni:              "projectcontour.local",
 			},
 		},
@@ -118,9 +119,9 @@ func TestUpstreamTLSContext(t *testing.T) {
 				MinimumProtocolVersion: "1.3",
 				MaximumProtocolVersion: "1.3",
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-					TlsParams: &envoy_v3_tls.TlsParameters{
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+					TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
 						TlsMinimumProtocolVersion: ParseTLSVersion("1.3"),
 						TlsMaximumProtocolVersion: ParseTLSVersion("1.3"),
 					},
@@ -137,28 +138,28 @@ func TestUpstreamTLSContext(t *testing.T) {
 					"bar.com",
 				},
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-					ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
-						ValidationContext: &envoy_v3_tls.CertificateValidationContext{
-							TrustedCa: &envoy_api_v3_core.DataSource{
-								Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+			want: &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+					ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContext{
+						ValidationContext: &envoy_transport_socket_tls_v3.CertificateValidationContext{
+							TrustedCa: &envoy_config_core_v3.DataSource{
+								Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 									InlineBytes: []byte("ca"),
 								},
 							},
-							MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+							MatchTypedSubjectAltNames: []*envoy_transport_socket_tls_v3.SubjectAltNameMatcher{
 								{
-									SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
-									Matcher: &matcher.StringMatcher{
-										MatchPattern: &matcher.StringMatcher_Exact{
+									SanType: envoy_transport_socket_tls_v3.SubjectAltNameMatcher_DNS,
+									Matcher: &envoy_matcher_v3.StringMatcher{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 											Exact: "foo.com",
 										},
 									},
 								},
 								{
-									SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
-									Matcher: &matcher.StringMatcher{
-										MatchPattern: &matcher.StringMatcher_Exact{
+									SanType: envoy_transport_socket_tls_v3.SubjectAltNameMatcher_DNS,
+									Matcher: &envoy_matcher_v3.StringMatcher{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 											Exact: "bar.com",
 										},
 									},

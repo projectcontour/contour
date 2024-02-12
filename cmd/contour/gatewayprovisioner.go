@@ -17,11 +17,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/provisioner"
-	"github.com/projectcontour/contour/internal/provisioner/controller"
-	"github.com/projectcontour/contour/pkg/config"
-
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/distribution/reference"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -29,6 +24,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/provisioner/controller"
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {

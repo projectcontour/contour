@@ -16,13 +16,14 @@ package main
 import (
 	"testing"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestGetDAGBuilder(t *testing.T) {
@@ -46,7 +47,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily})
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_v1alpha1.AutoClusterDNSFamily})
 		commonAssertions(t, got)
 		assert.Empty(t, got.Source.ConfiguredSecretRefs)
 	})
@@ -57,7 +58,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert})
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert})
 		commonAssertions(t, got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert})
 	})
@@ -68,7 +69,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert})
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert})
 		commonAssertions(t, got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{fallbackCert})
 	})
@@ -80,21 +81,21 @@ func TestGetDAGBuilder(t *testing.T) {
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert})
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert})
 		commonAssertions(t, got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert, fallbackCert})
 	})
 
 	t.Run("request and response headers policy specified", func(t *testing.T) {
-		policy := &contour_api_v1alpha1.PolicyConfig{
-			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+		policy := &contour_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 				Set: map[string]string{
 					"req-set-key-1": "req-set-val-1",
 					"req-set-key-2": "req-set-val-2",
 				},
 				Remove: []string{"req-remove-key-1", "req-remove-key-2"},
 			},
-			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 				Set: map[string]string{
 					"res-set-key-1": "res-set-val-1",
 					"res-set-key-2": "res-set-val-2",
@@ -107,7 +108,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, headersPolicy: policy})
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_v1alpha1.AutoClusterDNSFamily, headersPolicy: policy})
 		commonAssertions(t, got)
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, got)
@@ -124,7 +125,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	t.Run("GlobalCircuitBreakerDefaults specified for all processors", func(t *testing.T) {
-		g := contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+		g := contour_v1alpha1.GlobalCircuitBreakerDefaults{
 			MaxConnections: 100,
 		}
 
@@ -134,7 +135,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		got := serve.getDAGBuilder(dagBuilderConfig{
 			gatewayControllerName:        "projectcontour.io/gateway-controller",
 			rootNamespaces:               []string{},
-			dnsLookupFamily:              contour_api_v1alpha1.AutoClusterDNSFamily,
+			dnsLookupFamily:              contour_v1alpha1.AutoClusterDNSFamily,
 			globalCircuitBreakerDefaults: &g,
 		})
 
@@ -149,15 +150,15 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
-		policy := &contour_api_v1alpha1.PolicyConfig{
-			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+		policy := &contour_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 				Set: map[string]string{
 					"req-set-key-1": "req-set-val-1",
 					"req-set-key-2": "req-set-val-2",
 				},
 				Remove: []string{"req-remove-key-1", "req-remove-key-2"},
 			},
-			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 				Set: map[string]string{
 					"res-set-key-1": "res-set-val-1",
 					"res-set-key-2": "res-set-val-2",
@@ -172,7 +173,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{
 			rootNamespaces:  []string{},
-			dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+			dnsLookupFamily: contour_v1alpha1.AutoClusterDNSFamily,
 			headersPolicy:   policy,
 		})
 		commonAssertions(t, got)
@@ -192,7 +193,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{
 			rootNamespaces:    []string{},
-			dnsLookupFamily:   contour_api_v1alpha1.AutoClusterDNSFamily,
+			dnsLookupFamily:   contour_v1alpha1.AutoClusterDNSFamily,
 			ingressClassNames: ingressClassNames,
 		})
 		commonAssertions(t, got)
@@ -207,7 +208,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{
 			rootNamespaces:    []string{},
-			dnsLookupFamily:   contour_api_v1alpha1.AutoClusterDNSFamily,
+			dnsLookupFamily:   contour_v1alpha1.AutoClusterDNSFamily,
 			ingressClassNames: ingressClassNames,
 		})
 		commonAssertions(t, got)

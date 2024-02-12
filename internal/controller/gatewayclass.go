@@ -17,11 +17,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/leadership"
-	"github.com/projectcontour/contour/internal/status"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +30,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/leadership"
+	"github.com/projectcontour/contour/internal/status"
 )
 
 type gatewayClassReconciler struct {
@@ -159,7 +160,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		r.log.WithField("name", request.Name).Info("failed to find gatewayclass")
 
 		r.eventHandler.OnDelete(&gatewayapi_v1beta1.GatewayClass{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
 			},

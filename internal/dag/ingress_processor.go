@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
-
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/ref"
 )
 
 // IngressProcessor translates Ingresses into DAG
@@ -68,7 +68,7 @@ type IngressProcessor struct {
 	SetSourceMetadataOnRoutes bool
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
-	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults
 
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.

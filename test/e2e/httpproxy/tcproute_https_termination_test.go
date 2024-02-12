@@ -20,12 +20,13 @@ import (
 	"crypto/tls"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testTCPRouteHTTPSTermination(namespace string) {
@@ -35,20 +36,20 @@ func testTCPRouteHTTPSTermination(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo-cert", "tcp-route-https-termination.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "echo-tcpproxy",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "tcp-route-https-termination.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo-cert",
 					},
 				},
-				TCPProxy: &contourv1.TCPProxy{
-					Services: []contourv1.Service{
+				TCPProxy: &contour_v1.TCPProxy{
+					Services: []contour_v1.Service{
 						{
 							Name: "ingress-conformance-echo",
 							Port: 80,
@@ -59,7 +60,7 @@ func testTCPRouteHTTPSTermination(namespace string) {
 		}
 		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 
-		certSecret := &corev1.Secret{}
+		certSecret := &core_v1.Secret{}
 		key := client.ObjectKey{Namespace: namespace, Name: "echo-cert"}
 		require.NoError(t, f.Client.Get(context.TODO(), key, certSecret))
 

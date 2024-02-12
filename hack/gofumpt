@@ -1,3 +1,0 @@
-#! /usr/bin/env bash
-
-go run mvdan.cc/gofumpt@v0.5.0 "$@"

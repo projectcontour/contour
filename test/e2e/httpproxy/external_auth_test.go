@@ -19,15 +19,16 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testExternalAuth(namespace string) {
@@ -40,28 +41,28 @@ func testExternalAuth(namespace string) {
 		f.Certs.CreateSelfSignedCert(namespace, "testserver-cert", "testserver-cert", "testserver")
 
 		// auth testserver
-		deployment := &appsv1.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
+		deployment := &apps_v1.Deployment{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "testserver",
 				Labels: map[string]string{
 					"app.kubernetes.io/name": "testserver",
 				},
 			},
-			Spec: appsv1.DeploymentSpec{
-				Selector: &metav1.LabelSelector{
+			Spec: apps_v1.DeploymentSpec{
+				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{"app.kubernetes.io/name": "testserver"},
 				},
-				Template: corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
+				Template: core_v1.PodTemplateSpec{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Labels: map[string]string{"app.kubernetes.io/name": "testserver"},
 					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
+					Spec: core_v1.PodSpec{
+						Containers: []core_v1.Container{
 							{
 								Name:            "testserver",
 								Image:           "ghcr.io/projectcontour/contour-authserver:v4",
-								ImagePullPolicy: corev1.PullIfNotPresent,
+								ImagePullPolicy: core_v1.PullIfNotPresent,
 								Command: []string{
 									"/contour-authserver",
 								},
@@ -72,14 +73,14 @@ func testExternalAuth(namespace string) {
 									"--tls-cert-path=/tls/tls.crt",
 									"--tls-key-path=/tls/tls.key",
 								},
-								Ports: []corev1.ContainerPort{
+								Ports: []core_v1.ContainerPort{
 									{
 										Name:          "auth",
 										ContainerPort: 9443,
-										Protocol:      corev1.ProtocolTCP,
+										Protocol:      core_v1.ProtocolTCP,
 									},
 								},
-								VolumeMounts: []corev1.VolumeMount{
+								VolumeMounts: []core_v1.VolumeMount{
 									{
 										Name:      "tls",
 										MountPath: "/tls",
@@ -88,11 +89,11 @@ func testExternalAuth(namespace string) {
 								},
 							},
 						},
-						Volumes: []corev1.Volume{
+						Volumes: []core_v1.Volume{
 							{
 								Name: "tls",
-								VolumeSource: corev1.VolumeSource{
-									Secret: &corev1.SecretVolumeSource{
+								VolumeSource: core_v1.VolumeSource{
+									Secret: &core_v1.SecretVolumeSource{
 										SecretName: "testserver-cert",
 									},
 								},
@@ -104,19 +105,19 @@ func testExternalAuth(namespace string) {
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), deployment))
 
-		svc := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
+		svc := &core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "testserver",
 				Namespace: namespace,
 				Labels: map[string]string{
 					"app.kubernetes.io/name": "testserver",
 				},
 			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{
+			Spec: core_v1.ServiceSpec{
+				Ports: []core_v1.ServicePort{
 					{
 						Name:       "auth",
-						Protocol:   corev1.ProtocolTCP,
+						Protocol:   core_v1.ProtocolTCP,
 						Port:       9443,
 						TargetPort: intstr.FromInt(9443),
 					},
@@ -124,18 +125,18 @@ func testExternalAuth(namespace string) {
 				Selector: map[string]string{
 					"app.kubernetes.io/name": "testserver",
 				},
-				Type: corev1.ServiceTypeClusterIP,
+				Type: core_v1.ServiceTypeClusterIP,
 			},
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), svc))
 
-		extSvc := &contourv1alpha1.ExtensionService{
-			ObjectMeta: metav1.ObjectMeta{
+		extSvc := &contour_v1alpha1.ExtensionService{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "testserver",
 				Namespace: namespace,
 			},
-			Spec: contourv1alpha1.ExtensionServiceSpec{
-				Services: []contourv1alpha1.ExtensionServiceTarget{
+			Spec: contour_v1alpha1.ExtensionServiceSpec{
+				Services: []contour_v1alpha1.ExtensionServiceTarget{
 					{
 						Name: "testserver",
 						Port: 9443,
@@ -145,43 +146,43 @@ func testExternalAuth(namespace string) {
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), extSvc))
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "external-auth",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "externalauth.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo",
 					},
-					Authorization: &contourv1.AuthorizationServer{
+					Authorization: &contour_v1.AuthorizationServer{
 						ResponseTimeout: "500ms",
-						ExtensionServiceRef: contourv1.ExtensionServiceReference{
+						ExtensionServiceRef: contour_v1.ExtensionServiceReference{
 							Name:      extSvc.Name,
 							Namespace: extSvc.Namespace,
 						},
-						AuthPolicy: &contourv1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.AuthorizationPolicy{
 							Context: map[string]string{
 								"hostname": "externalauth.projectcontour.io",
 							},
 						},
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/first",
 							},
 						},
-						AuthPolicy: &contourv1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.AuthorizationPolicy{
 							Context: map[string]string{
 								"target": "first",
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -190,15 +191,15 @@ func testExternalAuth(namespace string) {
 					},
 
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/second",
 							},
 						},
-						AuthPolicy: &contourv1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.AuthorizationPolicy{
 							Disabled: true,
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -207,12 +208,12 @@ func testExternalAuth(namespace string) {
 					},
 
 					{
-						AuthPolicy: &contourv1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.AuthorizationPolicy{
 							Context: map[string]string{
 								"target": "default",
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,

@@ -22,16 +22,17 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/stretchr/testify/require"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // Tests in this block set up/tear down their own GatewayClasses and Gateways.
@@ -39,7 +40,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
-		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
+		contourConfiguration  *contour_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 		controllerName        string
@@ -57,7 +58,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 		// Update contour configuration to point to specified gateway.
 		contourConfiguration = e2e.DefaultContourConfiguration()
-		contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
+		contourConfiguration.Spec.Gateway = &contour_v1alpha1.GatewayConfig{
 			ControllerName: controllerName,
 		}
 
@@ -88,7 +89,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 		Specify("only the oldest matching gatewayclass should be accepted", func() {
 			newGatewayClass := func(name, controller string) *gatewayapi_v1beta1.GatewayClass {
 				return &gatewayapi_v1beta1.GatewayClass{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name: name,
 					},
 					Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -118,7 +119,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			_, notOldest := f.CreateGatewayClassAndWaitFor(secondOldest, func(gc *gatewayapi_v1beta1.GatewayClass) bool {
 				for _, cond := range gc.Status.Conditions {
 					if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) &&
-						cond.Status == metav1.ConditionFalse &&
+						cond.Status == meta_v1.ConditionFalse &&
 						cond.Reason == string(status.ReasonOlderGatewayClassExists) &&
 						cond.Message == "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists" {
 						return true
@@ -147,7 +148,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 		Specify("only the oldest gateway for the accepted gatewayclass should be accepted", func() {
 			// Create a matching gateway class.
 			gc := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour-gatewayclass",
 				},
 				Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -159,7 +160,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// Create a matching gateway and verify it's accepted.
 			oldest := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "oldest",
 					Namespace: namespace,
 				},
@@ -184,7 +185,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// Create another matching gateway and verify it's not accepted.
 			secondOldest := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "second-oldest",
 					Namespace: namespace,
 				},
@@ -207,7 +208,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			_, notAccepted := f.CreateGatewayAndWaitFor(secondOldest, func(gw *gatewayapi_v1beta1.Gateway) bool {
 				for _, cond := range gw.Status.Conditions {
 					if cond.Type == string(gatewayapi_v1.GatewayConditionAccepted) &&
-						cond.Status == metav1.ConditionFalse &&
+						cond.Status == meta_v1.ConditionFalse &&
 						cond.Reason == "OlderGatewayExists" {
 						return true
 					}
@@ -236,7 +237,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 		Specify("gatewayclass and gateway admission transitions properly when older gatewayclasses are deleted", func() {
 			// Create a matching gateway class.
 			olderGC := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "older-gc",
 				},
 				Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -248,7 +249,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 			// Create a matching gateway and verify it's accepted.
 			olderGCGateway1 := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "older-gc-gw-1",
 					Namespace: namespace,
 				},
@@ -274,7 +275,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			// Create a second matching gatewayclass & 2 associated gateways
 			// and verify none of them are accepted.
 			newerGC := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "newer-gc",
 				},
 				Spec: gatewayapi_v1beta1.GatewayClassSpec{
@@ -290,7 +291,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			}, 5*time.Second, time.Second)
 
 			newerGCGateway1 := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "newer-gc-gw-1",
 					Namespace: namespace,
 				},
@@ -319,7 +320,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			}, 5*time.Second, time.Second)
 
 			newerGCGateway2 := &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "newer-gc-gw-2",
 					Namespace: namespace,
 				},

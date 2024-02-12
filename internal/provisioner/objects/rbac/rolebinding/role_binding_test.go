@@ -17,13 +17,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/provisioner/model"
-
-	rbacv1 "k8s.io/api/rbac/v1"
+	rbac_v1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
-func checkRoleBindingName(t *testing.T, rb *rbacv1.RoleBinding, expected string) {
+func checkRoleBindingName(t *testing.T, rb *rbac_v1.RoleBinding, expected string) {
 	t.Helper()
 
 	if rb.Name == expected {
@@ -33,7 +33,7 @@ func checkRoleBindingName(t *testing.T, rb *rbacv1.RoleBinding, expected string)
 	t.Errorf("role binding %q has unexpected name", rb.Name)
 }
 
-func checkRoleBindingNamespace(t *testing.T, rb *rbacv1.RoleBinding, expected string) {
+func checkRoleBindingNamespace(t *testing.T, rb *rbac_v1.RoleBinding, expected string) {
 	t.Helper()
 
 	if rb.Namespace == expected {
@@ -43,7 +43,7 @@ func checkRoleBindingNamespace(t *testing.T, rb *rbacv1.RoleBinding, expected st
 	t.Errorf("role binding %q has unexpected namespace", rb.Namespace)
 }
 
-func checkRoleBindingLabels(t *testing.T, rb *rbacv1.RoleBinding, expected map[string]string) {
+func checkRoleBindingLabels(t *testing.T, rb *rbac_v1.RoleBinding, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(rb.Labels, expected) {
@@ -53,7 +53,7 @@ func checkRoleBindingLabels(t *testing.T, rb *rbacv1.RoleBinding, expected map[s
 	t.Errorf("role binding has unexpected %q labels", rb.Labels)
 }
 
-func checkRoleBindingSvcAcct(t *testing.T, rb *rbacv1.RoleBinding, name, ns string) {
+func checkRoleBindingSvcAcct(t *testing.T, rb *rbac_v1.RoleBinding, name, ns string) {
 	t.Helper()
 
 	if rb.Subjects[0].Name == name && rb.Subjects[0].Namespace == ns {
@@ -63,7 +63,7 @@ func checkRoleBindingSvcAcct(t *testing.T, rb *rbacv1.RoleBinding, name, ns stri
 	t.Errorf("role binding has unexpected %q/%q service account reference", rb.Subjects[0].Name, rb.Subjects[0].Namespace)
 }
 
-func checkRoleBindingRole(t *testing.T, rb *rbacv1.RoleBinding, expected string) {
+func checkRoleBindingRole(t *testing.T, rb *rbac_v1.RoleBinding, expected string) {
 	t.Helper()
 
 	if rb.RoleRef.Name == expected {

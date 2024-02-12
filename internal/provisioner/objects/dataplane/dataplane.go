@@ -18,18 +18,18 @@ import (
 	"fmt"
 	"path/filepath"
 
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/ref"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -63,14 +63,14 @@ const (
 
 // the default resource requirements for container: envoy-initconfig & shutdown-manager, the default value is come from:
 // ref: https://projectcontour.io/docs/1.25/deploy-options/#setting-resource-requests-and-limits
-var defContainerResources = corev1.ResourceRequirements{
-	Requests: corev1.ResourceList{
-		corev1.ResourceCPU:    resource.MustParse("25m"),
-		corev1.ResourceMemory: resource.MustParse("50Mi"),
+var defContainerResources = core_v1.ResourceRequirements{
+	Requests: core_v1.ResourceList{
+		core_v1.ResourceCPU:    resource.MustParse("25m"),
+		core_v1.ResourceMemory: resource.MustParse("50Mi"),
 	},
-	Limits: corev1.ResourceList{
-		corev1.ResourceCPU:    resource.MustParse("50m"),
-		corev1.ResourceMemory: resource.MustParse("100Mi"),
+	Limits: core_v1.ResourceList{
+		core_v1.ResourceCPU:    resource.MustParse("50m"),
+		core_v1.ResourceMemory: resource.MustParse("100Mi"),
 	},
 }
 
@@ -81,7 +81,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 	case model.WorkloadTypeDeployment:
 		desired := desiredDeployment(contour, contourImage, envoyImage)
 
-		updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.Deployment) error {
+		updater := func(ctx context.Context, cli client.Client, current, desired *apps_v1.Deployment) error {
 			differ := equality.DeploymentSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -90,13 +90,13 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDeploymentIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.Deployment{})
+		return objects.EnsureObject(ctx, cli, desired, updater, &apps_v1.Deployment{})
 
 	// The default workload type is a DaemonSet.
 	default:
 		desired := DesiredDaemonSet(contour, contourImage, envoyImage)
 
-		updater := func(ctx context.Context, cli client.Client, current, desired *appsv1.DaemonSet) error {
+		updater := func(ctx context.Context, cli client.Client, current, desired *apps_v1.DaemonSet) error {
 			differ := equality.DaemonSetSelectorsDiffer(current, desired)
 			if differ {
 				return EnsureDataPlaneDeleted(ctx, cli, contour)
@@ -105,7 +105,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 			return updateDaemonSetIfNeeded(ctx, cli, contour, current, desired)
 		}
 
-		return objects.EnsureObject(ctx, cli, desired, updater, &appsv1.DaemonSet{})
+		return objects.EnsureObject(ctx, cli, desired, updater, &apps_v1.DaemonSet{})
 	}
 }
 
@@ -117,8 +117,8 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	// using finalizers so the Gateway spec is unavailable to us at deletion
 	// time.
 
-	dsObj := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
+	dsObj := &apps_v1.DaemonSet{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
 		},
@@ -128,8 +128,8 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 		return err
 	}
 
-	deployObj := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
+	deployObj := &apps_v1.Deployment{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyDataPlaneName(),
 		},
@@ -138,7 +138,7 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	return objects.EnsureObjectDeleted(ctx, cli, deployObj, contour)
 }
 
-func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]corev1.Container, []corev1.Container) {
+func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]core_v1.Container, []core_v1.Container) {
 	var (
 		metricsPort = objects.EnvoyMetricsPort
 		healthPort  = objects.EnvoyHealthPort
@@ -158,17 +158,17 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		}
 	}
 
-	ports := []corev1.ContainerPort{{
+	ports := []core_v1.ContainerPort{{
 		Name:          "metrics",
 		ContainerPort: metricsPort,
-		Protocol:      corev1.ProtocolTCP,
+		Protocol:      core_v1.ProtocolTCP,
 	}}
 
-	containers := []corev1.Container{
+	containers := []core_v1.Container{
 		{
 			Name:            ShutdownContainerName,
 			Image:           contourImage,
-			ImagePullPolicy: corev1.PullIfNotPresent,
+			ImagePullPolicy: core_v1.PullIfNotPresent,
 			Command: []string{
 				"/bin/contour",
 			},
@@ -176,16 +176,16 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				"envoy",
 				"shutdown-manager",
 			},
-			Lifecycle: &corev1.Lifecycle{
-				PreStop: &corev1.LifecycleHandler{
-					Exec: &corev1.ExecAction{
+			Lifecycle: &core_v1.Lifecycle{
+				PreStop: &core_v1.LifecycleHandler{
+					Exec: &core_v1.ExecAction{
 						Command: []string{"/bin/contour", "envoy", "shutdown"},
 					},
 				},
 			},
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			TerminationMessagePolicy: core_v1.TerminationMessageReadFile,
 			TerminationMessagePath:   "/dev/termination-log",
-			VolumeMounts: []corev1.VolumeMount{
+			VolumeMounts: []core_v1.VolumeMount{
 				{
 					Name:      envoyAdminVolName,
 					MountPath: filepath.Join("/", envoyAdminVolMntDir),
@@ -197,7 +197,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 		{
 			Name:            EnvoyContainerName,
 			Image:           envoyImage,
-			ImagePullPolicy: corev1.PullIfNotPresent,
+			ImagePullPolicy: core_v1.PullIfNotPresent,
 			Command: []string{
 				"envoy",
 			},
@@ -209,11 +209,11 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				fmt.Sprintf("--log-level %s", contour.Spec.EnvoyLogLevel),
 				fmt.Sprintf("--base-id %d", contour.Spec.EnvoyBaseID),
 			},
-			Env: []corev1.EnvVar{
+			Env: []core_v1.EnvVar{
 				{
 					Name: envoyNsEnvVar,
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
+					ValueFrom: &core_v1.EnvVarSource{
+						FieldRef: &core_v1.ObjectFieldSelector{
 							APIVersion: "v1",
 							FieldPath:  "metadata.namespace",
 						},
@@ -221,19 +221,19 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				},
 				{
 					Name: envoyPodEnvVar,
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
+					ValueFrom: &core_v1.EnvVarSource{
+						FieldRef: &core_v1.ObjectFieldSelector{
 							APIVersion: "v1",
 							FieldPath:  "metadata.name",
 						},
 					},
 				},
 			},
-			ReadinessProbe: &corev1.Probe{
+			ReadinessProbe: &core_v1.Probe{
 				FailureThreshold: int32(3),
-				ProbeHandler: corev1.ProbeHandler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Scheme: corev1.URISchemeHTTP,
+				ProbeHandler: core_v1.ProbeHandler{
+					HTTPGet: &core_v1.HTTPGetAction{
+						Scheme: core_v1.URISchemeHTTP,
 						Path:   "/ready",
 						Port:   intstr.IntOrString{IntVal: int32(healthPort)},
 					},
@@ -244,7 +244,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				TimeoutSeconds:      int32(1),
 			},
 			Ports: ports,
-			VolumeMounts: []corev1.VolumeMount{
+			VolumeMounts: []core_v1.VolumeMount{
 				{
 					Name:      envoyCertsVolName,
 					MountPath: filepath.Join("/", envoyCertsVolMntDir),
@@ -260,26 +260,26 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 					MountPath: filepath.Join("/", envoyAdminVolMntDir),
 				},
 			},
-			Lifecycle: &corev1.Lifecycle{
-				PreStop: &corev1.LifecycleHandler{
-					HTTPGet: &corev1.HTTPGetAction{
+			Lifecycle: &core_v1.Lifecycle{
+				PreStop: &core_v1.LifecycleHandler{
+					HTTPGet: &core_v1.HTTPGetAction{
 						Path:   "/shutdown",
 						Port:   intstr.FromInt(8090),
 						Scheme: "HTTP",
 					},
 				},
 			},
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			TerminationMessagePolicy: core_v1.TerminationMessageReadFile,
 			TerminationMessagePath:   "/dev/termination-log",
 			Resources:                contour.Spec.EnvoyResources,
 		},
 	}
 
-	initContainers := []corev1.Container{
+	initContainers := []core_v1.Container{
 		{
 			Name:            envoyInitContainerName,
 			Image:           contourImage,
-			ImagePullPolicy: corev1.PullIfNotPresent,
+			ImagePullPolicy: core_v1.PullIfNotPresent,
 			Command: []string{
 				"contour",
 			},
@@ -295,7 +295,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				fmt.Sprintf("--envoy-key-file=%s", filepath.Join("/", envoyCertsVolMntDir, "tls.key")),
 				fmt.Sprintf("--overload-max-heap=%d", contour.Spec.EnvoyMaxHeapSizeBytes),
 			},
-			VolumeMounts: []corev1.VolumeMount{
+			VolumeMounts: []core_v1.VolumeMount{
 				{
 					Name:      envoyCertsVolName,
 					MountPath: filepath.Join("/", envoyCertsVolMntDir),
@@ -307,18 +307,18 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 					ReadOnly:  false,
 				},
 			},
-			Env: []corev1.EnvVar{
+			Env: []core_v1.EnvVar{
 				{
 					Name: envoyNsEnvVar,
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
+					ValueFrom: &core_v1.EnvVarSource{
+						FieldRef: &core_v1.ObjectFieldSelector{
 							APIVersion: "v1",
 							FieldPath:  "metadata.namespace",
 						},
 					},
 				},
 			},
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			TerminationMessagePolicy: core_v1.TerminationMessageReadFile,
 			TerminationMessagePath:   "/dev/termination-log",
 
 			Resources: defContainerResources,
@@ -334,36 +334,36 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 // DesiredDaemonSet returns the desired DaemonSet for the provided contour using
 // contourImage as the shutdown-manager/envoy-initconfig container images and
 // envoyImage as Envoy's container image.
-func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *appsv1.DaemonSet {
+func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *apps_v1.DaemonSet {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
-	ds := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
+	ds := &apps_v1.DaemonSet{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:   contour.Namespace,
 			Name:        contour.EnvoyDataPlaneName(),
 			Labels:      contour.WorkloadLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Spec: appsv1.DaemonSetSpec{
+		Spec: apps_v1.DaemonSetSpec{
 			RevisionHistoryLimit: ref.To(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector:       EnvoyPodSelector(contour),
 			UpdateStrategy: contour.Spec.EnvoyDaemonSetUpdateStrategy,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
+			Template: core_v1.PodTemplateSpec{
+				ObjectMeta: meta_v1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
 					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
 					Annotations: envoyPodAnnotations(contour),
 					Labels:      envoyPodLabels(contour),
 				},
-				Spec: corev1.PodSpec{
+				Spec: core_v1.PodSpec{
 					Containers:     containers,
 					InitContainers: initContainers,
-					Volumes: []corev1.Volume{
+					Volumes: []core_v1.Volume{
 						{
 							Name: envoyCertsVolName,
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
+							VolumeSource: core_v1.VolumeSource{
+								Secret: &core_v1.SecretVolumeSource{
 									DefaultMode: ref.To(int32(420)),
 									SecretName:  contour.EnvoyCertsSecretName(),
 								},
@@ -371,14 +371,14 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 						},
 						{
 							Name: envoyCfgVolName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							VolumeSource: core_v1.VolumeSource{
+								EmptyDir: &core_v1.EmptyDirVolumeSource{},
 							},
 						},
 						{
 							Name: envoyAdminVolName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							VolumeSource: core_v1.VolumeSource{
+								EmptyDir: &core_v1.EmptyDirVolumeSource{},
 							},
 						},
 					},
@@ -386,8 +386,8 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 					AutomountServiceAccountToken:  ref.To(false),
 					TerminationGracePeriodSeconds: ref.To(int64(300)),
 					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
-					DNSPolicy:                     corev1.DNSClusterFirst,
-					RestartPolicy:                 corev1.RestartPolicyAlways,
+					DNSPolicy:                     core_v1.DNSClusterFirst,
+					RestartPolicy:                 core_v1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
 				},
 			},
@@ -407,36 +407,36 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 	return ds
 }
 
-func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) *appsv1.Deployment {
+func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) *apps_v1.Deployment {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
+	deployment := &apps_v1.Deployment{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:   contour.Namespace,
 			Name:        contour.EnvoyDataPlaneName(),
 			Labels:      contour.WorkloadLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Spec: appsv1.DeploymentSpec{
+		Spec: apps_v1.DeploymentSpec{
 			Replicas:             ref.To(contour.Spec.EnvoyReplicas),
 			RevisionHistoryLimit: ref.To(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
 			Selector: EnvoyPodSelector(contour),
 			Strategy: contour.Spec.EnvoyDeploymentStrategy,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
+			Template: core_v1.PodTemplateSpec{
+				ObjectMeta: meta_v1.ObjectMeta{
 					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
 					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
 					Annotations: envoyPodAnnotations(contour),
 					Labels:      envoyPodLabels(contour),
 				},
-				Spec: corev1.PodSpec{
-					Affinity: &corev1.Affinity{
-						PodAntiAffinity: &corev1.PodAntiAffinity{
-							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				Spec: core_v1.PodSpec{
+					Affinity: &core_v1.Affinity{
+						PodAntiAffinity: &core_v1.PodAntiAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []core_v1.WeightedPodAffinityTerm{
 								{
 									Weight: int32(100),
-									PodAffinityTerm: corev1.PodAffinityTerm{
+									PodAffinityTerm: core_v1.PodAffinityTerm{
 										LabelSelector: EnvoyPodSelector(contour),
 										TopologyKey:   "kubernetes.io/hostname",
 									},
@@ -446,11 +446,11 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 					},
 					Containers:     containers,
 					InitContainers: initContainers,
-					Volumes: []corev1.Volume{
+					Volumes: []core_v1.Volume{
 						{
 							Name: envoyCertsVolName,
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
+							VolumeSource: core_v1.VolumeSource{
+								Secret: &core_v1.SecretVolumeSource{
 									DefaultMode: ref.To(int32(420)),
 									SecretName:  contour.EnvoyCertsSecretName(),
 								},
@@ -458,14 +458,14 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 						},
 						{
 							Name: envoyCfgVolName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							VolumeSource: core_v1.VolumeSource{
+								EmptyDir: &core_v1.EmptyDirVolumeSource{},
 							},
 						},
 						{
 							Name: envoyAdminVolName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							VolumeSource: core_v1.VolumeSource{
+								EmptyDir: &core_v1.EmptyDirVolumeSource{},
 							},
 						},
 					},
@@ -473,8 +473,8 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 					AutomountServiceAccountToken:  ref.To(false),
 					TerminationGracePeriodSeconds: ref.To(int64(300)),
 					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
-					DNSPolicy:                     corev1.DNSClusterFirst,
-					RestartPolicy:                 corev1.RestartPolicyAlways,
+					DNSPolicy:                     core_v1.DNSClusterFirst,
+					RestartPolicy:                 core_v1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
 				},
 			},
@@ -496,7 +496,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 
 // updateDaemonSetIfNeeded updates a DaemonSet if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.DaemonSet) error {
+func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *apps_v1.DaemonSet) error {
 	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DaemonsetConfigChanged(current, desired)
 		if updated {
@@ -511,7 +511,7 @@ func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *mo
 
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
+func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *apps_v1.Deployment) error {
 	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DeploymentConfigChanged(current, desired)
 		if updated {
@@ -526,8 +526,8 @@ func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *m
 
 // EnvoyPodSelector returns a label selector using "app: envoy" as the
 // key/value pair.
-func EnvoyPodSelector(contour *model.Contour) *metav1.LabelSelector {
-	return &metav1.LabelSelector{
+func EnvoyPodSelector(contour *model.Contour) *meta_v1.LabelSelector {
+	return &meta_v1.LabelSelector{
 		MatchLabels: map[string]string{
 			"app": contour.EnvoyDataPlaneName(),
 		},

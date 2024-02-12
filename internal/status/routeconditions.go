@@ -17,12 +17,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
 )
 
 const (
@@ -47,7 +48,7 @@ type RouteStatusUpdate struct {
 	GatewayController   gatewayapi_v1beta1.GatewayController
 	Resource            client.Object
 	Generation          int64
-	TransitionTime      metav1.Time
+	TransitionTime      meta_v1.Time
 }
 
 // RouteParentStatusUpdate helps update a specific
@@ -67,7 +68,7 @@ func (r *RouteStatusUpdate) StatusUpdateFor(parentRef gatewayapi_v1beta1.ParentR
 
 // AddCondition adds a condition with the given properties
 // to the RouteParentStatus.
-func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.RouteConditionType, status metav1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) metav1.Condition {
+func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.RouteConditionType, status meta_v1.ConditionStatus, reason gatewayapi_v1beta1.RouteConditionReason, message string) meta_v1.Condition {
 	var rps *gatewayapi_v1beta1.RouteParentStatus
 
 	for _, v := range r.RouteParentStatuses {
@@ -98,12 +99,12 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gatewayapi_v1beta1.
 		message = rps.Conditions[idx].Message + ", " + message
 	}
 
-	cond := metav1.Condition{
+	cond := meta_v1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(conditionType),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		LastTransitionTime: meta_v1.NewTime(time.Now()),
 		ObservedGeneration: r.Generation,
 	}
 
@@ -126,7 +127,7 @@ func (r *RouteParentStatusUpdate) ConditionExists(conditionType gatewayapi_v1bet
 	return false
 }
 
-func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gatewayapi_v1beta1.ParentReference) []metav1.Condition {
+func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gatewayapi_v1beta1.ParentReference) []meta_v1.Condition {
 	for _, rps := range r.RouteParentStatuses {
 		if rps.ParentRef == parentRef {
 			return rps.Conditions

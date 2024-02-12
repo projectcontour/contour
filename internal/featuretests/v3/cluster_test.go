@@ -16,25 +16,26 @@ package v3
 import (
 	"testing"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ref"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/wrapperspb"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // projectcontour/contour#186
@@ -44,10 +45,10 @@ func TestClusterLongServiceName(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r").
-		WithPorts(v1.ServicePort{Port: 8080})
+		WithPorts(core_v1.ServicePort{Port: 8080})
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -60,7 +61,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080"),
 		),
@@ -76,10 +77,10 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// s1 is a simple tcp 80 -> 8080 service.
 	s1 := fixture.NewService("default/kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -90,7 +91,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	rh.OnAdd(i1)
 
 	i2 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: "default",
 		},
@@ -117,7 +118,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	rh.OnAdd(s1)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -126,13 +127,13 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// s2 is the same as s1, but the service port has a name
 	s2 := fixture.NewService("default/kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	// replace s1 with s2
 	rh.OnUpdate(s1, s2)
 
 	// check that we get two CDS records because the port is now named.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
 		),
@@ -143,8 +144,8 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// requires all ports to be named if there is more than one of them.
 	s3 := fixture.NewService("default/kuard").
 		WithPorts(
-			v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
-			v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
+			core_v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			core_v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
 		)
 
 	// replace s2 with s3
@@ -152,7 +153,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get four CDS records. Order is important
 	// because the CDS cache is sorted.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -163,7 +164,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	// s4 is s3 with the http port removed.
 	s4 := fixture.NewService("default/kuard").
 		WithPorts(
-			v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
+			core_v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
 		)
 
 	// replace s3 with s4
@@ -171,7 +172,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get two CDS records only, and that the 80 and http
 	// records have been removed even though the service object remains.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 		),
@@ -185,7 +186,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	defer done()
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -219,13 +220,13 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 
 	s1 := fixture.NewService("default/kuard").
 		WithPorts(
-			v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
-			v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
+			core_v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			core_v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(8443)},
 		)
 
 	rh.OnAdd(s1)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -235,11 +236,11 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 
 	// s2 removes the name on port 80, moves it to port 443 and deletes the https port
 	s2 := fixture.NewService("default/kuard").
-		WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnUpdate(s1, s2)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443"),
 		),
@@ -249,7 +250,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	// now replace s2 with s1 to check it works in the other direction.
 	rh.OnUpdate(s2, s1)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -260,7 +261,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	// cleanup and check
 	rh.OnDelete(s1)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   clusterType,
 	})
@@ -273,10 +274,10 @@ func TestIssue243(t *testing.T) {
 
 	t.Run("single unnamed service with a different numeric target port", func(t *testing.T) {
 		s1 := fixture.NewService("default/kuard").
-			WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+			WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 		i1 := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "kuard",
 				Namespace: "default",
 			},
@@ -289,7 +290,7 @@ func TestIssue243(t *testing.T) {
 
 		rh.OnAdd(s1)
 
-		c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			Resources: resources(t,
 				cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 			),
@@ -309,10 +310,10 @@ func TestIssue247(t *testing.T) {
 	//     protocol: TCP
 	//     targetPort: kuard
 	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -324,7 +325,7 @@ func TestIssue247(t *testing.T) {
 
 	rh.OnAdd(s1)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -337,12 +338,12 @@ func TestCDSResourceFiltering(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
 	s2 := fixture.NewService("httpbin").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("httpbin")})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("httpbin")})
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -368,7 +369,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 	rh.OnAdd(s1)
 	rh.OnAdd(s2)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			// note, resources are sorted by Cluster.Name
 			cluster("default/httpbin/8080/da39a3ee5e", "default/httpbin", "default_httpbin_8080"),
@@ -378,19 +379,19 @@ func TestCDSResourceFiltering(t *testing.T) {
 	})
 
 	// assert we can filter on one resource
-	c.Request(clusterType, "default/kuard/80/da39a3ee5e").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType, "default/kuard/80/da39a3ee5e").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80")),
 		TypeUrl: clusterType,
 	})
 
 	// assert a non matching filter returns a response with no entries.
-	c.Request(clusterType, "default/httpbin/9000").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType, "default/httpbin/9000").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }
 
-func circuitBreakerGlobalOpt(t *testing.T, g *contour_api_v1alpha1.GlobalCircuitBreakerDefaults) func(*dag.Builder) {
+func circuitBreakerGlobalOpt(t *testing.T, g *contour_v1alpha1.GlobalCircuitBreakerDefaults) func(*dag.Builder) {
 	return func(b *dag.Builder) {
 		log := fixture.NewTestLogger(t)
 		log.SetLevel(logrus.DebugLevel)
@@ -413,7 +414,7 @@ func circuitBreakerGlobalOpt(t *testing.T, g *contour_api_v1alpha1.GlobalCircuit
 }
 
 func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
-	g := &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+	g := &contour_v1alpha1.GlobalCircuitBreakerDefaults{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
 		MaxRequests:        15,
@@ -428,10 +429,10 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 		Annotate("projectcontour.io/max-requests", "404").
 		Annotate("projectcontour.io/max-retries", "7").
 		Annotate("projectcontour.io/per-host-max-connections", "45").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "kuard",
 		},
@@ -444,24 +445,24 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections:     wrapperspb.UInt32(9000),
 						MaxPendingRequests: wrapperspb.UInt32(4096),
 						MaxRequests:        wrapperspb.UInt32(404),
 						MaxRetries:         wrapperspb.UInt32(7),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(45),
 					}},
 				},
@@ -475,29 +476,29 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "9999").
 		Annotate("projectcontour.io/max-requests", "1e6").
 		Annotate("projectcontour.io/max-retries", "0").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
 
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(9999),
 						MaxConnections:     wrapperspb.UInt32(13),
 						MaxRequests:        wrapperspb.UInt32(15),
 						MaxRetries:         wrapperspb.UInt32(17),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -509,29 +510,29 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "0").
 		Annotate("projectcontour.io/max-requests", "0").
 		Annotate("projectcontour.io/max-retries", "0").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
 
 	rh.OnUpdate(s2, s3)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections:     wrapperspb.UInt32(13),
 						MaxPendingRequests: wrapperspb.UInt32(14),
 						MaxRequests:        wrapperspb.UInt32(15),
 						MaxRetries:         wrapperspb.UInt32(17),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -540,7 +541,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 }
 
 func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
-	g := &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+	g := &contour_v1alpha1.GlobalCircuitBreakerDefaults{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
 		MaxRequests:        15,
@@ -554,19 +555,19 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "4096").
 		Annotate("projectcontour.io/max-requests", "404").
 		Annotate("projectcontour.io/max-retries", "7").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
 	rh.OnAdd(
-		&contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		&contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "simple",
 				Namespace: "default",
 			},
-			Spec: contour_api_v1.HTTPProxySpec{
-				VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-				Routes: []contour_api_v1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+				Routes: []contour_v1.Route{
 					{
-						Services: []contour_api_v1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "kuard",
 								Port: 80,
@@ -580,24 +581,24 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/da39a3ee5e",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections:     wrapperspb.UInt32(9000),
 						MaxPendingRequests: wrapperspb.UInt32(4096),
 						MaxRequests:        wrapperspb.UInt32(404),
 						MaxRetries:         wrapperspb.UInt32(7),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -609,29 +610,29 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "9999").
 		Annotate("projectcontour.io/max-requests", "1e6").
 		Annotate("projectcontour.io/max-retries", "0").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/da39a3ee5e",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(9999),
 						MaxConnections:     wrapperspb.UInt32(13),
 						MaxRequests:        wrapperspb.UInt32(15),
 						MaxRetries:         wrapperspb.UInt32(17),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -643,29 +644,29 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "0").
 		Annotate("projectcontour.io/max-requests", "0").
 		Annotate("projectcontour.io/max-retries", "0").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
 	rh.OnUpdate(s2, s3)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/da39a3ee5e",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections:     wrapperspb.UInt32(13),
 						MaxPendingRequests: wrapperspb.UInt32(14),
 						MaxRequests:        wrapperspb.UInt32(15),
 						MaxRetries:         wrapperspb.UInt32(17),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -674,7 +675,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 }
 
 func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
-	g := &contour_api_v1alpha1.GlobalCircuitBreakerDefaults{
+	g := &contour_v1alpha1.GlobalCircuitBreakerDefaults{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
 		MaxRequests:        15,
@@ -688,27 +689,27 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "4096").
 		Annotate("projectcontour.io/max-requests", "404").
 		Annotate("projectcontour.io/max-retries", "7").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
 	gc := &gatewayapi_v1beta1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "contour",
 		},
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
 	}
 
 	gt := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
@@ -732,7 +733,7 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 	rh.OnAdd(gt)
 
 	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
@@ -757,24 +758,24 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/da39a3ee5e",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections:     wrapperspb.UInt32(9000),
 						MaxPendingRequests: wrapperspb.UInt32(4096),
 						MaxRequests:        wrapperspb.UInt32(404),
 						MaxRetries:         wrapperspb.UInt32(7),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -786,29 +787,29 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "9999").
 		Annotate("projectcontour.io/max-requests", "1e6").
 		Annotate("projectcontour.io/max-retries", "0").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/da39a3ee5e",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(9999),
 						MaxConnections:     wrapperspb.UInt32(13),
 						MaxRequests:        wrapperspb.UInt32(15),
 						MaxRetries:         wrapperspb.UInt32(17),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -820,29 +821,29 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 		Annotate("projectcontour.io/max-pending-requests", "0").
 		Annotate("projectcontour.io/max-requests", "0").
 		Annotate("projectcontour.io/max-retries", "0").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
 	rh.OnUpdate(s2, s3)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/da39a3ee5e",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections:     wrapperspb.UInt32(13),
 						MaxPendingRequests: wrapperspb.UInt32(14),
 						MaxRequests:        wrapperspb.UInt32(15),
 						MaxRetries:         wrapperspb.UInt32(17),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			}),
 		),
@@ -857,30 +858,30 @@ func TestClusterPerServiceParameters(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
-	rh.OnAdd(&contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	rh.OnAdd(&contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 60,
@@ -889,7 +890,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			// note, resources are sorted by Cluster.Name
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -905,35 +906,35 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
-	rh.OnAdd(&contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	rh.OnAdd(&contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "Random",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/b",
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "WeightedLeastRequest",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
@@ -941,27 +942,27 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/58d888c08a",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RANDOM,
+				LbPolicy: envoy_config_cluster_v3.Cluster_RANDOM,
 			}),
-			DefaultCluster(&envoy_cluster_v3.Cluster{
+			DefaultCluster(&envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/80/8bf87fefba",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   envoy_v3.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_LEAST_REQUEST,
+				LbPolicy: envoy_config_cluster_v3.Cluster_LEAST_REQUEST,
 			}),
 		),
 		TypeUrl: clusterType,
@@ -973,20 +974,20 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
 	// proxy1 has a basic health check policy.
-	proxy1 := fixture.NewProxy("default/simple").WithSpec(contour_api_v1.HTTPProxySpec{
-		VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-		Routes: []contour_api_v1.Route{{
-			Conditions: []contour_api_v1.MatchCondition{{
+	proxy1 := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{{
+			Conditions: []contour_v1.MatchCondition{{
 				Prefix: "/a",
 			}},
-			HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
+			HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
 				Path: "/healthz",
 			},
-			Services: []contour_api_v1.Service{{
+			Services: []contour_v1.Service{{
 				Name:   "kuard",
 				Port:   80,
 				Weight: 90,
@@ -997,7 +998,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	rh.OnAdd(proxy1)
 
 	c.Status(proxy1).IsValid()
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", nil),
 		),
@@ -1005,20 +1006,20 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	})
 
 	// proxy2 has valid expected status ranges.
-	proxy2 := fixture.NewProxy("default/simple").WithSpec(contour_api_v1.HTTPProxySpec{
-		VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-		Routes: []contour_api_v1.Route{{
-			Conditions: []contour_api_v1.MatchCondition{{
+	proxy2 := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{{
+			Conditions: []contour_v1.MatchCondition{{
 				Prefix: "/a",
 			}},
-			HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
+			HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
 				Path: "/healthz",
-				ExpectedStatuses: []contour_api_v1.HTTPStatusRange{
+				ExpectedStatuses: []contour_v1.HTTPStatusRange{
 					{Start: 200, End: 300},
 					{Start: 500, End: 600},
 				},
 			},
-			Services: []contour_api_v1.Service{{
+			Services: []contour_v1.Service{{
 				Name:   "kuard",
 				Port:   80,
 				Weight: 90,
@@ -1029,7 +1030,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	rh.OnUpdate(proxy1, proxy2)
 
 	c.Status(proxy2).IsValid()
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", []*envoy_type_v3.Int64Range{
 				{Start: 200, End: 300},
@@ -1040,20 +1041,20 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	})
 
 	// proxy3 has an invalid expected status range (end is too large).
-	proxy3 := fixture.NewProxy("default/simple").WithSpec(contour_api_v1.HTTPProxySpec{
-		VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-		Routes: []contour_api_v1.Route{{
-			Conditions: []contour_api_v1.MatchCondition{{
+	proxy3 := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{{
+			Conditions: []contour_v1.MatchCondition{{
 				Prefix: "/a",
 			}},
-			HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
+			HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
 				Path: "/healthz",
-				ExpectedStatuses: []contour_api_v1.HTTPStatusRange{
+				ExpectedStatuses: []contour_v1.HTTPStatusRange{
 					{Start: 200, End: 300},
 					{Start: 500, End: 601},
 				},
 			},
-			Services: []contour_api_v1.Service{{
+			Services: []contour_v1.Service{{
 				Name:   "kuard",
 				Port:   80,
 				Weight: 90,
@@ -1062,24 +1063,24 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	})
 
 	rh.OnUpdate(proxy2, proxy3)
-	c.Status(proxy3).HasError(contour_api_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: end must be in the range [101, 600]")
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{})
+	c.Status(proxy3).HasError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: end must be in the range [101, 600]")
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
 
 	// proxy4 has an invalid expected status range (start is too small).
-	proxy4 := fixture.NewProxy("default/simple").WithSpec(contour_api_v1.HTTPProxySpec{
-		VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-		Routes: []contour_api_v1.Route{{
-			Conditions: []contour_api_v1.MatchCondition{{
+	proxy4 := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{{
+			Conditions: []contour_v1.MatchCondition{{
 				Prefix: "/a",
 			}},
-			HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
+			HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
 				Path: "/healthz",
-				ExpectedStatuses: []contour_api_v1.HTTPStatusRange{
+				ExpectedStatuses: []contour_v1.HTTPStatusRange{
 					{Start: 99, End: 300},
 					{Start: 599, End: 600},
 				},
 			},
-			Services: []contour_api_v1.Service{{
+			Services: []contour_v1.Service{{
 				Name:   "kuard",
 				Port:   80,
 				Weight: 90,
@@ -1088,8 +1089,8 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	})
 
 	rh.OnUpdate(proxy3, proxy4)
-	c.Status(proxy4).HasError(contour_api_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: start must be in the range [100, 599]")
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{})
+	c.Status(proxy4).HasError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: start must be in the range [100, 599]")
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
 }
 
 // Test processing a service that exists but is not referenced
@@ -1102,30 +1103,30 @@ func TestUnreferencedService(t *testing.T) {
 
 	// This service which is added should cause a DAG rebuild
 	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 	rh.OnAdd(s1)
 
-	rh.OnAdd(&contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	rh.OnAdd(&contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/b",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 60,
@@ -1135,7 +1136,7 @@ func TestUnreferencedService(t *testing.T) {
 	})
 
 	res := c.Request(clusterType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -1144,11 +1145,11 @@ func TestUnreferencedService(t *testing.T) {
 	res.assertEqualVersion(t, "1")
 	// This service which is added should not cause a DAG rebuild
 	s2 := fixture.NewService("kuard-notreferenced").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s2)
 
 	res = c.Request(clusterType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -1159,7 +1160,7 @@ func TestUnreferencedService(t *testing.T) {
 	// does not trigger a rebuild
 	rh.OnDelete(s2)
 	res = c.Request(clusterType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),

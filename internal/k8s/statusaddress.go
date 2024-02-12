@@ -18,19 +18,20 @@ import (
 	"fmt"
 	"sync"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/ingressclass"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/ingressclass"
+	"github.com/projectcontour/contour/internal/ref"
 )
 
 // StatusAddressUpdater observes informer OnAdd and OnUpdate events and
@@ -41,7 +42,7 @@ import (
 type StatusAddressUpdater struct {
 	Logger                logrus.FieldLogger
 	Cache                 cache.Cache
-	LBStatus              v1.LoadBalancerStatus
+	LBStatus              core_v1.LoadBalancerStatus
 	IngressClassNames     []string
 	GatewayControllerName string
 	GatewayRef            *types.NamespacedName
@@ -52,7 +53,7 @@ type StatusAddressUpdater struct {
 }
 
 // Set updates the LBStatus field.
-func (s *StatusAddressUpdater) Set(status v1.LoadBalancerStatus) {
+func (s *StatusAddressUpdater) Set(status core_v1.LoadBalancerStatus) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -74,7 +75,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 		return
 	}
 
-	logNoMatch := func(logger logrus.FieldLogger, obj metav1.Object) {
+	logNoMatch := func(logger logrus.FieldLogger, obj meta_v1.Object) {
 		logger.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
 			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
@@ -108,7 +109,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 			}),
 		))
 
-	case *contour_api_v1.HTTPProxy:
+	case *contour_v1.HTTPProxy:
 		if !ingressclass.MatchesHTTPProxy(o, s.IngressClassNames) {
 			logNoMatch(s.Logger, o)
 			return
@@ -117,9 +118,9 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 		s.StatusUpdater.Send(NewStatusUpdate(
 			o.Name,
 			o.Namespace,
-			&contour_api_v1.HTTPProxy{},
+			&contour_v1.HTTPProxy{},
 			StatusMutatorFunc(func(obj client.Object) client.Object {
-				proxy, ok := obj.(*contour_api_v1.HTTPProxy)
+				proxy, ok := obj.(*contour_v1.HTTPProxy)
 				if !ok {
 					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
 						obj.GetName(), obj.GetNamespace(),
@@ -209,12 +210,12 @@ func (s *StatusAddressUpdater) OnDelete(_ any) {
 // is desirable to clear the status.
 type ServiceStatusLoadBalancerWatcher struct {
 	ServiceName string
-	LBStatus    chan v1.LoadBalancerStatus
+	LBStatus    chan core_v1.LoadBalancerStatus
 	Log         logrus.FieldLogger
 }
 
 func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
-	svc, ok := obj.(*v1.Service)
+	svc, ok := obj.(*core_v1.Service)
 	if !ok {
 		// not a service
 		return
@@ -230,7 +231,7 @@ func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 }
 
 func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
-	svc, ok := newObj.(*v1.Service)
+	svc, ok := newObj.(*core_v1.Service)
 	if !ok {
 		// not a service
 		return
@@ -246,7 +247,7 @@ func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 }
 
 func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj any) {
-	svc, ok := obj.(*v1.Service)
+	svc, ok := obj.(*core_v1.Service)
 	if !ok {
 		// not a service
 		return
@@ -254,16 +255,16 @@ func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj any) {
 	if svc.Name != s.ServiceName {
 		return
 	}
-	s.notify(v1.LoadBalancerStatus{
+	s.notify(core_v1.LoadBalancerStatus{
 		Ingress: nil,
 	})
 }
 
-func (s *ServiceStatusLoadBalancerWatcher) notify(lbstatus v1.LoadBalancerStatus) {
+func (s *ServiceStatusLoadBalancerWatcher) notify(lbstatus core_v1.LoadBalancerStatus) {
 	s.LBStatus <- lbstatus
 }
 
-func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLoadBalancerStatus {
+func coreToNetworkingLBStatus(lbs core_v1.LoadBalancerStatus) networking_v1.IngressLoadBalancerStatus {
 	ingress := make([]networking_v1.IngressLoadBalancerIngress, len(lbs.Ingress))
 	for i, ing := range lbs.Ingress {
 		ports := make([]networking_v1.IngressPortStatus, len(ing.Ports))
@@ -285,7 +286,7 @@ func coreToNetworkingLBStatus(lbs v1.LoadBalancerStatus) networking_v1.IngressLo
 	}
 }
 
-func lbStatusToGatewayAddresses(lbs v1.LoadBalancerStatus) []gatewayapi_v1.GatewayStatusAddress {
+func lbStatusToGatewayAddresses(lbs core_v1.LoadBalancerStatus) []gatewayapi_v1.GatewayStatusAddress {
 	addrs := []gatewayapi_v1.GatewayStatusAddress{}
 
 	for _, lbi := range lbs.Ingress {

@@ -16,15 +16,16 @@ package v3
 import (
 	"testing"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestDownstreamTLSCertificateValidation(t *testing.T) {
@@ -38,22 +39,22 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnAdd(clientCASecret)
 
 	service := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(service)
 
 	proxy1 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate: clientCASecret.Name,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -62,7 +63,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	rh.OnAdd(proxy1)
 
-	ingressHTTPS := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -84,7 +85,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
@@ -94,18 +95,18 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}).Status(proxy1).IsValid()
 
 	proxy2 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						SkipClientCertValidation: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -114,7 +115,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	rh.OnUpdate(proxy1, proxy2)
 
-	ingressHTTPSSkipVerify := &envoy_listener_v3.Listener{
+	ingressHTTPSSkipVerify := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -132,7 +133,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSSkipVerify,
@@ -142,19 +143,19 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}).Status(proxy2).IsValid()
 
 	proxy3 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						SkipClientCertValidation: true,
 						CACertificate:            clientCASecret.Name,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -162,7 +163,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		})
 	rh.OnUpdate(proxy2, proxy3)
 
-	ingressHTTPSSkipVerifyWithCA := &envoy_listener_v3.Listener{
+	ingressHTTPSSkipVerifyWithCA := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -185,7 +186,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSSkipVerifyWithCA,
@@ -198,19 +199,19 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnAdd(crlSecret)
 
 	proxy4 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             clientCASecret.Name,
 						CertificateRevocationList: crlSecret.Name,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -218,7 +219,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		})
 	rh.OnUpdate(proxy3, proxy4)
 
-	ingressHTTPSWithCRLandCA := &envoy_listener_v3.Listener{
+	ingressHTTPSWithCRLandCA := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -242,7 +243,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSWithCRLandCA,
@@ -251,20 +252,20 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}).Status(proxy4).IsValid()
 
 	proxy5 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             clientCASecret.Name,
 						CertificateRevocationList: crlSecret.Name,
 						OnlyVerifyLeafCertCrl:     true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -272,7 +273,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		})
 	rh.OnUpdate(proxy4, proxy5)
 
-	ingressHTTPSWithLeafCRLandCA := &envoy_listener_v3.Listener{
+	ingressHTTPSWithLeafCRLandCA := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -297,7 +298,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSWithLeafCRLandCA,
@@ -306,19 +307,19 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}).Status(proxy5).IsValid()
 
 	proxy6 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             clientCASecret.Name,
 						OptionalClientCertificate: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -326,7 +327,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		})
 	rh.OnUpdate(proxy5, proxy6)
 
-	ingressHTTPSOptionalVerify := &envoy_listener_v3.Listener{
+	ingressHTTPSOptionalVerify := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -348,7 +349,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSOptionalVerify,
@@ -357,14 +358,14 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}).Status(proxy6).IsValid()
 
 	proxy7 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate: clientCASecret.Name,
-						ForwardClientCertificate: &contour_api_v1.ClientCertificateDetails{
+						ForwardClientCertificate: &contour_v1.ClientCertificateDetails{
 							Subject: true,
 							Cert:    true,
 							Chain:   true,
@@ -374,8 +375,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -383,7 +384,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		})
 	rh.OnUpdate(proxy6, proxy7)
 
-	ingressHTTPSForwardClientCert := &envoy_listener_v3.Listener{
+	ingressHTTPSForwardClientCert := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -410,7 +411,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSForwardClientCert,
@@ -419,14 +420,14 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	}).Status(proxy7).IsValid()
 
 	proxy8 := fixture.NewProxy("example.com").
-		WithSpec(contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						SkipClientCertValidation: true,
-						ForwardClientCertificate: &contour_api_v1.ClientCertificateDetails{
+						ForwardClientCertificate: &contour_v1.ClientCertificateDetails{
 							Subject: true,
 							DNS:     true,
 							URI:     true,
@@ -434,8 +435,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -443,7 +444,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		})
 	rh.OnUpdate(proxy7, proxy8)
 
-	ingressHTTPSForwardClientCertSkipValidation := &envoy_listener_v3.Listener{
+	ingressHTTPSForwardClientCertSkipValidation := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -464,7 +465,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSForwardClientCertSkipValidation,

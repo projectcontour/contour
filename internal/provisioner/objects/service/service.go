@@ -18,6 +18,11 @@ import (
 	"fmt"
 	"strings"
 
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -25,11 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/ref"
-
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -108,28 +108,28 @@ var InternalLBAnnotations = map[model.LoadBalancerProviderType]map[string]string
 // EnsureContourService ensures that a Contour Service exists for the given contour.
 func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	// Enclose contour.
-	updater := func(ctx context.Context, cli client.Client, current, desired *corev1.Service) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *core_v1.Service) error {
 		return updateContourServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, DesiredContourService(contour), updater, &corev1.Service{})
+	return objects.EnsureObject(ctx, cli, DesiredContourService(contour), updater, &core_v1.Service{})
 }
 
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
 func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	// Enclose contour.
-	updater := func(ctx context.Context, cli client.Client, current, desired *corev1.Service) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *core_v1.Service) error {
 		return updateEnvoyServiceIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, DesiredEnvoyService(contour), updater, &corev1.Service{})
+	return objects.EnsureObject(ctx, cli, DesiredEnvoyService(contour), updater, &core_v1.Service{})
 }
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the
 // provided contour is deleted if Contour owner labels exist.
 func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	obj := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	obj := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourServiceName(),
 		},
@@ -141,8 +141,8 @@ func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
 // provided contour is deleted.
 func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	obj := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	obj := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.EnvoyServiceName(),
 		},
@@ -152,56 +152,56 @@ func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
-func DesiredContourService(contour *model.Contour) *corev1.Service {
+func DesiredContourService(contour *model.Contour) *core_v1.Service {
 	xdsPort := objects.XDSPort
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	svc := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:   contour.Namespace,
 			Name:        contour.ContourServiceName(),
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{
 				{
 					Name:       "xds",
 					Port:       xdsPort,
-					Protocol:   corev1.ProtocolTCP,
+					Protocol:   core_v1.ProtocolTCP,
 					TargetPort: intstr.IntOrString{IntVal: xdsPort},
 				},
 			},
 			Selector:        deployment.ContourDeploymentPodSelector(contour).MatchLabels,
-			Type:            corev1.ServiceTypeClusterIP,
-			SessionAffinity: corev1.ServiceAffinityNone,
+			Type:            core_v1.ServiceTypeClusterIP,
+			SessionAffinity: core_v1.ServiceAffinityNone,
 		},
 	}
 	return svc
 }
 
 // DesiredEnvoyService generates the desired Envoy Service for the given contour.
-func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
-	var ports []corev1.ServicePort
+func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
+	var ports []core_v1.ServicePort
 
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.Ports {
-		ports = append(ports, corev1.ServicePort{
+		ports = append(ports, core_v1.ServicePort{
 			Name:       port.Name,
-			Protocol:   corev1.ProtocolTCP,
+			Protocol:   core_v1.ProtocolTCP,
 			Port:       port.ServicePort,
 			TargetPort: intstr.IntOrString{IntVal: port.ContainerPort},
 		})
 	}
 
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	svc := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:   contour.Namespace,
 			Name:        contour.EnvoyServiceName(),
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Spec: corev1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
 			Ports:           ports,
 			Selector:        dataplane.EnvoyPodSelector(contour).MatchLabels,
-			SessionAffinity: corev1.ServiceAffinityNone,
+			SessionAffinity: core_v1.ServiceAffinityNone,
 			LoadBalancerIP:  contour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP,
 		},
 	}
@@ -261,7 +261,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	}
 	switch epType {
 	case model.LoadBalancerServicePublishingType:
-		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+		svc.Spec.Type = core_v1.ServiceTypeLoadBalancer
 		isInternal := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope == model.InternalLoadBalancer
 		if isInternal {
 			provider := providerParams.Type
@@ -271,7 +271,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 			}
 		}
 	case model.NodePortServicePublishingType:
-		svc.Spec.Type = corev1.ServiceTypeNodePort
+		svc.Spec.Type = core_v1.ServiceTypeNodePort
 
 		for _, p := range contour.Spec.NetworkPublishing.Envoy.Ports {
 			if p.NodePort == 0 {
@@ -285,7 +285,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		}
 
 	case model.ClusterIPServicePublishingType:
-		svc.Spec.Type = corev1.ServiceTypeClusterIP
+		svc.Spec.Type = core_v1.ServiceTypeClusterIP
 	}
 
 	if len(contour.Spec.NetworkPublishing.Envoy.ServiceAnnotations) > 0 {
@@ -302,7 +302,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 }
 
 // updateContourServiceIfNeeded updates a Contour Service if current does not match desired.
-func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
+func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *core_v1.Service) error {
 	if !labels.AnyExist(current, model.OwnerLabels(contour)) {
 		return nil
 	}
@@ -319,14 +319,14 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 
 // updateEnvoyServiceIfNeeded updates an Envoy Service if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
+func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *core_v1.Service) error {
 	if !labels.AnyExist(current, model.OwnerLabels(contour)) {
 		return nil
 	}
 
 	// Using the Service returned by the equality pkg instead of the desired
 	// parameter since clusterIP is immutable.
-	var updated *corev1.Service
+	var updated *core_v1.Service
 	needed := false
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
 	case model.NodePortServicePublishingType:

@@ -17,20 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
-	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
-	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	"github.com/projectcontour/contour/internal/provisioner/objects/rbac"
-	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
-	"github.com/projectcontour/contour/internal/provisioner/objects/service"
-	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
-
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,6 +32,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
+	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
+	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac"
+	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
+	"github.com/projectcontour/contour/internal/provisioner/objects/service"
+	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 )
 
 // gatewayReconciler reconciles Gateway objects.
@@ -123,7 +123,7 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 	var accepted bool
 	for _, cond := range gatewayClass.Status.Conditions {
 		if cond.Type == string(gatewayapi_v1.GatewayClassConditionStatusAccepted) {
-			if cond.Status == metav1.ConditionTrue {
+			if cond.Status == meta_v1.ConditionTrue {
 				accepted = true
 			}
 			break
@@ -164,7 +164,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			log.Info("deleting gateway resources")
 
 			contour := &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: req.Namespace,
 					Name:      req.Name,
 				},
@@ -286,7 +286,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// Deployment replicas
-			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment {
+			if envoyParams.WorkloadType == contour_v1alpha1.WorkloadTypeDeployment {
 				if envoyParams.Replicas > 0 { // nolint:staticcheck
 					contourModel.Spec.EnvoyReplicas = envoyParams.Replicas // nolint:staticcheck
 				}
@@ -304,7 +304,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
 				}
 
-				if networkPublishing.Type == contour_api_v1alpha1.NodePortServicePublishingType {
+				if networkPublishing.Type == contour_v1alpha1.NodePortServicePublishingType {
 					// when the NetworkPublishingType is 'NodePortServicePublishingType',
 					// the gateway.Spec.Listeners' port will be used to set 'NodePort' in addition to 'ServicePort'
 					for i := range contourModel.Spec.NetworkPublishing.Envoy.Ports {
@@ -351,13 +351,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourModel.Spec.EnvoyLogLevel = envoyParams.LogLevel
 			}
 
-			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDeployment &&
+			if envoyParams.WorkloadType == contour_v1alpha1.WorkloadTypeDeployment &&
 				envoyParams.Deployment != nil &&
 				envoyParams.Deployment.Strategy != nil {
 				contourModel.Spec.EnvoyDeploymentStrategy = *envoyParams.Deployment.Strategy
 			}
 
-			if envoyParams.WorkloadType == contour_api_v1alpha1.WorkloadTypeDaemonSet &&
+			if envoyParams.WorkloadType == contour_v1alpha1.WorkloadTypeDaemonSet &&
 				envoyParams.DaemonSet != nil &&
 				envoyParams.DaemonSet.UpdateStrategy != nil {
 				contourModel.Spec.EnvoyDaemonSetUpdateStrategy = *envoyParams.DaemonSet.UpdateStrategy
@@ -388,10 +388,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("failed to ensure resources for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 
-	var newConds []metav1.Condition
+	var newConds []meta_v1.Condition
 	for _, cond := range gateway.Status.Conditions {
 		if cond.Type == string(gatewayapi_v1.GatewayConditionAccepted) {
-			if cond.Status == metav1.ConditionTrue {
+			if cond.Status == meta_v1.ConditionTrue {
 				return ctrl.Result{}, nil
 			}
 
@@ -404,11 +404,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log.Info("setting gateway's Accepted condition to true")
 
 	// nolint:gocritic
-	gateway.Status.Conditions = append(newConds, metav1.Condition{
+	gateway.Status.Conditions = append(newConds, meta_v1.Condition{
 		Type:               string(gatewayapi_v1.GatewayConditionAccepted),
-		Status:             metav1.ConditionTrue,
+		Status:             meta_v1.ConditionTrue,
 		ObservedGeneration: gateway.Generation,
-		LastTransitionTime: metav1.Now(),
+		LastTransitionTime: meta_v1.Now(),
 		Reason:             string(gatewayapi_v1.GatewayReasonAccepted),
 		Message:            "Gateway is accepted",
 	})
@@ -473,7 +473,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 	return errs
 }
 
-func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayClass *gatewayapi_v1beta1.GatewayClass) (*contour_api_v1alpha1.ContourDeployment, error) {
+func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayClass *gatewayapi_v1beta1.GatewayClass) (*contour_v1alpha1.ContourDeployment, error) {
 	// Check if there is a parametersRef to ContourDeployment with
 	// a namespace specified. Theoretically, we should only be reconciling
 	// Gateways for GatewayClasses that have valid parameter refs (or no refs),
@@ -487,7 +487,7 @@ func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayCl
 		return nil, nil
 	}
 
-	gcParams := &contour_api_v1alpha1.ContourDeployment{}
+	gcParams := &contour_v1alpha1.ContourDeployment{}
 	key := client.ObjectKey{
 		Namespace: string(*gatewayClass.Spec.ParametersRef.Namespace),
 		Name:      gatewayClass.Spec.ParametersRef.Name,

@@ -17,18 +17,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/internal/status"
 )
 
 func TestComputeHosts(t *testing.T) {
@@ -285,7 +286,7 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector matches labels, same ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
+				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "production",
 					},
@@ -297,7 +298,7 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector matches labels, different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
+				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
 					},
@@ -309,7 +310,7 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector doesn't matches labels, different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
+				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
 					},
@@ -321,10 +322,10 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector matches expression 'In', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
+				Selector: &meta_v1.LabelSelector{
+					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
 						Key:      "something",
-						Operator: metav1.LabelSelectorOpIn,
+						Operator: meta_v1.LabelSelectorOpIn,
 						Values:   []string{"special"},
 					}},
 				},
@@ -335,10 +336,10 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector matches expression 'DoesNotExist', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
+				Selector: &meta_v1.LabelSelector{
+					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
 						Key:      "notthere",
-						Operator: metav1.LabelSelectorOpDoesNotExist,
+						Operator: meta_v1.LabelSelectorOpDoesNotExist,
 					}},
 				},
 			},
@@ -348,10 +349,10 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
+				Selector: &meta_v1.LabelSelector{
+					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
 						Key:      "something",
-						Operator: metav1.LabelSelectorOpDoesNotExist,
+						Operator: meta_v1.LabelSelectorOpDoesNotExist,
 					}},
 				},
 			},
@@ -361,10 +362,10 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector matches expression 'Exists', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
+				Selector: &meta_v1.LabelSelector{
+					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
 						Key:      "notthere",
-						Operator: metav1.LabelSelectorOpExists,
+						Operator: meta_v1.LabelSelectorOpExists,
 					}},
 				},
 			},
@@ -374,10 +375,10 @@ func TestNamespaceMatches(t *testing.T) {
 		"From.NamespacesFromSelector doesn't match expression 'Exists', different ns as gateway": {
 			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-				Selector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{{
+				Selector: &meta_v1.LabelSelector{
+					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
 						Key:      "something",
-						Operator: metav1.LabelSelectorOpExists,
+						Operator: meta_v1.LabelSelectorOpExists,
 					}},
 				},
 			},
@@ -392,14 +393,14 @@ func TestNamespaceMatches(t *testing.T) {
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
 					gateway: &gatewayapi_v1beta1.Gateway{
-						ObjectMeta: metav1.ObjectMeta{
+						ObjectMeta: meta_v1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
 						},
 					},
-					namespaces: map[string]*v1.Namespace{
+					namespaces: map[string]*core_v1.Namespace{
 						"projectcontour": {
-							ObjectMeta: metav1.ObjectMeta{
+							ObjectMeta: meta_v1.ObjectMeta{
 								Name: "projectcontour",
 								Labels: map[string]string{
 									"app": "production",
@@ -407,7 +408,7 @@ func TestNamespaceMatches(t *testing.T) {
 							},
 						},
 						"custom": {
-							ObjectMeta: metav1.ObjectMeta{
+							ObjectMeta: meta_v1.ObjectMeta{
 								Name: "custom",
 								Labels: map[string]string{
 									"something": "special",
@@ -417,7 +418,7 @@ func TestNamespaceMatches(t *testing.T) {
 							},
 						},
 						"customsimilar": {
-							ObjectMeta: metav1.ObjectMeta{
+							ObjectMeta: meta_v1.ObjectMeta{
 								Name: "custom",
 								Labels: map[string]string{
 									"something": "special",
@@ -431,7 +432,7 @@ func TestNamespaceMatches(t *testing.T) {
 			var selector labels.Selector
 			var err error
 			if tc.namespaces != nil && tc.namespaces.Selector != nil {
-				selector, err = metav1.LabelSelectorAsSelector(tc.namespaces.Selector)
+				selector, err = meta_v1.LabelSelectorAsSelector(tc.namespaces.Selector)
 				require.NoError(t, err)
 			}
 
@@ -740,7 +741,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
 					gateway: &gatewayapi_v1beta1.Gateway{
-						ObjectMeta: metav1.ObjectMeta{
+						ObjectMeta: meta_v1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
 						},

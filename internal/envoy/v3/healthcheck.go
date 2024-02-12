@@ -16,29 +16,30 @@ package v3
 import (
 	"time"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-// httpHealthCheck returns a *envoy_core_v3.HealthCheck value for HTTP Routes
-func httpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
+// httpHealthCheck returns a *envoy_config_core_v3.HealthCheck value for HTTP Routes
+func httpHealthCheck(cluster *dag.Cluster) *envoy_config_core_v3.HealthCheck {
 	hc := cluster.HTTPHealthCheckPolicy
 	host := envoy.HCHost
 	if hc.Host != "" {
 		host = hc.Host
 	}
 
-	return &envoy_core_v3.HealthCheck{
+	return &envoy_config_core_v3.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, envoy.HCTimeout),
 		Interval:           durationOrDefault(hc.Interval, envoy.HCInterval),
 		UnhealthyThreshold: protobuf.UInt32OrDefault(hc.UnhealthyThreshold, envoy.HCUnhealthyThreshold),
 		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, envoy.HCHealthyThreshold),
-		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+		HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 				Path:             hc.Path,
 				Host:             host,
 				CodecClientType:  codecClientType(cluster),
@@ -48,15 +49,15 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 	}
 }
 
-func expectedStatuses(statusRanges []dag.HTTPStatusRange) []*typev3.Int64Range {
+func expectedStatuses(statusRanges []dag.HTTPStatusRange) []*envoy_type_v3.Int64Range {
 	if len(statusRanges) == 0 {
 		return nil
 	}
 
-	var res []*typev3.Int64Range
+	var res []*envoy_type_v3.Int64Range
 
 	for _, statusRange := range statusRanges {
-		res = append(res, &typev3.Int64Range{
+		res = append(res, &envoy_type_v3.Int64Range{
 			Start: statusRange.Start,
 			End:   statusRange.End,
 		})
@@ -65,17 +66,17 @@ func expectedStatuses(statusRanges []dag.HTTPStatusRange) []*typev3.Int64Range {
 	return res
 }
 
-// tcpHealthCheck returns a *envoy_core_v3.HealthCheck value for TCPProxies
-func tcpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
+// tcpHealthCheck returns a *envoy_config_core_v3.HealthCheck value for TCPProxies
+func tcpHealthCheck(cluster *dag.Cluster) *envoy_config_core_v3.HealthCheck {
 	hc := cluster.TCPHealthCheckPolicy
 
-	return &envoy_core_v3.HealthCheck{
+	return &envoy_config_core_v3.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, envoy.HCTimeout),
 		Interval:           durationOrDefault(hc.Interval, envoy.HCInterval),
 		UnhealthyThreshold: protobuf.UInt32OrDefault(hc.UnhealthyThreshold, envoy.HCUnhealthyThreshold),
 		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, envoy.HCHealthyThreshold),
-		HealthChecker: &envoy_core_v3.HealthCheck_TcpHealthCheck_{
-			TcpHealthCheck: &envoy_core_v3.HealthCheck_TcpHealthCheck{},
+		HealthChecker: &envoy_config_core_v3.HealthCheck_TcpHealthCheck_{
+			TcpHealthCheck: &envoy_config_core_v3.HealthCheck_TcpHealthCheck{},
 		},
 	}
 }
@@ -87,9 +88,9 @@ func durationOrDefault(d, def time.Duration) *durationpb.Duration {
 	return durationpb.New(def)
 }
 
-func codecClientType(cluster *dag.Cluster) typev3.CodecClientType {
+func codecClientType(cluster *dag.Cluster) envoy_type_v3.CodecClientType {
 	if cluster.Protocol == "h2" || cluster.Protocol == "h2c" {
-		return typev3.CodecClientType_HTTP2
+		return envoy_type_v3.CodecClientType_HTTP2
 	}
-	return typev3.CodecClientType_HTTP1
+	return envoy_type_v3.CodecClientType_HTTP1
 }

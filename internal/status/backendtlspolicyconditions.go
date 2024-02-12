@@ -17,12 +17,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
 )
 
 // BackendTLSPolicyStatusUpdate represents an atomic update to a
@@ -34,7 +35,7 @@ type BackendTLSPolicyStatusUpdate struct {
 	GatewayController      gatewayapi_v1beta1.GatewayController
 	Resource               client.Object
 	Generation             int64
-	TransitionTime         metav1.Time
+	TransitionTime         meta_v1.Time
 }
 
 // BackendTLSPolicyAncestorStatusUpdate helps update a specific ancestor ref's
@@ -55,7 +56,7 @@ func (b *BackendTLSPolicyStatusUpdate) StatusUpdateFor(ancestorRef gatewayapi_v1
 
 // AddCondition adds a condition with the given properties to the
 // BackendTLSPolicyAncestorStatus.
-func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewayapi_v1alpha2.PolicyConditionType, status metav1.ConditionStatus, reason gatewayapi_v1alpha2.PolicyConditionReason, message string) metav1.Condition {
+func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewayapi_v1alpha2.PolicyConditionType, status meta_v1.ConditionStatus, reason gatewayapi_v1alpha2.PolicyConditionReason, message string) meta_v1.Condition {
 	var pas *gatewayapi_v1alpha2.PolicyAncestorStatus
 
 	for _, v := range b.PolicyAncestorStatuses {
@@ -86,12 +87,12 @@ func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewa
 		message = pas.Conditions[idx].Message + ", " + message
 	}
 
-	cond := metav1.Condition{
+	cond := meta_v1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(conditionType),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		LastTransitionTime: meta_v1.NewTime(time.Now()),
 		ObservedGeneration: b.Generation,
 	}
 
@@ -106,7 +107,7 @@ func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewa
 
 // ConditionsForAncestorRef returns the list of conditions for a given ancestor
 // if it exists.
-func (b *BackendTLSPolicyStatusUpdate) ConditionsForAncestorRef(ancestorRef gatewayapi_v1beta1.ParentReference) []metav1.Condition {
+func (b *BackendTLSPolicyStatusUpdate) ConditionsForAncestorRef(ancestorRef gatewayapi_v1beta1.ParentReference) []meta_v1.Condition {
 	for _, pas := range b.PolicyAncestorStatuses {
 		if pas.AncestorRef == ancestorRef {
 			return pas.Conditions

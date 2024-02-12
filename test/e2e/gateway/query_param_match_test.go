@@ -17,13 +17,14 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testGatewayMultipleQueryParamMatch(namespace string, gateway types.NamespacedName) {
@@ -36,7 +37,7 @@ func testGatewayMultipleQueryParamMatch(namespace string, gateway types.Namespac
 		f.Fixtures.Echo.Deploy(namespace, "echo-4")
 
 		route := &gatewayapi_v1beta1.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "httproute-1",
 			},

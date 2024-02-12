@@ -16,7 +16,7 @@
 package e2e
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -32,7 +32,7 @@ func GatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	return conditionExists(
 		gatewayClass.Status.Conditions,
 		string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-		metav1.ConditionTrue,
+		meta_v1.ConditionTrue,
 	)
 }
 
@@ -46,7 +46,7 @@ func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool
 	return conditionExists(
 		gatewayClass.Status.Conditions,
 		string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-		metav1.ConditionFalse,
+		meta_v1.ConditionFalse,
 	)
 }
 
@@ -60,7 +60,7 @@ func GatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
 	return conditionExists(
 		gateway.Status.Conditions,
 		string(gatewayapi_v1.GatewayConditionAccepted),
-		metav1.ConditionTrue,
+		meta_v1.ConditionTrue,
 	)
 }
 
@@ -74,7 +74,7 @@ func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 	return conditionExists(
 		gateway.Status.Conditions,
 		string(gatewayapi_v1.GatewayConditionProgrammed),
-		metav1.ConditionTrue,
+		meta_v1.ConditionTrue,
 	)
 }
 
@@ -86,7 +86,7 @@ func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v
 			return conditionExists(
 				listenerStatus.Conditions,
 				string(gatewayapi_v1.ListenerConditionAccepted),
-				metav1.ConditionTrue,
+				meta_v1.ConditionTrue,
 			)
 		}
 	}
@@ -112,7 +112,7 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -137,7 +137,7 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -162,7 +162,7 @@ func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -178,7 +178,7 @@ func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
 	}
 
 	for _, gw := range btp.Status.Ancestors {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.PolicyConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.PolicyConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -186,7 +186,7 @@ func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
 	return false
 }
 
-func conditionExists(conditions []metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) bool {
+func conditionExists(conditions []meta_v1.Condition, conditionType string, conditionStatus meta_v1.ConditionStatus) bool {
 	for _, cond := range conditions {
 		if cond.Type == conditionType && cond.Status == conditionStatus {
 			return true

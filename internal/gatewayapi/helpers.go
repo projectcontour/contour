@@ -14,11 +14,12 @@
 package gatewayapi
 
 import (
-	"github.com/projectcontour/contour/internal/ref"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/ref"
 )
 
 func CertificateRef(name, namespace string) gatewayapi_v1beta1.SecretObjectReference {

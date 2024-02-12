@@ -18,25 +18,26 @@ import (
 	"sort"
 	"sync"
 
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
-	"google.golang.org/protobuf/proto"
 )
 
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
 	mu     sync.Mutex
-	values map[string]*envoy_route_v3.RouteConfiguration
+	values map[string]*envoy_config_route_v3.RouteConfiguration
 	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *RouteCache) Update(v map[string]*envoy_route_v3.RouteConfiguration) {
+func (c *RouteCache) Update(v map[string]*envoy_config_route_v3.RouteConfiguration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -49,7 +50,7 @@ func (c *RouteCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var values []*envoy_route_v3.RouteConfiguration
+	var values []*envoy_config_route_v3.RouteConfiguration
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -63,7 +64,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var values []*envoy_route_v3.RouteConfiguration
+	var values []*envoy_config_route_v3.RouteConfiguration
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -72,7 +73,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 			// not the same as returning nil, we're choosing to
 			// say "the configuration you asked for _does exists_,
 			// but it contains no useful information.
-			v = &envoy_route_v3.RouteConfiguration{
+			v = &envoy_config_route_v3.RouteConfiguration{
 				Name: n,
 			}
 		}
@@ -91,7 +92,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 	// 	- one for all the HTTP vhost routes -- "ingress_http"
 	//	- one per svhost -- "https/<vhost fqdn>"
 	//	- one for fallback cert (if configured) -- "ingress_fallbackcert"
-	routeConfigs := map[string]*envoy_route_v3.RouteConfiguration{}
+	routeConfigs := map[string]*envoy_config_route_v3.RouteConfiguration{}
 
 	// To maintain backwards compatibility, generate an "ingress_http" RouteConfiguration
 	// regardless of whether there are any vhosts if we are in static Listener mode.

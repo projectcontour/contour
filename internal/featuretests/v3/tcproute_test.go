@@ -16,11 +16,11 @@ package v3
 import (
 	"testing"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -38,25 +38,25 @@ func TestTCPRoute(t *testing.T) {
 	defer done()
 
 	svc1 := fixture.NewService("backend-1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	svc2 := fixture.NewService("backend-2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(svc1)
 	rh.OnAdd(svc2)
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
@@ -98,13 +98,13 @@ func TestTCPRoute(t *testing.T) {
 	}
 	rh.OnAdd(route1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-10000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 18000),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-10000", "default/backend-1/80/da39a3ee5e"),
 					),
@@ -149,23 +149,23 @@ func TestTCPRoute(t *testing.T) {
 	}
 	rh.OnAdd(route2)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-10000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 18000),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-10000", "default/backend-1/80/da39a3ee5e"),
 					),
 				}},
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-10001",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 18001),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-10001", "default/backend-2/80/da39a3ee5e"),
 					),
@@ -185,7 +185,7 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	defer done()
 
 	svc1 := fixture.NewService("backend-1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(svc1)
 
@@ -193,16 +193,16 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	rh.OnAdd(sec1)
 
 	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
 		Spec: gatewayapi_v1beta1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
@@ -252,9 +252,9 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	}
 	rh.OnAdd(route1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "https-5000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
 				ListenerFilters: envoy_v3.ListenerFilters(

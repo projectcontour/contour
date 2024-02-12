@@ -15,19 +15,20 @@ package v3
 
 import (
 	envoy_config_trace_v3 "github.com/envoyproxy/go-control-plane/envoy/config/trace/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_trace_v3 "github.com/envoyproxy/go-control-plane/envoy/type/tracing/v3"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
-	"google.golang.org/protobuf/types/known/wrapperspb"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // TracingConfig returns a tracing config,
 // or nil if config is nil.
-func TracingConfig(tracing *EnvoyTracingConfig) *http.HttpConnectionManager_Tracing {
+func TracingConfig(tracing *EnvoyTracingConfig) *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing {
 	if tracing == nil {
 		return nil
 	}
@@ -39,8 +40,8 @@ func TracingConfig(tracing *EnvoyTracingConfig) *http.HttpConnectionManager_Trac
 		}
 	}
 
-	return &http.HttpConnectionManager_Tracing{
-		OverallSampling: &envoy_type.Percent{
+	return &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
+		OverallSampling: &envoy_type_v3.Percent{
 			Value: tracing.OverallSampling,
 		},
 		MaxPathTagLength: wrapperspb.UInt32(tracing.MaxPathTagLength),

@@ -19,30 +19,31 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/ref"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testWildcardFQDN(namespace string) {
 	Specify("invalid wildcard fqdn", func() {
 		t := f.T()
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "wildcard-subdomain",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "*",
 				},
-				Routes: []contourv1.Route{{
-					Services: []contourv1.Service{{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{{
 						Name: "ingress-conformance-echo",
 						Port: 80,
 					}},
@@ -64,17 +65,17 @@ func testWildcardSubdomainFQDN(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "domainio")
 		f.Fixtures.Echo.Deploy(namespace, "bardomainio")
 
-		proxyWildcard := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyWildcard := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "wildcard",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "*.domain.io",
 				},
-				Routes: []contourv1.Route{{
-					Services: []contourv1.Service{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{
 						{
 							Name: "wildcarddomainio",
 							Port: 80,
@@ -83,17 +84,17 @@ func testWildcardSubdomainFQDN(namespace string) {
 				}},
 			},
 		}
-		proxyFullFQDN := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyFullFQDN := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "full-fqdn",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "domain.io",
 				},
-				Routes: []contourv1.Route{{
-					Services: []contourv1.Service{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{
 						{
 							Name: "domainio",
 							Port: 80,
@@ -102,17 +103,17 @@ func testWildcardSubdomainFQDN(namespace string) {
 				}},
 			},
 		}
-		proxyFullFQDNSubdomain := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyFullFQDNSubdomain := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "fqdn-subdomain",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "bar.domain.io",
 				},
-				Routes: []contourv1.Route{{
-					Services: []contourv1.Service{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{
 						{
 							Name: "bardomainio",
 							Port: 80,
@@ -187,25 +188,25 @@ func testIngressWildcardSubdomainFQDN(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "wildcarddomainio")
 		f.Fixtures.Echo.Deploy(namespace, "bardomainio")
 
-		ingressWildcard := &networkingv1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+		ingressWildcard := &networking_v1.Ingress{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "wildcard-ingress",
 			},
-			Spec: networkingv1.IngressSpec{
-				Rules: []networkingv1.IngressRule{
+			Spec: networking_v1.IngressSpec{
+				Rules: []networking_v1.IngressRule{
 					{
 						Host: "*.wildcard-override.projectcontour.io",
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
+						IngressRuleValue: networking_v1.IngressRuleValue{
+							HTTP: &networking_v1.HTTPIngressRuleValue{
+								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networkingv1.PathTypePrefix),
+										PathType: ref.To(networking_v1.PathTypePrefix),
 										Path:     "/",
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
 												Name: "wildcarddomainio",
-												Port: networkingv1.ServiceBackendPort{
+												Port: networking_v1.ServiceBackendPort{
 													Number: 80,
 												},
 											},
@@ -220,17 +221,17 @@ func testIngressWildcardSubdomainFQDN(namespace string) {
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), ingressWildcard))
 
-		proxySubdomain := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxySubdomain := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "fqdn-subdomain",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "bar.wildcard-override.projectcontour.io",
 				},
-				Routes: []contourv1.Route{{
-					Services: []contourv1.Service{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{
 						{
 							Name: "bardomainio",
 							Port: 80,

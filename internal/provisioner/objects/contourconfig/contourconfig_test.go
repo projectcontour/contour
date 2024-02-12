@@ -17,39 +17,40 @@ import (
 	"context"
 	"testing"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
 func TestEnsureContourConfig(t *testing.T) {
 	tests := map[string]struct {
 		contour  *model.Contour
-		existing *contour_api_v1alpha1.ContourConfiguration
-		want     contour_api_v1alpha1.ContourConfigurationSpec
+		existing *contour_v1alpha1.ContourConfiguration
+		want     contour_v1alpha1.ContourConfigurationSpec
 	}{
 		"no existing ContourConfiguration": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contour-1",
 				},
 			},
-			want: contour_api_v1alpha1.ContourConfigurationSpec{
-				Gateway: &contour_api_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_api_v1alpha1.NamespacedName{
+			want: contour_v1alpha1.ContourConfigurationSpec{
+				Gateway: &contour_v1alpha1.GatewayConfig{
+					GatewayRef: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
 				},
-				Envoy: &contour_api_v1alpha1.EnvoyConfig{
-					Service: &contour_api_v1alpha1.NamespacedName{
+				Envoy: &contour_v1alpha1.EnvoyConfig{
+					Service: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "envoy-contour-1",
 					},
@@ -58,40 +59,40 @@ func TestEnsureContourConfig(t *testing.T) {
 		},
 		"existing ContourConfiguration found, with exactly the right spec": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contourconfig-contour-1",
 				},
-				Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-					Gateway: &contour_api_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_api_v1alpha1.NamespacedName{
+				Spec: contour_v1alpha1.ContourConfigurationSpec{
+					Gateway: &contour_v1alpha1.GatewayConfig{
+						GatewayRef: &contour_v1alpha1.NamespacedName{
 							Namespace: "contour-namespace-1",
 							Name:      "contour-1",
 						},
 					},
-					Envoy: &contour_api_v1alpha1.EnvoyConfig{
-						Service: &contour_api_v1alpha1.NamespacedName{
+					Envoy: &contour_v1alpha1.EnvoyConfig{
+						Service: &contour_v1alpha1.NamespacedName{
 							Namespace: "contour-namespace-1",
 							Name:      "envoy-contour-1",
 						},
 					},
 				},
 			},
-			want: contour_api_v1alpha1.ContourConfigurationSpec{
-				Gateway: &contour_api_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_api_v1alpha1.NamespacedName{
+			want: contour_v1alpha1.ContourConfigurationSpec{
+				Gateway: &contour_v1alpha1.GatewayConfig{
+					GatewayRef: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
 				},
-				Envoy: &contour_api_v1alpha1.EnvoyConfig{
-					Service: &contour_api_v1alpha1.NamespacedName{
+				Envoy: &contour_v1alpha1.EnvoyConfig{
+					Service: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "envoy-contour-1",
 					},
@@ -100,40 +101,40 @@ func TestEnsureContourConfig(t *testing.T) {
 		},
 		"existing ContourConfiguration found, with the wrong spec": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contourconfig-contour-1",
 				},
-				Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-					Gateway: &contour_api_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_api_v1alpha1.NamespacedName{
+				Spec: contour_v1alpha1.ContourConfigurationSpec{
+					Gateway: &contour_v1alpha1.GatewayConfig{
+						GatewayRef: &contour_v1alpha1.NamespacedName{
 							Namespace: "some-other-namespace",
 							Name:      "some-other-contour",
 						},
 					},
-					Envoy: &contour_api_v1alpha1.EnvoyConfig{
-						Service: &contour_api_v1alpha1.NamespacedName{
+					Envoy: &contour_v1alpha1.EnvoyConfig{
+						Service: &contour_v1alpha1.NamespacedName{
 							Namespace: "yet-another-namespace",
 							Name:      "some-other-envoy-service",
 						},
 					},
 				},
 			},
-			want: contour_api_v1alpha1.ContourConfigurationSpec{
-				Gateway: &contour_api_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_api_v1alpha1.NamespacedName{
+			want: contour_v1alpha1.ContourConfigurationSpec{
+				Gateway: &contour_v1alpha1.GatewayConfig{
+					GatewayRef: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
 				},
-				Envoy: &contour_api_v1alpha1.EnvoyConfig{
-					Service: &contour_api_v1alpha1.NamespacedName{
+				Envoy: &contour_v1alpha1.EnvoyConfig{
+					Service: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "envoy-contour-1",
 					},
@@ -142,56 +143,56 @@ func TestEnsureContourConfig(t *testing.T) {
 		},
 		"existing ContourConfiguration found, with additional fields specified": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace-1",
 					Name:      "contourconfig-contour-1",
 				},
-				Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-					Gateway: &contour_api_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_api_v1alpha1.NamespacedName{
+				Spec: contour_v1alpha1.ContourConfigurationSpec{
+					Gateway: &contour_v1alpha1.GatewayConfig{
+						GatewayRef: &contour_v1alpha1.NamespacedName{
 							Namespace: "contour-namespace-1",
 							Name:      "contour-1",
 						},
 					},
-					Envoy: &contour_api_v1alpha1.EnvoyConfig{
-						Service: &contour_api_v1alpha1.NamespacedName{
+					Envoy: &contour_v1alpha1.EnvoyConfig{
+						Service: &contour_v1alpha1.NamespacedName{
 							Namespace: "contour-namespace-1",
 							Name:      "envoy-contour-1",
 						},
-						ClientCertificate: &contour_api_v1alpha1.NamespacedName{
+						ClientCertificate: &contour_v1alpha1.NamespacedName{
 							Namespace: "client-cert-namespace",
 							Name:      "client-cert",
 						},
 					},
-					HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
+					HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
 						RootNamespaces: []string{"ns-1", "ns-2"},
 					},
 				},
 			},
-			want: contour_api_v1alpha1.ContourConfigurationSpec{
-				Gateway: &contour_api_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_api_v1alpha1.NamespacedName{
+			want: contour_v1alpha1.ContourConfigurationSpec{
+				Gateway: &contour_v1alpha1.GatewayConfig{
+					GatewayRef: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
 				},
-				Envoy: &contour_api_v1alpha1.EnvoyConfig{
-					Service: &contour_api_v1alpha1.NamespacedName{
+				Envoy: &contour_v1alpha1.EnvoyConfig{
+					Service: &contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "envoy-contour-1",
 					},
-					ClientCertificate: &contour_api_v1alpha1.NamespacedName{
+					ClientCertificate: &contour_v1alpha1.NamespacedName{
 						Namespace: "client-cert-namespace",
 						Name:      "client-cert",
 					},
 				},
-				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
 					RootNamespaces: []string{"ns-1", "ns-2"},
 				},
 			},
@@ -201,7 +202,7 @@ func TestEnsureContourConfig(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
-			require.NoError(t, contour_api_v1alpha1.AddToScheme(scheme))
+			require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
 
 			clientBuilder := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.existing != nil {
@@ -211,7 +212,7 @@ func TestEnsureContourConfig(t *testing.T) {
 
 			require.NoError(t, EnsureContourConfig(context.Background(), client, tc.contour))
 
-			got := &contour_api_v1alpha1.ContourConfiguration{}
+			got := &contour_v1alpha1.ContourConfiguration{}
 			key := types.NamespacedName{
 				Namespace: tc.contour.Namespace,
 				Name:      "contourconfig-" + tc.contour.Name,
@@ -226,18 +227,18 @@ func TestEnsureContourConfig(t *testing.T) {
 func TestEnsureContourConfigDeleted(t *testing.T) {
 	tests := map[string]struct {
 		contour    *model.Contour
-		existing   *contour_api_v1alpha1.ContourConfiguration
+		existing   *contour_v1alpha1.ContourConfiguration
 		wantDelete bool
 	}{
 		"ContourConfiguration exists with the proper labels": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contourconfig-contour-1",
 					Labels: map[string]string{
@@ -249,13 +250,13 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 		},
 		"ContourConfiguration exists without the proper labels (no labels)": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contourconfig-contour-1",
 				},
@@ -264,13 +265,13 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 		},
 		"ContourConfiguration exists without the proper labels (wrong key)": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contourconfig-contour-1",
 					Labels: map[string]string{
@@ -282,13 +283,13 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 		},
 		"ContourConfiguration exists without the proper labels (wrong value)": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contour-1",
 				},
 			},
-			existing: &contour_api_v1alpha1.ContourConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
+			existing: &contour_v1alpha1.ContourConfiguration{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contourconfig-contour-1",
 					Labels: map[string]string{
@@ -300,7 +301,7 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 		},
 		"ContourConfiguration does not exist": {
 			contour: &model.Contour{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "contour-namespace",
 					Name:      "contour-1",
 				},
@@ -312,7 +313,7 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			scheme := runtime.NewScheme()
-			require.NoError(t, contour_api_v1alpha1.AddToScheme(scheme))
+			require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
 
 			clientBuilder := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.existing != nil {
@@ -325,7 +326,7 @@ func TestEnsureContourConfigDeleted(t *testing.T) {
 			// no error.
 			require.NoError(t, EnsureContourConfigDeleted(context.Background(), client, tc.contour))
 
-			remaining := &contour_api_v1alpha1.ContourConfiguration{}
+			remaining := &contour_v1alpha1.ContourConfiguration{}
 			key := types.NamespacedName{
 				Namespace: tc.contour.Namespace,
 				Name:      "contourconfig-" + tc.contour.Name,

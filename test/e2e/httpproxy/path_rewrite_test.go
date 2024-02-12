@@ -17,10 +17,11 @@ package httpproxy
 
 import (
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testPathPrefixRewrite(namespace string) {
@@ -31,43 +32,43 @@ func testPathPrefixRewrite(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "prefix-rewrite")
 		f.Fixtures.Echo.Deploy(namespace, "prefix-rewrite-to-root")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "prefix-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "prefixrewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "no-rewrite",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "prefix-rewrite",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/someprefix1",
 							},
 						},
-						PathRewritePolicy: &contourv1.PathRewritePolicy{
-							ReplacePrefix: []contourv1.ReplacePrefix{
+						PathRewritePolicy: &contour_v1.PathRewritePolicy{
+							ReplacePrefix: []contour_v1.ReplacePrefix{
 								{
 									Prefix:      "/someprefix1",
 									Replacement: "/someotherprefix",
@@ -76,19 +77,19 @@ func testPathPrefixRewrite(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "prefix-rewrite-to-root",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/someprefix2",
 							},
 						},
-						PathRewritePolicy: &contourv1.PathRewritePolicy{
-							ReplacePrefix: []contourv1.ReplacePrefix{
+						PathRewritePolicy: &contour_v1.PathRewritePolicy{
+							ReplacePrefix: []contour_v1.ReplacePrefix{
 								{
 									Prefix:      "/someprefix2",
 									Replacement: "/",

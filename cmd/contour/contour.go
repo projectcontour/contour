@@ -16,15 +16,15 @@ package main
 import (
 	"os"
 
-	"go.uber.org/automaxprocs/maxprocs"
-
 	"github.com/alecthomas/kingpin/v2"
 	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/sirupsen/logrus"
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/projectcontour/contour/internal/build"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {

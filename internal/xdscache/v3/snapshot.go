@@ -21,10 +21,11 @@ import (
 	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+
 	"github.com/projectcontour/contour/internal/dag"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
-	"github.com/sirupsen/logrus"
 )
 
 // SnapshotHandler responds to DAG builds via the OnChange()

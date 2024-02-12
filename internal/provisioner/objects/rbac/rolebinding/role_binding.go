@@ -17,15 +17,16 @@ import (
 	"context"
 	"fmt"
 
+	core_v1 "k8s.io/api/core/v1"
+	rbac_v1 "k8s.io/api/rbac/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	equality "github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EnsureControllerRoleBinding ensures a RoleBinding resource exists with the provided
@@ -35,11 +36,11 @@ func EnsureControllerRoleBinding(ctx context.Context, cli client.Client, name, s
 	desired := desiredRoleBindingInNamespace(name, svcAct, role, contour.Namespace, contour)
 
 	// Enclose contour.
-	updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.RoleBinding) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *rbac_v1.RoleBinding) error {
 		return updateRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 	}
 
-	return objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.RoleBinding{})
+	return objects.EnsureObject(ctx, cli, desired, updater, &rbac_v1.RoleBinding{})
 }
 
 // EnsureRoleBindingsInNamespaces ensures a set of RoleBinding resources exist with the provided
@@ -51,10 +52,10 @@ func EnsureRoleBindingsInNamespaces(ctx context.Context, cli client.Client, name
 		desired := desiredRoleBindingInNamespace(name, svcAct, role, ns, contour)
 
 		// Enclose contour.
-		updater := func(ctx context.Context, cli client.Client, current, desired *rbacv1.RoleBinding) error {
+		updater := func(ctx context.Context, cli client.Client, current, desired *rbac_v1.RoleBinding) error {
 			return updateRoleBindingIfNeeded(ctx, cli, contour, current, desired)
 		}
-		err := objects.EnsureObject(ctx, cli, desired, updater, &rbacv1.RoleBinding{})
+		err := objects.EnsureObject(ctx, cli, desired, updater, &rbac_v1.RoleBinding{})
 		errs = append(errs, err)
 	}
 
@@ -65,27 +66,27 @@ func EnsureRoleBindingsInNamespaces(ctx context.Context, cli client.Client, name
 // with the provided name in provided namespace, using contour namespace/name
 // for the owning contour labels. The RoleBinding will use svcAct for the subject
 // and role for the role reference.
-func desiredRoleBindingInNamespace(name, svcAcctRef, roleRef, namespace string, contour *model.Contour) *rbacv1.RoleBinding {
-	rb := &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
+func desiredRoleBindingInNamespace(name, svcAcctRef, roleRef, namespace string, contour *model.Contour) *rbac_v1.RoleBinding {
+	rb := &rbac_v1.RoleBinding{
+		TypeMeta: meta_v1.TypeMeta{
 			Kind: "RoleBinding",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:   namespace,
 			Name:        name,
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
 	}
-	rb.Subjects = []rbacv1.Subject{{
+	rb.Subjects = []rbac_v1.Subject{{
 		Kind:     "ServiceAccount",
-		APIGroup: corev1.GroupName,
+		APIGroup: core_v1.GroupName,
 		Name:     svcAcctRef,
 		// service account will be the same one
 		Namespace: contour.Namespace,
 	}}
-	rb.RoleRef = rbacv1.RoleRef{
-		APIGroup: rbacv1.GroupName,
+	rb.RoleRef = rbac_v1.RoleRef{
+		APIGroup: rbac_v1.GroupName,
 		Kind:     "Role",
 		Name:     roleRef,
 	}
@@ -95,7 +96,7 @@ func desiredRoleBindingInNamespace(name, svcAcctRef, roleRef, namespace string, 
 
 // updateRoleBindingIfNeeded updates a RoleBinding resource if current does
 // not match desired.
-func updateRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.RoleBinding) error {
+func updateRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbac_v1.RoleBinding) error {
 	if labels.AnyExist(current, model.OwnerLabels(contour)) {
 		rb, updated := equality.RoleBindingConfigChanged(current, desired)
 		if updated {
