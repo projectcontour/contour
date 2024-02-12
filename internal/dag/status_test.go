@@ -11471,7 +11471,6 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "GatewayRef"),
 				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "Generation"),
 				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "TransitionTime"),
-				cmpopts.IgnoreFields(status.BackendTLSPolicyStatusUpdate{}, "Resource"),
 				cmpopts.SortSlices(func(i, j meta_v1.Condition) bool {
 					return i.Message < j.Message
 				}),
