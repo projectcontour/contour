@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -101,7 +102,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, backendTLSPolicyUpdate := range c.backendTLSPolicyUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       backendTLSPolicyUpdate.Resource,
+			Resource:       &gatewayapi_v1alpha2.BackendTLSPolicy{},
 			Mutator:        backendTLSPolicyUpdate,
 		}
 
@@ -268,14 +269,13 @@ func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation 
 // to build up a list of metav1.Conditions as well as a function to commit the change back to the
 // cache when everything is done. The commit function pattern is used so that the
 // BackendTLSPolicyStatusUpdate does not need to know anything the cache internals.
-func (c *Cache) BackendTLSPolicyConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object) (*BackendTLSPolicyStatusUpdate, func()) {
+func (c *Cache) BackendTLSPolicyConditionsAccessor(nsName types.NamespacedName, generation int64) (*BackendTLSPolicyStatusUpdate, func()) {
 	pu := &BackendTLSPolicyStatusUpdate{
 		FullName:          nsName,
 		GatewayRef:        c.gatewayRef,
 		GatewayController: c.gatewayController,
 		Generation:        generation,
 		TransitionTime:    metav1.NewTime(time.Now()),
-		Resource:          resource,
 	}
 
 	return pu, func() {

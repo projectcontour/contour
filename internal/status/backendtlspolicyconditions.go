@@ -32,7 +32,6 @@ type BackendTLSPolicyStatusUpdate struct {
 	PolicyAncestorStatuses []*gatewayapi_v1alpha2.PolicyAncestorStatus
 	GatewayRef             types.NamespacedName
 	GatewayController      gatewayapi_v1beta1.GatewayController
-	Resource               client.Object
 	Generation             int64
 	TransitionTime         metav1.Time
 }
