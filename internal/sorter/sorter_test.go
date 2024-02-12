@@ -203,7 +203,7 @@ func presentQueryParam(name string) dag.QueryParamMatchCondition {
 // others that have identical path matches, number of header matches, and
 // number of query matches.
 // This is mainly to support Gateway API route match preference.
-// See: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.HTTPRouteRule
+// See: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule
 func TestSortRoutesPriority(t *testing.T) {
 	want := []*dag.Route{
 		{

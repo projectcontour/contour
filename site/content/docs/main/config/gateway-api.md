@@ -143,7 +143,7 @@ A simple example of a parameterized Contour GatewayClass that provisions Envoy a
 
 ```yaml
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour-with-envoy-deployment
 spec:
@@ -214,7 +214,7 @@ containers:
 [7]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.GatewayConfig
 [8]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-controller-selection
 [9]: https://projectcontour.io/quickstart/contour-gateway-provisioner.yaml
-[10]: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.GatewayClass
+[10]: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.GatewayClass
 [11]: https://gateway-api.sigs.k8s.io/concepts/api-overview/#route-resources
 [12]: /docs/{{< param version >}}/guides/gateway-api
 [13]: https://github.com/projectcontour/contour/issues/5970
