@@ -2098,7 +2098,6 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 		backendTLSPolicyAccessor, commit := p.dag.StatusCache.BackendTLSPolicyConditionsAccessor(
 			k8s.NamespacedNameOf(backendTLSPolicy),
 			backendTLSPolicy.GetGeneration(),
-			backendTLSPolicy,
 		)
 		defer commit()
 		backendTLSPolicyAncestorStatus := backendTLSPolicyAccessor.StatusUpdateFor(routeParentRef)
