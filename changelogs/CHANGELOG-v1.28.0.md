@@ -46,7 +46,7 @@ The spec also requires you to specify `caCertRefs`, which can either be a Config
 
 See Gateway API's [GEP-1897](https://gateway-api.sigs.k8s.io/geps/gep-1897) for the proposal for BackendTLSPolicy.
 
-(#6119, @flawedmatrix)
+(#6119, @flawedmatrix, @christianang)
 
 
 # Minor Changes
@@ -89,7 +89,7 @@ Adds a `listeners.max-connections-per-listener` config option to Contour config 
 
 Setting the max connection limit per listener field limits the number of active connections to a listener. The default, if unset, is unlimited.
 
-(#6058, @flawedmatrix)
+(#6058, @flawedmatrix, @christianang)
 
 ## Upstream TLS validation and client certificate for TCPProxy
 
@@ -154,6 +154,8 @@ using `subjectNames`, the first entry in `subjectNames` must match the value of
 `subjectName`. this will be enforced by CEL validation.
 
 (#5849, @KauzClay)
+
+## ContourDeployment.Spec.ResourceLabels is deprecated
 
 The `ContourDeployment.Spec.ResourceLabels` field is now deprecated. You should use `Gateway.Spec.Infrastructure.Labels` instead. The `ResourceLabels` field will be removed in a future release.
 
