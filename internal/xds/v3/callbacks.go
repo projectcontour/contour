@@ -29,14 +29,14 @@ import (
 // OnStreamRequest is implemented.
 func NewRequestLoggingCallbacks(log logrus.FieldLogger) envoy_server_v3.Callbacks {
 	return &envoy_server_v3.CallbackFuncs{
-		StreamOpenFunc: func(ctx context.Context, streamID int64, typeURL string) error {
+		StreamOpenFunc: func(_ context.Context, streamID int64, typeURL string) error {
 			logStreamOpenDetails(log, streamID, typeURL)
 			return nil
 		},
 		StreamClosedFunc: func(streamID int64, node *envoy_config_core_v3.Node) {
 			logStreamClosedDetails(log, streamID, node)
 		},
-		StreamRequestFunc: func(streamID int64, req *envoy_service_discovery_v3.DiscoveryRequest) error {
+		StreamRequestFunc: func(_ int64, req *envoy_service_discovery_v3.DiscoveryRequest) error {
 			logDiscoveryRequestDetails(log, req)
 			return nil
 		},

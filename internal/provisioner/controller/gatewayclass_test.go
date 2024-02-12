@@ -51,7 +51,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 			req: &reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "nonexistent"},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayClassReconciler, _ *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
 				gatewayClasses := &gatewayapi_v1.GatewayClassList{}
@@ -537,7 +537,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, _ *gatewayClassReconciler, _ *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 			},
 		},
@@ -572,7 +572,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, _ *gatewayClassReconciler, _ *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 			},
 		},
@@ -605,7 +605,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, _ *gatewayClassReconciler, _ *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 			},
 		},

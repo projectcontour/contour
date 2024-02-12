@@ -56,7 +56,7 @@ func registerProfile(mux *http.ServeMux) {
 }
 
 func registerDotWriter(mux *http.ServeMux, builder *dag.Builder) {
-	mux.HandleFunc("/debug/dag", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/debug/dag", func(w http.ResponseWriter, _ *http.Request) {
 		dw := &dotWriter{
 			Builder: builder,
 		}

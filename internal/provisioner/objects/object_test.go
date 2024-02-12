@@ -106,7 +106,7 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 		},
 	}
 
-	updater := func(ctx context.Context, client pkgclient.Client, current, desired *core_v1.Service) error {
+	updater := func(ctx context.Context, client pkgclient.Client, _, desired *core_v1.Service) error {
 		// Set another annotation on "desired" so we can validate that
 		// updater is actually being called.
 		desired = desired.DeepCopy()
@@ -157,7 +157,7 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 		},
 	}
 
-	updater := func(ctx context.Context, client pkgclient.Client, current, desired *core_v1.Service) error {
+	updater := func(_ context.Context, _ pkgclient.Client, _, _ *core_v1.Service) error {
 		return errors.New("update error")
 	}
 

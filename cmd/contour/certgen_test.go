@@ -274,7 +274,7 @@ func TestOutputFileMode(t *testing.T) {
 
 			require.NoError(t, OutputCerts(tc.cc, nil, generatedCerts))
 
-			err = filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
+			err = filepath.Walk(outputDir, func(path string, info os.FileInfo, _ error) error {
 				if !info.IsDir() {
 					assert.Equal(t, os.FileMode(0o600), info.Mode(), "incorrect mode for file "+path)
 				}

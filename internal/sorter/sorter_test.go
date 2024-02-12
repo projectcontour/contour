@@ -41,7 +41,7 @@ func shuffleSlice[T any](original []T) []T {
 }
 
 func TestInvalidSorter(t *testing.T) {
-	assert.Equal(t, nil, For([]string{"invalid"}))
+	assert.Nil(t, For([]string{"invalid"}))
 }
 
 func TestSortRouteConfiguration(t *testing.T) {
