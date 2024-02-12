@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func TestComputeGatewayClassAcceptedCondition(t *testing.T) {
@@ -50,7 +49,7 @@ func TestComputeGatewayClassAcceptedCondition(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gc := &gatewayapi_v1beta1.GatewayClass{
+		gc := &gatewayapi_v1.GatewayClass{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Generation: 7,
 			},

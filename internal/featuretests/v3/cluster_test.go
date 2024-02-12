@@ -26,7 +26,6 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -691,14 +690,14 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 		Annotate("projectcontour.io/max-retries", "7").
 		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
 
-	gc := &gatewayapi_v1beta1.GatewayClass{
+	gc := &gatewayapi_v1.GatewayClass{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "contour",
 		},
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -708,20 +707,20 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 		},
 	}
 
-	gt := &gatewayapi_v1beta1.Gateway{
+	gt := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(gc.Name),
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "http",
 					Port:     80,
 					Protocol: gatewayapi_v1.HTTPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -732,21 +731,21 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 	rh.OnAdd(gc)
 	rh.OnAdd(gt)
 
-	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+			Rules: []gatewayapi_v1.HTTPRouteRule{
 				{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 80, 1),

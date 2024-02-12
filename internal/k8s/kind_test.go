@@ -20,6 +20,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -44,12 +45,13 @@ func TestKindOf(t *testing.T) {
 		{"ContourConfiguration", &contour_v1alpha1.ContourConfiguration{}},
 		{"ContourDeployment", &contour_v1alpha1.ContourDeployment{}},
 		{"GRPCRoute", &gatewayapi_v1alpha2.GRPCRoute{}},
-		{"HTTPRoute", &gatewayapi_v1beta1.HTTPRoute{}},
+		{"HTTPRoute", &gatewayapi_v1.HTTPRoute{}},
 		{"TLSRoute", &gatewayapi_v1alpha2.TLSRoute{}},
 		{"TCPRoute", &gatewayapi_v1alpha2.TCPRoute{}},
-		{"Gateway", &gatewayapi_v1beta1.Gateway{}},
-		{"GatewayClass", &gatewayapi_v1beta1.GatewayClass{}},
+		{"Gateway", &gatewayapi_v1.Gateway{}},
+		{"GatewayClass", &gatewayapi_v1.GatewayClass{}},
 		{"ReferenceGrant", &gatewayapi_v1beta1.ReferenceGrant{}},
+		{"BackendTLSPolicy", &gatewayapi_v1alpha2.BackendTLSPolicy{}},
 		{
 			"Foo", &unstructured.Unstructured{
 				Object: map[string]any{

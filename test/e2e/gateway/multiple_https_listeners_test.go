@@ -26,7 +26,6 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
@@ -40,18 +39,18 @@ func testMultipleHTTPSListeners(namespace string) {
 		for _, tc := range []string{"1", "2", "3"} {
 			f.Fixtures.Echo.Deploy(namespace, "echo-"+tc)
 
-			route := &gatewayapi_v1beta1.HTTPRoute{
+			route := &gatewayapi_v1.HTTPRoute{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "httproute-" + tc,
 				},
-				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1beta1.ParentReference{
+				Spec: gatewayapi_v1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayListenerParentRef("", "multiple-https-listeners", "https-"+tc, 0),
 						},
 					},
-					Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+					Rules: []gatewayapi_v1.HTTPRouteRule{
 						{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("echo-"+tc, 80, 1),

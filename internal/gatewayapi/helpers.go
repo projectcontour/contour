@@ -17,66 +17,65 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/ref"
 )
 
-func CertificateRef(name, namespace string) gatewayapi_v1beta1.SecretObjectReference {
-	secretRef := gatewayapi_v1beta1.SecretObjectReference{
-		Group: ref.To(gatewayapi_v1beta1.Group("")),
-		Kind:  ref.To(gatewayapi_v1beta1.Kind("Secret")),
-		Name:  gatewayapi_v1beta1.ObjectName(name),
+func CertificateRef(name, namespace string) gatewayapi_v1.SecretObjectReference {
+	secretRef := gatewayapi_v1.SecretObjectReference{
+		Group: ref.To(gatewayapi_v1.Group("")),
+		Kind:  ref.To(gatewayapi_v1.Kind("Secret")),
+		Name:  gatewayapi_v1.ObjectName(name),
 	}
 
 	if namespace != "" {
-		secretRef.Namespace = ref.To(gatewayapi_v1beta1.Namespace(namespace))
+		secretRef.Namespace = ref.To(gatewayapi_v1.Namespace(namespace))
 	}
 
 	return secretRef
 }
 
-func GatewayParentRef(namespace, name string) gatewayapi_v1beta1.ParentReference {
-	parentRef := gatewayapi_v1beta1.ParentReference{
-		Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-		Kind:  ref.To(gatewayapi_v1beta1.Kind("Gateway")),
-		Name:  gatewayapi_v1beta1.ObjectName(name),
+func GatewayParentRef(namespace, name string) gatewayapi_v1.ParentReference {
+	parentRef := gatewayapi_v1.ParentReference{
+		Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+		Kind:  ref.To(gatewayapi_v1.Kind("Gateway")),
+		Name:  gatewayapi_v1.ObjectName(name),
 	}
 
 	if namespace != "" {
-		parentRef.Namespace = ref.To(gatewayapi_v1beta1.Namespace(namespace))
+		parentRef.Namespace = ref.To(gatewayapi_v1.Namespace(namespace))
 	}
 
 	return parentRef
 }
 
-func GatewayListenerParentRef(namespace, name, listener string, port int) gatewayapi_v1beta1.ParentReference {
+func GatewayListenerParentRef(namespace, name, listener string, port int) gatewayapi_v1.ParentReference {
 	parentRef := GatewayParentRef(namespace, name)
 
 	if listener != "" {
-		parentRef.SectionName = ref.To(gatewayapi_v1beta1.SectionName(listener))
+		parentRef.SectionName = ref.To(gatewayapi_v1.SectionName(listener))
 	}
 
 	if port != 0 {
-		parentRef.Port = ref.To(gatewayapi_v1beta1.PortNumber(port))
+		parentRef.Port = ref.To(gatewayapi_v1.PortNumber(port))
 	}
 
 	return parentRef
 }
 
-func ServiceBackendObjectRef(name string, port int) gatewayapi_v1beta1.BackendObjectReference {
-	return gatewayapi_v1beta1.BackendObjectReference{
-		Group: ref.To(gatewayapi_v1beta1.Group("")),
-		Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
-		Name:  gatewayapi_v1beta1.ObjectName(name),
-		Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
+func ServiceBackendObjectRef(name string, port int) gatewayapi_v1.BackendObjectReference {
+	return gatewayapi_v1.BackendObjectReference{
+		Group: ref.To(gatewayapi_v1.Group("")),
+		Kind:  ref.To(gatewayapi_v1.Kind("Service")),
+		Name:  gatewayapi_v1.ObjectName(name),
+		Port:  ref.To(gatewayapi_v1.PortNumber(port)),
 	}
 }
 
-func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []gatewayapi_v1beta1.HTTPRouteMatch {
-	return []gatewayapi_v1beta1.HTTPRouteMatch{
+func HTTPRouteMatch(pathType gatewayapi_v1.PathMatchType, value string) []gatewayapi_v1.HTTPRouteMatch {
+	return []gatewayapi_v1.HTTPRouteMatch{
 		{
-			Path: &gatewayapi_v1beta1.HTTPPathMatch{
+			Path: &gatewayapi_v1.HTTPPathMatch{
 				Type:  ref.To(pathType),
 				Value: ref.To(value),
 			},
@@ -84,8 +83,8 @@ func HTTPRouteMatch(pathType gatewayapi_v1beta1.PathMatchType, value string) []g
 	}
 }
 
-func HTTPHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value string) []gatewayapi_v1beta1.HTTPHeaderMatch {
-	return []gatewayapi_v1beta1.HTTPHeaderMatch{
+func HTTPHeaderMatch(matchType gatewayapi_v1.HeaderMatchType, name, value string) []gatewayapi_v1.HTTPHeaderMatch {
+	return []gatewayapi_v1.HTTPHeaderMatch{
 		{
 			Type:  ref.To(matchType),
 			Name:  gatewayapi_v1.HTTPHeaderName(name),
@@ -94,11 +93,11 @@ func HTTPHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value s
 	}
 }
 
-func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1beta1.HTTPQueryParamMatch {
-	var matches []gatewayapi_v1beta1.HTTPQueryParamMatch
+func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1.HTTPQueryParamMatch {
+	var matches []gatewayapi_v1.HTTPQueryParamMatch
 
 	for name, val := range namesAndValues {
-		matches = append(matches, gatewayapi_v1beta1.HTTPQueryParamMatch{
+		matches = append(matches, gatewayapi_v1.HTTPQueryParamMatch{
 			Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
 			Name:  gatewayapi_v1.HTTPHeaderName(name),
 			Value: val,
@@ -108,8 +107,8 @@ func HTTPQueryParamMatches(namesAndValues map[string]string) []gatewayapi_v1beta
 	return matches
 }
 
-func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1beta1.HTTPBackendRef) []gatewayapi_v1beta1.HTTPBackendRef {
-	var res []gatewayapi_v1beta1.HTTPBackendRef
+func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1.HTTPBackendRef) []gatewayapi_v1.HTTPBackendRef {
+	var res []gatewayapi_v1.HTTPBackendRef
 
 	for _, ref := range backendRefs {
 		res = append(res, ref...)
@@ -117,10 +116,10 @@ func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1beta1.HTTPBackendRef) []gatew
 	return res
 }
 
-func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1beta1.HTTPBackendRef {
-	return []gatewayapi_v1beta1.HTTPBackendRef{
+func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1.HTTPBackendRef {
+	return []gatewayapi_v1.HTTPBackendRef{
 		{
-			BackendRef: gatewayapi_v1beta1.BackendRef{
+			BackendRef: gatewayapi_v1.BackendRef{
 				BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
 				Weight:                 &weight,
 			},
@@ -141,10 +140,10 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	return []gatewayapi_v1alpha2.BackendRef{
 		{
 			BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-				Group: ref.To(gatewayapi_v1beta1.Group("")),
-				Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
+				Group: ref.To(gatewayapi_v1.Group("")),
+				Kind:  ref.To(gatewayapi_v1.Kind("Service")),
 				Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
-				Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
+				Port:  ref.To(gatewayapi_v1.PortNumber(port)),
 			},
 			Weight: weight,
 		},
@@ -156,10 +155,10 @@ func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayap
 		{
 			BackendRef: gatewayapi_v1alpha2.BackendRef{
 				BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-					Group: ref.To(gatewayapi_v1beta1.Group("")),
-					Kind:  ref.To(gatewayapi_v1beta1.Kind("Service")),
+					Group: ref.To(gatewayapi_v1.Group("")),
+					Kind:  ref.To(gatewayapi_v1.Kind("Service")),
 					Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
-					Port:  ref.To(gatewayapi_v1beta1.PortNumber(port)),
+					Port:  ref.To(gatewayapi_v1.PortNumber(port)),
 				},
 				Weight: &weight,
 			},
@@ -176,7 +175,7 @@ func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service,
 	}
 }
 
-func GRPCHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
+func GRPCHeaderMatch(matchType gatewayapi_v1.HeaderMatchType, name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
 	return []gatewayapi_v1alpha2.GRPCHeaderMatch{
 		{
 			Type:  ref.To(matchType),
@@ -190,8 +189,8 @@ func GRPCHeaderMatch(matchType gatewayapi_v1beta1.HeaderMatchType, name, value s
 // to a Gateway with the given namespace/name, irrespective of whether a
 // section/listener name has been specified (i.e. a parent ref to a listener
 // on the specified gateway will return "true").
-func IsRefToGateway(parentRef gatewayapi_v1beta1.ParentReference, gateway types.NamespacedName) bool {
-	if parentRef.Group != nil && string(*parentRef.Group) != gatewayapi_v1beta1.GroupName {
+func IsRefToGateway(parentRef gatewayapi_v1.ParentReference, gateway types.NamespacedName) bool {
+	if parentRef.Group != nil && string(*parentRef.Group) != gatewayapi_v1.GroupName {
 		return false
 	}
 

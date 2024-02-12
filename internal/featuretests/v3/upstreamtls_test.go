@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -245,13 +244,13 @@ func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
 	rh.OnAdd(sec1)
 	rh.OnAdd(sec2)
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
 		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -261,15 +260,15 @@ func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
 		},
 	})
 
-	gateway := &gatewayapi_v1beta1.Gateway{
+	gateway := &gatewayapi_v1.Gateway{
 		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -282,21 +281,21 @@ func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
 	rh.OnAdd(svc)
 
-	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "authenticated",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("backend", 443, 1),
 			}},

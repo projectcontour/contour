@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -133,7 +132,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 			}),
 		))
 
-	case *gatewayapi_v1beta1.Gateway:
+	case *gatewayapi_v1.Gateway:
 		switch {
 		// Specific Gateway configured: check if the added Gateway
 		// matches.
@@ -148,7 +147,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 		// Otherwise, check if the added Gateway's class is controlled
 		// by us.
 		default:
-			gc := &gatewayapi_v1beta1.GatewayClass{}
+			gc := &gatewayapi_v1.GatewayClass{}
 			if err := s.Cache.Get(context.Background(), client.ObjectKey{Name: string(o.Spec.GatewayClassName)}, gc); err != nil {
 				s.Logger.
 					WithField("name", o.Name).
@@ -172,9 +171,9 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 		s.StatusUpdater.Send(NewStatusUpdate(
 			o.Name,
 			o.Namespace,
-			&gatewayapi_v1beta1.Gateway{},
+			&gatewayapi_v1.Gateway{},
 			StatusMutatorFunc(func(obj client.Object) client.Object {
-				gateway, ok := obj.(*gatewayapi_v1beta1.Gateway)
+				gateway, ok := obj.(*gatewayapi_v1.Gateway)
 				if !ok {
 					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
 						obj.GetName(), obj.GetNamespace(),
@@ -292,13 +291,13 @@ func lbStatusToGatewayAddresses(lbs core_v1.LoadBalancerStatus) []gatewayapi_v1.
 	for _, lbi := range lbs.Ingress {
 		if len(lbi.IP) > 0 {
 			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
-				Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+				Type:  ref.To(gatewayapi_v1.IPAddressType),
 				Value: lbi.IP,
 			})
 		}
 		if len(lbi.Hostname) > 0 {
 			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
-				Type:  ref.To(gatewayapi_v1beta1.HostnameAddressType),
+				Type:  ref.To(gatewayapi_v1.HostnameAddressType),
 				Value: lbi.Hostname,
 			})
 		}

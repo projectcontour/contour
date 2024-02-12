@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -41,49 +40,49 @@ import (
 
 func TestGatewayClassReconcile(t *testing.T) {
 	tests := map[string]struct {
-		gatewayClass    *gatewayapi_v1beta1.GatewayClass
+		gatewayClass    *gatewayapi_v1.GatewayClass
 		gatewayClassCRD *apiextensions_v1.CustomResourceDefinition
 		params          *contour_v1alpha1.ContourDeployment
 		req             *reconcile.Request
 		wantConditions  []*meta_v1.Condition
-		assertions      func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1beta1.GatewayClass, reconcileErr error)
+		assertions      func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error)
 	}{
 		"reconcile request for non-existent gatewayclass results in no error": {
 			req: &reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "nonexistent"},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1beta1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				gatewayClasses := &gatewayapi_v1beta1.GatewayClassList{}
+				gatewayClasses := &gatewayapi_v1.GatewayClassList{}
 				require.NoError(t, r.client.List(context.Background(), gatewayClasses))
 				assert.Empty(t, gatewayClasses.Items)
 			},
 		},
 		"gatewayclass not controlled by us does not get conditions set": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
-					ControllerName: gatewayapi_v1beta1.GatewayController("someothercontroller.io/controller"),
+				Spec: gatewayapi_v1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1.GatewayController("someothercontroller.io/controller"),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1beta1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 
-				res := &gatewayapi_v1beta1.GatewayClass{}
+				res := &gatewayapi_v1.GatewayClass{}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
 
 				assert.Empty(t, res.Status.Conditions)
 			},
 		},
 		"gatewayclass controlled by us with no parameters gets Accepted: true condition and SupportedVersion: true": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			},
@@ -101,17 +100,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (target does not exist) gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -129,17 +128,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid group) gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "invalidgroup.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -163,17 +162,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid kind) gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "InvalidKind",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -197,17 +196,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid name) gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "invalid-name",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -231,17 +230,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid namespace) gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("invalid-namespace")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("invalid-namespace")),
 					},
 				},
 			},
@@ -265,17 +264,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef gets Accepted: true condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -299,17 +298,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for NetworkPublishing gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -341,17 +340,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExtraVolumeMounts gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -389,17 +388,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for LogLevel gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -428,17 +427,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for ExternalTrafficPolicy gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -469,17 +468,17 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef but invalid parameter values for IPFamilyPolicy gets Accepted: false condition": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
-					ParametersRef: &gatewayapi_v1beta1.ParametersReference{
+					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
 						Name:      "gatewayclass-params",
-						Namespace: ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
+						Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
 					},
 				},
 			},
@@ -510,11 +509,11 @@ func TestGatewayClassReconcile(t *testing.T) {
 			},
 		},
 		"gatewayclass controlled by us with gatewayclass CRD with unsupported version sets Accepted: true, SupportedVersion: False": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			},
@@ -538,16 +537,16 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1beta1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 			},
 		},
 		"gatewayclass controlled by us with gatewayclass CRD fetch failed sets SupportedVersion: false": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			},
@@ -573,16 +572,16 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1beta1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 			},
 		},
 		"gatewayclass controlled by us with gatewayclass CRD without version annotation sets SupportedVersion: false": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclass-1",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			},
@@ -606,20 +605,20 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1beta1.GatewayClass, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error) {
 				require.NoError(t, reconcileErr)
 			},
 		},
 		"gatewayclass with status from previous generation is updated, only conditions we own are changed": {
-			gatewayClass: &gatewayapi_v1beta1.GatewayClass{
+			gatewayClass: &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:       "gatewayclass-1",
 					Generation: 2,
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
-				Status: gatewayapi_v1beta1.GatewayClassStatus{
+				Status: gatewayapi_v1.GatewayClassStatus{
 					Conditions: []meta_v1.Condition{
 						{
 							Type:               string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -706,7 +705,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 			_, err = r.Reconcile(context.Background(), req)
 
 			if len(tc.wantConditions) > 0 {
-				res := &gatewayapi_v1beta1.GatewayClass{}
+				res := &gatewayapi_v1.GatewayClass{}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(tc.gatewayClass), res))
 
 				require.Len(t, res.Status.Conditions, len(tc.wantConditions))

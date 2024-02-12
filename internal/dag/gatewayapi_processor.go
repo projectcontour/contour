@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -139,9 +138,9 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	for name, cond := range validateListenersResult.InvalidListenerConditions {
 		gwAccessor.AddListenerCondition(
 			string(name),
-			gatewayapi_v1beta1.ListenerConditionType(cond.Type),
+			gatewayapi_v1.ListenerConditionType(cond.Type),
 			cond.Status,
-			gatewayapi_v1beta1.ListenerConditionReason(cond.Reason),
+			gatewayapi_v1.ListenerConditionReason(cond.Reason),
 			cond.Message,
 		)
 	}
@@ -158,7 +157,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	// Process HTTPRoutes.
 	for _, httpRoute := range p.source.httproutes {
-		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1beta1.HTTPRoute{})
+		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1.HTTPRoute{})
 	}
 
 	// Process TLSRoutes.
@@ -184,9 +183,9 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 }
 
 func (p *GatewayAPIProcessor) processRoute(
-	routeKind gatewayapi_v1beta1.Kind,
+	routeKind gatewayapi_v1.Kind,
 	route client.Object,
-	parentRefs []gatewayapi_v1beta1.ParentReference,
+	parentRefs []gatewayapi_v1.ParentReference,
 	gatewayNotProgrammedCondition *meta_v1.Condition,
 	listeners []*listenerInfo,
 	listenerAttachedRoutes map[string]int,
@@ -208,7 +207,7 @@ func (p *GatewayAPIProcessor) processRoute(
 		routeParentStatus := routeStatus.StatusUpdateFor(routeParentRef)
 		// If the Gateway is invalid, set status on the route and we're done.
 		if gatewayNotProgrammedCondition != nil {
-			routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, meta_v1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+			routeParentStatus.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 			continue
 		}
 
@@ -233,10 +232,10 @@ func (p *GatewayAPIProcessor) processRoute(
 
 			// TCPRoutes don't have hostnames.
 			if routeKind != KindTCPRoute {
-				var routeHostnames []gatewayapi_v1beta1.Hostname
+				var routeHostnames []gatewayapi_v1.Hostname
 
 				switch route := route.(type) {
-				case *gatewayapi_v1beta1.HTTPRoute:
+				case *gatewayapi_v1.HTTPRoute:
 					routeHostnames = route.Spec.Hostnames
 				case *gatewayapi_v1alpha2.TLSRoute:
 					routeHostnames = route.Spec.Hostnames
@@ -250,7 +249,7 @@ func (p *GatewayAPIProcessor) processRoute(
 					// invalid hostnames make it through, we're using our best judgment here.
 					// Theoretically these should be prevented by the combination of kubebuilder
 					// and admission webhook validations.
-					routeParentStatus.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, err.Error())
+					routeParentStatus.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, err.Error())
 				}
 
 				// If there were no intersections between the listener hostname and the
@@ -261,7 +260,7 @@ func (p *GatewayAPIProcessor) processRoute(
 			}
 
 			switch route := route.(type) {
-			case *gatewayapi_v1beta1.HTTPRoute:
+			case *gatewayapi_v1.HTTPRoute:
 				p.computeHTTPRouteForListener(route, routeParentStatus, routeParentRef, listener, hosts)
 			case *gatewayapi_v1alpha2.TLSRoute:
 				p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
@@ -274,32 +273,32 @@ func (p *GatewayAPIProcessor) processRoute(
 			hostCount += hosts.Len()
 		}
 
-		if routeKind != KindTCPRoute && hostCount == 0 && !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionAccepted) {
+		if routeKind != KindTCPRoute && hostCount == 0 && !routeParentStatus.ConditionExists(gatewayapi_v1.RouteConditionAccepted) {
 			routeParentStatus.AddCondition(
-				gatewayapi_v1beta1.RouteConditionAccepted,
+				gatewayapi_v1.RouteConditionAccepted,
 				meta_v1.ConditionFalse,
-				gatewayapi_v1beta1.RouteReasonNoMatchingListenerHostname,
+				gatewayapi_v1.RouteReasonNoMatchingListenerHostname,
 				"No intersecting hostnames were found between the listener and the route.",
 			)
 		}
 
 		// Check for an existing "ResolvedRefs" condition, add one if one does
 		// not already exist.
-		if !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionResolvedRefs) {
+		if !routeParentStatus.ConditionExists(gatewayapi_v1.RouteConditionResolvedRefs) {
 			routeParentStatus.AddCondition(
-				gatewayapi_v1beta1.RouteConditionResolvedRefs,
+				gatewayapi_v1.RouteConditionResolvedRefs,
 				meta_v1.ConditionTrue,
-				gatewayapi_v1beta1.RouteReasonResolvedRefs,
+				gatewayapi_v1.RouteReasonResolvedRefs,
 				"References resolved")
 		}
 
 		// Check for an existing "Accepted" condition, add one if one does
 		// not already exist.
-		if !routeParentStatus.ConditionExists(gatewayapi_v1beta1.RouteConditionAccepted) {
+		if !routeParentStatus.ConditionExists(gatewayapi_v1.RouteConditionAccepted) {
 			routeParentStatus.AddCondition(
-				gatewayapi_v1beta1.RouteConditionAccepted,
+				gatewayapi_v1.RouteConditionAccepted,
 				meta_v1.ConditionTrue,
-				gatewayapi_v1beta1.RouteReasonAccepted,
+				gatewayapi_v1.RouteReasonAccepted,
 				fmt.Sprintf("Accepted %s", routeKind),
 			)
 		}
@@ -307,9 +306,9 @@ func (p *GatewayAPIProcessor) processRoute(
 }
 
 func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
-	routeParentRef gatewayapi_v1beta1.ParentReference,
+	routeParentRef gatewayapi_v1.ParentReference,
 	routeNamespace string,
-	routeKind gatewayapi_v1beta1.Kind,
+	routeKind gatewayapi_v1.Kind,
 	listeners []*listenerInfo,
 	attachedRoutes map[string]int,
 	routeParentStatusAccessor *status.RouteParentStatusUpdate,
@@ -362,7 +361,7 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 	}
 	if readyListenerCount == 0 {
 		routeParentStatusAccessor.AddCondition(
-			gatewayapi_v1beta1.RouteConditionAccepted,
+			gatewayapi_v1.RouteConditionAccepted,
 			meta_v1.ConditionFalse,
 			gatewayapi_v1.RouteReasonNoMatchingParent,
 			"No listeners match this parent ref",
@@ -372,9 +371,9 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 
 	if len(allowedListeners) == 0 {
 		routeParentStatusAccessor.AddCondition(
-			gatewayapi_v1beta1.RouteConditionAccepted,
+			gatewayapi_v1.RouteConditionAccepted,
 			meta_v1.ConditionFalse,
-			gatewayapi_v1beta1.RouteReasonNotAllowedByListeners,
+			gatewayapi_v1.RouteReasonNotAllowedByListeners,
 			"No listeners included by this parent ref allowed this attachment.",
 		)
 		return nil
@@ -384,15 +383,15 @@ func (p *GatewayAPIProcessor) getListenersForRouteParentRef(
 }
 
 type listenerInfo struct {
-	listener          gatewayapi_v1beta1.Listener
+	listener          gatewayapi_v1.Listener
 	dagListenerName   string
-	allowedKinds      []gatewayapi_v1beta1.Kind
+	allowedKinds      []gatewayapi_v1.Kind
 	namespaceSelector labels.Selector
 	tlsSecret         *Secret
 	ready             bool
 }
 
-func (l *listenerInfo) AllowsKind(kind gatewayapi_v1beta1.Kind) bool {
+func (l *listenerInfo) AllowsKind(kind gatewayapi_v1.Kind) bool {
 	for _, allowedKind := range l.allowedKinds {
 		if allowedKind == kind {
 			return true
@@ -404,7 +403,7 @@ func (l *listenerInfo) AllowsKind(kind gatewayapi_v1beta1.Kind) bool {
 
 // isAddressAssigned returns true if either there are no addresses requested in specAddresses,
 // or if at least one address from specAddresses appears in statusAddresses.
-func isAddressAssigned(specAddresses []gatewayapi_v1beta1.GatewayAddress, statusAddresses []gatewayapi_v1.GatewayStatusAddress) bool {
+func isAddressAssigned(specAddresses []gatewayapi_v1.GatewayAddress, statusAddresses []gatewayapi_v1.GatewayStatusAddress) bool {
 	if len(specAddresses) == 0 {
 		return true
 	}
@@ -412,7 +411,7 @@ func isAddressAssigned(specAddresses []gatewayapi_v1beta1.GatewayAddress, status
 	for _, specAddress := range specAddresses {
 		for _, statusAddress := range statusAddresses {
 			// Types must match
-			if ref.Val(specAddress.Type, gatewayapi_v1beta1.IPAddressType) != ref.Val(statusAddress.Type, gatewayapi_v1beta1.IPAddressType) {
+			if ref.Val(specAddress.Type, gatewayapi_v1.IPAddressType) != ref.Val(statusAddress.Type, gatewayapi_v1.IPAddressType) {
 				continue
 			}
 
@@ -434,7 +433,7 @@ func isAddressAssigned(specAddresses []gatewayapi_v1beta1.GatewayAddress, status
 // the Gateway's .status.listeners. It returns a listenerInfo struct with
 // the allowed route kinds and TLS secret (if any).
 func (p *GatewayAPIProcessor) computeListener(
-	listener gatewayapi_v1beta1.Listener,
+	listener gatewayapi_v1.Listener,
 	gwAccessor *status.GatewayStatusUpdate,
 	validateListenersResult gatewayapi.ValidateListenersResult,
 ) *listenerInfo {
@@ -620,32 +619,32 @@ func (p *GatewayAPIProcessor) computeListener(
 
 // getListenerRouteKinds gets a list of the valid route kinds that
 // the listener accepts.
-func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.Listener, gwAccessor *status.GatewayStatusUpdate) []gatewayapi_v1beta1.Kind {
+func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1.Listener, gwAccessor *status.GatewayStatusUpdate) []gatewayapi_v1.Kind {
 	// None specified on the listener: return the default based on
 	// the listener's protocol.
 	if len(listener.AllowedRoutes.Kinds) == 0 {
 		switch listener.Protocol {
 		case gatewayapi_v1.HTTPProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
+			return []gatewayapi_v1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1.HTTPSProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindHTTPRoute, KindGRPCRoute}
+			return []gatewayapi_v1.Kind{KindHTTPRoute, KindGRPCRoute}
 		case gatewayapi_v1.TLSProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindTLSRoute, KindTCPRoute}
+			return []gatewayapi_v1.Kind{KindTLSRoute, KindTCPRoute}
 		case gatewayapi_v1.TCPProtocolType:
-			return []gatewayapi_v1beta1.Kind{KindTCPRoute}
+			return []gatewayapi_v1.Kind{KindTCPRoute}
 		}
 	}
 
-	var routeKinds []gatewayapi_v1beta1.Kind
+	var routeKinds []gatewayapi_v1.Kind
 
 	for _, routeKind := range listener.AllowedRoutes.Kinds {
-		if routeKind.Group != nil && *routeKind.Group != gatewayapi_v1beta1.GroupName {
+		if routeKind.Group != nil && *routeKind.Group != gatewayapi_v1.GroupName {
 			gwAccessor.AddListenerCondition(
 				string(listener.Name),
 				gatewayapi_v1.ListenerConditionResolvedRefs,
 				meta_v1.ConditionFalse,
 				gatewayapi_v1.ListenerReasonInvalidRouteKinds,
-				fmt.Sprintf("Group %q is not supported, group must be %q", *routeKind.Group, gatewayapi_v1beta1.GroupName),
+				fmt.Sprintf("Group %q is not supported, group must be %q", *routeKind.Group, gatewayapi_v1.GroupName),
 			)
 			continue
 		}
@@ -691,7 +690,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1beta1.
 // certificate ref, to a core_v1.Secret, that exists, is allowed to be referenced
 // based on namespace and ReferenceGrants, and is a valid TLS secret.
 // Conditions are set if any of these requirements are not met.
-func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi_v1beta1.SecretObjectReference, listenerName string, gwAccessor *status.GatewayStatusUpdate) *Secret {
+func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi_v1.SecretObjectReference, listenerName string, gwAccessor *status.GatewayStatusUpdate) *Secret {
 	if len(certificateRefs) != 1 {
 		gwAccessor.AddListenerCondition(
 			listenerName,
@@ -723,7 +722,7 @@ func (p *GatewayAPIProcessor) resolveListenerSecret(certificateRefs []gatewayapi
 	if certificateRef.Namespace != nil && string(*certificateRef.Namespace) != p.source.gateway.Namespace {
 		if !p.validCrossNamespaceRef(
 			crossNamespaceFrom{
-				group:     gatewayapi_v1beta1.GroupName,
+				group:     gatewayapi_v1.GroupName,
 				kind:      KindGateway,
 				namespace: p.source.gateway.Namespace,
 			},
@@ -822,7 +821,7 @@ func (p *GatewayAPIProcessor) validCrossNamespaceRef(from crossNamespaceFrom, to
 	return false
 }
 
-func isSecretRef(certificateRef gatewayapi_v1beta1.SecretObjectReference) bool {
+func isSecretRef(certificateRef gatewayapi_v1.SecretObjectReference) bool {
 	return certificateRef.Group != nil && *certificateRef.Group == "" &&
 		certificateRef.Kind != nil && *certificateRef.Kind == "Secret"
 }
@@ -836,7 +835,7 @@ func isSecretRef(certificateRef gatewayapi_v1beta1.SecretObjectReference) bool {
 //     invalid and some condition should be added to the route. This shouldn't be
 //     possible because of kubebuilder+admission webhook validation but we're being
 //     defensive here.
-func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1beta1.Hostname, listenerHostname string) (sets.Set[string], []error) {
+func (p *GatewayAPIProcessor) computeHosts(routeHostnames []gatewayapi_v1.Hostname, listenerHostname string) (sets.Set[string], []error) {
 	// The listener hostname is assumed to be valid because it's been run
 	// through the `gatewayapi.ValidateListeners` logic, so we don't need
 	// to validate it here.
@@ -908,7 +907,7 @@ func hostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 
 // namespaceMatches returns true if namespaces allows
 // the provided route namespace.
-func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1beta1.RouteNamespaces, namespaceSelector labels.Selector, routeNamespace string) bool {
+func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1.RouteNamespaces, namespaceSelector labels.Selector, routeNamespace string) bool {
 	// From indicates where Routes will be selected for this Gateway.
 	// Possible values are:
 	//   * All: Routes in all namespaces may be used by this Gateway.
@@ -949,9 +948,9 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	switch {
 	case gatewayNotProgrammedCondition != nil:
 		gwAccessor.AddCondition(
-			gatewayapi_v1beta1.GatewayConditionType(gatewayNotProgrammedCondition.Type),
+			gatewayapi_v1.GatewayConditionType(gatewayNotProgrammedCondition.Type),
 			gatewayNotProgrammedCondition.Status,
-			gatewayapi_v1beta1.GatewayConditionReason(gatewayNotProgrammedCondition.Reason),
+			gatewayapi_v1.GatewayConditionReason(gatewayNotProgrammedCondition.Reason),
 			gatewayNotProgrammedCondition.Message,
 		)
 	default:
@@ -989,7 +988,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 	var programmed bool
 	for _, rule := range route.Spec.Rules {
 		if len(rule.BackendRefs) == 0 {
-			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
+			routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 			continue
 		}
 
@@ -1000,7 +999,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 
 			service, cond := p.validateBackendRef(backendRef, KindTLSRoute, route.Namespace)
 			if cond != nil {
-				routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+				routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 				continue
 			}
 
@@ -1058,13 +1057,13 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 // Resolve route references for a route and do not program any routes.
 func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.RouteParentStatusUpdate) {
 	switch route := route.(type) {
-	case *gatewayapi_v1beta1.HTTPRoute:
+	case *gatewayapi_v1.HTTPRoute:
 		for _, r := range route.Spec.Rules {
 			for _, f := range r.Filters {
 				if f.Type == gatewayapi_v1.HTTPRouteFilterRequestMirror && f.RequestMirror != nil {
 					_, cond := p.validateBackendObjectRef(f.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindHTTPRoute, route.Namespace)
 					if cond != nil {
-						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+						routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 					}
 				}
 			}
@@ -1074,7 +1073,7 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 			for _, br := range r.BackendRefs {
 				_, cond := p.validateBackendRef(br.BackendRef, KindHTTPRoute, route.Namespace)
 				if cond != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 				}
 
 				// RequestMirror filter is not supported so we don't check it here
@@ -1087,7 +1086,7 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 			for _, b := range r.BackendRefs {
 				_, cond := p.validateBackendRef(b, KindTLSRoute, route.Namespace)
 				if cond != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 				}
 			}
 		}
@@ -1097,7 +1096,7 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 				if f.Type == gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror && f.RequestMirror != nil {
 					_, cond := p.validateBackendObjectRef(f.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindGRPCRoute, route.Namespace)
 					if cond != nil {
-						routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+						routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 					}
 				}
 			}
@@ -1107,7 +1106,7 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 			for _, br := range r.BackendRefs {
 				_, cond := p.validateBackendRef(br.BackendRef, KindGRPCRoute, route.Namespace)
 				if cond != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 				}
 
 				// RequestMirror filter is not supported so we don't check it here
@@ -1145,9 +1144,9 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
-	route *gatewayapi_v1beta1.HTTPRoute,
+	route *gatewayapi_v1.HTTPRoute,
 	routeAccessor *status.RouteParentStatusUpdate,
-	routeParentRef gatewayapi_v1beta1.ParentReference,
+	routeParentRef gatewayapi_v1.ParentReference,
 	listener *listenerInfo,
 	hosts sets.Set[string],
 ) {
@@ -1162,7 +1161,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 
 			headerMatches, err := gatewayHeaderMatchConditions(match.Headers)
 			if err != nil {
-				routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
+				routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, err.Error())
 				continue
 			}
 
@@ -1178,7 +1177,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 
 			queryParamMatches, err := gatewayQueryParamMatchConditions(match.QueryParams)
 			if err != nil {
-				routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
+				routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, err.Error())
 				continue
 			}
 
@@ -1203,7 +1202,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 
 		timeoutPolicy, err = parseHTTPRouteTimeouts(rule.Timeouts)
 		if err != nil {
-			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
+			routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, err.Error())
 			continue
 		}
 
@@ -1222,7 +1221,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				var err error
 				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier:
 				if filter.ResponseHeaderModifier == nil || responseHeaderPolicy != nil {
@@ -1232,7 +1231,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				var err error
 				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1.HTTPRouteFilterRequestRedirect:
 				if filter.RequestRedirect == nil || redirect != nil {
@@ -1279,9 +1278,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 						}
 					default:
 						routeAccessor.AddCondition(
-							gatewayapi_v1beta1.RouteConditionAccepted,
+							gatewayapi_v1.RouteConditionAccepted,
 							meta_v1.ConditionFalse,
-							gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+							gatewayapi_v1.RouteReasonUnsupportedValue,
 							fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.RequestRedirect.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.RequestRedirect.Path.Type),
 						)
 						continue
@@ -1307,7 +1306,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 
 				mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindHTTPRoute, route.Namespace)
 				if cond != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 					continue
 				}
 				mirrorPolicies = append(mirrorPolicies, &MirrorPolicy{
@@ -1346,9 +1345,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 					}
 				default:
 					routeAccessor.AddCondition(
-						gatewayapi_v1beta1.RouteConditionAccepted,
+						gatewayapi_v1.RouteConditionAccepted,
 						meta_v1.ConditionFalse,
-						gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+						gatewayapi_v1.RouteReasonUnsupportedValue,
 						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.URLRewrite.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.URLRewrite.Path.Type),
 					)
 					continue
@@ -1360,9 +1359,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				}
 			default:
 				routeAccessor.AddCondition(
-					gatewayapi_v1beta1.RouteConditionAccepted,
+					gatewayapi_v1.RouteConditionAccepted,
 					meta_v1.ConditionFalse,
-					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					gatewayapi_v1.RouteReasonUnsupportedValue,
 					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier, RequestRedirect, RequestMirror and URLRewrite are supported.", filter.Type),
 				)
 			}
@@ -1458,7 +1457,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 
 			headerMatches, err := gatewayGRPCHeaderMatchConditions(match.Headers)
 			if err != nil {
-				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, err.Error())
+				routeAccessor.AddCondition(gatewayapi_v1alpha2.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, err.Error())
 				continue
 			}
 
@@ -1496,7 +1495,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 				var err error
 				requestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier:
 				if filter.ResponseHeaderModifier == nil || responseHeaderPolicy != nil {
@@ -1506,7 +1505,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 				var err error
 				responseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterRequestMirror:
 				if filter.RequestMirror == nil {
@@ -1515,7 +1514,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 
 				mirrorService, cond := p.validateBackendObjectRef(filter.RequestMirror.BackendRef, "Spec.Rules.Filters.RequestMirror.BackendRef", KindGRPCRoute, route.Namespace)
 				if cond != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 					continue
 				}
 				// If protocol is not set on the service, need to set a default one based on listener's protocol type.
@@ -1528,9 +1527,9 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1al
 				})
 			default:
 				routeAccessor.AddCondition(
-					gatewayapi_v1beta1.RouteConditionAccepted,
+					gatewayapi_v1.RouteConditionAccepted,
 					meta_v1.ConditionFalse,
-					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					gatewayapi_v1.RouteReasonUnsupportedValue,
 					fmt.Sprintf("GRPCRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier, ResponseHeaderModifier and RequestMirror are supported.", filter.Type),
 				)
 			}
@@ -1602,12 +1601,12 @@ func gatewayGRPCMethodMatchCondition(match *gatewayapi_v1alpha2.GRPCMethodMatch,
 
 	// Support "Exact" match type only. If match type is not specified, use "Exact" as default.
 	if match.Type != nil && *match.Type != gatewayapi_v1alpha2.GRPCMethodMatchExact {
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1beta1.RouteReasonUnsupportedValue, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
+		routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, "GRPCRoute.Spec.Rules.Matches.Method: Only Exact match type is supported.")
 		return nil, false
 	}
 
 	if match.Service == nil || isBlank(*match.Service) || match.Method == nil || isBlank(*match.Method) {
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionAccepted, meta_v1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.")
+		routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, status.ReasonInvalidMethodMatch, "GRPCRoute.Spec.Rules.Matches.Method: Both Service and Method need be configured.")
 		return nil, false
 	}
 
@@ -1657,7 +1656,7 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alpha2.TCPRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo) bool {
 	if len(route.Spec.Rules) != 1 {
 		routeAccessor.AddCondition(
-			gatewayapi_v1beta1.RouteConditionAccepted,
+			gatewayapi_v1.RouteConditionAccepted,
 			meta_v1.ConditionFalse,
 			"InvalidRouteRules",
 			"TCPRoute must have only a single rule defined",
@@ -1670,7 +1669,7 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 
 	if len(rule.BackendRefs) == 0 {
 		routeAccessor.AddCondition(
-			gatewayapi_v1beta1.RouteConditionResolvedRefs,
+			gatewayapi_v1.RouteConditionResolvedRefs,
 			meta_v1.ConditionFalse,
 			status.ReasonDegraded,
 			"At least one Spec.Rules.BackendRef must be specified.",
@@ -1685,9 +1684,9 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 		service, cond := p.validateBackendRef(backendRef, KindTCPRoute, route.Namespace)
 		if cond != nil {
 			routeAccessor.AddCondition(
-				gatewayapi_v1beta1.RouteConditionType(cond.Type),
+				gatewayapi_v1.RouteConditionType(cond.Type),
 				cond.Status,
-				gatewayapi_v1beta1.RouteConditionReason(cond.Reason),
+				gatewayapi_v1.RouteConditionReason(cond.Reason),
 				cond.Message,
 			)
 			continue
@@ -1746,13 +1745,13 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 
 // validateBackendRef verifies that the specified BackendRef is valid.
 // Returns a meta_v1.Condition for the route if any errors are detected.
-func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1beta1.BackendRef, routeKind, routeNamespace string) (*Service, *meta_v1.Condition) {
+func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1.BackendRef, routeKind, routeNamespace string) (*Service, *meta_v1.Condition) {
 	return p.validateBackendObjectRef(backendRef.BackendObjectReference, "Spec.Rules.BackendRef", routeKind, routeNamespace)
 }
 
-func resolvedRefsFalse(reason gatewayapi_v1beta1.RouteConditionReason, msg string) meta_v1.Condition {
+func resolvedRefsFalse(reason gatewayapi_v1.RouteConditionReason, msg string) meta_v1.Condition {
 	return meta_v1.Condition{
-		Type:    string(gatewayapi_v1beta1.RouteConditionResolvedRefs),
+		Type:    string(gatewayapi_v1.RouteConditionResolvedRefs),
 		Status:  meta_v1.ConditionFalse,
 		Reason:  string(reason),
 		Message: msg,
@@ -1764,17 +1763,17 @@ func resolvedRefsFalse(reason gatewayapi_v1beta1.RouteConditionReason, msg strin
 // As BackendObjectReference is used in multiple fields, the given field is used
 // to build the message in meta_v1.Condition.
 func (p *GatewayAPIProcessor) validateBackendObjectRef(
-	backendObjectRef gatewayapi_v1beta1.BackendObjectReference,
+	backendObjectRef gatewayapi_v1.BackendObjectReference,
 	field string,
 	routeKind string,
 	routeNamespace string,
 ) (*Service, *meta_v1.Condition) {
 	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
 	}
 
 	if !(backendObjectRef.Kind != nil && *backendObjectRef.Kind == "Service") {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field)))
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field)))
 	}
 
 	if backendObjectRef.Name == "" {
@@ -1790,7 +1789,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 	if backendObjectRef.Namespace != nil && string(*backendObjectRef.Namespace) != routeNamespace {
 		if !p.validCrossNamespaceRef(
 			crossNamespaceFrom{
-				group:     string(gatewayapi_v1beta1.GroupName),
+				group:     string(gatewayapi_v1.GroupName),
 				kind:      routeKind,
 				namespace: routeNamespace,
 			},
@@ -1801,7 +1800,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 				name:      string(backendObjectRef.Name),
 			},
 		) {
-			return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonRefNotPermitted, fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferenceGrant", field)))
+			return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonRefNotPermitted, fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferenceGrant", field)))
 		}
 	}
 
@@ -1814,7 +1813,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 
 	service, err := p.dag.EnsureService(meta, int(*backendObjectRef.Port), int(*backendObjectRef.Port), p.source, p.EnableExternalNameService)
 	if err != nil {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1beta1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
+		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
 	service = serviceCircuitBreakerPolicy(service, p.GlobalCircuitBreakerDefaults)
@@ -1835,7 +1834,7 @@ func validateAppProtocol(svc *core_v1.ServicePort) error {
 	return fmt.Errorf("AppProtocol: \"%s\" is unsupported", *svc.AppProtocol)
 }
 
-func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAccessor *status.RouteParentStatusUpdate) MatchCondition {
+func gatewayPathMatchCondition(match *gatewayapi_v1.HTTPPathMatch, routeAccessor *status.RouteParentStatusUpdate) MatchCondition {
 	if match == nil {
 		return &PrefixMatchCondition{Prefix: "/"}
 	}
@@ -1883,15 +1882,15 @@ func gatewayPathMatchCondition(match *gatewayapi_v1beta1.HTTPPathMatch, routeAcc
 	}
 
 	routeAccessor.AddCondition(
-		gatewayapi_v1beta1.RouteConditionAccepted,
+		gatewayapi_v1.RouteConditionAccepted,
 		meta_v1.ConditionFalse,
-		gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+		gatewayapi_v1.RouteReasonUnsupportedValue,
 		"HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type, Exact match type and RegularExpression match type are supported.",
 	)
 	return nil
 }
 
-func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {
+func gatewayHeaderMatchConditions(matches []gatewayapi_v1.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {
 	var headerMatchConditions []HeaderMatchCondition
 	seenNames := sets.New[string]()
 
@@ -1928,7 +1927,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1beta1.HTTPHeaderMatch) 
 	return headerMatchConditions, nil
 }
 
-func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryParamMatch) ([]QueryParamMatchCondition, error) {
+func gatewayQueryParamMatchConditions(matches []gatewayapi_v1.HTTPQueryParamMatch) ([]QueryParamMatchCondition, error) {
 	var dagMatchConditions []QueryParamMatchCondition
 	seenNames := sets.New[gatewayapi_v1.HTTPHeaderName]()
 
@@ -1964,11 +1963,11 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1beta1.HTTPQueryPara
 }
 
 // httpClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []gatewayapi_v1beta1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, routeParentRef gatewayapi_v1beta1.ParentReference) ([]*Cluster, uint32, bool) {
+func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []gatewayapi_v1.HTTPBackendRef, routeAccessor *status.RouteParentStatusUpdate, routeParentRef gatewayapi_v1.ParentReference) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
+		routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil, totalWeight, false
 	}
 
@@ -1978,7 +1977,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 	for _, backendRef := range backendRefs {
 		service, cond := p.validateBackendRef(backendRef.BackendRef, KindHTTPRoute, routeNamespace)
 		if cond != nil {
-			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+			routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 			continue
 		}
 
@@ -2005,7 +2004,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 				var err error
 				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier:
 				if filter.ResponseHeaderModifier == nil || clusterResponseHeaderPolicy != nil {
@@ -2015,13 +2014,13 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 				var err error
 				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			default:
 				routeAccessor.AddCondition(
-					gatewayapi_v1beta1.RouteConditionAccepted,
+					gatewayapi_v1.RouteConditionAccepted,
 					meta_v1.ConditionFalse,
-					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					gatewayapi_v1.RouteReasonUnsupportedValue,
 					"HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
 				)
 			}
@@ -2061,7 +2060,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 //
 // If no BackendTLSPolicy is found or the BackendTLSPolicy is invalid then nil
 // is returned for both fields.
-func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, backendRef gatewayapi_v1beta1.HTTPBackendRef, service *Service, routeParentRef gatewayapi_v1beta1.ParentReference) (*PeerValidationContext, *UpstreamTLS) {
+func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, backendRef gatewayapi_v1.HTTPBackendRef, service *Service, routeParentRef gatewayapi_v1.ParentReference) (*PeerValidationContext, *UpstreamTLS) {
 	var upstreamValidation *PeerValidationContext
 	var upstreamTLS *UpstreamTLS
 
@@ -2170,11 +2169,11 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 }
 
 // grpcClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1beta1.ProtocolType) ([]*Cluster, uint32, bool) {
+func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []gatewayapi_v1alpha2.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1.ProtocolType) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
-		routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
+		routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 		return nil, totalWeight, false
 	}
 
@@ -2184,7 +2183,7 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 	for _, backendRef := range backendRefs {
 		service, cond := p.validateBackendRef(backendRef.BackendRef, KindGRPCRoute, routeNamespace)
 		if cond != nil {
-			routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1beta1.RouteConditionReason(cond.Reason), cond.Message)
+			routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 			continue
 		}
 
@@ -2205,7 +2204,7 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 				var err error
 				clusterRequestHeaderPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			case gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier:
 				if filter.ResponseHeaderModifier == nil || clusterResponseHeaderPolicy != nil {
@@ -2215,13 +2214,13 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 				var err error
 				clusterResponseHeaderPolicy, err = headersPolicyGatewayAPI(filter.ResponseHeaderModifier, string(filter.Type))
 				if err != nil {
-					routeAccessor.AddCondition(gatewayapi_v1beta1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
+					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on response headers", err))
 				}
 			default:
 				routeAccessor.AddCondition(
-					gatewayapi_v1beta1.RouteConditionAccepted,
+					gatewayapi_v1.RouteConditionAccepted,
 					meta_v1.ConditionFalse,
-					gatewayapi_v1beta1.RouteReasonUnsupportedValue,
+					gatewayapi_v1.RouteReasonUnsupportedValue,
 					"GRPCRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier and ResponseHeaderModifier type is supported.",
 				)
 			}
@@ -2322,7 +2321,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	return routes
 }
 
-func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1beta1.ProtocolType) {
+func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1.ProtocolType) {
 	// For GRPCRoute, if the protocol is not set on the Service via annotation,
 	// we should assume a protocol that matches what listener the route was attached to
 	if isBlank(service.Protocol) {

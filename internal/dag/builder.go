@@ -18,7 +18,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -61,7 +61,7 @@ func (b *Builder) Build() *DAG {
 	if b.Source.gateway != nil {
 		gatewayNSName = k8s.NamespacedNameOf(b.Source.gateway)
 	}
-	var gatewayController gatewayapi_v1beta1.GatewayController
+	var gatewayController gatewayapi_v1.GatewayController
 	if b.Source.gatewayclass != nil {
 		gatewayController = b.Source.gatewayclass.Spec.ControllerName
 	}

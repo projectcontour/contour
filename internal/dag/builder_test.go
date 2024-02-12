@@ -112,15 +112,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	validClass := &gatewayapi_v1beta1.GatewayClass{
+	validClass := &gatewayapi_v1.GatewayClass{
 		TypeMeta: meta_v1.TypeMeta{},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-validClass",
 		},
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
+		Status: gatewayapi_v1.GatewayClassStatus{
 			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
@@ -130,19 +130,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPAllNamespaces := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPAllNamespaces := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -150,19 +150,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPSameNamespace := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPSameNamespace := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromSame),
 					},
 				},
@@ -170,18 +170,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPNamespaceSelector := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPNamespaceSelector := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 						Selector: &meta_v1.LabelSelector{
 							MatchLabels: map[string]string{
@@ -199,22 +199,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	hostname := gatewayapi_v1beta1.Hostname("gateway.projectcontour.io")
-	wildcardHostname := gatewayapi_v1beta1.Hostname("*.projectcontour.io")
+	hostname := gatewayapi_v1.Hostname("gateway.projectcontour.io")
+	wildcardHostname := gatewayapi_v1.Hostname("*.projectcontour.io")
 
-	gatewayHTTPWithHostname := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPWithHostname := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Hostname: &hostname,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -222,19 +222,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPWithWildcardHostname := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPWithWildcardHostname := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Hostname: &wildcardHostname,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -242,25 +242,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPWithAddresses := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPWithAddresses := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Addresses: []gatewayapi_v1beta1.GatewayAddress{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Addresses: []gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+					Type:  ref.To(gatewayapi_v1.IPAddressType),
 					Value: "1.2.3.4",
 				},
 			},
-			Listeners: []gatewayapi_v1beta1.Listener{{
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -268,21 +268,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayTLSPassthroughAllNamespaces := &gatewayapi_v1beta1.Gateway{
+	gatewayTLSPassthroughAllNamespaces := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -290,21 +290,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayTLSPassthroughSameNamespace := &gatewayapi_v1beta1.Gateway{
+	gatewayTLSPassthroughSameNamespace := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromSame),
 					},
 				},
@@ -312,21 +312,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayTLSPassthroughNamespaceSelector := &gatewayapi_v1beta1.Gateway{
+	gatewayTLSPassthroughNamespaceSelector := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 						Selector: &meta_v1.LabelSelector{
 							MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
@@ -386,25 +386,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	gatewayTLSTerminateCertInDifferentNamespace := &gatewayapi_v1beta1.Gateway{
+	gatewayTLSTerminateCertInDifferentNamespace := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "https",
 				Port:     443,
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
 					Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+					CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 						gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
 					},
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -412,23 +412,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPSAllNamespaces := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPSAllNamespaces := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
+					CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 						gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 					},
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
 						From: ref.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
@@ -436,20 +436,20 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayHTTPAndHTTPS := &gatewayapi_v1beta1.Gateway{
+	gatewayHTTPAndHTTPS := &gatewayapi_v1.Gateway{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "http-listener",
 					Port:     80,
 					Protocol: gatewayapi_v1.HTTPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -458,13 +458,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name:     "https-listener",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
+						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 						},
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
 							From: ref.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
@@ -473,19 +473,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	basicHTTPRoute := &gatewayapi_v1beta1.HTTPRoute{
+	basicHTTPRoute := &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 			}},
@@ -527,15 +527,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	crossNSBackendHTTPRoute := makeHTTPRoute("basic", "default", "", gatewayapi_v1beta1.HTTPRouteRule{
+	crossNSBackendHTTPRoute := makeHTTPRoute("basic", "default", "", gatewayapi_v1.HTTPRouteRule{
 		Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-		BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{{
-			BackendRef: gatewayapi_v1beta1.BackendRef{
-				BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-					Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-					Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
-					Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
-					Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+		BackendRefs: []gatewayapi_v1.HTTPBackendRef{{
+			BackendRef: gatewayapi_v1.BackendRef{
+				BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+					Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+					Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
+					Name:      gatewayapi_v1.ObjectName(kuardService.Name),
+					Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 				},
 				Weight: ref.To(int32(1)),
 			},
@@ -544,8 +544,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 	tests := map[string]struct {
 		objs         []any
-		gatewayclass *gatewayapi_v1beta1.GatewayClass
-		gateway      *gatewayapi_v1beta1.Gateway
+		gatewayclass *gatewayapi_v1.GatewayClass
+		gateway      *gatewayapi_v1.Gateway
 		upstreamTLS  *UpstreamTLS
 		want         []*Listener
 	}{
@@ -656,22 +656,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1beta1.HTTPRoute{
+				&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway"),
 								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway-2"),
 							},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
@@ -889,23 +889,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 		"TLS Listener with TLS.Mode=Passthrough is invalid if certificateRef is specified": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
 							Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -920,21 +920,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener with TLS.Mode=Terminate is invalid if certificateRef is not specified": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
 							Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -950,17 +950,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener with TLS not defined is invalid": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -975,20 +975,20 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLSRoute with invalid listener protocol of HTTP": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
 							Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -1031,23 +1031,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert gateway with selector kind that doesn't match": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
-							Kinds: []gatewayapi_v1beta1.RouteGroupKind{
+							Kinds: []gatewayapi_v1.RouteGroupKind{
 								{
-									Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-									Kind:  gatewayapi_v1beta1.Kind("INVALID-KIND"),
+									Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+									Kind:  gatewayapi_v1.Kind("INVALID-KIND"),
 								},
 							},
 						},
@@ -1062,23 +1062,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert gateway with selector group that doesn't match": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
-							Kinds: []gatewayapi_v1beta1.RouteGroupKind{
+							Kinds: []gatewayapi_v1.RouteGroupKind{
 								{
-									Group: ref.To(gatewayapi_v1beta1.Group("invalid-group-name")),
-									Kind:  gatewayapi_v1beta1.Kind("HTTPRoute"),
+									Group: ref.To(gatewayapi_v1.Group("invalid-group-name")),
+									Kind:  gatewayapi_v1.Kind("HTTPRoute"),
 								},
 							},
 						},
@@ -1100,10 +1100,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io",
 					makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "kuard", 8080, 1),
 					makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/blog", "blogsvc", 80, 1),
-					gatewayapi_v1beta1.HTTPRouteRule{
+					gatewayapi_v1.HTTPRouteRule{
 						Matches: append(
 							gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/another"),
-							gatewayapi_v1beta1.HTTPRouteMatch{
+							gatewayapi_v1.HTTPRouteMatch{
 								Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1.HeaderMatchExact, "X-Foo-Header", "some_value"),
 							},
 						),
@@ -1146,22 +1146,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1beta1.HTTPRoute{
+				&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 							"test2.projectcontour.io",
 							"test3.projectcontour.io",
 							"test4.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
@@ -1264,13 +1264,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
-				makeHTTPRoute("basic", "default", "", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "default", "", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
-								BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-									Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
+							BackendRef: gatewayapi_v1.BackendRef{
+								BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+									Kind: ref.To(gatewayapi_v1.Kind("Service")),
 									Name: "kuard",
 								},
 							},
@@ -1314,7 +1314,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
@@ -1342,13 +1342,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName(kuardService.Name)),
+							Name: ref.To(gatewayapi_v1.ObjectName(kuardService.Name)),
 						}},
 					},
 				},
@@ -1371,7 +1371,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
@@ -1401,7 +1401,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
@@ -1431,7 +1431,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "some-other-namespace", // would need to be "default" to be valid
 						}},
@@ -1461,13 +1461,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName("some-other-service")), // would need to be "kuard" to be valid.
+							Name: ref.To(gatewayapi_v1.ObjectName("some-other-service")), // would need to be "kuard" to be valid.
 						}},
 					},
 				},
@@ -1520,19 +1520,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io",
-					gatewayapi_v1beta1.HTTPRouteRule{
-						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+					gatewayapi_v1.HTTPRouteRule{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 								Value: ref.To("/"),
 							},
 						}, {
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+							Path: &gatewayapi_v1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 								Value: ref.To("/blog"),
 							},
 						}, {
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+							Path: &gatewayapi_v1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 								Value: ref.To("/tech"),
 							},
@@ -1554,22 +1554,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert basic single route, single hostname, gateway with TLS, HTTP protocol is ignored": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -1597,17 +1597,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert basic single route, single hostname, gateway with TLS, HTTPS protocol missing certificateRef": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -1701,26 +1701,26 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener Gateway CertificateRef must be type core.Secret": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								{
-									Group: ref.To(gatewayapi_v1beta1.Group("custom")),
-									Kind:  ref.To(gatewayapi_v1beta1.Kind("shhhh")),
-									Name:  gatewayapi_v1beta1.ObjectName(sec1.Name),
+									Group: ref.To(gatewayapi_v1.Group("custom")),
+									Kind:  ref.To(gatewayapi_v1.Kind("shhhh")),
+									Name:  gatewayapi_v1.ObjectName(sec1.Name),
 								},
 							},
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -1736,18 +1736,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener Gateway CertificateRef must be specified": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						TLS:      &gatewayapi_v1beta1.GatewayTLSConfig{},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						TLS:      &gatewayapi_v1.GatewayTLSConfig{},
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -1775,9 +1775,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1824,13 +1824,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName(sec2.Name)),
+							Name: ref.To(gatewayapi_v1.ObjectName(sec2.Name)),
 						}},
 					},
 				},
@@ -1864,9 +1864,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1890,9 +1890,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace("wrong-namespace"),
+							Namespace: gatewayapi_v1.Namespace("wrong-namespace"),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1916,9 +1916,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "WrongKind",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1942,9 +1942,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "WrongKind",
@@ -1968,13 +1968,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName("wrong-name")),
+							Name: ref.To(gatewayapi_v1.ObjectName("wrong-name")),
 						}},
 					},
 				},
@@ -1996,17 +1996,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"Invalid listener protocol type (TCP)": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TCPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -2018,17 +2018,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"Invalid listener protocol type (UDP)": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.UDPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -2040,17 +2040,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"Invalid listener protocol type (custom)": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: "projectcontour.io/HTTPUDP",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
@@ -2067,41 +2067,41 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				sec1,
 				kuardService,
 				blogService,
-				&gatewayapi_v1beta1.HTTPRoute{
+				&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener", 0),
 							},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
 					},
 				},
-				&gatewayapi_v1beta1.HTTPRoute{
+				&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basictls",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
 							},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("blogsvc", 80, 1),
 						}},
@@ -2134,9 +2134,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
@@ -2165,15 +2165,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{
 						{
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+							Path: &gatewayapi_v1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 								Value: ref.To("/blog"),
 							},
 						}, {
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
+							Path: &gatewayapi_v1.HTTPPathMatch{
 								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 								Value: ref.To("/tech"),
 							},
@@ -2207,8 +2207,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
 						Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1.HeaderMatchRegularExpression, "foo", "^abc$"),
 					}},
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -2234,9 +2234,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Headers: []gatewayapi_v1.HTTPHeaderMatch{
 							{Name: "header-1", Value: "value-1"},
 							{Name: "header-2", Value: "value-2"},
 							{Name: "header-1", Value: "value-3"},
@@ -2267,9 +2267,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
@@ -2298,13 +2298,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Name:  "param-1",
 								Value: "value-1",
@@ -2334,13 +2334,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
@@ -2371,13 +2371,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
@@ -2425,13 +2425,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
@@ -2481,13 +2481,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
@@ -2525,13 +2525,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
 							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
 							Value: ref.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Type:  ref.To(gatewayapi_v1.QueryParamMatchRegularExpression),
 								Name:  "query-param-regex",
@@ -2563,18 +2563,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "foo-bar"},
 								},
 								Remove: []string{"x-remove"},
@@ -2583,12 +2583,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						{
 							// Second instance of filter should be ignored.
 							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "ignored"},
 								},
 								Remove: []string{"x-remove-ignored"},
@@ -2624,18 +2624,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-							ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "foo-bar"},
 								},
 								Remove: []string{"x-remove"},
@@ -2644,12 +2644,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						{
 							// Second instance of filter should be ignored.
 							Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-							ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "ignored"},
 								},
 								Remove: []string{"x-remove-ignored"},
@@ -2685,23 +2685,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 								Weight:                 ref.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{
 								{
 									Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "foo-bar"},
 										},
 										Remove: []string{"x-remove"},
@@ -2710,12 +2710,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								{
 									// Second instance of filter should be ignored.
 									Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "ignored"},
 										},
 										Remove: []string{"x-remove-ignored"},
@@ -2743,23 +2743,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 								Weight:                 ref.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{
 								{
 									Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "foo-bar"},
 										},
 										Remove: []string{"x-remove"},
@@ -2768,12 +2768,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								{
 									// Second instance of filter should be ignored.
 									Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "ignored"},
 										},
 										Remove: []string{"x-remove-ignored"},
@@ -2801,17 +2801,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-						RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-							Set: []gatewayapi_v1beta1.HTTPHeader{
+						RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+							Set: []gatewayapi_v1.HTTPHeader{
 								{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 								{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 							},
-							Add: []gatewayapi_v1beta1.HTTPHeader{
+							Add: []gatewayapi_v1.HTTPHeader{
 								{Name: "!invalid-header-add", Value: "foo-bar"},
 							},
 						},
@@ -2840,22 +2840,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 								Weight:                 ref.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{{
 								Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Set: []gatewayapi_v1beta1.HTTPHeader{
+								RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+									Set: []gatewayapi_v1.HTTPHeader{
 										{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 										{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 									},
-									Add: []gatewayapi_v1beta1.HTTPHeader{
+									Add: []gatewayapi_v1.HTTPHeader{
 										{Name: "!invalid-header-add", Value: "foo-bar"},
 									},
 								},
@@ -2881,22 +2881,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
 								Weight:                 ref.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{{
 								Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-								ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Set: []gatewayapi_v1beta1.HTTPHeader{
+								ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+									Set: []gatewayapi_v1.HTTPHeader{
 										{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 										{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 									},
-									Add: []gatewayapi_v1beta1.HTTPHeader{
+									Add: []gatewayapi_v1.HTTPHeader{
 										{Name: "!invalid-header-add", Value: "foo-bar"},
 									},
 								},
@@ -2922,14 +2922,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
 							Scheme:     ref.To("https"),
-							Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
-							Port:       ref.To(gatewayapi_v1beta1.PortNumber(443)),
+							Hostname:   ref.To(gatewayapi_v1.PreciseHostname("envoyproxy.io")),
+							Port:       ref.To(gatewayapi_v1.PortNumber(443)),
 							StatusCode: ref.To(301),
 						},
 					}},
@@ -2957,17 +2957,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: append(
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/another-match")...,
 					),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
 							Scheme:     ref.To("https"),
-							Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
-							Port:       ref.To(gatewayapi_v1beta1.PortNumber(443)),
+							Hostname:   ref.To(gatewayapi_v1.PreciseHostname("envoyproxy.io")),
+							Port:       ref.To(gatewayapi_v1.PortNumber(443)),
 							StatusCode: ref.To(301),
 						},
 					}},
@@ -3004,12 +3004,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
 								ReplacePrefixMatch: ref.To("/replacement"),
 							},
@@ -3039,12 +3039,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
 								ReplacePrefixMatch: ref.To("/"),
 							},
@@ -3074,12 +3074,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:            gatewayapi_v1.FullPathHTTPPathModifier,
 								ReplaceFullPath: ref.To("/replacement"),
 							},
@@ -3110,12 +3110,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				kuardService2,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-						RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
 						},
 					}},
@@ -3136,19 +3136,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+							RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
 							},
 						},
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+							RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
 							},
 						},
@@ -3169,7 +3169,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				kuardService2,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: append(
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/another-match")...,
@@ -3177,7 +3177,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-						RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
 						},
 					}},
@@ -3198,12 +3198,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
 								ReplacePrefixMatch: ref.To("/replacement"),
 							},
@@ -3232,12 +3232,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
 								ReplacePrefixMatch: ref.To("/"),
 							},
@@ -3266,12 +3266,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:            gatewayapi_v1.FullPathHTTPPathModifier,
 								ReplaceFullPath: ref.To("/replacement"),
 							},
@@ -3300,12 +3300,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Hostname: ref.To(gatewayapi_v1beta1.PreciseHostname("rewritten.com")),
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Hostname: ref.To(gatewayapi_v1.PreciseHostname("rewritten.com")),
 						},
 					}},
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -3329,13 +3329,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{
 										Name:  "Host",
 										Value: "requestheader.rewritten.com",
@@ -3345,8 +3345,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-							URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-								Hostname: ref.To(gatewayapi_v1beta1.PreciseHostname("url.rewritten.com")),
+							URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+								Hostname: ref.To(gatewayapi_v1.PreciseHostname("url.rewritten.com")),
 							},
 						},
 					},
@@ -3643,16 +3643,16 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsAndNonTLSService,
 				cert1,
 				makeHTTPRoute("tls-basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/tls", "tlsandnontlssvc", 443, 1)),
-				&gatewayapi_v1beta1.HTTPRoute{
+				&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "non-tls-basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/non-tls"),
 							BackendRefs: gatewayapi.HTTPBackendRefs(
 								gatewayapi.HTTPBackendRef("tlsandnontlssvc", 80, 1),
@@ -3911,7 +3911,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRefs(
 						gatewayapi.HTTPBackendRef("kuard", 8080, 5),
@@ -3964,7 +3964,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRefs(
 						gatewayapi.HTTPBackendRef("kuard", 8080, 5),
@@ -4115,10 +4115,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ref.To(int32(1)),
 								},
@@ -4133,7 +4133,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
@@ -4178,10 +4178,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ref.To(int32(1)),
 								},
@@ -4196,13 +4196,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName(kuardService.Name)),
+							Name: ref.To(gatewayapi_v1.ObjectName(kuardService.Name)),
 						}},
 					},
 				},
@@ -4242,10 +4242,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ref.To(int32(1)),
 								},
@@ -4260,7 +4260,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute", // would need to be TLSRoute to be valid
 							Namespace: "default",
 						}},
@@ -4291,10 +4291,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ref.To(int32(1)),
 								},
@@ -4309,7 +4309,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
@@ -4340,10 +4340,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ref.To(int32(1)),
 								},
@@ -4358,7 +4358,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "some-other-namespace", // would have to be "default" to be valid
 						}},
@@ -4389,10 +4389,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ref.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ref.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ref.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ref.To(int32(1)),
 								},
@@ -4407,13 +4407,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName("some-other-service")), // would have to be "kuard" to be valid
+							Name: ref.To(gatewayapi_v1.ObjectName("some-other-service")), // would have to be "kuard" to be valid
 						}},
 					},
 				},
@@ -5319,7 +5319,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
@@ -5476,7 +5476,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							}},
 							BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
+									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ref.To(gatewayapi_v1alpha2.Kind("Service")),
 										Namespace: ref.To(gatewayapi_v1alpha2.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
@@ -13919,25 +13919,25 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		gateway *gatewayapi_v1beta1.Gateway
+		gateway *gatewayapi_v1.Gateway
 		objs    []any
 		want    []*Listener
 	}{
 		"HTTPProxy attached to HTTP-only Gateway": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -13984,20 +13984,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy attached to Gateway with multiple HTTP listeners": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14006,8 +14006,8 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "http-2",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     81,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14047,20 +14047,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			want: nil,
 		},
 		"HTTPProxy attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14069,12 +14069,12 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14120,20 +14120,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy with TLS attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14142,12 +14142,12 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14203,20 +14203,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy with TLS attached to Gateway with HTTP and HTTPS listener using projectcontour.io/https protocol": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14225,8 +14225,8 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi.ContourHTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14283,20 +14283,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy with TLS attached to Gateway with no HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14341,20 +14341,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 		},
 
 		"Ingress attached to HTTP-only Gateway": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14397,20 +14397,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress attached to Gateway with multiple HTTP listeners": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14419,8 +14419,8 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "http-2",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     81,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14456,20 +14456,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			want: nil,
 		},
 		"Ingress attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14478,12 +14478,12 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14525,20 +14525,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress with TLS attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14547,12 +14547,12 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14607,20 +14607,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress with TLS attached to Gateway with HTTP and HTTPS listener using projectcontour.io/https protocol": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14629,8 +14629,8 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi.ContourHTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14686,20 +14686,20 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress with TLS (with HTTP not allowed) attached to Gateway with no HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
+			gateway: &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									From: ref.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
@@ -14748,11 +14748,11 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			gc := &gatewayapi_v1beta1.GatewayClass{
+			gc := &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour-gc",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			}
@@ -16003,20 +16003,20 @@ func makeHTTPRouteTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRo
 	return httpRouteTimeouts
 }
 
-func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1beta1.HTTPRoute {
-	return &gatewayapi_v1beta1.HTTPRoute{
+func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRoute {
+	return &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 				Timeouts:    makeHTTPRouteTimeouts(request, backendRequest),
@@ -16025,25 +16025,25 @@ func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1bet
 	}
 }
 
-func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1beta1.HTTPRouteRule, additionalRules ...gatewayapi_v1beta1.HTTPRouteRule) *gatewayapi_v1beta1.HTTPRoute {
-	rules := []gatewayapi_v1beta1.HTTPRouteRule{firstRule}
+func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1.HTTPRouteRule, additionalRules ...gatewayapi_v1.HTTPRouteRule) *gatewayapi_v1.HTTPRoute {
+	rules := []gatewayapi_v1.HTTPRouteRule{firstRule}
 	if len(additionalRules) > 0 {
 		rules = append(rules, additionalRules...)
 	}
-	var hostnames []gatewayapi_v1beta1.Hostname
+	var hostnames []gatewayapi_v1.Hostname
 	if hostname != "" {
-		hostnames = []gatewayapi_v1beta1.Hostname{
-			gatewayapi_v1beta1.Hostname(hostname),
+		hostnames = []gatewayapi_v1.Hostname{
+			gatewayapi_v1.Hostname(hostname),
 		}
 	}
-	return &gatewayapi_v1beta1.HTTPRoute{
+	return &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
 			Hostnames: hostnames,
 			Rules:     rules,
@@ -16051,8 +16051,8 @@ func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1beta
 	}
 }
 
-func makeHTTPRouteRule(pathType gatewayapi_v1beta1.PathMatchType, pathValue, serviceName string, port int, weight int32) gatewayapi_v1beta1.HTTPRouteRule {
-	return gatewayapi_v1beta1.HTTPRouteRule{
+func makeHTTPRouteRule(pathType gatewayapi_v1.PathMatchType, pathValue, serviceName string, port int, weight int32) gatewayapi_v1.HTTPRouteRule {
+	return gatewayapi_v1.HTTPRouteRule{
 		Matches:     gatewayapi.HTTPRouteMatch(pathType, pathValue),
 		BackendRefs: gatewayapi.HTTPBackendRef(serviceName, port, weight),
 	}

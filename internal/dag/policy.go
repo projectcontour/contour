@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -238,14 +237,14 @@ func extractHostRewriteHeaderValue(s string) string {
 
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1beta1.HTTPHeaderFilter, headerPolicyType string) (*HeadersPolicy, error) {
+func headersPolicyGatewayAPI(hf *gatewayapi_v1.HTTPHeaderFilter, headerPolicyType string) (*HeadersPolicy, error) {
 	var (
 		remove      = sets.NewString()
 		hostRewrite = ""
 		errlist     = []error{}
 	)
 
-	addOrSetHeader := func(headers []gatewayapi_v1beta1.HTTPHeader, op string) map[string]string {
+	addOrSetHeader := func(headers []gatewayapi_v1.HTTPHeader, op string) map[string]string {
 		m := make(map[string]string, len(headers))
 
 		for _, header := range headers {

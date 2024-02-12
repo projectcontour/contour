@@ -19,13 +19,12 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-const ReasonOlderGatewayClassExists gatewayapi_v1beta1.GatewayClassConditionReason = "OlderGatewayClassExists"
+const ReasonOlderGatewayClassExists gatewayapi_v1.GatewayClassConditionReason = "OlderGatewayClassExists"
 
 // computeGatewayClassAcceptedCondition computes the GatewayClass Accepted status condition.
-func computeGatewayClassAcceptedCondition(gatewayClass *gatewayapi_v1beta1.GatewayClass, accepted bool) meta_v1.Condition {
+func computeGatewayClassAcceptedCondition(gatewayClass *gatewayapi_v1.GatewayClass, accepted bool) meta_v1.Condition {
 	switch accepted {
 	case true:
 		return meta_v1.Condition{

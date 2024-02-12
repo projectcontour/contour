@@ -14,12 +14,12 @@
 package status
 
 import (
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // SetGatewayClassAccepted inserts or updates the Accepted condition
 // for the provided GatewayClass.
-func SetGatewayClassAccepted(gc *gatewayapi_v1beta1.GatewayClass, accepted bool) *gatewayapi_v1beta1.GatewayClass {
+func SetGatewayClassAccepted(gc *gatewayapi_v1.GatewayClass, accepted bool) *gatewayapi_v1.GatewayClass {
 	gc.Status.Conditions = mergeConditions(gc.Status.Conditions, computeGatewayClassAcceptedCondition(gc, accepted))
 	return gc
 }

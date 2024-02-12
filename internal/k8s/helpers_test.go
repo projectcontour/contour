@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -202,9 +203,9 @@ func TestIsEqualForGeneration(t *testing.T) {
 	run(t, &contour_v1.HTTPProxy{})
 	run(t, &contour_v1alpha1.ExtensionService{})
 	run(t, &contour_v1.TLSCertificateDelegation{})
-	run(t, &gatewayapi_v1beta1.GatewayClass{})
-	run(t, &gatewayapi_v1beta1.Gateway{})
-	run(t, &gatewayapi_v1beta1.HTTPRoute{})
+	run(t, &gatewayapi_v1.GatewayClass{})
+	run(t, &gatewayapi_v1.Gateway{})
+	run(t, &gatewayapi_v1.HTTPRoute{})
 	run(t, &gatewayapi_v1alpha2.TLSRoute{})
 	run(t, &gatewayapi_v1beta1.ReferenceGrant{})
 	run(t, &gatewayapi_v1alpha2.GRPCRoute{})

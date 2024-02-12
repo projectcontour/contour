@@ -46,8 +46,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -105,7 +105,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, contour_v1.AddToScheme(scheme))
 	require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
 	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(scheme))
-	require.NoError(t, gatewayapi_v1beta1.AddToScheme(scheme))
+	require.NoError(t, gatewayapi_v1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
@@ -372,7 +372,7 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contour_v1.HTTPProxy, condi
 
 // CreateHTTPRouteAndWaitFor creates the provided HTTPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1beta1.HTTPRoute, condition func(*gatewayapi_v1beta1.HTTPRoute) bool) (*gatewayapi_v1beta1.HTTPRoute, bool) {
+func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1.HTTPRoute, condition func(*gatewayapi_v1.HTTPRoute) bool) (*gatewayapi_v1.HTTPRoute, bool) {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
@@ -438,19 +438,19 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 
 // CreateGatewayAndWaitFor creates a gateway in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1beta1.Gateway, condition func(*gatewayapi_v1beta1.Gateway) bool) (*gatewayapi_v1beta1.Gateway, bool) {
+func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1.Gateway, condition func(*gatewayapi_v1.Gateway) bool) (*gatewayapi_v1.Gateway, bool) {
 	return createAndWaitFor(f.t, f.Client, gateway, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateGatewayClassAndWaitFor creates a GatewayClass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1beta1.GatewayClass, condition func(*gatewayapi_v1beta1.GatewayClass) bool) (*gatewayapi_v1beta1.GatewayClass, bool) {
+func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1.GatewayClass, condition func(*gatewayapi_v1.GatewayClass) bool) (*gatewayapi_v1.GatewayClass, bool) {
 	return createAndWaitFor(f.t, f.Client, gatewayClass, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // DeleteGateway deletes the provided gateway in the Kubernetes API
 // or fails the test if it encounters an error.
-func (f *Framework) DeleteGateway(gw *gatewayapi_v1beta1.Gateway, waitForDeletion bool) error {
+func (f *Framework) DeleteGateway(gw *gatewayapi_v1.Gateway, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gw))
 
 	if waitForDeletion {
@@ -464,7 +464,7 @@ func (f *Framework) DeleteGateway(gw *gatewayapi_v1beta1.Gateway, waitForDeletio
 
 // DeleteGatewayClass deletes the provided gatewayclass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1beta1.GatewayClass, waitForDeletion bool) error {
+func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1.GatewayClass, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gwc))
 
 	if waitForDeletion {

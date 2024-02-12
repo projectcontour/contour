@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -35,13 +34,13 @@ import (
 func TestComputeHosts(t *testing.T) {
 	tests := map[string]struct {
 		listenerHost string
-		hostnames    []gatewayapi_v1beta1.Hostname
+		hostnames    []gatewayapi_v1.Hostname
 		want         sets.Set[string]
 		wantError    []error
 	}{
 		"single host": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
 			want:      sets.New("test.projectcontour.io"),
@@ -49,7 +48,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"single DNS label hostname": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"projectcontour",
 			},
 			want:      sets.New("projectcontour"),
@@ -57,7 +56,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"multiple hosts": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 				"test1.projectcontour.io",
 				"test2.projectcontour.io",
@@ -73,13 +72,13 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"no host": {
 			listenerHost: "",
-			hostnames:    []gatewayapi_v1beta1.Hostname{},
+			hostnames:    []gatewayapi_v1.Hostname{},
 			want:         sets.New("*"),
 			wantError:    []error(nil),
 		},
 		"IP in host": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"1.2.3.4",
 			},
 			want: nil,
@@ -89,7 +88,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"valid wildcard hostname": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.projectcontour.io",
 			},
 			want:      sets.New("*.projectcontour.io"),
@@ -97,7 +96,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid wildcard hostname": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.*.projectcontour.io",
 			},
 			want: nil,
@@ -107,7 +106,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid wildcard hostname *": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*",
 			},
 			want:      nil,
@@ -115,7 +114,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid hostname": {
 			listenerHost: "",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"#projectcontour.io",
 			},
 			want: nil,
@@ -125,7 +124,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host do not exactly match": {
 			listenerHost: "listener.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"http.projectcontour.io",
 			},
 			want:      nil,
@@ -133,7 +132,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host exactly match": {
 			listenerHost: "http.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"http.projectcontour.io",
 			},
 			want:      sets.New("http.projectcontour.io"),
@@ -141,7 +140,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & multi hostnames host exactly match one host": {
 			listenerHost: "http.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"http.projectcontour.io",
 				"http2.projectcontour.io",
 				"http3.projectcontour.io",
@@ -151,7 +150,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host match wildcard host": {
 			listenerHost: "*.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"http.projectcontour.io",
 			},
 			want:      sets.New("http.projectcontour.io"),
@@ -159,7 +158,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host do not match wildcard host": {
 			listenerHost: "*.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"http.example.com",
 			},
 			want:      nil,
@@ -167,7 +166,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & wildcard hostnames host do not match": {
 			listenerHost: "http.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.projectcontour.io",
 			},
 			want:      sets.New("http.projectcontour.io"),
@@ -175,7 +174,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & wildcard hostname and matching hostname match": {
 			listenerHost: "http.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.projectcontour.io",
 				"http.projectcontour.io",
 			},
@@ -184,7 +183,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & wildcard hostname and non-matching hostname don't match": {
 			listenerHost: "http.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.projectcontour.io",
 				"not.matching.io",
 			},
@@ -193,7 +192,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host wildcard & wildcard hostnames host match": {
 			listenerHost: "*.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.projectcontour.io",
 			},
 			want:      sets.New("*.projectcontour.io"),
@@ -201,13 +200,13 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostname not defined match": {
 			listenerHost: "http.projectcontour.io",
-			hostnames:    []gatewayapi_v1beta1.Hostname{},
+			hostnames:    []gatewayapi_v1.Hostname{},
 			want:         sets.New("http.projectcontour.io"),
 			wantError:    nil,
 		},
 		"listener host with many labels matches hostnames wildcard host": {
 			listenerHost: "very.many.labels.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"*.projectcontour.io",
 			},
 			want:      sets.New("very.many.labels.projectcontour.io"),
@@ -215,7 +214,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host matches hostnames with many labels host": {
 			listenerHost: "*.projectcontour.io",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"very.many.labels.projectcontour.io",
 			},
 			want:      sets.New("very.many.labels.projectcontour.io"),
@@ -223,7 +222,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host doesn't match bare hostname": {
 			listenerHost: "*.foo",
-			hostnames: []gatewayapi_v1beta1.Hostname{
+			hostnames: []gatewayapi_v1.Hostname{
 				"foo",
 			},
 			want:      nil,
@@ -246,7 +245,7 @@ func TestComputeHosts(t *testing.T) {
 
 func TestNamespaceMatches(t *testing.T) {
 	tests := map[string]struct {
-		namespaces *gatewayapi_v1beta1.RouteNamespaces
+		namespaces *gatewayapi_v1.RouteNamespaces
 		namespace  string
 		valid      bool
 	}{
@@ -256,35 +255,35 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:      true,
 		},
 		"nil From matches all": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: nil,
 			},
 			namespace: "projectcontour",
 			valid:     true,
 		},
 		"From.NamespacesFromAll matches all": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromAll),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 		},
 		"From.NamespacesFromSame matches": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSame),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 		},
 		"From.NamespacesFromSame doesn't match": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSame),
 			},
 			namespace: "custom",
 			valid:     false,
 		},
 		"From.NamespacesFromSelector matches labels, same ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{
@@ -296,7 +295,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     true,
 		},
 		"From.NamespacesFromSelector matches labels, different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{
@@ -308,7 +307,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     true,
 		},
 		"From.NamespacesFromSelector doesn't matches labels, different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchLabels: map[string]string{
@@ -320,7 +319,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     false,
 		},
 		"From.NamespacesFromSelector matches expression 'In', different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
@@ -334,7 +333,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     true,
 		},
 		"From.NamespacesFromSelector matches expression 'DoesNotExist', different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
@@ -347,7 +346,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     true,
 		},
 		"From.NamespacesFromSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
@@ -360,7 +359,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     false,
 		},
 		"From.NamespacesFromSelector matches expression 'Exists', different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
@@ -373,7 +372,7 @@ func TestNamespaceMatches(t *testing.T) {
 			valid:     false,
 		},
 		"From.NamespacesFromSelector doesn't match expression 'Exists', different ns as gateway": {
-			namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+			namespaces: &gatewayapi_v1.RouteNamespaces{
 				From: ref.To(gatewayapi_v1.NamespacesFromSelector),
 				Selector: &meta_v1.LabelSelector{
 					MatchExpressions: []meta_v1.LabelSelectorRequirement{{
@@ -392,7 +391,7 @@ func TestNamespaceMatches(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
-					gateway: &gatewayapi_v1beta1.Gateway{
+					gateway: &gatewayapi_v1.Gateway{
 						ObjectMeta: meta_v1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
@@ -444,7 +443,7 @@ func TestNamespaceMatches(t *testing.T) {
 
 func TestGetListenersForRouteParentRef(t *testing.T) {
 	tests := map[string]struct {
-		routeParentRef gatewayapi_v1beta1.ParentReference
+		routeParentRef gatewayapi_v1.ParentReference
 		routeNamespace string
 		routeKind      string
 		listeners      []*listenerInfo
@@ -456,27 +455,27 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 			},
@@ -488,26 +487,26 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 				},
 			},
 			want: nil,
@@ -518,27 +517,27 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 			},
@@ -550,26 +549,26 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 				},
 			},
 			want: nil,
@@ -581,27 +580,27 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 			},
@@ -613,27 +612,27 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 			},
@@ -645,26 +644,26 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 				},
 			},
 			want: nil,
@@ -675,27 +674,27 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "HTTPRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"TLSRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"TLSRoute"},
 					ready:        true,
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 			},
@@ -707,27 +706,27 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			routeKind:      "GRPCRoute",
 			listeners: []*listenerInfo{
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-1",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"GRPCRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"GRPCRoute"},
 					ready:        true,
 				},
 				{
-					listener: gatewayapi_v1beta1.Listener{
+					listener: gatewayapi_v1.Listener{
 						Name: "http-2",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ref.To(gatewayapi_v1.NamespacesFromSame),
 							},
 						},
 					},
-					allowedKinds: []gatewayapi_v1beta1.Kind{"HTTPRoute"},
+					allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
 					ready:        true,
 				},
 			},
@@ -740,7 +739,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
-					gateway: &gatewayapi_v1beta1.Gateway{
+					gateway: &gatewayapi_v1.Gateway{
 						ObjectMeta: meta_v1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
@@ -755,7 +754,7 @@ func TestGetListenersForRouteParentRef(t *testing.T) {
 			got := processor.getListenersForRouteParentRef(
 				tc.routeParentRef,
 				tc.routeNamespace,
-				gatewayapi_v1beta1.Kind(tc.routeKind),
+				gatewayapi_v1.Kind(tc.routeKind),
 				tc.listeners,
 				map[string]int{},
 				rpsu)

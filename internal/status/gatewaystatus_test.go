@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/ref"
@@ -39,7 +38,7 @@ func TestGatewayAddCondition(t *testing.T) {
 
 	gatewayUpdate := GatewayStatusUpdate{
 		FullName:           k8s.NamespacedNameFrom("test/test"),
-		Conditions:         make(map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition),
+		Conditions:         make(map[gatewayapi_v1.GatewayConditionType]meta_v1.Condition),
 		ExistingConditions: nil,
 		Generation:         testGeneration,
 		TransitionTime:     meta_v1.Time{},
@@ -62,8 +61,8 @@ func TestGatewayAddCondition(t *testing.T) {
 func TestGatewaySetListenerSupportedKinds(t *testing.T) {
 	var gsu GatewayStatusUpdate
 
-	gsu.SetListenerSupportedKinds("http", []gatewayapi_v1beta1.Kind{"HTTPRoute"})
-	gsu.SetListenerSupportedKinds("https", []gatewayapi_v1beta1.Kind{"HTTPRoute", "TLSRoute"})
+	gsu.SetListenerSupportedKinds("http", []gatewayapi_v1.Kind{"HTTPRoute"})
+	gsu.SetListenerSupportedKinds("https", []gatewayapi_v1.Kind{"HTTPRoute", "TLSRoute"})
 
 	assert.Len(t, gsu.ListenerStatus, 2)
 
@@ -71,16 +70,16 @@ func TestGatewaySetListenerSupportedKinds(t *testing.T) {
 	require.NotNil(t, gsu.ListenerStatus["https"])
 
 	assert.ElementsMatch(t,
-		[]gatewayapi_v1beta1.RouteGroupKind{
-			{Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)), Kind: "HTTPRoute"},
+		[]gatewayapi_v1.RouteGroupKind{
+			{Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)), Kind: "HTTPRoute"},
 		},
 		gsu.ListenerStatus["http"].SupportedKinds,
 	)
 
 	assert.ElementsMatch(t,
-		[]gatewayapi_v1beta1.RouteGroupKind{
-			{Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)), Kind: "HTTPRoute"},
-			{Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)), Kind: "TLSRoute"},
+		[]gatewayapi_v1.RouteGroupKind{
+			{Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)), Kind: "HTTPRoute"},
+			{Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)), Kind: "TLSRoute"},
 		},
 		gsu.ListenerStatus["https"].SupportedKinds,
 	)
@@ -104,18 +103,18 @@ func TestGatewaySetListenerAttachedRoutes(t *testing.T) {
 func TestGatewayMutate(t *testing.T) {
 	var gsu GatewayStatusUpdate
 
-	gsu.ListenerStatus = map[string]*gatewayapi_v1beta1.ListenerStatus{
+	gsu.ListenerStatus = map[string]*gatewayapi_v1.ListenerStatus{
 		"http": {
 			Name:           "http",
 			AttachedRoutes: 7,
-			SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+			SupportedKinds: []gatewayapi_v1.RouteGroupKind{
 				{
-					Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-					Kind:  gatewayapi_v1beta1.Kind("FooRoute"),
+					Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+					Kind:  gatewayapi_v1.Kind("FooRoute"),
 				},
 				{
-					Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-					Kind:  gatewayapi_v1beta1.Kind("BarRoute"),
+					Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+					Kind:  gatewayapi_v1.Kind("BarRoute"),
 				},
 			},
 			Conditions: []meta_v1.Condition{},
@@ -123,26 +122,26 @@ func TestGatewayMutate(t *testing.T) {
 		"https": {
 			Name:           "https",
 			AttachedRoutes: 77,
-			SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+			SupportedKinds: []gatewayapi_v1.RouteGroupKind{
 				{
-					Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-					Kind:  gatewayapi_v1beta1.Kind("TLSRoute"),
+					Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+					Kind:  gatewayapi_v1.Kind("TLSRoute"),
 				},
 			},
 			Conditions: []meta_v1.Condition{},
 		},
 	}
 
-	gw := &gatewayapi_v1beta1.Gateway{
-		Status: gatewayapi_v1beta1.GatewayStatus{
-			Listeners: []gatewayapi_v1beta1.ListenerStatus{
+	gw := &gatewayapi_v1.Gateway{
+		Status: gatewayapi_v1.GatewayStatus{
+			Listeners: []gatewayapi_v1.ListenerStatus{
 				{
 					Name:           "http",
 					AttachedRoutes: 3,
-					SupportedKinds: []gatewayapi_v1beta1.RouteGroupKind{
+					SupportedKinds: []gatewayapi_v1.RouteGroupKind{
 						{
-							Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-							Kind:  gatewayapi_v1beta1.Kind("HTTPRoute"),
+							Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+							Kind:  gatewayapi_v1.Kind("HTTPRoute"),
 						},
 					},
 					Conditions: []meta_v1.Condition{},
@@ -151,12 +150,12 @@ func TestGatewayMutate(t *testing.T) {
 		},
 	}
 
-	got, ok := gsu.Mutate(gw).(*gatewayapi_v1beta1.Gateway)
+	got, ok := gsu.Mutate(gw).(*gatewayapi_v1.Gateway)
 	require.True(t, ok)
 
 	assert.Len(t, got.Status.Listeners, 2)
 
-	var want []gatewayapi_v1beta1.ListenerStatus
+	var want []gatewayapi_v1.ListenerStatus
 	for _, v := range gsu.ListenerStatus {
 		want = append(want, *v)
 	}
@@ -203,17 +202,17 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 func TestGetGatewayConditions(t *testing.T) {
 	tests := map[string]struct {
 		conditions []meta_v1.Condition
-		want       map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition
+		want       map[gatewayapi_v1.GatewayConditionType]meta_v1.Condition
 	}{
 		"no gateway conditions": {
 			conditions: nil,
-			want:       map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition{},
+			want:       map[gatewayapi_v1.GatewayConditionType]meta_v1.Condition{},
 		},
 		"one gateway condition": {
 			conditions: []meta_v1.Condition{
 				{Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
 			},
-			want: map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition{
+			want: map[gatewayapi_v1.GatewayConditionType]meta_v1.Condition{
 				gatewayapi_v1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
 			},
 		},
@@ -222,7 +221,7 @@ func TestGetGatewayConditions(t *testing.T) {
 				{Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
 				{Type: string(gatewayapi_v1.GatewayConditionAccepted)},
 			},
-			want: map[gatewayapi_v1beta1.GatewayConditionType]meta_v1.Condition{
+			want: map[gatewayapi_v1.GatewayConditionType]meta_v1.Condition{
 				gatewayapi_v1.GatewayConditionProgrammed: {Type: string(gatewayapi_v1.GatewayConditionProgrammed)},
 				gatewayapi_v1.GatewayConditionAccepted:   {Type: string(gatewayapi_v1.GatewayConditionAccepted)},
 			},
@@ -231,7 +230,7 @@ func TestGetGatewayConditions(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := getGatewayConditions(&gatewayapi_v1beta1.GatewayStatus{Conditions: tc.conditions})
+			got := getGatewayConditions(&gatewayapi_v1.GatewayStatus{Conditions: tc.conditions})
 			assert.Equal(t, tc.want, got)
 		})
 	}

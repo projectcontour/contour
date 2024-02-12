@@ -31,7 +31,6 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -148,12 +147,12 @@ var _ = Describe("When upgrading", func() {
 
 			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
-			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1beta1.GatewayClass{
+			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: gatewayClassName,
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
-					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+				Spec: gatewayapi_v1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1.GatewayController("projectcontour.io/gateway-controller"),
 				},
 			}, e2e.GatewayClassAccepted)
 
@@ -164,7 +163,7 @@ var _ = Describe("When upgrading", func() {
 		AfterEach(func() {
 			require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
 
-			gc := &gatewayapi_v1beta1.GatewayClass{
+			gc := &gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: gatewayClassName,
 				},
@@ -179,23 +178,23 @@ var _ = Describe("When upgrading", func() {
 
 				appHost := "upgrade.provisioner.projectcontour.io"
 
-				gateway, ok := f.CreateGatewayAndWaitFor(&gatewayapi_v1beta1.Gateway{
+				gateway, ok := f.CreateGatewayAndWaitFor(&gatewayapi_v1.Gateway{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "upgrade-gateway",
 					},
-					Spec: gatewayapi_v1beta1.GatewaySpec{
+					Spec: gatewayapi_v1.GatewaySpec{
 						GatewayClassName: gatewayClassName,
-						Listeners: []gatewayapi_v1beta1.Listener{
+						Listeners: []gatewayapi_v1.Listener{
 							{
 								Name:     "http",
-								Port:     gatewayapi_v1beta1.PortNumber(80),
+								Port:     gatewayapi_v1.PortNumber(80),
 								Protocol: gatewayapi_v1.HTTPProtocolType,
-								Hostname: ref.To(gatewayapi_v1beta1.Hostname(appHost)),
+								Hostname: ref.To(gatewayapi_v1.Hostname(appHost)),
 							},
 						},
 					},
-				}, func(gw *gatewayapi_v1beta1.Gateway) bool {
+				}, func(gw *gatewayapi_v1.Gateway) bool {
 					return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 				})
 				require.True(t, ok)
@@ -205,34 +204,34 @@ var _ = Describe("When upgrading", func() {
 
 				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 
-				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1beta1.HTTPRoute{
+				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "echo",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
-								{Name: gatewayapi_v1beta1.ObjectName(gateway.Name)},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
+								{Name: gatewayapi_v1.ObjectName(gateway.Name)},
 							},
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						Rules: []gatewayapi_v1.HTTPRouteRule{
 							{
-								BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+								BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 									{
-										BackendRef: gatewayapi_v1beta1.BackendRef{
-											BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-												Name: gatewayapi_v1beta1.ObjectName("echo"),
-												Port: ref.To(gatewayapi_v1beta1.PortNumber(80)),
+										BackendRef: gatewayapi_v1.BackendRef{
+											BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+												Name: gatewayapi_v1.ObjectName("echo"),
+												Port: ref.To(gatewayapi_v1.PortNumber(80)),
 											},
 										},
 									},
 								},
-								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+								Filters: []gatewayapi_v1.HTTPRouteFilter{
 									{
 										Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-											Set: []gatewayapi_v1beta1.HTTPHeader{
+										ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+											Set: []gatewayapi_v1.HTTPHeader{
 												{
 													Name:  gatewayapi_v1.HTTPHeaderName("X-Envoy-Response-Flags"),
 													Value: "%RESPONSE_FLAGS%",
