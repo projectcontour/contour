@@ -20,6 +20,9 @@ EOF
 
 for f in "examples/contour/"*.yaml "examples/gateway/"*.yaml ; do
   case $f in
+  examples/contour/01-contour-config.yaml)
+    # skip
+    ;;
   */03-envoy-deployment.yaml)
     # skip
     ;;
@@ -38,7 +41,7 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
         # skip
         ;;
     */01-contour-config.yaml)
-        sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/gateway-controller|  controllerName: projectcontour.io/gateway-controller|g' < "$y"
+        # skip
         ;;
     *)
         cat $y
@@ -48,14 +51,14 @@ done
 
 for y in "${REPO}/examples/gateway/"*.yaml ; do
     echo # Ensure we have at least one newline between joined fragments.
-    
+
     # Since the Gateway YAMLs are pulled from the Gateway API repo, the manifests do not start with "---".
     case $y in
-    */00-crds.yaml)  
+    */00-crds.yaml)
       echo "---"
       ;;
 
     esac
-    
+
     cat "$y"
 done

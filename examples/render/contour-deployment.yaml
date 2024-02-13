@@ -46,7 +46,8 @@ data:
     #
     # Specify the Gateway API configuration.
     # gateway:
-    #   controllerName: projectcontour.io/gateway-controller
+    #   namespace: projectcontour
+    #   name: contour
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
@@ -830,22 +831,10 @@ spec:
                   Gateway contains parameters for the gateway-api Gateway that Contour
                   is configured to serve traffic.
                 properties:
-                  controllerName:
-                    description: |-
-                      ControllerName is used to determine whether Contour should reconcile a
-                      GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-                      If unset, the gatewayclass controller will not be started.
-                      Exactly one of ControllerName or GatewayRef must be set.
-                      Deprecated: users should use GatewayRef, or the Gateway provisioner,
-                      in place of this field. This field will be removed in a future release.
-                    type: string
                   gatewayRef:
                     description: |-
-                      GatewayRef defines a specific Gateway that this Contour
-                      instance corresponds to. If set, Contour will reconcile
-                      only this gateway, and will not reconcile any gateway
-                      classes.
-                      Exactly one of ControllerName or GatewayRef must be set.
+                      GatewayRef defines the specific Gateway that this Contour
+                      instance corresponds to.
                     properties:
                       name:
                         type: string
@@ -855,6 +844,8 @@ spec:
                     - name
                     - namespace
                     type: object
+                required:
+                - gatewayRef
                 type: object
               globalExtAuth:
                 description: |-
@@ -4525,22 +4516,10 @@ spec:
                       Gateway contains parameters for the gateway-api Gateway that Contour
                       is configured to serve traffic.
                     properties:
-                      controllerName:
-                        description: |-
-                          ControllerName is used to determine whether Contour should reconcile a
-                          GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-                          If unset, the gatewayclass controller will not be started.
-                          Exactly one of ControllerName or GatewayRef must be set.
-                          Deprecated: users should use GatewayRef, or the Gateway provisioner,
-                          in place of this field. This field will be removed in a future release.
-                        type: string
                       gatewayRef:
                         description: |-
-                          GatewayRef defines a specific Gateway that this Contour
-                          instance corresponds to. If set, Contour will reconcile
-                          only this gateway, and will not reconcile any gateway
-                          classes.
-                          Exactly one of ControllerName or GatewayRef must be set.
+                          GatewayRef defines the specific Gateway that this Contour
+                          instance corresponds to.
                         properties:
                           name:
                             type: string
@@ -4550,6 +4529,8 @@ spec:
                         - name
                         - namespace
                         type: object
+                    required:
+                    - gatewayRef
                     type: object
                   globalExtAuth:
                     description: |-

@@ -49,13 +49,12 @@ import (
 //  5. If the worker is stopped, the informer continues but no further
 //     status updates are made.
 type loadBalancerStatusWriter struct {
-	log                   logrus.FieldLogger
-	cache                 cache.Cache
-	lbStatus              chan core_v1.LoadBalancerStatus
-	statusUpdater         k8s.StatusUpdater
-	ingressClassNames     []string
-	gatewayControllerName string
-	gatewayRef            *types.NamespacedName
+	log               logrus.FieldLogger
+	cache             cache.Cache
+	lbStatus          chan core_v1.LoadBalancerStatus
+	statusUpdater     k8s.StatusUpdater
+	ingressClassNames []string
+	gatewayRef        *types.NamespacedName
 }
 
 func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
@@ -73,11 +72,10 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 
 			return log
 		}(),
-		Cache:                 isw.cache,
-		IngressClassNames:     isw.ingressClassNames,
-		GatewayControllerName: isw.gatewayControllerName,
-		GatewayRef:            isw.gatewayRef,
-		StatusUpdater:         isw.statusUpdater,
+		Cache:             isw.cache,
+		IngressClassNames: isw.ingressClassNames,
+		GatewayRef:        isw.gatewayRef,
+		StatusUpdater:     isw.statusUpdater,
 	}
 
 	// Create informers for the types that need load balancer
@@ -88,9 +86,9 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 		&networking_v1.Ingress{},
 	}
 
-	// Only create Gateway informer if a controller or specific gateway was provided,
+	// Only create Gateway informer if a gateway was provided,
 	// otherwise the API may not exist in the cluster.
-	if len(isw.gatewayControllerName) > 0 || isw.gatewayRef != nil {
+	if isw.gatewayRef != nil {
 		resources = append(resources, &gatewayapi_v1.Gateway{})
 	}
 
@@ -139,9 +137,9 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 				}
 			}
 
-			// Only list Gateways if a controller or specific gateway was configured,
+			// Only list Gateways if a gateway was configured,
 			// otherwise the API may not exist in the cluster.
-			if len(isw.gatewayControllerName) > 0 || isw.gatewayRef != nil {
+			if isw.gatewayRef != nil {
 				var gatewayList gatewayapi_v1.GatewayList
 				if err := isw.cache.List(context.Background(), &gatewayList); err != nil {
 					isw.log.WithError(err).WithField("kind", "Gateway").Error("failed to list objects")

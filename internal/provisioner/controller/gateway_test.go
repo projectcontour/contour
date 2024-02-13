@@ -335,7 +335,7 @@ func TestGatewayReconcile(t *testing.T) {
 				want := contour_v1alpha1.ContourConfigurationSpec{
 					EnableExternalNameService: ref.To(true),
 					Gateway: &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: gw.Name,
 							Name:      gw.Name,
 						},
@@ -367,8 +367,7 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contour_v1alpha1.ContourConfigurationSpec{
 						Gateway: &contour_v1alpha1.GatewayConfig{
-							ControllerName: "some-controller",
-							GatewayRef: &contour_v1alpha1.NamespacedName{
+							GatewayRef: contour_v1alpha1.NamespacedName{
 								Namespace: "some-other-namespace",
 								Name:      "some-other-gateway",
 							},
@@ -403,7 +402,7 @@ func TestGatewayReconcile(t *testing.T) {
 
 				want := contour_v1alpha1.ContourConfigurationSpec{
 					Gateway: &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: gw.Name,
 							Name:      gw.Name,
 						},
@@ -458,7 +457,7 @@ func TestGatewayReconcile(t *testing.T) {
 
 				want := contour_v1alpha1.ContourConfigurationSpec{
 					Gateway: &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: gw.Name,
 							Name:      gw.Name,
 						},

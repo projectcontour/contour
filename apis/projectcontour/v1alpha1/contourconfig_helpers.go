@@ -238,18 +238,10 @@ func (f FeatureFlags) IsEndpointSliceEnabled() bool {
 	return slices.Contains(f, featureFlagUseEndpointSlices)
 }
 
-// Validate ensures that exactly one of ControllerName or GatewayRef are specified.
+// Validate ensures that GatewayRef namespace/name is specified.
 func (g *GatewayConfig) Validate() error {
-	if g == nil {
-		return nil
-	}
-
-	if len(g.ControllerName) > 0 && g.GatewayRef != nil {
-		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway ref must be specified")
-	}
-
-	if len(g.ControllerName) == 0 && g.GatewayRef == nil {
-		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway ref must be specified")
+	if g != nil && (g.GatewayRef.Namespace == "" || g.GatewayRef.Name == "") {
+		return fmt.Errorf("invalid gateway configuration: gateway ref namespace and name must be specified")
 	}
 
 	return nil

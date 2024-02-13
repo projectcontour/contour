@@ -168,15 +168,15 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Gateway: &contour_v1alpha1.GatewayConfig{},
 		}
 
-		c.Gateway.ControllerName = "foo"
+		c.Gateway.GatewayRef = contour_v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
 		require.NoError(t, c.Validate())
 
-		c.Gateway.ControllerName = ""
-		c.Gateway.GatewayRef = &contour_v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
-		require.NoError(t, c.Validate())
+		// empty namespace is not allowed
+		c.Gateway.GatewayRef = contour_v1alpha1.NamespacedName{Name: "name"}
+		require.Error(t, c.Validate())
 
-		c.Gateway.ControllerName = "foo"
-		c.Gateway.GatewayRef = &contour_v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
+		// empty name is not allowed
+		c.Gateway.GatewayRef = contour_v1alpha1.NamespacedName{Namespace: "ns"}
 		require.Error(t, c.Validate())
 	})
 

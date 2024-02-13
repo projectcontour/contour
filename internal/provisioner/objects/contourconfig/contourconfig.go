@@ -60,7 +60,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 
 func setGatewayConfig(config *contour_v1alpha1.ContourConfiguration, contour *model.Contour) {
 	config.Spec.Gateway = &contour_v1alpha1.GatewayConfig{
-		GatewayRef: &contour_v1alpha1.NamespacedName{
+		GatewayRef: contour_v1alpha1.NamespacedName{
 			Namespace: contour.Namespace,
 			Name:      contour.Name,
 		},

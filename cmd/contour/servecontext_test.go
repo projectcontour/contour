@@ -563,24 +563,10 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
-		"gatewayapi - controller": {
+		"gatewayapi": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.GatewayConfig = &config.GatewayParameters{
-					ControllerName: "projectcontour.io/gateway-controller",
-				}
-				return ctx
-			},
-			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
-				cfg.Gateway = &contour_v1alpha1.GatewayConfig{
-					ControllerName: "projectcontour.io/gateway-controller",
-				}
-				return cfg
-			},
-		},
-		"gatewayapi - specific gateway": {
-			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.GatewayConfig = &config.GatewayParameters{
-					GatewayRef: &config.NamespacedName{
+					GatewayRef: config.NamespacedName{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},
@@ -589,7 +575,7 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Gateway = &contour_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_v1alpha1.NamespacedName{
+					GatewayRef: contour_v1alpha1.NamespacedName{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},

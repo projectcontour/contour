@@ -193,9 +193,17 @@ func TestValidateGatewayParameters(t *testing.T) {
 	var gw *GatewayParameters
 	require.NoError(t, gw.Validate())
 
-	// ControllerName is required.
-	gw = &GatewayParameters{ControllerName: "controller"}
+	// Namespace and name are required
+	gw = &GatewayParameters{GatewayRef: NamespacedName{Namespace: "foo", Name: "bar"}}
 	require.NoError(t, gw.Validate())
+
+	// Namespace is required
+	gw = &GatewayParameters{GatewayRef: NamespacedName{Name: "bar"}}
+	require.Error(t, gw.Validate())
+
+	// Name is required
+	gw = &GatewayParameters{GatewayRef: NamespacedName{Namespace: "foo"}}
+	require.Error(t, gw.Validate())
 }
 
 func TestValidateHTTPVersionType(t *testing.T) {

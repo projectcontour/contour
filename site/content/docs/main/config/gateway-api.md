@@ -24,9 +24,7 @@ There are two ways to deploy Contour with Gateway API support: **static** provis
 
 In **static** provisioning, the platform operator defines a `Gateway` resource, and then manually deploys a Contour instance corresponding to that `Gateway` resource.
 It is up to the platform operator to ensure that all configuration matches between the `Gateway` and the Contour/Envoy resources.
-With static provisioning, Contour can be configured with either a [controller name][8], or a specific gateway (see the [API documentation][7].)
-If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
-If configured with a specific gateway, Contour will process that `Gateway` and its routes.
+Contour will then process that `Gateway` and its routes.
 
 **Note:** configuring Contour with a controller name is deprecated and will be removed in a future release. Use a specific gateway reference or dynamic provisioning instead.
 
