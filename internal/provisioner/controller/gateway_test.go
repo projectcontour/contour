@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,7 +35,6 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestGatewayReconcile(t *testing.T) {
@@ -66,7 +66,7 @@ func TestGatewayReconcile(t *testing.T) {
 		gc.Spec.ParametersRef = &gatewayapi_v1.ParametersReference{
 			Group:     gatewayapi_v1.Group(contour_v1alpha1.GroupVersion.Group),
 			Kind:      "ContourDeployment",
-			Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
+			Namespace: ptr.To(gatewayapi_v1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
@@ -77,7 +77,7 @@ func TestGatewayReconcile(t *testing.T) {
 		gc.Spec.ParametersRef = &gatewayapi_v1.ParametersReference{
 			Group:     gatewayapi_v1.Group(contour_v1alpha1.GroupVersion.Group),
 			Kind:      "InvalidKind",
-			Namespace: ref.To(gatewayapi_v1.Namespace("projectcontour")),
+			Namespace: ptr.To(gatewayapi_v1.Namespace("projectcontour")),
 			Name:      name + "-params",
 		}
 		return gc
@@ -222,7 +222,7 @@ func TestGatewayReconcile(t *testing.T) {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1.IPAddressType),
+					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.207",
 				},
 			}),
@@ -236,11 +236,11 @@ func TestGatewayReconcile(t *testing.T) {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1.IPAddressType),
+					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.207",
 				},
 				{
-					Type:  ref.To(gatewayapi_v1.IPAddressType),
+					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.999",
 				},
 			}),
@@ -253,7 +253,7 @@ func TestGatewayReconcile(t *testing.T) {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1.HostnameAddressType),
+					Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 					Value: "projectcontour.io",
 				},
 			}),
@@ -266,11 +266,11 @@ func TestGatewayReconcile(t *testing.T) {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1.HostnameAddressType),
+					Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 					Value: "projectcontour.io",
 				},
 				{
-					Type:  ref.To(gatewayapi_v1.HostnameAddressType),
+					Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 					Value: "anotherhost.io",
 				},
 			}),
@@ -283,7 +283,7 @@ func TestGatewayReconcile(t *testing.T) {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
 			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1.AddressType("acme.io/CustomAddressType")),
+					Type:  ptr.To(gatewayapi_v1.AddressType("acme.io/CustomAddressType")),
 					Value: "custom-address-types-are-not-supported",
 				},
 			}),
@@ -301,10 +301,10 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contour_v1alpha1.ContourConfigurationSpec{
-						EnableExternalNameService: ref.To(true),
+						EnableExternalNameService: ptr.To(true),
 						Envoy: &contour_v1alpha1.EnvoyConfig{
 							Listener: &contour_v1alpha1.EnvoyListenerConfig{
-								DisableMergeSlashes: ref.To(true),
+								DisableMergeSlashes: ptr.To(true),
 							},
 							Metrics: &contour_v1alpha1.MetricsConfig{
 								Port: 8003,
@@ -333,7 +333,7 @@ func TestGatewayReconcile(t *testing.T) {
 				require.NoError(t, r.client.Get(context.Background(), keyFor(contourConfig), contourConfig))
 
 				want := contour_v1alpha1.ContourConfigurationSpec{
-					EnableExternalNameService: ref.To(true),
+					EnableExternalNameService: ptr.To(true),
 					Gateway: &contour_v1alpha1.GatewayConfig{
 						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: gw.Name,
@@ -342,7 +342,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 					Envoy: &contour_v1alpha1.EnvoyConfig{
 						Listener: &contour_v1alpha1.EnvoyListenerConfig{
-							DisableMergeSlashes: ref.To(true),
+							DisableMergeSlashes: ptr.To(true),
 						},
 						Service: &contour_v1alpha1.NamespacedName{
 							Namespace: gw.Namespace,
@@ -427,10 +427,10 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					RuntimeSettings: &contour_v1alpha1.ContourConfigurationSpec{
-						EnableExternalNameService: ref.To(true),
+						EnableExternalNameService: ptr.To(true),
 						Envoy: &contour_v1alpha1.EnvoyConfig{
 							Listener: &contour_v1alpha1.EnvoyListenerConfig{
-								DisableMergeSlashes: ref.To(true),
+								DisableMergeSlashes: ptr.To(true),
 							},
 						},
 					},
@@ -485,7 +485,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:     "listener-2",
 					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
-					Hostname: ref.To(gatewayapi_v1.Hostname("foo.bar")),
+					Hostname: ptr.To(gatewayapi_v1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-3",
@@ -507,13 +507,13 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:     "listener-6",
 					Protocol: gatewayapi_v1.TLSProtocolType,
 					Port:     443,
-					Hostname: ref.To(gatewayapi_v1.Hostname("foo.bar")),
+					Hostname: ptr.To(gatewayapi_v1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-7",
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					Port:     8443,
-					Hostname: ref.To(gatewayapi_v1.Hostname("foo.baz")),
+					Hostname: ptr.To(gatewayapi_v1.Hostname("foo.baz")),
 				},
 			}),
 
@@ -567,7 +567,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Name:     "listener-2",
 					Protocol: gatewayapi_v1.HTTPProtocolType,
 					Port:     80,
-					Hostname: ref.To(gatewayapi_v1.Hostname("foo.bar")),
+					Hostname: ptr.To(gatewayapi_v1.Hostname("foo.bar")),
 				},
 				{
 					Name:     "listener-3",
@@ -911,7 +911,7 @@ func TestGatewayReconcile(t *testing.T) {
 					Protocol: gatewayapi_v1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 					Name: gatewayapi_v1.SectionName("http"),
@@ -923,11 +923,11 @@ func TestGatewayReconcile(t *testing.T) {
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 					TLS: &gatewayapi_v1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 					},
 				},
 			}),
@@ -949,7 +949,7 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
 				assert.Equal(t, core_v1.ServiceExternalTrafficPolicyTypeCluster, svc.Spec.ExternalTrafficPolicy)
-				assert.Equal(t, ref.To(core_v1.IPFamilyPolicyPreferDualStack), svc.Spec.IPFamilyPolicy)
+				assert.Equal(t, ptr.To(core_v1.IPFamilyPolicyPreferDualStack), svc.Spec.IPFamilyPolicy)
 				assert.Equal(t, core_v1.ServiceTypeNodePort, svc.Spec.Type)
 				require.Len(t, svc.Annotations, 2)
 				assert.Equal(t, "val-1", svc.Annotations["key-1"])

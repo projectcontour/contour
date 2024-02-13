@@ -23,6 +23,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -30,7 +31,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s/mocks"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
@@ -416,11 +416,11 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
-							Type:  ref.To(gatewayapi_v1.IPAddressType),
+							Type:  ptr.To(gatewayapi_v1.IPAddressType),
 							Value: ipLBStatus.Ingress[0].IP,
 						},
 						{
-							Type:  ref.To(gatewayapi_v1.IPAddressType),
+							Type:  ptr.To(gatewayapi_v1.IPAddressType),
 							Value: ipLBStatus.Ingress[1].IP,
 						},
 					},
@@ -464,7 +464,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 					},
 					Addresses: []gatewayapi_v1.GatewayStatusAddress{
 						{
-							Type:  ref.To(gatewayapi_v1.HostnameAddressType),
+							Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 							Value: hostnameLBStatus.Ingress[0].Hostname,
 						},
 					},
@@ -567,7 +567,7 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 	}
 	var ingressClassName *string
 	if ingressClassSpec != "" {
-		ingressClassName = ref.To(ingressClassSpec)
+		ingressClassName = ptr.To(ingressClassSpec)
 	}
 	return &networking_v1.Ingress{
 		TypeMeta: meta_v1.TypeMeta{

@@ -18,9 +18,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestValidateListeners(t *testing.T) {
@@ -35,25 +34,25 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 		}
 
@@ -76,25 +75,25 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     8080,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 		}
 
@@ -118,31 +117,31 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")), // duplicate hostname
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")), // duplicate hostname
 			},
 			{
 				Name:     "listener-4",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "listener-5",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     8080,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
 				Protocol: gatewayapi_v1.TLSProtocolType, // non-HTTP
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 		}
 
@@ -173,25 +172,25 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "non-http-listener-1",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 		}
 
@@ -214,25 +213,25 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-4",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     8443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "http-listener-1",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 		}
 
@@ -256,31 +255,31 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")), // duplicate hostname
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")), // duplicate hostname
 			},
 			{
 				Name:     "listener-4",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "listener-5",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     8443,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.envoyproxy.io")),
 			},
 			{
 				Name:     "http-listener-1",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("local.projectcontour.io")),
 			},
 		}
 
@@ -306,19 +305,19 @@ func TestValidateListeners(t *testing.T) {
 				Name:     "listener-1",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("192.168.1.1")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("192.168.1.1")),
 			},
 			{
 				Name:     "listener-2",
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				Port:     80,
-				Hostname: ref.To(gatewayapi_v1.Hostname("*.*.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("*.*.projectcontour.io")),
 			},
 			{
 				Name:     "listener-3",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
 				Port:     443,
-				Hostname: ref.To(gatewayapi_v1.Hostname(".invalid.$.")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname(".invalid.$.")),
 			},
 		}
 
@@ -351,19 +350,19 @@ func TestValidateListeners(t *testing.T) {
 			{
 				Name:     "https-1",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				Hostname: ref.To(gatewayapi_v1.Hostname("https-1.gateway.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("https-1.gateway.projectcontour.io")),
 				Port:     443,
 			},
 			{
 				Name:     "https-2",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				Hostname: ref.To(gatewayapi_v1.Hostname("https-2.gateway.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("https-2.gateway.projectcontour.io")),
 				Port:     443,
 			},
 			{
 				Name:     "https-3",
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				Hostname: ref.To(gatewayapi_v1.Hostname("https-3.gateway.projectcontour.io")),
+				Hostname: ptr.To(gatewayapi_v1.Hostname("https-3.gateway.projectcontour.io")),
 				Port:     443,
 			},
 		}

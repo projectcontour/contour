@@ -22,6 +22,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -29,7 +30,6 @@ import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/ingressclass"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 // StatusAddressUpdater observes informer OnAdd and OnUpdate events and
@@ -84,7 +84,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 	switch o := obj.(type) {
 	case *networking_v1.Ingress:
 		if !ingressclass.MatchesIngress(o, s.IngressClassNames) {
-			logNoMatch(s.Logger.WithField("ingress-class-name", ref.Val(o.Spec.IngressClassName, "")), o)
+			logNoMatch(s.Logger.WithField("ingress-class-name", ptr.Deref(o.Spec.IngressClassName, "")), o)
 			return
 		}
 
@@ -266,13 +266,13 @@ func lbStatusToGatewayAddresses(lbs core_v1.LoadBalancerStatus) []gatewayapi_v1.
 	for _, lbi := range lbs.Ingress {
 		if len(lbi.IP) > 0 {
 			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
-				Type:  ref.To(gatewayapi_v1.IPAddressType),
+				Type:  ptr.To(gatewayapi_v1.IPAddressType),
 				Value: lbi.IP,
 			})
 		}
 		if len(lbi.Hostname) > 0 {
 			addrs = append(addrs, gatewayapi_v1.GatewayStatusAddress{
-				Type:  ref.To(gatewayapi_v1.HostnameAddressType),
+				Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 				Value: lbi.Hostname,
 			})
 		}

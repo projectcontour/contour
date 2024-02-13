@@ -20,11 +20,11 @@ import (
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
@@ -40,11 +40,11 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 			VirtualHost: &contour_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_v1.Route{{
 				RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
-					Scheme:     ref.To("https"),
-					Hostname:   ref.To("envoyproxy.io"),
-					Port:       ref.To(int32(443)),
-					StatusCode: ref.To(301),
-					Path:       ref.To("/blog"),
+					Scheme:     ptr.To("https"),
+					Hostname:   ptr.To("envoyproxy.io"),
+					Port:       ptr.To(int32(443)),
+					StatusCode: ptr.To(301),
+					Path:       ptr.To("/blog"),
 				},
 			}},
 		})
@@ -84,11 +84,11 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 			VirtualHost: &contour_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_v1.Route{{
 				RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
-					Scheme:     ref.To("https"),
-					Hostname:   ref.To("envoyproxy.io"),
-					Port:       ref.To(int32(443)),
-					StatusCode: ref.To(301),
-					Prefix:     ref.To("/blogprefix"),
+					Scheme:     ptr.To("https"),
+					Hostname:   ptr.To("envoyproxy.io"),
+					Port:       ptr.To(int32(443)),
+					StatusCode: ptr.To(301),
+					Prefix:     ptr.To("/blogprefix"),
 				},
 			}},
 		})
@@ -132,12 +132,12 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 					Port: 80,
 				}},
 				RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
-					Scheme:     ref.To("https"),
-					Hostname:   ref.To("envoyproxy.io"),
-					Port:       ref.To(int32(443)),
-					StatusCode: ref.To(301),
-					Prefix:     ref.To("/blogprefix"),
-					Path:       ref.To("/blogprefix"),
+					Scheme:     ptr.To("https"),
+					Hostname:   ptr.To("envoyproxy.io"),
+					Port:       ptr.To(int32(443)),
+					StatusCode: ptr.To(301),
+					Prefix:     ptr.To("/blogprefix"),
+					Path:       ptr.To("/blogprefix"),
 				},
 			}},
 		})

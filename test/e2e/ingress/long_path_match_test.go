@@ -24,8 +24,8 @@ import (
 	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -51,7 +51,7 @@ func testLongPathMatch(namespace string) {
 							HTTP: &networking_v1.HTTPIngressRuleValue{
 								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networking_v1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     longPrefixMatch,
 										Backend: networking_v1.IngressBackend{
 											Service: &networking_v1.IngressServiceBackend{
@@ -63,7 +63,7 @@ func testLongPathMatch(namespace string) {
 										},
 									},
 									{
-										PathType: ref.To(networking_v1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     reallyLongPrefixMatch,
 										Backend: networking_v1.IngressBackend{
 											Service: &networking_v1.IngressServiceBackend{
@@ -75,7 +75,7 @@ func testLongPathMatch(namespace string) {
 										},
 									},
 									{
-										PathType: ref.To(networking_v1.PathTypeImplementationSpecific),
+										PathType: ptr.To(networking_v1.PathTypeImplementationSpecific),
 										Path:     longRegexMatch,
 										Backend: networking_v1.IngressBackend{
 											Service: &networking_v1.IngressServiceBackend{

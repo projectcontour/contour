@@ -27,11 +27,11 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 )
@@ -159,7 +159,7 @@ var _ = Describe("Gateway API", func() {
 							Port:     gatewayapi_v1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -203,7 +203,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -221,7 +221,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -258,7 +258,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
-							Hostname: ref.To(gatewayapi_v1.Hostname("https-1.gateway.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("https-1.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-1", ""),
@@ -269,7 +269,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -277,7 +277,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "https-2",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
-							Hostname: ref.To(gatewayapi_v1.Hostname("https-2.gateway.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("https-2.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-2", ""),
@@ -288,7 +288,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -296,7 +296,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "https-3",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
-							Hostname: ref.To(gatewayapi_v1.Hostname("https-3.gateway.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("https-3.gateway.projectcontour.io")),
 							TLS: &gatewayapi_v1.GatewayTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-3", ""),
@@ -307,7 +307,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -345,7 +345,7 @@ var _ = Describe("Gateway API", func() {
 							Port:     gatewayapi_v1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},

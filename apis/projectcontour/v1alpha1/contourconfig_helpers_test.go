@@ -19,9 +19,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestContourConfigurationSpecValidate(t *testing.T) {
@@ -193,10 +193,10 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		}
 		require.NoError(t, c.Validate())
 
-		c.Tracing.OverallSampling = ref.To("number")
+		c.Tracing.OverallSampling = ptr.To("number")
 		require.Error(t, c.Validate())
 
-		c.Tracing.OverallSampling = ref.To("10")
+		c.Tracing.OverallSampling = ptr.To("10")
 		require.NoError(t, c.Validate())
 
 		customTags := []*contour_v1alpha1.CustomTag{

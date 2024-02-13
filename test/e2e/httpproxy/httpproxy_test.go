@@ -28,10 +28,10 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 )
@@ -117,7 +117,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testInternalRedirectPolicy(namespace)
 		})
@@ -145,7 +145,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("set to true", func() {
 			BeforeEach(func() {
 				contourConfig.DisableMergeSlashes = true
-				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = ref.To(true)
+				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = ptr.To(true)
 			})
 
 			f.NamespacedTest("httpproxy-disable-merge-slashes", testDisableMergeSlashes(true))
@@ -404,7 +404,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testHostRewriteHeaderExternalNameService(namespace)
 		})
@@ -415,7 +415,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with trusted xff hops", func() {
 			BeforeEach(func() {
 				contourConfig.Network.XffNumTrustedHops = 1
-				contourConfiguration.Spec.Envoy.Network.XffNumTrustedHops = ref.To(uint32(1))
+				contourConfiguration.Spec.Envoy.Network.XffNumTrustedHops = ptr.To(uint32(1))
 			})
 
 			testIPFilterPolicy(namespace)
@@ -453,7 +453,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testExternalNameServiceInsecure(namespace)
 		})
@@ -463,7 +463,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testExternalNameServiceTLS(namespace)
 		})
@@ -473,7 +473,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testExternalNameServiceLocalhostInvalid(namespace)
 		})
@@ -498,8 +498,8 @@ var _ = Describe("HTTPProxy", func() {
 								Namespace: namespace,
 							},
 							Domain:                  "contour",
-							FailOpen:                ref.To(false),
-							EnableXRateLimitHeaders: ref.To(false),
+							FailOpen:                ptr.To(false),
+							EnableXRateLimitHeaders: ptr.To(false),
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(
@@ -590,8 +590,8 @@ descriptors:
 								Namespace: namespace,
 							},
 							Domain:                  "contour-default-global-rate-limit",
-							FailOpen:                ref.To(false),
-							EnableXRateLimitHeaders: ref.To(false),
+							FailOpen:                ptr.To(false),
+							EnableXRateLimitHeaders: ptr.To(false),
 							DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
 								Descriptors: []contour_v1.RateLimitDescriptor{
 									{
@@ -635,7 +635,7 @@ descriptors:
   - key: customHeader
     rate_limit:
       unit: hour
-      requests_per_unit: 1  
+      requests_per_unit: 1
   - key: anotherHeader
     rate_limit:
       unit: hour

@@ -27,9 +27,9 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -69,7 +69,7 @@ func testBackendTLS(namespace string) {
 							HTTP: &networking_v1.HTTPIngressRuleValue{
 								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networking_v1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     "/",
 										Backend: networking_v1.IngressBackend{
 											Service: &networking_v1.IngressServiceBackend{

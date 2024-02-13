@@ -34,9 +34,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -67,7 +67,7 @@ func testGRPCServicePlaintext(namespace string) {
 							{
 								Name:     "grpc-echo",
 								Port:     9000,
-								Protocol: ref.To("h2c"),
+								Protocol: ptr.To("h2c"),
 							},
 						},
 						Conditions: []contour_v1.MatchCondition{
@@ -151,7 +151,7 @@ func testGRPCWeb(namespace string) {
 							{
 								Name:     "grpc-echo",
 								Port:     9000,
-								Protocol: ref.To("h2c"),
+								Protocol: ptr.To("h2c"),
 							},
 						},
 					},

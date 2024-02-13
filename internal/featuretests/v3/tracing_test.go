@@ -19,6 +19,7 @@ import (
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -26,7 +27,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 )
@@ -75,7 +75,7 @@ func TestTracing(t *testing.T) {
 			Services: []contour_v1alpha1.ExtensionServiceTarget{
 				{Name: "otel-collector", Port: 4317},
 			},
-			Protocol: ref.To("h2c"),
+			Protocol: ptr.To("h2c"),
 			TimeoutPolicy: &contour_v1.TimeoutPolicy{
 				Response: defaultResponseTimeout.String(),
 			},

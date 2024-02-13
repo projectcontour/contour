@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"dario.cat/mergo"
+	"k8s.io/utils/ptr"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
@@ -48,7 +48,7 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				CAFile:   "/certs/ca.crt",
 				CertFile: "/certs/tls.crt",
 				KeyFile:  "/certs/tls.key",
-				Insecure: ref.To(false),
+				Insecure: ptr.To(false),
 			},
 		},
 		Ingress: &contour_v1alpha1.IngressConfig{
@@ -65,9 +65,9 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 		},
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              ref.To(false),
-				DisableAllowChunkedLength:  ref.To(false),
-				DisableMergeSlashes:        ref.To(false),
+				UseProxyProto:              ptr.To(false),
+				DisableAllowChunkedLength:  ptr.To(false),
+				DisableMergeSlashes:        ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
 				ConnectionBalancer:         "",
 				TLS: &contour_v1alpha1.EnvoyTLS{
@@ -128,22 +128,22 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				},
 			},
 			Network: &contour_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: ref.To(uint32(0)),
-				EnvoyAdminPort:    ref.To(9001),
+				XffNumTrustedHops: ptr.To(uint32(0)),
+				EnvoyAdminPort:    ptr.To(9001),
 			},
 		},
 		Gateway: nil,
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
-			DisablePermitInsecure: ref.To(false),
+			DisablePermitInsecure: ptr.To(false),
 			RootNamespaces:        nil,
 			FallbackCertificate:   nil,
 		},
-		EnableExternalNameService: ref.To(false),
+		EnableExternalNameService: ptr.To(false),
 		RateLimitService:          nil,
 		Policy: &contour_v1alpha1.PolicyConfig{
 			RequestHeadersPolicy:  &contour_v1alpha1.HeadersPolicy{},
 			ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{},
-			ApplyToIngress:        ref.To(false),
+			ApplyToIngress:        ptr.To(false),
 		},
 		Metrics: &contour_v1alpha1.MetricsConfig{
 			Address: "0.0.0.0",

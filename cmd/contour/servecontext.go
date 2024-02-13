@@ -27,12 +27,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
 )
@@ -167,7 +167,7 @@ func grpcOptions(log logrus.FieldLogger, contourXDSConfig *contour_v1alpha1.TLS)
 		}),
 	}
 
-	if !ref.Val(contourXDSConfig.Insecure, false) {
+	if !ptr.Deref(contourXDSConfig.Insecure, false) {
 		tlsconfig := tlsconfig(log, contourXDSConfig)
 		creds := credentials.NewTLS(tlsconfig)
 		opts = append(opts, grpc.Creds(creds))
@@ -345,25 +345,25 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 
 	timeoutParams := &contour_v1alpha1.TimeoutParameters{}
 	if len(ctx.Config.Timeouts.RequestTimeout) > 0 {
-		timeoutParams.RequestTimeout = ref.To(ctx.Config.Timeouts.RequestTimeout)
+		timeoutParams.RequestTimeout = ptr.To(ctx.Config.Timeouts.RequestTimeout)
 	}
 	if len(ctx.Config.Timeouts.ConnectionIdleTimeout) > 0 {
-		timeoutParams.ConnectionIdleTimeout = ref.To(ctx.Config.Timeouts.ConnectionIdleTimeout)
+		timeoutParams.ConnectionIdleTimeout = ptr.To(ctx.Config.Timeouts.ConnectionIdleTimeout)
 	}
 	if len(ctx.Config.Timeouts.StreamIdleTimeout) > 0 {
-		timeoutParams.StreamIdleTimeout = ref.To(ctx.Config.Timeouts.StreamIdleTimeout)
+		timeoutParams.StreamIdleTimeout = ptr.To(ctx.Config.Timeouts.StreamIdleTimeout)
 	}
 	if len(ctx.Config.Timeouts.MaxConnectionDuration) > 0 {
-		timeoutParams.MaxConnectionDuration = ref.To(ctx.Config.Timeouts.MaxConnectionDuration)
+		timeoutParams.MaxConnectionDuration = ptr.To(ctx.Config.Timeouts.MaxConnectionDuration)
 	}
 	if len(ctx.Config.Timeouts.DelayedCloseTimeout) > 0 {
-		timeoutParams.DelayedCloseTimeout = ref.To(ctx.Config.Timeouts.DelayedCloseTimeout)
+		timeoutParams.DelayedCloseTimeout = ptr.To(ctx.Config.Timeouts.DelayedCloseTimeout)
 	}
 	if len(ctx.Config.Timeouts.ConnectionShutdownGracePeriod) > 0 {
-		timeoutParams.ConnectionShutdownGracePeriod = ref.To(ctx.Config.Timeouts.ConnectionShutdownGracePeriod)
+		timeoutParams.ConnectionShutdownGracePeriod = ptr.To(ctx.Config.Timeouts.ConnectionShutdownGracePeriod)
 	}
 	if len(ctx.Config.Timeouts.ConnectTimeout) > 0 {
-		timeoutParams.ConnectTimeout = ref.To(ctx.Config.Timeouts.ConnectTimeout)
+		timeoutParams.ConnectTimeout = ptr.To(ctx.Config.Timeouts.ConnectTimeout)
 	}
 
 	var dnsLookupFamily contour_v1alpha1.ClusterDNSFamilyType
@@ -412,9 +412,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Namespace: nsedName.Namespace,
 			},
 			Domain:                       ctx.Config.RateLimitService.Domain,
-			FailOpen:                     ref.To(ctx.Config.RateLimitService.FailOpen),
-			EnableXRateLimitHeaders:      ref.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
-			EnableResourceExhaustedCode:  ref.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
+			FailOpen:                     ptr.To(ctx.Config.RateLimitService.FailOpen),
+			EnableXRateLimitHeaders:      ptr.To(ctx.Config.RateLimitService.EnableXRateLimitHeaders),
+			EnableResourceExhaustedCode:  ptr.To(ctx.Config.RateLimitService.EnableResourceExhaustedCode),
 			DefaultGlobalRateLimitPolicy: ctx.Config.RateLimitService.DefaultGlobalRateLimitPolicy,
 		}
 	}
@@ -466,7 +466,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 			Set:    ctx.Config.Policy.ResponseHeadersPolicy.Set,
 			Remove: ctx.Config.Policy.ResponseHeadersPolicy.Remove,
 		},
-		ApplyToIngress: ref.To(ctx.Config.Policy.ApplyToIngress),
+		ApplyToIngress: ptr.To(ctx.Config.Policy.ApplyToIngress),
 	}
 
 	var clientCertificate *contour_v1alpha1.NamespacedName

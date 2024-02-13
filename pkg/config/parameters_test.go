@@ -21,8 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
-
-	"github.com/projectcontour/contour/internal/ref"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetenvOr(t *testing.T) {
@@ -462,42 +461,42 @@ network:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxRequestsPerConnection)
+		assert.Equal(t, ptr.To(uint32(1)), conf.Listener.MaxRequestsPerConnection)
 	}, `
 listener:
   max-requests-per-connection: 1
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, ref.To(uint32(10)), conf.Listener.HTTP2MaxConcurrentStreams)
+		assert.Equal(t, ptr.To(uint32(10)), conf.Listener.HTTP2MaxConcurrentStreams)
 	}, `
 listener:
   http2-max-concurrent-streams: 10
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, ref.To(uint32(1)), conf.Listener.PerConnectionBufferLimitBytes)
+		assert.Equal(t, ptr.To(uint32(1)), conf.Listener.PerConnectionBufferLimitBytes)
 	}, `
 listener:
   per-connection-buffer-limit-bytes: 1
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxRequestsPerIOCycle)
+		assert.Equal(t, ptr.To(uint32(1)), conf.Listener.MaxRequestsPerIOCycle)
 	}, `
 listener:
   max-requests-per-io-cycle: 1
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, ref.To(uint32(1)), conf.Listener.MaxConnectionsPerListener)
+		assert.Equal(t, ptr.To(uint32(1)), conf.Listener.MaxConnectionsPerListener)
 	}, `
 listener:
   max-connections-per-listener: 1
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, ref.To(uint32(1)), conf.Cluster.MaxRequestsPerConnection)
+		assert.Equal(t, ptr.To(uint32(1)), conf.Cluster.MaxRequestsPerConnection)
 	}, `
 cluster:
   max-requests-per-connection: 1
@@ -589,35 +588,35 @@ func TestListenerValidation(t *testing.T) {
 	}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{
-		MaxRequestsPerConnection: ref.To(uint32(1)),
+		MaxRequestsPerConnection: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
-		MaxRequestsPerConnection: ref.To(uint32(0)),
+		MaxRequestsPerConnection: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{
-		PerConnectionBufferLimitBytes: ref.To(uint32(1)),
+		PerConnectionBufferLimitBytes: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
-		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
+		PerConnectionBufferLimitBytes: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{
-		MaxRequestsPerIOCycle: ref.To(uint32(1)),
+		MaxRequestsPerIOCycle: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
-		MaxRequestsPerIOCycle: ref.To(uint32(0)),
+		MaxRequestsPerIOCycle: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{
-		HTTP2MaxConcurrentStreams: ref.To(uint32(1)),
+		HTTP2MaxConcurrentStreams: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
-		HTTP2MaxConcurrentStreams: ref.To(uint32(0)),
+		HTTP2MaxConcurrentStreams: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ListenerParameters{
@@ -637,11 +636,11 @@ func TestListenerValidation(t *testing.T) {
 	require.Error(t, l.Validate())
 
 	l = &ListenerParameters{
-		MaxConnectionsPerListener: ref.To(uint32(1)),
+		MaxConnectionsPerListener: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 	l = &ListenerParameters{
-		MaxConnectionsPerListener: ref.To(uint32(0)),
+		MaxConnectionsPerListener: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 }
@@ -649,15 +648,15 @@ func TestListenerValidation(t *testing.T) {
 func TestClusterParametersValidation(t *testing.T) {
 	var l *ClusterParameters
 	l = &ClusterParameters{
-		MaxRequestsPerConnection: ref.To(uint32(0)),
+		MaxRequestsPerConnection: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{
-		MaxRequestsPerConnection: ref.To(uint32(1)),
+		MaxRequestsPerConnection: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 	l = &ClusterParameters{
-		PerConnectionBufferLimitBytes: ref.To(uint32(0)),
+		PerConnectionBufferLimitBytes: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{
@@ -667,7 +666,7 @@ func TestClusterParametersValidation(t *testing.T) {
 	}
 	require.Error(t, l.Validate())
 	l = &ClusterParameters{
-		PerConnectionBufferLimitBytes: ref.To(uint32(1)),
+		PerConnectionBufferLimitBytes: ptr.To(uint32(1)),
 	}
 	require.NoError(t, l.Validate())
 }
@@ -677,36 +676,36 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.NoError(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: ref.To(false),
-		ServiceName:      ref.To("contour"),
-		OverallSampling:  ref.To("100"),
-		MaxPathTagLength: ref.To(uint32(256)),
+		IncludePodDetail: ptr.To(false),
+		ServiceName:      ptr.To("contour"),
+		OverallSampling:  ptr.To("100"),
+		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags:       nil,
 		ExtensionService: "projectcontour/otel-collector",
 	}
 	require.NoError(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: ref.To(false),
-		ServiceName:      ref.To("contour"),
-		OverallSampling:  ref.To("100"),
-		MaxPathTagLength: ref.To(uint32(256)),
+		IncludePodDetail: ptr.To(false),
+		ServiceName:      ptr.To("contour"),
+		OverallSampling:  ptr.To("100"),
+		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags:       nil,
 	}
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: ref.To(false),
-		OverallSampling:  ref.To("100"),
-		MaxPathTagLength: ref.To(uint32(256)),
+		IncludePodDetail: ptr.To(false),
+		OverallSampling:  ptr.To("100"),
+		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags:       nil,
 		ExtensionService: "projectcontour/otel-collector",
 	}
 	require.NoError(t, trace.Validate())
 
 	trace = &Tracing{
-		OverallSampling:  ref.To("100"),
-		MaxPathTagLength: ref.To(uint32(256)),
+		OverallSampling:  ptr.To("100"),
+		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
 				TagName:           "first",
@@ -719,8 +718,8 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
-		OverallSampling:  ref.To("100"),
-		MaxPathTagLength: ref.To(uint32(256)),
+		OverallSampling:  ptr.To("100"),
+		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
 				Literal: "literal",
@@ -731,9 +730,9 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.Error(t, trace.Validate())
 
 	trace = &Tracing{
-		IncludePodDetail: ref.To(true),
-		OverallSampling:  ref.To("100"),
-		MaxPathTagLength: ref.To(uint32(256)),
+		IncludePodDetail: ptr.To(true),
+		OverallSampling:  ptr.To("100"),
+		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
 				TagName: "first",

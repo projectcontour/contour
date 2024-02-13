@@ -21,6 +21,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
@@ -28,7 +29,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 const (
@@ -568,7 +568,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		ingressValid := &networking_v1.Ingress{
 			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: ref.To("testingressclass"),
+				IngressClassName: ptr.To("testingressclass"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}
@@ -593,7 +593,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 		ingressWrongClass := &networking_v1.Ingress{
 			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: ref.To("wrongingressclass"),
+				IngressClassName: ptr.To("wrongingressclass"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}
@@ -812,7 +812,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 		ingressMatchingClass := &networking_v1.Ingress{
 			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: ref.To("contour"),
+				IngressClassName: ptr.To("contour"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}
@@ -837,7 +837,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 		ingressNonMatchingClass := &networking_v1.Ingress{
 			ObjectMeta: fixture.ObjectMeta(IngressName),
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: ref.To("notcontour"),
+				IngressClassName: ptr.To("notcontour"),
 				DefaultBackend:   featuretests.IngressBackend(svc),
 			},
 		}

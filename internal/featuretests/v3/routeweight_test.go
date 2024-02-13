@@ -24,6 +24,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -31,7 +32,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
@@ -368,7 +368,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -484,11 +484,11 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				TLS: &gatewayapi_v1.GatewayTLSConfig{
-					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -509,7 +509,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, ref.To(int32(1))),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, ptr.To(int32(1))),
 			}},
 		},
 	}
@@ -557,8 +557,8 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRefs(
-					gatewayapi.TLSRouteBackendRef("svc1", 443, ref.To(int32(1))),
-					gatewayapi.TLSRouteBackendRef("svc2", 443, ref.To(int32(7))),
+					gatewayapi.TLSRouteBackendRef("svc1", 443, ptr.To(int32(1))),
+					gatewayapi.TLSRouteBackendRef("svc2", 443, ptr.To(int32(7))),
 				),
 			}},
 		},

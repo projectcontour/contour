@@ -22,6 +22,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -29,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestTCPRoute(t *testing.T) {
@@ -70,7 +70,7 @@ func TestTCPRoute(t *testing.T) {
 				Protocol: gatewayapi_v1.TCPProtocolType,
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -84,9 +84,9 @@ func TestTCPRoute(t *testing.T) {
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1.Namespace("projectcontour")),
+						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
 						Name:        gatewayapi_v1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1.SectionName("tcp-1")),
+						SectionName: ptr.To(gatewayapi_v1.SectionName("tcp-1")),
 					},
 				},
 			},
@@ -123,7 +123,7 @@ func TestTCPRoute(t *testing.T) {
 		Protocol: gatewayapi_v1.TCPProtocolType,
 		AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 			Namespaces: &gatewayapi_v1.RouteNamespaces{
-				From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 			},
 		},
 	})
@@ -135,9 +135,9 @@ func TestTCPRoute(t *testing.T) {
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1.Namespace("projectcontour")),
+						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
 						Name:        gatewayapi_v1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1.SectionName("tcp-2")),
+						SectionName: ptr.To(gatewayapi_v1.SectionName("tcp-2")),
 					},
 				},
 			},
@@ -216,14 +216,14 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 					Port:     5000,
 					Protocol: gatewayapi_v1.TLSProtocolType,
 					TLS: &gatewayapi_v1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -238,9 +238,9 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1.Namespace("projectcontour")),
+						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
 						Name:        gatewayapi_v1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1.SectionName("tls")),
+						SectionName: ptr.To(gatewayapi_v1.SectionName("tls")),
 					},
 				},
 			},

@@ -22,6 +22,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -29,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestTLSRoute_TLSPassthrough(t *testing.T) {
@@ -68,11 +68,11 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
 				TLS: &gatewayapi_v1.GatewayTLSConfig{
-					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -270,15 +270,15 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 					Port:     5000,
 					Protocol: gatewayapi_v1.TLSProtocolType,
 					TLS: &gatewayapi_v1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
-					Hostname: ref.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
+					Hostname: ptr.To(gatewayapi_v1.Hostname("*.projectcontour.io")),
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -303,7 +303,7 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 				"test1.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 80, ref.To(int32(1))),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 80, ptr.To(int32(1))),
 			}},
 		},
 	})
@@ -340,7 +340,7 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 				"test2.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TLSRouteBackendRef("svc2", 80, ref.To(int32(1))),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc2", 80, ptr.To(int32(1))),
 			}},
 		},
 	})

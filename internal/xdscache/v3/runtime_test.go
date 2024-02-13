@@ -22,10 +22,10 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestRuntimeCacheContents(t *testing.T) {
@@ -38,7 +38,7 @@ func TestRuntimeCacheContents(t *testing.T) {
 		},
 		"http max requests per io cycle set": {
 			runtimeSettings: ConfigurableRuntimeSettings{
-				MaxRequestsPerIOCycle: ref.To(uint32(1)),
+				MaxRequestsPerIOCycle: ptr.To(uint32(1)),
 			},
 			additionalFields: map[string]*structpb.Value{
 				"http.max_requests_per_io_cycle": structpb.NewNumberValue(1),
@@ -46,7 +46,7 @@ func TestRuntimeCacheContents(t *testing.T) {
 		},
 		"http max requests per io cycle set invalid": {
 			runtimeSettings: ConfigurableRuntimeSettings{
-				MaxRequestsPerIOCycle: ref.To(uint32(0)),
+				MaxRequestsPerIOCycle: ptr.To(uint32(0)),
 			},
 		},
 		"http max requests per io cycle set nil": {
@@ -158,7 +158,7 @@ func TestRuntimeVisit(t *testing.T) {
 		},
 		"configure max connection per listener for one listener": {
 			ConfigurableRuntimeSettings: ConfigurableRuntimeSettings{
-				MaxConnectionsPerListener: ref.To(uint32(100)),
+				MaxConnectionsPerListener: ptr.To(uint32(100)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -198,7 +198,7 @@ func TestRuntimeVisit(t *testing.T) {
 		},
 		"configure max connection per listener for two listeners": {
 			ConfigurableRuntimeSettings: ConfigurableRuntimeSettings{
-				MaxConnectionsPerListener: ref.To(uint32(100)),
+				MaxConnectionsPerListener: ptr.To(uint32(100)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -254,7 +254,7 @@ func TestRuntimeVisit(t *testing.T) {
 
 func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 	configurableRuntimeSettings := ConfigurableRuntimeSettings{
-		MaxConnectionsPerListener: ref.To(uint32(100)),
+		MaxConnectionsPerListener: ptr.To(uint32(100)),
 	}
 	objs := []any{
 		&contour_v1.HTTPProxy{

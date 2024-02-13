@@ -24,6 +24,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -31,7 +32,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 const (
@@ -214,9 +214,9 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 			Annotations: contour.CommonAnnotations(),
 		},
 		Spec: apps_v1.DeploymentSpec{
-			ProgressDeadlineSeconds: ref.To(int32(600)),
-			Replicas:                ref.To(contour.Spec.ContourReplicas),
-			RevisionHistoryLimit:    ref.To(int32(10)),
+			ProgressDeadlineSeconds: ptr.To(int32(600)),
+			Replicas:                ptr.To(contour.Spec.ContourReplicas),
+			RevisionHistoryLimit:    ptr.To(int32(10)),
 			// Ensure the deployment adopts only its own pods.
 			Selector: ContourDeploymentPodSelector(contour),
 			Strategy: contour.Spec.ContourDeploymentStrategy,
@@ -251,7 +251,7 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 							Name: contourCertsVolName,
 							VolumeSource: core_v1.VolumeSource{
 								Secret: &core_v1.SecretVolumeSource{
-									DefaultMode: ref.To(int32(420)),
+									DefaultMode: ptr.To(int32(420)),
 									SecretName:  contour.ContourCertsSecretName(),
 								},
 							},
@@ -262,7 +262,7 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 					RestartPolicy:                 core_v1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
 					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
-					TerminationGracePeriodSeconds: ref.To(int64(30)),
+					TerminationGracePeriodSeconds: ptr.To(int64(30)),
 				},
 			},
 		},

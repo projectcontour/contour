@@ -21,10 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -51,8 +51,8 @@ func testHostRewrite(namespace string, gateway types.NamespacedName) {
 						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1.HTTPPathMatch{
-									Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-									Value: ref.To("/"),
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
 								},
 							},
 						},

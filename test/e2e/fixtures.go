@@ -30,10 +30,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 )
 
@@ -88,7 +88,7 @@ func (e *Echo) DeployN(ns, name string, replicas int32) (func(), *apps_v1.Deploy
 			Name:      name,
 		},
 		Spec: apps_v1.DeploymentSpec{
-			Replicas: ref.To(replicas),
+			Replicas: ptr.To(replicas),
 			Selector: &meta_v1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
@@ -194,7 +194,7 @@ func (e *Echo) ScaleAndWaitDeployment(name, ns string, replicas int32) {
 
 	updateAndWaitFor(e.t, e.client, deployment,
 		func(d *apps_v1.Deployment) {
-			d.Spec.Replicas = ref.To(replicas)
+			d.Spec.Replicas = ptr.To(replicas)
 		},
 		func(d *apps_v1.Deployment) bool {
 			if d.Status.Replicas == replicas && d.Status.ReadyReplicas == replicas {
@@ -443,7 +443,7 @@ func (g *GRPC) Deploy(ns, name string) func() {
 			Name:      name,
 		},
 		Spec: apps_v1.DeploymentSpec{
-			Replicas: ref.To(int32(1)),
+			Replicas: ptr.To(int32(1)),
 			Selector: &meta_v1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
@@ -565,7 +565,7 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 					CAFile:   "/certs/ca.crt",
 					CertFile: "/certs/tls.crt",
 					KeyFile:  "/certs/tls.key",
-					Insecure: ref.To(false),
+					Insecure: ptr.To(false),
 				},
 			},
 			Debug: &contour_v1alpha1.DebugConfig{
@@ -582,8 +582,8 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 					"HTTP/1.1", "HTTP/2",
 				},
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
-					UseProxyProto:             ref.To(false),
-					DisableAllowChunkedLength: ref.To(false),
+					UseProxyProto:             ptr.To(false),
+					DisableAllowChunkedLength: ptr.To(false),
 					ConnectionBalancer:        "",
 					TLS: &contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "1.2",
@@ -624,13 +624,13 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 					DNSLookupFamily: contour_v1alpha1.AutoClusterDNSFamily,
 				},
 				Network: &contour_v1alpha1.NetworkParameters{
-					EnvoyAdminPort: ref.To(9001),
+					EnvoyAdminPort: ptr.To(9001),
 				},
 			},
 			HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
-				DisablePermitInsecure: ref.To(false),
+				DisablePermitInsecure: ptr.To(false),
 			},
-			EnableExternalNameService: ref.To(false),
+			EnableExternalNameService: ptr.To(false),
 			Metrics: &contour_v1alpha1.MetricsConfig{
 				Address: listenAllAddress(),
 				Port:    8000,

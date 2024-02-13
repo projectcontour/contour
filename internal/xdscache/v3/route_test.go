@@ -34,6 +34,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -41,7 +42,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestRouteCacheContents(t *testing.T) {
@@ -817,32 +817,32 @@ func TestRouteVisit(t *testing.T) {
 									Paths: []networking_v1.HTTPIngressPath{
 										{
 											Path:     "/",
-											PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+											PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo",
-											PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+											PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo",
-											PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+											PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo2",
-											PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+											PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo3[a|b]?",
-											PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+											PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo4",
-											PathType: (*networking_v1.PathType)(ref.To("Exact")),
+											PathType: (*networking_v1.PathType)(ptr.To("Exact")),
 											Backend:  *backend("kuard", 8080),
 										},
 									},

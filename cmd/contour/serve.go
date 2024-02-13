@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -59,7 +60,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/projectcontour/contour/internal/metrics"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
@@ -804,7 +804,7 @@ func (s *Server) setupTracingService(tracingConfig *contour_v1alpha1.TracingConf
 
 	var customTags []*xdscache_v3.CustomTag
 
-	if ref.Val(tracingConfig.IncludePodDetail, true) {
+	if ptr.Deref(tracingConfig.IncludePodDetail, true) {
 		customTags = append(customTags, &xdscache_v3.CustomTag{
 			TagName:         "podName",
 			EnvironmentName: "HOSTNAME",
@@ -822,16 +822,16 @@ func (s *Server) setupTracingService(tracingConfig *contour_v1alpha1.TracingConf
 		})
 	}
 
-	overallSampling, err := strconv.ParseFloat(ref.Val(tracingConfig.OverallSampling, "100"), 64)
+	overallSampling, err := strconv.ParseFloat(ptr.Deref(tracingConfig.OverallSampling, "100"), 64)
 	if err != nil || overallSampling == 0 {
 		overallSampling = 100.0
 	}
 
 	return &xdscache_v3.TracingConfig{
-		ServiceName:            ref.Val(tracingConfig.ServiceName, "contour"),
+		ServiceName:            ptr.Deref(tracingConfig.ServiceName, "contour"),
 		ExtensionServiceConfig: extensionSvcConfig,
 		OverallSampling:        overallSampling,
-		MaxPathTagLength:       ref.Val(tracingConfig.MaxPathTagLength, 256),
+		MaxPathTagLength:       ptr.Deref(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:             customTags,
 	}, nil
 }
@@ -848,11 +848,12 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_v1alpha1.Con
 	}
 
 	return &xdscache_v3.RateLimitConfig{
-		ExtensionServiceConfig:      extensionSvcConfig,
-		Domain:                      contourConfiguration.RateLimitService.Domain,
-		FailOpen:                    ref.Val(contourConfiguration.RateLimitService.FailOpen, false),
-		EnableXRateLimitHeaders:     ref.Val(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
-		EnableResourceExhaustedCode: ref.Val(contourConfiguration.RateLimitService.EnableResourceExhaustedCode, false),
+		ExtensionServiceConfig: extensionSvcConfig,
+		Domain:                 contourConfiguration.RateLimitService.Domain,
+
+		FailOpen:                    ptr.Deref(contourConfiguration.RateLimitService.FailOpen, false),
+		EnableXRateLimitHeaders:     ptr.Deref(contourConfiguration.RateLimitService.EnableXRateLimitHeaders, false),
+		EnableResourceExhaustedCode: ptr.Deref(contourConfiguration.RateLimitService.EnableResourceExhaustedCode, false),
 	}, nil
 }
 

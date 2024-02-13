@@ -21,6 +21,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/projectcontour/contour/internal/provisioner/equality"
@@ -29,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 const (
@@ -251,7 +251,7 @@ func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
 	}
 
 	if contour.Spec.NetworkPublishing.Envoy.IPFamilyPolicy != "" {
-		svc.Spec.IPFamilyPolicy = ref.To(contour.Spec.NetworkPublishing.Envoy.IPFamilyPolicy)
+		svc.Spec.IPFamilyPolicy = ptr.To(contour.Spec.NetworkPublishing.Envoy.IPFamilyPolicy)
 	}
 
 	epType := contour.Spec.NetworkPublishing.Envoy.Type

@@ -26,9 +26,8 @@ import (
 	coordination_v1 "k8s.io/api/coordination/v1"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func testLeaderElection() {
@@ -50,7 +49,7 @@ func testLeaderElection() {
 				return "", err
 			}
 
-			leaseHolder := ref.Val(leaderElectionLease.Spec.HolderIdentity, "")
+			leaseHolder := ptr.Deref(leaderElectionLease.Spec.HolderIdentity, "")
 			if !strings.HasPrefix(leaseHolder, "contour-") {
 				return "", fmt.Errorf("invalid leader name: %q", leaseHolder)
 			}

@@ -25,6 +25,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -35,7 +36,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
@@ -69,7 +69,7 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 				Services: []contour_v1.Service{{
 					Name:     svc.Name,
 					Port:     443,
-					Protocol: ref.To("tls"),
+					Protocol: ptr.To("tls"),
 					UpstreamValidation: &contour_v1.UpstreamValidation{
 						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
@@ -269,7 +269,7 @@ func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
 				Protocol: gatewayapi_v1.HTTPProtocolType,
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 					Namespaces: &gatewayapi_v1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},

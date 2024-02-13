@@ -21,9 +21,8 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 // ContourHTTPSProtocolType is the protocol for an HTTPS Listener
@@ -88,7 +87,7 @@ func ValidateListeners(listeners []gatewayapi_v1.Listener) ValidateListenersResu
 
 	for i, listener := range listeners {
 		// Check for a valid hostname.
-		if hostname := ref.Val(listener.Hostname, ""); len(hostname) > 0 {
+		if hostname := ptr.Deref(listener.Hostname, ""); len(hostname) > 0 {
 			if err := IsValidHostname(string(hostname)); err != nil {
 				result.InvalidListenerConditions[listener.Name] = meta_v1.Condition{
 					Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
@@ -159,7 +158,7 @@ func ValidateListeners(listeners []gatewayapi_v1.Listener) ValidateListenersResu
 				}
 
 				// Hostname conflict
-				if ref.Val(listener.Hostname, "") == ref.Val(otherListener.Hostname, "") {
+				if ptr.Deref(listener.Hostname, "") == ptr.Deref(otherListener.Hostname, "") {
 					result.InvalidListenerConditions[listener.Name] = conflictedCondition(gatewayapi_v1.ListenerReasonHostnameConflict, "All Listener hostnames for a given port must be unique")
 					return true
 				}

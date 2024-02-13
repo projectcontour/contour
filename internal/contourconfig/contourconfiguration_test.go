@@ -19,11 +19,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
@@ -37,7 +37,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				CAFile:   "/foo/ca.crt",
 				CertFile: "/foo/tls.crt",
 				KeyFile:  "/foo/tls.key",
-				Insecure: ref.To(true),
+				Insecure: ptr.To(true),
 			},
 		},
 		Ingress: &contour_v1alpha1.IngressConfig{
@@ -54,11 +54,11 @@ func TestOverlayOnDefaults(t *testing.T) {
 		},
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              ref.To(true),
-				DisableAllowChunkedLength:  ref.To(true),
-				DisableMergeSlashes:        ref.To(true),
-				MaxRequestsPerConnection:   ref.To(uint32(1)),
-				HTTP2MaxConcurrentStreams:  ref.To(uint32(10)),
+				UseProxyProto:              ptr.To(true),
+				DisableAllowChunkedLength:  ptr.To(true),
+				DisableMergeSlashes:        ptr.To(true),
+				MaxRequestsPerConnection:   ptr.To(uint32(1)),
+				HTTP2MaxConcurrentStreams:  ptr.To(uint32(10)),
 				ServerHeaderTransformation: contour_v1alpha1.PassThroughServerHeader,
 				ConnectionBalancer:         "yesplease",
 				TLS: &contour_v1alpha1.EnvoyTLS{
@@ -112,13 +112,13 @@ func TestOverlayOnDefaults(t *testing.T) {
 				"HTTP/3",
 			},
 			Timeouts: &contour_v1alpha1.TimeoutParameters{
-				RequestTimeout:                ref.To("1s"),
-				ConnectionIdleTimeout:         ref.To("2s"),
-				StreamIdleTimeout:             ref.To("3s"),
-				MaxConnectionDuration:         ref.To("4s"),
-				DelayedCloseTimeout:           ref.To("5s"),
-				ConnectionShutdownGracePeriod: ref.To("6s"),
-				ConnectTimeout:                ref.To("7s"),
+				RequestTimeout:                ptr.To("1s"),
+				ConnectionIdleTimeout:         ptr.To("2s"),
+				StreamIdleTimeout:             ptr.To("3s"),
+				MaxConnectionDuration:         ptr.To("4s"),
+				DelayedCloseTimeout:           ptr.To("5s"),
+				ConnectionShutdownGracePeriod: ptr.To("6s"),
+				ConnectTimeout:                ptr.To("7s"),
 			},
 			Cluster: &contour_v1alpha1.ClusterParameters{
 				DNSLookupFamily: contour_v1alpha1.IPv4ClusterDNSFamily,
@@ -131,8 +131,8 @@ func TestOverlayOnDefaults(t *testing.T) {
 				},
 			},
 			Network: &contour_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: ref.To(uint32(77)),
-				EnvoyAdminPort:    ref.To(9997),
+				XffNumTrustedHops: ptr.To(uint32(77)),
+				EnvoyAdminPort:    ptr.To(9997),
 			},
 		},
 		Gateway: &contour_v1alpha1.GatewayConfig{
@@ -142,22 +142,22 @@ func TestOverlayOnDefaults(t *testing.T) {
 			},
 		},
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
-			DisablePermitInsecure: ref.To(true),
+			DisablePermitInsecure: ptr.To(true),
 			RootNamespaces:        []string{"rootnamespace"},
 			FallbackCertificate: &contour_v1alpha1.NamespacedName{
 				Namespace: "fallbackcertificatenamespace",
 				Name:      "fallbackcertificatename",
 			},
 		},
-		EnableExternalNameService: ref.To(true),
+		EnableExternalNameService: ptr.To(true),
 		RateLimitService: &contour_v1alpha1.RateLimitServiceConfig{
 			ExtensionService: contour_v1alpha1.NamespacedName{
 				Namespace: "ratelimitservicenamespace",
 				Name:      "ratelimitservicename",
 			},
 			Domain:                  "ratelimitservicedomain",
-			FailOpen:                ref.To(true),
-			EnableXRateLimitHeaders: ref.To(true),
+			FailOpen:                ptr.To(true),
+			EnableXRateLimitHeaders: ptr.To(true),
 			DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
 				Descriptors: []contour_v1.RateLimitDescriptor{
 					{
@@ -182,7 +182,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 				Set:    map[string]string{"set": "val"},
 				Remove: []string{"remove"},
 			},
-			ApplyToIngress: ref.To(true),
+			ApplyToIngress: ptr.To(true),
 		},
 		Metrics: &contour_v1alpha1.MetricsConfig{
 			Address: "9.8.7.6",
@@ -264,13 +264,13 @@ func TestParseTimeoutPolicy(t *testing.T) {
 		},
 		"timeouts all set": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				RequestTimeout:                ref.To("1s"),
-				ConnectionIdleTimeout:         ref.To("2s"),
-				StreamIdleTimeout:             ref.To("3s"),
-				MaxConnectionDuration:         ref.To("infinity"),
-				DelayedCloseTimeout:           ref.To("5s"),
-				ConnectionShutdownGracePeriod: ref.To("6s"),
-				ConnectTimeout:                ref.To("8s"),
+				RequestTimeout:                ptr.To("1s"),
+				ConnectionIdleTimeout:         ptr.To("2s"),
+				StreamIdleTimeout:             ptr.To("3s"),
+				MaxConnectionDuration:         ptr.To("infinity"),
+				DelayedCloseTimeout:           ptr.To("5s"),
+				ConnectionShutdownGracePeriod: ptr.To("6s"),
+				ConnectTimeout:                ptr.To("8s"),
 			},
 			expected: contourconfig.Timeouts{
 				Request:                       timeout.DurationSetting(time.Second),
@@ -284,43 +284,43 @@ func TestParseTimeoutPolicy(t *testing.T) {
 		},
 		"request timeout invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				RequestTimeout: ref.To("xxx"),
+				RequestTimeout: ptr.To("xxx"),
 			},
 			errorMsg: "failed to parse request timeout",
 		},
 		"connection idle timeout invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				ConnectionIdleTimeout: ref.To("a"),
+				ConnectionIdleTimeout: ptr.To("a"),
 			},
 			errorMsg: "failed to parse connection idle timeout",
 		},
 		"stream idle timeout invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				StreamIdleTimeout: ref.To("invalid"),
+				StreamIdleTimeout: ptr.To("invalid"),
 			},
 			errorMsg: "failed to parse stream idle timeout",
 		},
 		"max connection duration invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				MaxConnectionDuration: ref.To("xxx"),
+				MaxConnectionDuration: ptr.To("xxx"),
 			},
 			errorMsg: "failed to parse max connection duration",
 		},
 		"delayed close timeout invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				DelayedCloseTimeout: ref.To("xxx"),
+				DelayedCloseTimeout: ptr.To("xxx"),
 			},
 			errorMsg: "failed to parse delayed close timeout",
 		},
 		"connection shutdown grace period invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				ConnectionShutdownGracePeriod: ref.To("xxx"),
+				ConnectionShutdownGracePeriod: ptr.To("xxx"),
 			},
 			errorMsg: "failed to parse connection shutdown grace period",
 		},
 		"connect timeout invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
-				ConnectTimeout: ref.To("infinite"),
+				ConnectTimeout: ptr.To("infinite"),
 			},
 			errorMsg: "failed to parse connect timeout",
 		},

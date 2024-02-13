@@ -25,9 +25,9 @@ import (
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -192,9 +192,9 @@ func getInternalRedirectHTTPProxy(namespace string) *contour_v1.HTTPProxy {
 					}},
 					Services: []contour_v1.Service{},
 					RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
-						Hostname:   ref.To(fqdn),
-						StatusCode: ref.To(302),
-						Path:       ref.To("/echo"),
+						Hostname:   ptr.To(fqdn),
+						StatusCode: ptr.To(302),
+						Path:       ptr.To("/echo"),
 					},
 				},
 				{

@@ -23,9 +23,9 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func makeServicePort(name string, protocol core_v1.Protocol, port int32, extras ...any) core_v1.ServicePort {
@@ -40,7 +40,7 @@ func makeServicePort(name string, protocol core_v1.Protocol, port int32, extras 
 	}
 
 	if len(extras) > 1 {
-		p.AppProtocol = ref.To(extras[1].(string))
+		p.AppProtocol = ptr.To(extras[1].(string))
 	}
 
 	return p
@@ -118,13 +118,13 @@ func TestBuilderLookupService(t *testing.T) {
 				{
 					Name:        "k8s-h2c",
 					Protocol:    "TCP",
-					AppProtocol: ref.To("kubernetes.io/h2c"),
+					AppProtocol: ptr.To("kubernetes.io/h2c"),
 					Port:        8443,
 				},
 				{
 					Name:        "k8s-wss",
 					Protocol:    "TCP",
-					AppProtocol: ref.To("kubernetes.io/wss"),
+					AppProtocol: ptr.To("kubernetes.io/wss"),
 					Port:        8444,
 				},
 			},
