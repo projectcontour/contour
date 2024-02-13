@@ -26,8 +26,6 @@ In **static** provisioning, the platform operator defines a `Gateway` resource, 
 It is up to the platform operator to ensure that all configuration matches between the `Gateway` and the Contour/Envoy resources.
 Contour will then process that `Gateway` and its routes.
 
-**Note:** configuring Contour with a controller name is deprecated and will be removed in a future release. Use a specific gateway reference or dynamic provisioning instead.
-
 In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
 
 Static provisioning makes sense for users who:
