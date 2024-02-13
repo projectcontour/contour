@@ -6,7 +6,7 @@ We are delighted to present version v1.28.1 of Contour, our layer 7 HTTP reverse
 
 # All Changes
 
-- Fix data race in BackendTlSPolicy status update logic.
+- Fix data race in BackendTLSPolicy status update logic.
 
 # Installing and Upgrading
 
