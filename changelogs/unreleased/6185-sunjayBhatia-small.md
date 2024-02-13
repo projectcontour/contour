@@ -1,1 +1,1 @@
-Fix data race in BackendTlSPolicy status update logic.
+Fix data race in BackendTLSPolicy status update logic.
