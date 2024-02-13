@@ -9,7 +9,7 @@ id: getting-started
 This guide shows how to install Contour in three different ways:
 - using Contour's example YAML
 - using the Helm chart for Contour
-- using the Contour gateway provisioner (beta)
+- using the Contour gateway provisioner
 
 It then shows how to deploy a sample workload and route traffic to it via Contour.
 
@@ -24,7 +24,7 @@ This guide is designed to work with:
 
 If you already have access to one of these Kubernetes environments, you're ready to move on to installing Contour.
 If not, you can [set up a local kind cluster][28] for testing purposes.
- 
+
 ## Install Contour and Envoy
 
 ### Option 1: YAML
@@ -34,45 +34,45 @@ Run the following to install Contour:
 $ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 ```
 
-Verify the Contour pods are ready by running the following: 
+Verify the Contour pods are ready by running the following:
 
 ```bash
 $ kubectl get pods -n projectcontour -o wide
 ```
 
 You should see the following:
-- 2 Contour pods each with status **Running** and 1/1 **Ready**  
-- 1+ Envoy pod(s), each with the status **Running** and 2/2 **Ready**  
+- 2 Contour pods each with status **Running** and 1/1 **Ready**
+- 1+ Envoy pod(s), each with the status **Running** and 2/2 **Ready**
 
 ### Option 2: Helm
 This option requires [Helm to be installed locally][29].
 
-Add the bitnami chart repository (which contains the Contour chart) by running the following:  
+Add the bitnami chart repository (which contains the Contour chart) by running the following:
 
-```bash  
+```bash
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
 ```
 
 Install the Contour chart by running the following:
 
-```bash 
+```bash
 $ helm install my-release bitnami/contour --namespace projectcontour --create-namespace
-```  
+```
 
 Verify Contour is ready by running:
 
 ```bash
 $ kubectl -n projectcontour get po,svc
-```  
+```
 
 You should see the following:
-- 1 instance of pod/my-release-contour-contour with status **Running** and 1/1 **Ready**  
-- 1+ instance(s) of pod/my-release-contour-envoy with each status **Running** and 2/2 **Ready**  
-- 1 instance of service/my-release-contour 
+- 1 instance of pod/my-release-contour-contour with status **Running** and 1/1 **Ready**
+- 1+ instance(s) of pod/my-release-contour-envoy with each status **Running** and 2/2 **Ready**
+- 1 instance of service/my-release-contour
 - 1 instance of service/my-release-contour-envoy
 
 
-### Option 3: Contour Gateway Provisioner (beta)
+### Option 3: Contour Gateway Provisioner
 
 The Gateway provisioner watches for the creation of [Gateway API][31] `Gateway` resources, and dynamically provisions Contour+Envoy instances based on the `Gateway's` spec.
 Note that although the provisioning request itself is made via a Gateway API resource (`Gateway`), this method of installation still allows you to use *any* of the supported APIs for defining virtual hosts and routes: `Ingress`, `HTTPProxy`, or Gateway API's `HTTPRoute` and `TLSRoute`.
@@ -134,15 +134,15 @@ NAME        CLASS     ADDRESS         READY   AGE
 contour     contour                   True    27s
 ```
 
-Verify the Contour pods are ready by running the following: 
+Verify the Contour pods are ready by running the following:
 
 ```bash
 $ kubectl -n projectcontour get pods
 ```
 
 You should see the following:
-- 2 Contour pods each with status **Running** and 1/1 **Ready**  
-- 1+ Envoy pod(s), each with the status **Running** and 2/2 **Ready**  
+- 2 Contour pods each with status **Running** and 1/1 **Ready**
+- 1+ Envoy pod(s), each with the status **Running** and 2/2 **Ready**
 
 ## Test it out!
 
@@ -158,7 +158,7 @@ Verify the pods and service are ready by running:
 
 ```bash
 kubectl get po,svc,ing -l app=httpbin
-```  
+```
 
 You should see the following:
 - 3 instances of pods/httpbin, each with status **Running** and 1/1 **Ready**
@@ -193,7 +193,7 @@ You should see the `httpbin` home page.
 
 Congratulations, you have installed Contour, deployed a backend application, created an `Ingress` to route traffic to the application, and successfully accessed the app with Contour!
 
-## Next Steps  
+## Next Steps
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
@@ -202,18 +202,18 @@ Now that you have a basic Contour installation, where to go from here?
 
 Check out the following demo videos:
 - [Contour 101 - Kubernetes Ingress and Blue/Green Deployments][20]
-- [HTTPProxy in Action][19]  
+- [HTTPProxy in Action][19]
 - [Contour Demos and Deep Dives videos][21]
 
-Explore the documentation:  
+Explore the documentation:
 - [FAQ][4]
 - [Contour Architecture][18]
 - [Contour Configuration Reference][7]
-  
+
 ## Connect with the Team
 Have questions? Send a Slack message on the Contour channel, an email on the mailing list, or join a Contour meeting.
 - Slack: kubernetes.slack.com [#contour][12]
-- Join us in a [User Group][10] or [Office Hours][11] meeting 
+- Join us in a [User Group][10] or [Office Hours][11] meeting
 - Join the [mailing list][25] for the latest information
 
 ## Troubleshooting
