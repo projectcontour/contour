@@ -77,7 +77,7 @@ var _ = Describe("Gateway API", func() {
 					gateway.Namespace = namespace
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{
-						GatewayRef: &config.NamespacedName{
+						GatewayRef: config.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
 						},
@@ -85,7 +85,7 @@ var _ = Describe("Gateway API", func() {
 
 					// Update contour configuration to point to specified gateway.
 					contourConfiguration.Spec.Gateway = &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
 						},
