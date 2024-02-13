@@ -549,7 +549,7 @@ func (s *Server) doServe() error {
 
 	var gatewayRef *types.NamespacedName
 
-	if contourConfiguration.Gateway != nil && contourConfiguration.Gateway.GatewayRef != nil {
+	if contourConfiguration.Gateway != nil {
 		gatewayRef = &types.NamespacedName{
 			Namespace: contourConfiguration.Gateway.GatewayRef.Namespace,
 			Name:      contourConfiguration.Gateway.GatewayRef.Name,
@@ -1014,7 +1014,7 @@ func (s *Server) setupHealth(healthConfig contour_v1alpha1.HealthConfig,
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourConfigurationSpec, eventHandler *contour.EventRecorder) {
 	// Watch resources for Gateway API if enabled.
-	if contourConfiguration.Gateway != nil && contourConfiguration.Gateway.GatewayRef != nil {
+	if contourConfiguration.Gateway != nil {
 		resources := map[string]client.Object{
 			"gatewayclasses":     &gatewayapi_v1.GatewayClass{},
 			"gateways":           &gatewayapi_v1.Gateway{},

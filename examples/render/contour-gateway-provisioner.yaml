@@ -624,10 +624,8 @@ spec:
                 properties:
                   gatewayRef:
                     description: |-
-                      GatewayRef defines a specific Gateway that this Contour
-                      instance corresponds to. If set, Contour will reconcile
-                      only this gateway, and will not reconcile any gateway
-                      classes.
+                      GatewayRef defines the specific Gateway that this Contour
+                      instance corresponds to.
                     properties:
                       name:
                         type: string
@@ -637,6 +635,8 @@ spec:
                     - name
                     - namespace
                     type: object
+                required:
+                - gatewayRef
                 type: object
               globalExtAuth:
                 description: |-
@@ -4309,10 +4309,8 @@ spec:
                     properties:
                       gatewayRef:
                         description: |-
-                          GatewayRef defines a specific Gateway that this Contour
-                          instance corresponds to. If set, Contour will reconcile
-                          only this gateway, and will not reconcile any gateway
-                          classes.
+                          GatewayRef defines the specific Gateway that this Contour
+                          instance corresponds to.
                         properties:
                           name:
                             type: string
@@ -4322,6 +4320,8 @@ spec:
                         - name
                         - namespace
                         type: object
+                    required:
+                    - gatewayRef
                     type: object
                   globalExtAuth:
                     description: |-

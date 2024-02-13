@@ -44,7 +44,7 @@ func TestEnsureContourConfig(t *testing.T) {
 			},
 			want: contour_v1alpha1.ContourConfigurationSpec{
 				Gateway: &contour_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_v1alpha1.NamespacedName{
+					GatewayRef: contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
@@ -71,7 +71,7 @@ func TestEnsureContourConfig(t *testing.T) {
 				},
 				Spec: contour_v1alpha1.ContourConfigurationSpec{
 					Gateway: &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: "contour-namespace-1",
 							Name:      "contour-1",
 						},
@@ -86,7 +86,7 @@ func TestEnsureContourConfig(t *testing.T) {
 			},
 			want: contour_v1alpha1.ContourConfigurationSpec{
 				Gateway: &contour_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_v1alpha1.NamespacedName{
+					GatewayRef: contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
@@ -113,7 +113,7 @@ func TestEnsureContourConfig(t *testing.T) {
 				},
 				Spec: contour_v1alpha1.ContourConfigurationSpec{
 					Gateway: &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: "some-other-namespace",
 							Name:      "some-other-contour",
 						},
@@ -128,7 +128,7 @@ func TestEnsureContourConfig(t *testing.T) {
 			},
 			want: contour_v1alpha1.ContourConfigurationSpec{
 				Gateway: &contour_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_v1alpha1.NamespacedName{
+					GatewayRef: contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},
@@ -155,7 +155,7 @@ func TestEnsureContourConfig(t *testing.T) {
 				},
 				Spec: contour_v1alpha1.ContourConfigurationSpec{
 					Gateway: &contour_v1alpha1.GatewayConfig{
-						GatewayRef: &contour_v1alpha1.NamespacedName{
+						GatewayRef: contour_v1alpha1.NamespacedName{
 							Namespace: "contour-namespace-1",
 							Name:      "contour-1",
 						},
@@ -177,7 +177,7 @@ func TestEnsureContourConfig(t *testing.T) {
 			},
 			want: contour_v1alpha1.ContourConfigurationSpec{
 				Gateway: &contour_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_v1alpha1.NamespacedName{
+					GatewayRef: contour_v1alpha1.NamespacedName{
 						Namespace: "contour-namespace-1",
 						Name:      "contour-1",
 					},

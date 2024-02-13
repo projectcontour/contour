@@ -294,9 +294,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 	ingress.StatusAddress = ctx.Config.IngressStatusAddress
 
 	var gatewayConfig *contour_v1alpha1.GatewayConfig
-	if ctx.Config.GatewayConfig != nil && ctx.Config.GatewayConfig.GatewayRef != nil {
+	if ctx.Config.GatewayConfig != nil {
 		gatewayConfig = &contour_v1alpha1.GatewayConfig{
-			GatewayRef: &contour_v1alpha1.NamespacedName{
+			GatewayRef: contour_v1alpha1.NamespacedName{
 				Namespace: ctx.Config.GatewayConfig.GatewayRef.Namespace,
 				Name:      ctx.Config.GatewayConfig.GatewayRef.Name,
 			},

@@ -154,12 +154,9 @@ type XDSServerConfig struct {
 
 // GatewayConfig holds the config for Gateway API controllers.
 type GatewayConfig struct {
-	// GatewayRef defines a specific Gateway that this Contour
-	// instance corresponds to. If set, Contour will reconcile
-	// only this gateway, and will not reconcile any gateway
-	// classes.
-	// +optional
-	GatewayRef *NamespacedName `json:"gatewayRef,omitempty"`
+	// GatewayRef defines the specific Gateway that this Contour
+	// instance corresponds to.
+	GatewayRef NamespacedName `json:"gatewayRef"`
 }
 
 // TLS holds TLS file config details.

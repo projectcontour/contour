@@ -136,7 +136,7 @@ func TestOverlayOnDefaults(t *testing.T) {
 			},
 		},
 		Gateway: &contour_v1alpha1.GatewayConfig{
-			GatewayRef: &contour_v1alpha1.NamespacedName{
+			GatewayRef: contour_v1alpha1.NamespacedName{
 				Namespace: "gatewaynamespace",
 				Name:      "gatewayname",
 			},

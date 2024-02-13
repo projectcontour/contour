@@ -214,7 +214,7 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 
 | Field Name     | Type           | Default | Description                                                                    |
 | -------------- | -------------- | ------- | ------------------------------------------------------------------------------ |
-| gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). If set, Contour will reconcile this specific Gateway. |
+| gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). |
 
 ### Gateway Ref
 
@@ -320,7 +320,8 @@ data:
     #
     # specify the gateway-api Gateway Contour should configure
     # gateway:
-    #   controllerName: projectcontour.io/gateway-controller
+    #   namespace: projectcontour
+    #   name: contour
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true

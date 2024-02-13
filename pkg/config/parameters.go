@@ -47,10 +47,10 @@ func (s ServerType) Validate() error {
 	}
 }
 
-// Validate the GatewayConfig.
+// Validate ensures that GatewayRef namespace/name is specified.
 func (g *GatewayParameters) Validate() error {
-	if g != nil && g.GatewayRef == nil {
-		return fmt.Errorf("invalid Gateway parameters specified: gateway ref must be provided")
+	if g != nil && (g.GatewayRef.Namespace == "" || g.GatewayRef.Name == "") {
+		return fmt.Errorf("invalid Gateway parameters specified: gateway ref namespace and name must be provided")
 	}
 
 	return nil
@@ -247,11 +247,9 @@ type ServerParameters struct {
 
 // GatewayParameters holds the configuration for Gateway API controllers.
 type GatewayParameters struct {
-	// GatewayRef defines a specific Gateway that this Contour
-	// instance corresponds to. If set, Contour will reconcile
-	// only this gateway, and will not reconcile any gateway
-	// classes.
-	GatewayRef *NamespacedName `yaml:"gatewayRef,omitempty"`
+	// GatewayRef defines the specific Gateway that this Contour
+	// instance corresponds to.
+	GatewayRef NamespacedName `yaml:"gatewayRef"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.
