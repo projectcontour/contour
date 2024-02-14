@@ -2414,8 +2414,8 @@ func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *
 	return p
 }
 
-// sort routes based on age in ascending order
-// if creation times are the same, sort based on name in ascending order
+// sort routes based on creationTimestamp in ascending order
+// if creationTimestamps are the same, sort based on name, then namespace in alphetical ascending order
 func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewayapi_v1.HTTPRoute {
 	routes := []*gatewayapi_v1.HTTPRoute{}
 	for _, r := range m {

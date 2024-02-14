@@ -20,8 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 func TestVirtualHostValid(t *testing.T) {
@@ -280,7 +278,7 @@ func TestAddRoute(t *testing.T) {
 			},
 			rs: []Route{
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "a",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/path1"),
@@ -289,7 +287,7 @@ func TestAddRoute(t *testing.T) {
 					},
 				},
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "c",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/path1"),
@@ -298,7 +296,7 @@ func TestAddRoute(t *testing.T) {
 					},
 				},
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "f",
 					Namespace:          "g",
 					PathMatchCondition: prefixSegment("/path1"),
@@ -309,13 +307,13 @@ func TestAddRoute(t *testing.T) {
 			},
 			expectCount: 3,
 		},
-		"3 routes, 1 and 2 has header conflict, 2 and 3 has query param conflict, only 1st one gets added": {
+		"3 routes, 1 and 2 have conflict, 2 and 3 have conflict, but 3 doesn't have conflict with 1, 1 and 3 one gets added": {
 			vHost: VirtualHost{
 				Routes: map[string]*Route{},
 			},
 			rs: []Route{
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "a",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/path1"),
@@ -324,40 +322,48 @@ func TestAddRoute(t *testing.T) {
 					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
 						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "c",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/path1"),
 					HeaderMatchConditions: []HeaderMatchCondition{
 						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+						{Name: "x-request-id", MatchType: "present"},
+						{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
+						{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
 					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
 						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "f",
 					Namespace:          "g",
 					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "x-request-id", MatchType: "present"},
+						{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
+						{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
+					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 			},
-			expectCount: 1,
+			expectCount: 2,
 		},
-		"3 routes, 1 and 2 has header conflict, 2 and 3 has query param conflict, only 1st one gets added, but all has different paths, all get added": {
+		"3 routes, 1 and 2 have conflict, 1 and 3 have conflict, but all has different paths, all get added": {
 			vHost: VirtualHost{
 				Routes: map[string]*Route{},
 			},
 			rs: []Route{
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "a",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/differentpath1"),
@@ -370,36 +376,42 @@ func TestAddRoute(t *testing.T) {
 					},
 				},
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "c",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/differentpath2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
 						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 				{
-					Kind:               contour_v1.KindHTTPProxy,
+					Kind:               KindHTTPRoute,
 					Name:               "f",
 					Namespace:          "g",
 					PathMatchCondition: prefixSegment("/differentpath3"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 			},
 			expectCount: 3,
 		},
-		"3 routes, 1 and 2 has header conflict, 2 and 3 has query param conflict, only 1st one gets added, but all are not http proxy, all get added": {
+		"3 routes, 1 and 2 have conflict, 1 and 3 have conflict, but all are not httproute, all get added": {
 			vHost: VirtualHost{
 				Routes: map[string]*Route{},
 			},
 			rs: []Route{
 				{
-					Kind:               "HTTPRoute",
+					Kind:               "GRPCRoute",
 					Name:               "a",
 					Namespace:          "b",
-					PathMatchCondition: prefixSegment("/path1"),
+					PathMatchCondition: prefixSegment("/path"),
 					HeaderMatchConditions: []HeaderMatchCondition{
 						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
 					},
@@ -409,10 +421,10 @@ func TestAddRoute(t *testing.T) {
 					},
 				},
 				{
-					Kind:               "HTTPRoute",
+					Kind:               "GRPCRoute",
 					Name:               "c",
 					Namespace:          "b",
-					PathMatchCondition: prefixSegment("/path1"),
+					PathMatchCondition: prefixSegment("/path"),
 					HeaderMatchConditions: []HeaderMatchCondition{
 						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
 					},
@@ -421,12 +433,15 @@ func TestAddRoute(t *testing.T) {
 					},
 				},
 				{
-					Kind:               "HTTPRoute",
+					Kind:               "GRPCRoute",
 					Name:               "f",
 					Namespace:          "g",
-					PathMatchCondition: prefixSegment("/path1"),
+					PathMatchCondition: prefixSegment("/path"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 			},
