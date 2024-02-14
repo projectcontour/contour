@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -772,55 +771,25 @@ type VirtualHost struct {
 	RouteHeaderAndQueryParamMatchMap map[string]*Route
 }
 
+// Add route to VirtualHosts.Routes map.
 func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
 		v.Routes = make(map[string]*Route)
 	}
-	// check if it's HTTPRoute type and there is existing RouteHeader + RouteQueryParams combination match this route candidate
-	if route.IsHTTPRoute() && v.hasMatchConflict(route) {
-		return
-	}
+
 	v.Routes[conditionsToString(route)] = route
 }
 
-func (v *VirtualHost) hasMatchConflict(route *Route) bool {
-	hasConflict := false
-	if v.RouteHeaderAndQueryParamMatchMap == nil {
-		v.RouteHeaderAndQueryParamMatchMap = make(map[string]*Route)
-	}
-	// first clean up maps in case there are stale match that were removed from Route CR, but not from the map
-	for k, r := range v.RouteHeaderAndQueryParamMatchMap {
-		if r.SameRoute(route) {
-			delete(v.RouteHeaderAndQueryParamMatchMap, k)
-		}
-	}
-	// add headerMatchCondition and QueryParamMatchCondition combination to the map
-	tmpMap, hasConflict := v.getMapIfNoMatchConflicts(route)
-	// no conflict, then add the tmpMap content to map
-	if !hasConflict {
-		maps.Copy(v.RouteHeaderAndQueryParamMatchMap, tmpMap)
+// HasConflictRoute returns true HTTPRoute type and there is existing Path + Headers
+// + QueryParams combination match this route candidate.
+func (v *VirtualHost) HasConflictHTTPRoute(route *Route) bool {
+	if !route.IsHTTPRoute() {
 		return false
 	}
-
-	return true
-}
-
-func (v *VirtualHost) getMapIfNoMatchConflicts(route *Route) (map[string]*Route, bool) {
-	key := "%s,%s,%s"
-	tmpMap := make(map[string]*Route)
-	for _, headerMath := range route.HeaderMatchConditions {
-		for _, queryParamMatch := range route.QueryParamMatchConditions {
-			newKey := fmt.Sprintf(key, route.PathMatchCondition.String(), headerMath.String(), queryParamMatch.String())
-			if r, ok := v.RouteHeaderAndQueryParamMatchMap[newKey]; ok {
-				// if it's not the same route, then it's conflict
-				if !r.SameRoute(route) {
-					return nil, true
-				}
-			}
-			tmpMap[newKey] = route
-		}
+	if r, ok := v.Routes[conditionsToString(route)]; ok && !r.SameRoute(route) {
+		return true
 	}
-	return tmpMap, false
+	return false
 }
 
 func conditionsToString(r *Route) string {
