@@ -266,13 +266,13 @@ func TestServiceClusterRebalance(t *testing.T) {
 	}
 }
 
-func TestAddRoute(t *testing.T) {
+func TestHasConflictHTTPRoute(t *testing.T) {
 	cases := map[string]struct {
-		vHost       VirtualHost
-		rs          []Route
-		expectCount int
+		vHost          VirtualHost
+		rs             []Route
+		expectConflict bool
 	}{
-		"3 different routes all get added": {
+		"2 different routes with same path and header, expect conflict": {
 			vHost: VirtualHost{
 				Routes: map[string]*Route{},
 			},
@@ -288,26 +288,17 @@ func TestAddRoute(t *testing.T) {
 				},
 				{
 					Kind:               KindHTTPRoute,
-					Name:               "c",
-					Namespace:          "b",
+					Name:               "b",
+					Namespace:          "c",
 					PathMatchCondition: prefixSegment("/path1"),
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
-					},
-				},
-				{
-					Kind:               KindHTTPRoute,
-					Name:               "f",
-					Namespace:          "g",
-					PathMatchCondition: prefixSegment("/path1"),
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
 					},
 				},
 			},
-			expectCount: 3,
+			expectConflict: true,
 		},
-		"3 routes, 1 and 2 have conflict, 2 and 3 have conflict, but 3 doesn't have conflict with 1, 1 and 3 one gets added": {
+		"2 different routes with same path and header and query params, expect conflict": {
 			vHost: VirtualHost{
 				Routes: map[string]*Route{},
 			},
@@ -327,37 +318,19 @@ func TestAddRoute(t *testing.T) {
 				{
 					Kind:               KindHTTPRoute,
 					Name:               "c",
-					Namespace:          "b",
+					Namespace:          "d",
 					PathMatchCondition: prefixSegment("/path1"),
 					HeaderMatchConditions: []HeaderMatchCondition{
 						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
-						{Name: "x-request-id", MatchType: "present"},
-						{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
-						{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
 					},
 					QueryParamMatchConditions: []QueryParamMatchCondition{
 						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
-					},
-				},
-				{
-					Kind:               KindHTTPRoute,
-					Name:               "f",
-					Namespace:          "g",
-					PathMatchCondition: prefixSegment("/path1"),
-					HeaderMatchConditions: []HeaderMatchCondition{
-						{Name: "x-request-id", MatchType: "present"},
-						{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
-						{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
-					},
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 			},
-			expectCount: 2,
+			expectConflict: true,
 		},
-		"3 routes, 1 and 2 have conflict, 1 and 3 have conflict, but all has different paths, all get added": {
+		"2 different routes with different path, don't expect conflict": {
 			vHost: VirtualHost{
 				Routes: map[string]*Route{},
 			},
@@ -366,20 +339,7 @@ func TestAddRoute(t *testing.T) {
 					Kind:               KindHTTPRoute,
 					Name:               "a",
 					Namespace:          "b",
-					PathMatchCondition: prefixSegment("/differentpath1"),
-					HeaderMatchConditions: []HeaderMatchCondition{
-						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
-					},
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
-					},
-				},
-				{
-					Kind:               KindHTTPRoute,
-					Name:               "c",
-					Namespace:          "b",
-					PathMatchCondition: prefixSegment("/differentpath2"),
+					PathMatchCondition: prefixSegment("/path2"),
 					HeaderMatchConditions: []HeaderMatchCondition{
 						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
 					},
@@ -389,42 +349,9 @@ func TestAddRoute(t *testing.T) {
 				},
 				{
 					Kind:               KindHTTPRoute,
-					Name:               "f",
-					Namespace:          "g",
-					PathMatchCondition: prefixSegment("/differentpath3"),
-					HeaderMatchConditions: []HeaderMatchCondition{
-						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
-					},
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
-					},
-				},
-			},
-			expectCount: 3,
-		},
-		"3 routes, 1 and 2 have conflict, 1 and 3 have conflict, but all are not httproute, all get added": {
-			vHost: VirtualHost{
-				Routes: map[string]*Route{},
-			},
-			rs: []Route{
-				{
-					Kind:               "GRPCRoute",
-					Name:               "a",
-					Namespace:          "b",
-					PathMatchCondition: prefixSegment("/path"),
-					HeaderMatchConditions: []HeaderMatchCondition{
-						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
-					},
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
-					},
-				},
-				{
-					Kind:               "GRPCRoute",
 					Name:               "c",
-					Namespace:          "b",
-					PathMatchCondition: prefixSegment("/path"),
+					Namespace:          "d",
+					PathMatchCondition: prefixSegment("/path1"),
 					HeaderMatchConditions: []HeaderMatchCondition{
 						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
 					},
@@ -432,30 +359,16 @@ func TestAddRoute(t *testing.T) {
 						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
 					},
 				},
-				{
-					Kind:               "GRPCRoute",
-					Name:               "f",
-					Namespace:          "g",
-					PathMatchCondition: prefixSegment("/path"),
-					HeaderMatchConditions: []HeaderMatchCondition{
-						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
-					},
-					QueryParamMatchConditions: []QueryParamMatchCondition{
-						{Name: "param-2", Value: "value-2", MatchType: QueryParamMatchTypeExact},
-					},
-				},
 			},
-			expectCount: 3,
+			expectConflict: false,
 		},
 	}
 
 	for n, c := range cases {
 		t.Run(n, func(t *testing.T) {
-			for i := range c.rs {
-				c.vHost.AddRoute(&c.rs[i])
-			}
+			c.vHost.AddRoute(&c.rs[0])
 
-			assert.Len(t, c.vHost.Routes, c.expectCount)
+			assert.Equal(t, c.vHost.HasConflictHTTPRoute(&c.rs[1]), c.expectConflict)
 		})
 	}
 }

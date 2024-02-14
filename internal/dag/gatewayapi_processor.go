@@ -1440,22 +1440,52 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				pathRewritePolicy,
 				timeoutPolicy)
 		}
+		if p.hasConflictRoute(listener, hosts, routes) {
+			routeAccessor.AddCondition(
+				gatewayapi_v1.RouteConditionAccepted,
+				meta_v1.ConditionFalse,
+				status.ReasonRouteConflict,
+				"HTTPRoute's Match has conflict with other HTTPRoute's Match ",
+			)
+		} else {
+			// Add each route to the relevant vhost(s)/svhosts(s).
+			for host := range hosts {
+				for _, route := range routes {
+					switch {
+					case listener.tlsSecret != nil:
+						svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+						svhost.Secret = listener.tlsSecret
+						svhost.AddRoute(route)
+					default:
+						vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+						vhost.AddRoute(route)
+					}
+				}
+			}
+		}
 
-		// Add each route to the relevant vhost(s)/svhosts(s).
-		for host := range hosts {
-			for _, route := range routes {
-				switch {
-				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
-					svhost.Secret = listener.tlsSecret
-					svhost.AddRoute(route)
-				default:
-					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
-					vhost.AddRoute(route)
+	}
+}
+
+func (p *GatewayAPIProcessor) hasConflictRoute(listener *listenerInfo, hosts sets.Set[string], routes []*Route) bool {
+	// check if there is conflict match first
+	for host := range hosts {
+		for _, route := range routes {
+			switch {
+			case listener.tlsSecret != nil:
+				svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+				if svhost.HasConflictHTTPRoute(route) {
+					return true
+				}
+			default:
+				vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+				if vhost.HasConflictHTTPRoute(route) {
+					return true
 				}
 			}
 		}
 	}
+	return false
 }
 
 func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1alpha2.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
