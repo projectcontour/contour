@@ -20,13 +20,13 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 var (
@@ -308,7 +308,7 @@ func TestClusterIpServiceChanged(t *testing.T) {
 		{
 			description: "if ip family policy changed",
 			mutate: func(svc *core_v1.Service) {
-				svc.Spec.IPFamilyPolicy = ref.To(core_v1.IPFamilyPolicyRequireDualStack)
+				svc.Spec.IPFamilyPolicy = ptr.To(core_v1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},
@@ -441,7 +441,7 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 		{
 			description: "if ip family policy changed",
 			mutate: func(svc *core_v1.Service) {
-				svc.Spec.IPFamilyPolicy = ref.To(core_v1.IPFamilyPolicyRequireDualStack)
+				svc.Spec.IPFamilyPolicy = ptr.To(core_v1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},
@@ -539,7 +539,7 @@ func TestNodePortServiceChanged(t *testing.T) {
 		{
 			description: "if ip family policy changed",
 			mutate: func(svc *core_v1.Service) {
-				svc.Spec.IPFamilyPolicy = ref.To(core_v1.IPFamilyPolicyRequireDualStack)
+				svc.Spec.IPFamilyPolicy = ptr.To(core_v1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},

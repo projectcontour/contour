@@ -19,11 +19,11 @@ import (
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
@@ -185,7 +185,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 				Services: []contour_v1.Service{{
 					Name:     svc.Name,
 					Port:     443,
-					Protocol: ref.To("tls"),
+					Protocol: ptr.To("tls"),
 					UpstreamValidation: &contour_v1.UpstreamValidation{
 						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",

@@ -21,12 +21,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	core_v1 "k8s.io/api/core/v1"
 	discovery_v1 "k8s.io/api/discovery/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestEndpointSliceTranslatorContents(t *testing.T) {
@@ -179,8 +179,8 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -202,8 +202,8 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -219,8 +219,8 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](80),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](80),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -261,8 +261,8 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](80),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](80),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -291,14 +291,14 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Name:     ref.To[string]("a"),
-					Port:     ref.To[int32](8675),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("a"),
+					Port:     ptr.To[int32](8675),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 				{
-					Name:     ref.To[string]("b"),
-					Port:     ref.To[int32](309),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("b"),
+					Port:     ptr.To[int32](309),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -331,14 +331,14 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Name:     ref.To[string]("a"),
-					Port:     ref.To[int32](8675),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("a"),
+					Port:     ptr.To[int32](8675),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 				{
-					Name:     ref.To[string]("b"),
-					Port:     ref.To[int32](309),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("b"),
+					Port:     ptr.To[int32](309),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -369,7 +369,7 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 						"10.10.1.1",
 					},
 					Conditions: discovery_v1.EndpointConditions{
-						Ready: ref.To[bool](false),
+						Ready: ptr.To[bool](false),
 					},
 				},
 				{
@@ -377,19 +377,19 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 						"10.10.2.2",
 					},
 					Conditions: discovery_v1.EndpointConditions{
-						Ready: ref.To[bool](true),
+						Ready: ptr.To[bool](true),
 					},
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Name:     ref.To[string]("a"),
-					Port:     ref.To[int32](8675),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("a"),
+					Port:     ptr.To[int32](8675),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 				{
-					Name:     ref.To[string]("b"),
-					Port:     ref.To[int32](309),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("b"),
+					Port:     ptr.To[int32](309),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -420,14 +420,14 @@ func TestEndpointSliceTranslatorAddEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Name:     ref.To[string]("health"),
-					Port:     ref.To[int32](8998),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("health"),
+					Port:     ptr.To[int32](8998),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 				{
-					Name:     ref.To[string]("a"),
-					Port:     ref.To[int32](309),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("a"),
+					Port:     ptr.To[int32](309),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -512,8 +512,8 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					},
 				}, []discovery_v1.EndpointPort{
 					{
-						Port:     ref.To[int32](8080),
-						Protocol: ref.To[core_v1.Protocol]("TCP"),
+						Port:     ptr.To[int32](8080),
+						Protocol: ptr.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
@@ -524,8 +524,8 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -544,8 +544,8 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					},
 				}, []discovery_v1.EndpointPort{
 					{
-						Port:     ref.To[int32](8080),
-						Protocol: ref.To[core_v1.Protocol]("TCP"),
+						Port:     ptr.To[int32](8080),
+						Protocol: ptr.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
@@ -556,8 +556,8 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -579,8 +579,8 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -606,14 +606,14 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 						},
 					}, []discovery_v1.EndpointPort{
 						{
-							Name:     ref.To[string]("http"),
-							Port:     ref.To[int32](8080),
-							Protocol: ref.To[core_v1.Protocol]("TCP"),
+							Name:     ptr.To[string]("http"),
+							Port:     ptr.To[int32](8080),
+							Protocol: ptr.To[core_v1.Protocol]("TCP"),
 						},
 						{
-							Name:     ref.To[string]("https"),
-							Port:     ref.To[int32](8443),
-							Protocol: ref.To[core_v1.Protocol]("TCP"),
+							Name:     ptr.To[string]("https"),
+							Port:     ptr.To[int32](8443),
+							Protocol: ptr.To[core_v1.Protocol]("TCP"),
 						},
 					},
 				)
@@ -632,14 +632,14 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 					},
 				}, []discovery_v1.EndpointPort{
 					{
-						Name:     ref.To[string]("http"),
-						Port:     ref.To[int32](8080),
-						Protocol: ref.To[core_v1.Protocol]("TCP"),
+						Name:     ptr.To[string]("http"),
+						Port:     ptr.To[int32](8080),
+						Protocol: ptr.To[core_v1.Protocol]("TCP"),
 					},
 					{
-						Name:     ref.To[string]("https"),
-						Port:     ref.To[int32](8443),
-						Protocol: ref.To[core_v1.Protocol]("TCP"),
+						Name:     ptr.To[string]("https"),
+						Port:     ptr.To[int32](8443),
+						Protocol: ptr.To[core_v1.Protocol]("TCP"),
 					},
 				},
 			),
@@ -701,8 +701,8 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 					},
 				}, []discovery_v1.EndpointPort{
 					{
-						Port:     ref.To[int32](8080),
-						Protocol: ref.To[core_v1.Protocol]("TCP"),
+						Port:     ptr.To[int32](8080),
+						Protocol: ptr.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
@@ -713,8 +713,8 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -724,8 +724,8 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8081),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8081),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -745,8 +745,8 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 					},
 				}, []discovery_v1.EndpointPort{
 					{
-						Port:     ref.To[int32](8080),
-						Protocol: ref.To[core_v1.Protocol]("TCP"),
+						Port:     ptr.To[int32](8080),
+						Protocol: ptr.To[core_v1.Protocol]("TCP"),
 					},
 				},
 				), false)
@@ -757,8 +757,8 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -768,8 +768,8 @@ func TestEndpointSliceTranslatorUpdateEndpoints(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8081),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8081),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -824,8 +824,8 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8080),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](8080),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -861,8 +861,8 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](80),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
+					Port:     ptr.To[int32](80),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
 				},
 			},
 			),
@@ -894,9 +894,9 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](8443),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
-					Name:     ref.To[string]("https"),
+					Port:     ptr.To[int32](8443),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("https"),
 				},
 			},
 			),
@@ -934,14 +934,14 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](80),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
-					Name:     ref.To[string]("a"),
+					Port:     ptr.To[int32](80),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("a"),
 				},
 				{
-					Port:     ref.To[int32](8998),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
-					Name:     ref.To[string]("health"),
+					Port:     ptr.To[int32](8998),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("health"),
 				},
 			},
 			),
@@ -983,14 +983,14 @@ func TestEndpointSliceTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				},
 			}, []discovery_v1.EndpointPort{
 				{
-					Port:     ref.To[int32](80),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
-					Name:     ref.To[string]("a"),
+					Port:     ptr.To[int32](80),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("a"),
 				},
 				{
-					Port:     ref.To[int32](8998),
-					Protocol: ref.To[core_v1.Protocol]("TCP"),
-					Name:     ref.To[string]("health"),
+					Port:     ptr.To[int32](8998),
+					Protocol: ptr.To[core_v1.Protocol]("TCP"),
+					Name:     ptr.To[string]("health"),
 				},
 			},
 			),
@@ -1041,8 +1041,8 @@ func TestEndpointSliceTranslatorScaleToZeroEndpoints(t *testing.T) {
 		},
 	}, []discovery_v1.EndpointPort{
 		{
-			Port:     ref.To[int32](8080),
-			Protocol: ref.To[core_v1.Protocol]("TCP"),
+			Port:     ptr.To[int32](8080),
+			Protocol: ptr.To[core_v1.Protocol]("TCP"),
 		},
 	},
 	)
@@ -1108,8 +1108,8 @@ func TestEndpointSliceTranslatorWeightedService(t *testing.T) {
 
 	ports := []discovery_v1.EndpointPort{
 		{
-			Port:     ref.To[int32](8080),
-			Protocol: ref.To[core_v1.Protocol]("TCP"),
+			Port:     ptr.To[int32](8080),
+			Protocol: ptr.To[core_v1.Protocol]("TCP"),
 		},
 	}
 
@@ -1171,8 +1171,8 @@ func TestEndpointSliceTranslatorDefaultWeightedService(t *testing.T) {
 
 	ports := []discovery_v1.EndpointPort{
 		{
-			Port:     ref.To[int32](8080),
-			Protocol: ref.To[core_v1.Protocol]("TCP"),
+			Port:     ptr.To[int32](8080),
+			Protocol: ptr.To[core_v1.Protocol]("TCP"),
 		},
 	}
 

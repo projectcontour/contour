@@ -20,8 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/projectcontour/contour/internal/ref"
+	"k8s.io/utils/ptr"
 )
 
 type testMetric struct {
@@ -708,8 +707,8 @@ func TestSetDAGCacheObjectMetric(t *testing.T) {
 					{
 						Label: []*io_prometheus_client.LabelPair{
 							{
-								Name:  ref.To("kind"),
-								Value: ref.To("test"),
+								Name:  ptr.To("kind"),
+								Value: ptr.To("test"),
 							},
 						},
 						Gauge: &io_prometheus_client.Gauge{

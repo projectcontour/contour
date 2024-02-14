@@ -36,7 +36,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
@@ -465,7 +464,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: ref.To("nginx"),
+					IngressClassName: ptr.To("nginx"),
 				},
 			},
 			want: false,
@@ -477,7 +476,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: ref.To("contour"),
+					IngressClassName: ptr.To("contour"),
 				},
 			},
 			want: true,
@@ -566,7 +565,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: ref.To("contour"),
+					IngressClassName: ptr.To("contour"),
 				},
 			},
 			want: false,
@@ -581,7 +580,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: ref.To("nginx"),
+					IngressClassName: ptr.To("nginx"),
 				},
 			},
 			want: true,

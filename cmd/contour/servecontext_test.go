@@ -27,12 +27,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tsaarni/certyaml"
 	"google.golang.org/grpc"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 )
 
@@ -93,7 +93,7 @@ func TestServeContextTLSParams(t *testing.T) {
 				CAFile:   "cacert.pem",
 				CertFile: "contourcert.pem",
 				KeyFile:  "contourkey.pem",
-				Insecure: ref.To(false),
+				Insecure: ptr.To(false),
 			},
 			expectError: false,
 		},
@@ -101,7 +101,7 @@ func TestServeContextTLSParams(t *testing.T) {
 			tls: &contour_v1alpha1.TLS{
 				CertFile: "contourcert.pem",
 				KeyFile:  "contourkey.pem",
-				Insecure: ref.To(false),
+				Insecure: ptr.To(false),
 			},
 			expectError: true,
 		},
@@ -191,7 +191,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 		CAFile:   filepath.Join(configDir, "CAcert.pem"),
 		CertFile: filepath.Join(configDir, "contourcert.pem"),
 		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
-		Insecure: ref.To(false),
+		Insecure: ptr.To(false),
 	}
 
 	// Initial set of credentials must be written into temp directory before
@@ -257,7 +257,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 		CAFile:   filepath.Join(configDir, "CAcert.pem"),
 		CertFile: filepath.Join(configDir, "contourcert.pem"),
 		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
-		Insecure: ref.To(false),
+		Insecure: ptr.To(false),
 	}
 
 	err = caCert.WritePEM(contourTLS.CAFile, filepath.Join(configDir, "CAkey.pem"))
@@ -386,7 +386,7 @@ func TestConvertServeContext(t *testing.T) {
 					CAFile:   "/certs/ca.crt",
 					CertFile: "/certs/cert.crt",
 					KeyFile:  "/certs/cert.key",
-					Insecure: ref.To(false),
+					Insecure: ptr.To(false),
 				},
 			},
 			Ingress: &contour_v1alpha1.IngressConfig{
@@ -407,9 +407,9 @@ func TestConvertServeContext(t *testing.T) {
 					Namespace: "projectcontour",
 				},
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
-					UseProxyProto:              ref.To(false),
-					DisableAllowChunkedLength:  ref.To(false),
-					DisableMergeSlashes:        ref.To(false),
+					UseProxyProto:              ptr.To(false),
+					DisableAllowChunkedLength:  ptr.To(false),
+					DisableMergeSlashes:        ptr.To(false),
 					ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
 					TLS: &contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
@@ -471,8 +471,8 @@ func TestConvertServeContext(t *testing.T) {
 				},
 				DefaultHTTPVersions: nil,
 				Timeouts: &contour_v1alpha1.TimeoutParameters{
-					ConnectionIdleTimeout: ref.To("60s"),
-					ConnectTimeout:        ref.To("2s"),
+					ConnectionIdleTimeout: ptr.To("60s"),
+					ConnectTimeout:        ptr.To("2s"),
 				},
 				Cluster: &contour_v1alpha1.ClusterParameters{
 					DNSLookupFamily:              contour_v1alpha1.AutoClusterDNSFamily,
@@ -483,22 +483,22 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Network: &contour_v1alpha1.NetworkParameters{
-					EnvoyAdminPort:    ref.To(9001),
-					XffNumTrustedHops: ref.To(uint32(0)),
+					EnvoyAdminPort:    ptr.To(9001),
+					XffNumTrustedHops: ptr.To(uint32(0)),
 				},
 			},
 			Gateway: nil,
 			HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
-				DisablePermitInsecure: ref.To(false),
+				DisablePermitInsecure: ptr.To(false),
 				FallbackCertificate:   nil,
 			},
-			EnableExternalNameService:   ref.To(false),
+			EnableExternalNameService:   ptr.To(false),
 			RateLimitService:            nil,
 			GlobalExternalAuthorization: nil,
 			Policy: &contour_v1alpha1.PolicyConfig{
 				RequestHeadersPolicy:  &contour_v1alpha1.HeadersPolicy{},
 				ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{},
-				ApplyToIngress:        ref.To(false),
+				ApplyToIngress:        ptr.To(false),
 			},
 			Metrics: &contour_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
@@ -544,7 +544,7 @@ func TestConvertServeContext(t *testing.T) {
 						Set:    map[string]string{"custom-response-header-set": "foo-bar", "Host": "response-bar.com"},
 						Remove: []string{"custom-response-header-remove"},
 					},
-					ApplyToIngress: ref.To(true),
+					ApplyToIngress: ptr.To(true),
 				}
 				return cfg
 			},
@@ -610,7 +610,7 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.HTTPProxy = &contour_v1alpha1.HTTPProxyConfig{
-					DisablePermitInsecure: ref.To(true),
+					DisablePermitInsecure: ptr.To(true),
 					FallbackCertificate: &contour_v1alpha1.NamespacedName{
 						Name:      "fallbackname",
 						Namespace: "fallbacknamespace",
@@ -651,9 +651,9 @@ func TestConvertServeContext(t *testing.T) {
 						Namespace: "ratens",
 					},
 					Domain:                      "contour",
-					FailOpen:                    ref.To(true),
-					EnableXRateLimitHeaders:     ref.To(true),
-					EnableResourceExhaustedCode: ref.To(true),
+					FailOpen:                    ptr.To(true),
+					EnableXRateLimitHeaders:     ptr.To(true),
+					EnableResourceExhaustedCode: ptr.To(true),
 					DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
 						Descriptors: []contour_v1.RateLimitDescriptor{
 							{
@@ -751,7 +751,7 @@ func TestConvertServeContext(t *testing.T) {
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Listener.DisableMergeSlashes = ref.To(true)
+				cfg.Envoy.Listener.DisableMergeSlashes = ptr.To(true)
 				return cfg
 			},
 		},
@@ -828,10 +828,10 @@ func TestConvertServeContext(t *testing.T) {
 		"tracing config normal": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.Tracing = &config.Tracing{
-					IncludePodDetail: ref.To(false),
-					ServiceName:      ref.To("contour"),
-					OverallSampling:  ref.To("100"),
-					MaxPathTagLength: ref.To(uint32(256)),
+					IncludePodDetail: ptr.To(false),
+					ServiceName:      ptr.To("contour"),
+					OverallSampling:  ptr.To("100"),
+					MaxPathTagLength: ptr.To(uint32(256)),
 					CustomTags: []config.CustomTag{
 						{
 							TagName: "literal",
@@ -848,10 +848,10 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Tracing = &contour_v1alpha1.TracingConfig{
-					IncludePodDetail: ref.To(false),
-					ServiceName:      ref.To("contour"),
-					OverallSampling:  ref.To("100"),
-					MaxPathTagLength: ref.To(uint32(256)),
+					IncludePodDetail: ptr.To(false),
+					ServiceName:      ptr.To("contour"),
+					OverallSampling:  ptr.To("100"),
+					MaxPathTagLength: ptr.To(uint32(256)),
 					CustomTags: []*contour_v1alpha1.CustomTag{
 						{
 							TagName: "literal",
@@ -889,15 +889,15 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"envoy listener settings": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
-				ctx.Config.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
-				ctx.Config.Listener.MaxConnectionsPerListener = ref.To(uint32(50))
+				ctx.Config.Listener.MaxRequestsPerIOCycle = ptr.To(uint32(10))
+				ctx.Config.Listener.HTTP2MaxConcurrentStreams = ptr.To(uint32(30))
+				ctx.Config.Listener.MaxConnectionsPerListener = ptr.To(uint32(50))
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ref.To(uint32(10))
-				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ref.To(uint32(30))
-				cfg.Envoy.Listener.MaxConnectionsPerListener = ref.To(uint32(50))
+				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ptr.To(uint32(10))
+				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ptr.To(uint32(30))
+				cfg.Envoy.Listener.MaxConnectionsPerListener = ptr.To(uint32(50))
 				return cfg
 			},
 		},

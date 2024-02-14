@@ -29,12 +29,12 @@ import (
 	"github.com/stretchr/testify/require"
 	apps_v1 "k8s.io/api/apps/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -190,7 +190,7 @@ var _ = Describe("When upgrading", func() {
 								Name:     "http",
 								Port:     gatewayapi_v1.PortNumber(80),
 								Protocol: gatewayapi_v1.HTTPProtocolType,
-								Hostname: ref.To(gatewayapi_v1.Hostname(appHost)),
+								Hostname: ptr.To(gatewayapi_v1.Hostname(appHost)),
 							},
 						},
 					},
@@ -222,7 +222,7 @@ var _ = Describe("When upgrading", func() {
 										BackendRef: gatewayapi_v1.BackendRef{
 											BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 												Name: gatewayapi_v1.ObjectName("echo"),
-												Port: ref.To(gatewayapi_v1.PortNumber(80)),
+												Port: ptr.To(gatewayapi_v1.PortNumber(80)),
 											},
 										},
 									},

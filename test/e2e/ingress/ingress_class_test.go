@@ -22,8 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -40,7 +40,7 @@ func testIngressClass(namespace, class string) {
 				Name:      name,
 			},
 			Spec: networking_v1.IngressSpec{
-				IngressClassName: ref.To(class),
+				IngressClassName: ptr.To(class),
 				Rules: []networking_v1.IngressRule{
 					{
 						Host: name + ".projectcontour.io",
@@ -48,7 +48,7 @@ func testIngressClass(namespace, class string) {
 							HTTP: &networking_v1.HTTPIngressRuleValue{
 								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networking_v1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     "/",
 										Backend: networking_v1.IngressBackend{
 											Service: &networking_v1.IngressServiceBackend{

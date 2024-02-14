@@ -23,9 +23,9 @@ import (
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -138,7 +138,7 @@ func testExternalNameServiceTLS(namespace string) {
 							{
 								Name:     externalNameService.Name,
 								Port:     443,
-								Protocol: ref.To("tls"),
+								Protocol: ptr.To("tls"),
 							},
 						},
 						RequestHeadersPolicy: &contour_v1.HeadersPolicy{

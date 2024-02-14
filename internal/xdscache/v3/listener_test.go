@@ -33,6 +33,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -41,7 +42,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
@@ -2824,7 +2824,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with MaxRequestsPerConnection set in listener config": {
 			ListenerConfig: ListenerConfig{
-				MaxRequestsPerConnection: ref.To(uint32(1)),
+				MaxRequestsPerConnection: ptr.To(uint32(1)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -2858,7 +2858,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 						DefaultFilters().
-						MaxRequestsPerConnection(ref.To(uint32(1))).
+						MaxRequestsPerConnection(ptr.To(uint32(1))).
 						Get(),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
@@ -2866,7 +2866,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with MaxRequestsPerConnection set in listener config": {
 			ListenerConfig: ListenerConfig{
-				MaxRequestsPerConnection: ref.To(uint32(1)),
+				MaxRequestsPerConnection: ptr.To(uint32(1)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -2900,7 +2900,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 					DefaultFilters().
-					MaxRequestsPerConnection(ref.To(uint32(1))).
+					MaxRequestsPerConnection(ptr.To(uint32(1))).
 					Get(),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
@@ -2918,7 +2918,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
-						MaxRequestsPerConnection(ref.To(uint32(1))).
+						MaxRequestsPerConnection(ptr.To(uint32(1))).
 						Get()),
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
@@ -2929,7 +2929,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with HTTP2MaxConcurrentStreams set in listener config": {
 			ListenerConfig: ListenerConfig{
-				HTTP2MaxConcurrentStreams: ref.To(uint32(100)),
+				HTTP2MaxConcurrentStreams: ptr.To(uint32(100)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -2963,7 +2963,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 						DefaultFilters().
-						HTTP2MaxConcurrentStreams(ref.To(uint32(100))).
+						HTTP2MaxConcurrentStreams(ptr.To(uint32(100))).
 						Get(),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
@@ -2971,7 +2971,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with HTTP2MaxConcurrentStreams set in listener config": {
 			ListenerConfig: ListenerConfig{
-				HTTP2MaxConcurrentStreams: ref.To(uint32(101)),
+				HTTP2MaxConcurrentStreams: ptr.To(uint32(101)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3005,7 +3005,7 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 					DefaultFilters().
-					HTTP2MaxConcurrentStreams(ref.To(uint32(101))).
+					HTTP2MaxConcurrentStreams(ptr.To(uint32(101))).
 					Get(),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
@@ -3023,7 +3023,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
-						HTTP2MaxConcurrentStreams(ref.To(uint32(101))).
+						HTTP2MaxConcurrentStreams(ptr.To(uint32(101))).
 						Get()),
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
@@ -3034,7 +3034,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with PerConnectionBufferLimitBytes set in listener config": {
 			ListenerConfig: ListenerConfig{
-				PerConnectionBufferLimitBytes: ref.To(uint32(32768)),
+				PerConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3076,7 +3076,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with PerConnectionBufferLimitBytes set in listener config": {
 			ListenerConfig: ListenerConfig{
-				PerConnectionBufferLimitBytes: ref.To(uint32(32768)),
+				PerConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3140,7 +3140,7 @@ func TestListenerVisit(t *testing.T) {
 
 		"httpproxy with authZ the authN": {
 			ListenerConfig: ListenerConfig{
-				PerConnectionBufferLimitBytes: ref.To(uint32(32768)),
+				PerConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			},
 			objs: []any{
 				&contour_v1alpha1.ExtensionService{

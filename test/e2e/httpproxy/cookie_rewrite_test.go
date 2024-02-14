@@ -29,10 +29,10 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -162,7 +162,7 @@ func testInvalidCookieRewriteFields(namespace string) {
 						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:     "invalid-samesite",
-								SameSite: ref.To("Invalid"),
+								SameSite: ptr.To("Invalid"),
 							},
 						},
 						Services: []contour_v1.Service{
@@ -214,8 +214,8 @@ func testAppCookieRewrite(namespace string) {
 								Name:          "no-attributes",
 								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/foo"},
 								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "foo.com"},
-								Secure:        ref.To(true),
-								SameSite:      ref.To("Strict"),
+								Secure:        ptr.To(true),
+								SameSite:      ptr.To("Strict"),
 							},
 						},
 						Services: []contour_v1.Service{
@@ -234,8 +234,8 @@ func testAppCookieRewrite(namespace string) {
 								Name:          "rewrite-all",
 								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/ra"},
 								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "ra.com"},
-								Secure:        ref.To(false),
-								SameSite:      ref.To("Lax"),
+								Secure:        ptr.To(false),
+								SameSite:      ptr.To("Lax"),
 							},
 						},
 						Services: []contour_v1.Service{
@@ -333,8 +333,8 @@ func testAppCookieRewrite(namespace string) {
 									{
 										Name:        "route-service",
 										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/service"},
-										Secure:      ref.To(true),
-										SameSite:    ref.To("Lax"),
+										Secure:      ptr.To(true),
+										SameSite:    ptr.To("Lax"),
 									},
 									{
 										Name:        "service",
@@ -506,8 +506,8 @@ func testHeaderRewriteCookieRewrite(namespace string) {
 						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:     "X-Contour-Session-Affinity",
-								Secure:   ref.To(true),
-								SameSite: ref.To("Strict"),
+								Secure:   ptr.To(true),
+								SameSite: ptr.To("Strict"),
 							},
 						},
 						Services: []contour_v1.Service{
@@ -681,8 +681,8 @@ func testCookieRewriteTLS(namespace string) {
 								Name:          "a-cookie",
 								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/"},
 								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "cookie-rewrite-tls.projectcontour.io"},
-								Secure:        ref.To(true),
-								SameSite:      ref.To("Strict"),
+								Secure:        ptr.To(true),
+								SameSite:      ptr.To("Strict"),
 							},
 						},
 						Services: []contour_v1.Service{

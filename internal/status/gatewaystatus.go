@@ -19,10 +19,9 @@ import (
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 const MessageValidGateway = "Valid Gateway"
@@ -73,7 +72,7 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName
 
 	for _, kind := range kinds {
 		groupKind := gatewayapi_v1.RouteGroupKind{
-			Group: ref.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+			Group: ptr.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
 			Kind:  kind,
 		}
 

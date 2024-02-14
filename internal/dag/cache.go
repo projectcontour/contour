@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -38,7 +39,6 @@ import (
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
@@ -154,7 +154,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-					WithField("ingress-class-name", ref.Val(obj.Spec.IngressClassName, "")).
+					WithField("ingress-class-name", ptr.Deref(obj.Spec.IngressClassName, "")).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring Ingress with unmatched ingress class")
 				return false, len(kc.ingresses)

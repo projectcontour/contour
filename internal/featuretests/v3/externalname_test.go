@@ -26,6 +26,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
@@ -33,7 +34,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 // Assert that services of type core_v1.ServiceTypeExternalName can be
@@ -172,7 +172,7 @@ func TestExternalNameService(t *testing.T) {
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
 				Services: []contour_v1.Service{{
-					Protocol: ref.To("h2"),
+					Protocol: ptr.To("h2"),
 					Name:     s1.Name,
 					Port:     80,
 				}},
@@ -236,7 +236,7 @@ func TestExternalNameService(t *testing.T) {
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
 				Services: []contour_v1.Service{{
-					Protocol: ref.To("tls"),
+					Protocol: ptr.To("tls"),
 					Name:     s1.Name,
 					Port:     80,
 				}},
@@ -290,7 +290,7 @@ func TestExternalNameService(t *testing.T) {
 		WithSpec(contour_v1.HTTPProxySpec{
 			TCPProxy: &contour_v1.TCPProxy{
 				Services: []contour_v1.Service{{
-					Protocol: ref.To("tls"),
+					Protocol: ptr.To("tls"),
 					Name:     s1.Name,
 					Port:     80,
 				}},

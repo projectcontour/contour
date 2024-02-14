@@ -20,10 +20,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestGetDAGBuilder(t *testing.T) {
@@ -102,7 +102,7 @@ func TestGetDAGBuilder(t *testing.T) {
 				},
 				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			ApplyToIngress: ref.To(false),
+			ApplyToIngress: ptr.To(false),
 		}
 
 		serve := &Server{
@@ -165,7 +165,7 @@ func TestGetDAGBuilder(t *testing.T) {
 				},
 				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			ApplyToIngress: ref.To(true),
+			ApplyToIngress: ptr.To(true),
 		}
 
 		serve := &Server{

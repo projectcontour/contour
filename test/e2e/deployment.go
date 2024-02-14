@@ -45,10 +45,10 @@ import (
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/pkg/config"
 )
 
@@ -523,7 +523,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	// The envoy deployment uses host ports, so can have at most
 	// one replica per node, and our cluster only has one worker
 	// node, so scale the deployment to 1.
-	d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
+	d.EnvoyDeployment.Spec.Replicas = ptr.To(int32(1))
 
 	return d.EnsureEnvoyDeployment()
 }
@@ -623,7 +623,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		contourConfiguration.Spec.XDSServer.Port = port
 		contourConfiguration.Spec.XDSServer.Address = listenAllAddress()
 		contourConfiguration.Spec.XDSServer.TLS = &contour_v1alpha1.TLS{
-			Insecure: ref.To(true),
+			Insecure: ptr.To(true),
 		}
 
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
@@ -832,7 +832,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		// The envoy deployment uses host ports, so can have at most
 		// one replica per node, and our cluster only has one worker
 		// node, so scale the deployment to 1.
-		d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
+		d.EnvoyDeployment.Spec.Replicas = ptr.To(int32(1))
 
 		if err := d.EnsureEnvoyDeployment(); err != nil {
 			return err
@@ -949,7 +949,7 @@ func (d *Deployment) DumpContourLogs() error {
 func (d *Deployment) EnsureDeleted(obj client.Object) error {
 	// Delete the object; if it already doesn't exist,
 	// then we're done.
-	err := d.client.Delete(context.Background(), obj, &client.DeleteOptions{PropagationPolicy: ref.To(meta_v1.DeletePropagationBackground)})
+	err := d.client.Delete(context.Background(), obj, &client.DeleteOptions{PropagationPolicy: ptr.To(meta_v1.DeletePropagationBackground)})
 	if api_errors.IsNotFound(err) {
 		return nil
 	}

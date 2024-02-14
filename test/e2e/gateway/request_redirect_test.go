@@ -23,10 +23,10 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -55,10 +55,10 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 							{
 								Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
-									Hostname:   ref.To(gatewayapi_v1.PreciseHostname("envoyproxy.io")),
-									StatusCode: ref.To(301),
-									Scheme:     ref.To("https"),
-									Port:       ref.To(gatewayapi_v1.PortNumber(8080)),
+									Hostname:   ptr.To(gatewayapi_v1.PreciseHostname("envoyproxy.io")),
+									StatusCode: ptr.To(301),
+									Scheme:     ptr.To("https"),
+									Port:       ptr.To(gatewayapi_v1.PortNumber(8080)),
 								},
 							},
 						},

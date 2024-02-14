@@ -41,12 +41,12 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
@@ -162,7 +162,7 @@ func TestListener(t *testing.T) {
 			name:                          "http",
 			address:                       "0.0.0.0",
 			port:                          9000,
-			perConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			f: []*envoy_config_listener_v3.Filter{
 				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 			},
@@ -180,7 +180,7 @@ func TestListener(t *testing.T) {
 			name:                          "https",
 			address:                       "0.0.0.0",
 			port:                          9000,
-			perConnectionBufferLimitBytes: ref.To(uint32(32768)),
+			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			lf: ListenerFilters(
 				TLSInspector(),
 			),
@@ -1362,7 +1362,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		"maxRequestsPerConnection set to 1": {
 			routename:                "default/kuard",
 			accesslogger:             FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
-			maxRequestsPerConnection: ref.To(uint32(1)),
+			maxRequestsPerConnection: ptr.To(uint32(1)),
 			want: &envoy_config_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
@@ -1411,7 +1411,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		"http2MaxConcurrentStreams set": {
 			routename:                 "default/kuard",
 			accesslogger:              FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
-			http2MaxConcurrentStreams: ref.To(uint32(50)),
+			http2MaxConcurrentStreams: ptr.To(uint32(50)),
 			want: &envoy_config_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{

@@ -22,10 +22,10 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -46,9 +46,9 @@ func testTLSWildcardHost(namespace string, gateway types.NamespacedName) {
 				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1.ParentReference{
 						{
-							Namespace:   ref.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+							Namespace:   ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
 							Name:        gatewayapi_v1.ObjectName(gateway.Name),
-							SectionName: ref.To(gatewayapi_v1.SectionName("secure")),
+							SectionName: ptr.To(gatewayapi_v1.SectionName("secure")),
 						},
 					},
 				},

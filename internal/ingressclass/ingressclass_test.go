@@ -19,9 +19,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestMatchesIngress(t *testing.T) {
@@ -38,7 +38,7 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set to default, class not configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("contour"),
+			IngressClassName: ptr.To("contour"),
 		},
 	}, nil))
 	// Annotation set, no spec field set, class not configured
@@ -52,7 +52,7 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set, class not configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, nil))
 	// No annotation, no spec field set, class configured
@@ -68,7 +68,7 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set, class configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("something"),
+			IngressClassName: ptr.To("something"),
 		},
 	}, []string{"something"}))
 	// Annotation set, no spec field set, class configured
@@ -82,7 +82,7 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"something"}))
 	// Annotation set, spec field set, class configured
@@ -93,7 +93,7 @@ func TestMatchesIngress(t *testing.T) {
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"something"}))
 	// Annotation set, spec field set, class configured
@@ -104,7 +104,7 @@ func TestMatchesIngress(t *testing.T) {
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("something"),
+			IngressClassName: ptr.To("something"),
 		},
 	}, []string{"something"}))
 	// Multiple classes: Annotation set, no spec field set, class configured
@@ -118,7 +118,7 @@ func TestMatchesIngress(t *testing.T) {
 	// Multiple classes: No annotation set, spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"something", "somethingelse"}))
 	// Multiple classes: Annotation set, spec field set, class configured
@@ -129,7 +129,7 @@ func TestMatchesIngress(t *testing.T) {
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"somethingelse", "something"}))
 	// Multiple classes: Annotation set, spec field set, class configured
@@ -140,7 +140,7 @@ func TestMatchesIngress(t *testing.T) {
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("something"),
+			IngressClassName: ptr.To("something"),
 		},
 	}, []string{"something", "somethingelse"}))
 }

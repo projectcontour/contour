@@ -35,7 +35,6 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -243,7 +242,7 @@ func (p *GatewayAPIProcessor) processRoute(
 					routeHostnames = route.Spec.Hostnames
 				}
 
-				hosts, errs = p.computeHosts(routeHostnames, string(ref.Val(listener.listener.Hostname, "")))
+				hosts, errs = p.computeHosts(routeHostnames, string(ptr.Deref(listener.listener.Hostname, "")))
 				for _, err := range errs {
 					// The Gateway API spec does not indicate what to do if syntactically
 					// invalid hostnames make it through, we're using our best judgment here.
@@ -411,7 +410,7 @@ func isAddressAssigned(specAddresses []gatewayapi_v1.GatewayAddress, statusAddre
 	for _, specAddress := range specAddresses {
 		for _, statusAddress := range statusAddresses {
 			// Types must match
-			if ref.Val(specAddress.Type, gatewayapi_v1.IPAddressType) != ref.Val(statusAddress.Type, gatewayapi_v1.IPAddressType) {
+			if ptr.Deref(specAddress.Type, gatewayapi_v1.IPAddressType) != ptr.Deref(statusAddress.Type, gatewayapi_v1.IPAddressType) {
 				continue
 			}
 
@@ -1623,7 +1622,7 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1alpha2.GRPCHeaderMa
 	for _, match := range matches {
 		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
 		var matchType string
-		switch ref.Val(match.Type, gatewayapi_v1.HeaderMatchExact) {
+		switch ptr.Deref(match.Type, gatewayapi_v1.HeaderMatchExact) {
 		case gatewayapi_v1.HeaderMatchExact:
 			matchType = HeaderMatchTypeExact
 		case gatewayapi_v1.HeaderMatchRegularExpression:
@@ -1769,19 +1768,19 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 	routeNamespace string,
 ) (*Service, *meta_v1.Condition) {
 	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
+		return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
 	}
 
 	if !(backendObjectRef.Kind != nil && *backendObjectRef.Kind == "Service") {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field)))
+		return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field)))
 	}
 
 	if backendObjectRef.Name == "" {
-		return nil, ref.To(resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Name must be specified", field)))
+		return nil, ptr.To(resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Name must be specified", field)))
 	}
 
 	if backendObjectRef.Port == nil {
-		return nil, ref.To(resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Port must be specified", field)))
+		return nil, ptr.To(resolvedRefsFalse(status.ReasonDegraded, fmt.Sprintf("%s.Port must be specified", field)))
 	}
 
 	// If the backend is in a different namespace than the route, then we need to
@@ -1800,7 +1799,7 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 				name:      string(backendObjectRef.Name),
 			},
 		) {
-			return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonRefNotPermitted, fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferenceGrant", field)))
+			return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonRefNotPermitted, fmt.Sprintf("%s.Namespace must match the route's namespace or be covered by a ReferenceGrant", field)))
 		}
 	}
 
@@ -1813,12 +1812,12 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 
 	service, err := p.dag.EnsureService(meta, int(*backendObjectRef.Port), int(*backendObjectRef.Port), p.source, p.EnableExternalNameService)
 	if err != nil {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
+		return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonBackendNotFound, fmt.Sprintf("service %q is invalid: %s", meta.Name, err)))
 	}
 
 	service = serviceCircuitBreakerPolicy(service, p.GlobalCircuitBreakerDefaults)
 	if err = validateAppProtocol(&service.Weighted.ServicePort); err != nil {
-		return nil, ref.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, err.Error()))
+		return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonUnsupportedProtocol, err.Error()))
 	}
 
 	return service, nil
@@ -1839,7 +1838,7 @@ func gatewayPathMatchCondition(match *gatewayapi_v1.HTTPPathMatch, routeAccessor
 		return &PrefixMatchCondition{Prefix: "/"}
 	}
 
-	path := ref.Val(match.Value, "/")
+	path := ptr.Deref(match.Value, "/")
 
 	// If path match type is not defined, default to 'PathPrefix'.
 	if match.Type == nil || *match.Type == gatewayapi_v1.PathMatchPathPrefix {
@@ -1897,7 +1896,7 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1.HTTPHeaderMatch) ([]He
 	for _, match := range matches {
 		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
 		var matchType string
-		switch ref.Val(match.Type, gatewayapi_v1.HeaderMatchExact) {
+		switch ptr.Deref(match.Type, gatewayapi_v1.HeaderMatchExact) {
 		case gatewayapi_v1.HeaderMatchExact:
 			matchType = HeaderMatchTypeExact
 		case gatewayapi_v1.HeaderMatchRegularExpression:
@@ -1933,7 +1932,7 @@ func gatewayQueryParamMatchConditions(matches []gatewayapi_v1.HTTPQueryParamMatc
 
 	for _, match := range matches {
 		var matchType string
-		switch ref.Val(match.Type, gatewayapi_v1.QueryParamMatchExact) {
+		switch ptr.Deref(match.Type, gatewayapi_v1.QueryParamMatchExact) {
 		case gatewayapi_v1.QueryParamMatchExact:
 			matchType = HeaderMatchTypeExact
 		case gatewayapi_v1.QueryParamMatchRegularExpression:

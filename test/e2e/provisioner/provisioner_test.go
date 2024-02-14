@@ -37,7 +37,6 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
@@ -81,7 +80,7 @@ var _ = BeforeSuite(func() {
 		gc.Spec.ParametersRef = &gatewayapi_v1.ParametersReference{
 			Group:     "projectcontour.io",
 			Kind:      "ContourDeployment",
-			Namespace: ref.To(gatewayapi_v1.Namespace(params.Namespace)),
+			Namespace: ptr.To(gatewayapi_v1.Namespace(params.Namespace)),
 			Name:      params.Name,
 		}
 	}
@@ -112,7 +111,7 @@ var _ = BeforeSuite(func() {
 			ParametersRef: &gatewayapi_v1.ParametersReference{
 				Group:     "projectcontour.io",
 				Kind:      "ContourDeployment",
-				Namespace: ref.To(gatewayapi_v1.Namespace(paramsEnvoyDeployment.Namespace)),
+				Namespace: ptr.To(gatewayapi_v1.Namespace(paramsEnvoyDeployment.Namespace)),
 				Name:      paramsEnvoyDeployment.Name,
 			},
 		},
@@ -176,7 +175,7 @@ var _ = Describe("Gateway provisioner", func() {
 					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
-						Namespace: ref.To(gatewayapi_v1.Namespace(namespace)),
+						Namespace: ptr.To(gatewayapi_v1.Namespace(namespace)),
 						Name:      "contour-params",
 					},
 				},
@@ -200,7 +199,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Port:     gatewayapi_v1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -270,7 +269,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Port:     gatewayapi_v1.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -340,21 +339,21 @@ var _ = Describe("Gateway provisioner", func() {
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							Hostname: ref.To(gatewayapi_v1.Hostname("http-1.provisioner.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("http-1.provisioner.projectcontour.io")),
 						},
 						{
 							Name:     "http-2",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     81,
-							Hostname: ref.To(gatewayapi_v1.Hostname("http-2.provisioner.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("http-2.provisioner.projectcontour.io")),
 						},
 						{
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							Hostname: ref.To(gatewayapi_v1.Hostname("https-1.provisioner.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("https-1.provisioner.projectcontour.io")),
 							TLS: &gatewayapi_v1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+								Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									{Name: "https-1-cert"},
 								},
@@ -364,9 +363,9 @@ var _ = Describe("Gateway provisioner", func() {
 							Name:     "https-2",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     444,
-							Hostname: ref.To(gatewayapi_v1.Hostname("https-2.provisioner.projectcontour.io")),
+							Hostname: ptr.To(gatewayapi_v1.Hostname("https-2.provisioner.projectcontour.io")),
 							TLS: &gatewayapi_v1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+								Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									{Name: "https-2-cert"},
 								},
@@ -474,14 +473,14 @@ var _ = Describe("Gateway provisioner", func() {
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							{
-								Namespace: ref.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+								Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
 								Name:      gatewayapi_v1.ObjectName(gateway.Name),
 							},
 						},
 					},
 					Rules: []gatewayapi_v1alpha2.TCPRouteRule{
 						{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ref.To(int32(1))),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ptr.To(int32(1))),
 						},
 					},
 				},
@@ -529,7 +528,7 @@ var _ = Describe("Gateway provisioner", func() {
 					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
-						Namespace: ref.To(gatewayapi_v1.Namespace(namespace)),
+						Namespace: ptr.To(gatewayapi_v1.Namespace(namespace)),
 						Name:      objectTestName,
 					},
 				},
@@ -588,7 +587,7 @@ var _ = Describe("Gateway provisioner", func() {
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
 									// TODO: set to from all for now
 									// The correct way would be label the testns-1, testns-2, testns-3, then select by label
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -697,7 +696,7 @@ var _ = Describe("Gateway provisioner", func() {
 					ParametersRef: &gatewayapi_v1.ParametersReference{
 						Group:     "projectcontour.io",
 						Kind:      "ContourDeployment",
-						Namespace: ref.To(gatewayapi_v1.Namespace(namespace)),
+						Namespace: ptr.To(gatewayapi_v1.Namespace(namespace)),
 						Name:      objectTestName,
 					},
 				},
@@ -756,7 +755,7 @@ var _ = Describe("Gateway provisioner", func() {
 							},
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 								Namespaces: &gatewayapi_v1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromSame),
+									From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 								},
 							},
 						},
@@ -781,14 +780,14 @@ var _ = Describe("Gateway provisioner", func() {
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 							{
-								Namespace: ref.To(gatewayapi_v1alpha2.Namespace(gateway.Namespace)),
+								Namespace: ptr.To(gatewayapi_v1alpha2.Namespace(gateway.Namespace)),
 								Name:      gatewayapi_v1alpha2.ObjectName(gateway.Name),
 							},
 						},
 					},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
 						{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("echo-secure", 443, ref.To(int32(1))),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("echo-secure", 443, ptr.To(int32(1))),
 						},
 					},
 				},

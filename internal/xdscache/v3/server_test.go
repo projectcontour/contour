@@ -37,11 +37,11 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -124,10 +124,10 @@ func TestGRPC(t *testing.T) {
 				},
 				Ports: []discovery_v1.EndpointPort{
 					{
-						Port: ref.To[int32](80),
+						Port: ptr.To[int32](80),
 					},
 					{
-						Port: ref.To[int32](80),
+						Port: ptr.To[int32](80),
 					},
 				},
 			}, false)

@@ -22,13 +22,13 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 var (
@@ -63,7 +63,7 @@ var (
 					Protocol: gatewayapi_v1.HTTPProtocolType,
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -72,14 +72,14 @@ var (
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
 					TLS: &gatewayapi_v1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},

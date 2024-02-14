@@ -31,11 +31,11 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 )
@@ -726,7 +726,7 @@ func TestCluster(t *testing.T) {
 		"cluster with per connection buffer limit bytes set": {
 			cluster: &dag.Cluster{
 				Upstream:                      service(s1),
-				PerConnectionBufferLimitBytes: ref.To(uint32(32768)),
+				PerConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -742,7 +742,7 @@ func TestCluster(t *testing.T) {
 		"cluster with max requests per connection set": {
 			cluster: &dag.Cluster{
 				Upstream:                 service(s1),
-				MaxRequestsPerConnection: ref.To(uint32(1)),
+				MaxRequestsPerConnection: ptr.To(uint32(1)),
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -771,7 +771,7 @@ func TestCluster(t *testing.T) {
 		"cluster with max requests per connection and idle timeout set": {
 			cluster: &dag.Cluster{
 				Upstream:                 service(s1),
-				MaxRequestsPerConnection: ref.To(uint32(1)),
+				MaxRequestsPerConnection: ptr.To(uint32(1)),
 				TimeoutPolicy: dag.ClusterTimeoutPolicy{
 					IdleConnectionTimeout: timeout.DurationSetting(time.Second * 60),
 				},

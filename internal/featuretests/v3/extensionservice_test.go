@@ -24,13 +24,13 @@ import (
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func extBasic(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
@@ -79,7 +79,7 @@ func extCleartext(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	rh.OnAdd(&contour_v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
 		Spec: contour_v1alpha1.ExtensionServiceSpec{
-			Protocol: ref.To("h2c"),
+			Protocol: ptr.To("h2c"),
 			Services: []contour_v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 				{Name: "svc2", Port: 8082},
@@ -317,7 +317,7 @@ func extInconsistentProto(_ *testing.T, rh ResourceEventHandlerWrapper, c *Conto
 			Services: []contour_v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 			},
-			Protocol: ref.To("h2c"),
+			Protocol: ptr.To("h2c"),
 			UpstreamValidation: &contour_v1.UpstreamValidation{
 				CACertificate: "cacert",
 				SubjectName:   "ext.projectcontour.io",
