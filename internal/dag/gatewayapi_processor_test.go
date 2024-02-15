@@ -1087,7 +1087,7 @@ func TestHasConflictRoute(t *testing.T) {
 					Name: "http-1",
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromSame),
+							From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 						},
 					},
 				},

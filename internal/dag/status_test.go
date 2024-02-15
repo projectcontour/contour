@@ -5570,19 +5570,19 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1.HTTPPathMatch{
-									Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-									Value: ref.To("/"),
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
 								},
 								Headers: []gatewayapi_v1.HTTPHeaderMatch{
 									{
-										Type:  ref.To(gatewayapi_v1.HeaderMatchExact), // <---- unknown type to break the test
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact), // <---- unknown type to break the test
 										Name:  gatewayapi_v1.HTTPHeaderName("foo"),
 										Value: "bar",
 									},
 								},
 								QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 									{
-										Type:  ref.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+										Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
 										Name:  "param-1",
 										Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
 									},
@@ -5590,12 +5590,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							},
 							{
 								Path: &gatewayapi_v1.HTTPPathMatch{
-									Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-									Value: ref.To("/"),
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
 								},
 								Headers: []gatewayapi_v1.HTTPHeaderMatch{
 									{
-										Type:  ref.To(gatewayapi_v1.HeaderMatchExact),
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
 										Name:  gatewayapi_v1.HTTPHeaderName("a"),
 										Value: "b",
 									},
@@ -5628,12 +5628,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1.HTTPPathMatch{
-									Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-									Value: ref.To("/"),
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
 								},
 								Headers: []gatewayapi_v1.HTTPHeaderMatch{
 									{
-										Type:  ref.To(gatewayapi_v1.HeaderMatchExact),
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
 										Name:  gatewayapi_v1.HTTPHeaderName("a"),
 										Value: "b",
 									},
@@ -5666,19 +5666,19 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1.HTTPPathMatch{
-									Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-									Value: ref.To("/"),
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
 								},
 								Headers: []gatewayapi_v1.HTTPHeaderMatch{
 									{
-										Type:  ref.To(gatewayapi_v1.HeaderMatchExact),
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
 										Name:  gatewayapi_v1.HTTPHeaderName("foo"),
 										Value: "bar",
 									},
 								},
 								QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 									{
-										Type:  ref.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+										Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
 										Name:  "param-1",
 										Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
 									},
