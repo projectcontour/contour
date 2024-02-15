@@ -1165,6 +1165,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 	listener *listenerInfo,
 	hosts sets.Set[string],
 ) {
+	routes := []*Route{}
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
@@ -1403,14 +1404,15 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 		// the same priority.
 		priority := uint8(ruleIndex)
 
-		// Get our list of routes based on whether it's a redirect or a cluster-backed route.
+		// Get our list of routes under current rule based on whether it's a redirect
+		// or a cluster-backed route.
 		// Note that we can end up with multiple routes here since the match conditions are
 		// logically "OR"-ed, which we express as multiple routes, each with one of the
 		// conditions, all with the same action.
-		var routes []*Route
+		var routesPerRule []*Route
 
 		if redirect != nil {
-			routes = p.redirectRoutes(
+			routesPerRule = p.redirectRoutes(
 				matchconditions,
 				requestHeaderPolicy,
 				responseHeaderPolicy,
@@ -1426,7 +1428,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 			if !ok {
 				continue
 			}
-			routes = p.clusterRoutes(
+			routesPerRule = p.clusterRoutes(
 				matchconditions,
 				clusters,
 				totalWeight,
@@ -1440,30 +1442,34 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				pathRewritePolicy,
 				timeoutPolicy)
 		}
-		if p.hasConflictRoute(listener, hosts, routes) {
-			routeAccessor.AddCondition(
-				gatewayapi_v1.RouteConditionAccepted,
-				meta_v1.ConditionFalse,
-				status.ReasonRouteConflict,
-				"HTTPRoute's Match has conflict with other HTTPRoute's Match ",
-			)
-		} else {
-			// Add each route to the relevant vhost(s)/svhosts(s).
-			for host := range hosts {
-				for _, route := range routes {
-					switch {
-					case listener.tlsSecret != nil:
-						svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
-						svhost.Secret = listener.tlsSecret
-						svhost.AddRoute(route)
-					default:
-						vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
-						vhost.AddRoute(route)
-					}
+
+		routes = append(routes, routesPerRule...)
+	}
+
+	// check all the routes at once in case there is conclict
+	if p.hasConflictRoute(listener, hosts, routes) {
+		// skip adding the route to svhost or vhost since it's marked as conflict route
+		routeAccessor.AddCondition(
+			gatewayapi_v1.RouteConditionAccepted,
+			meta_v1.ConditionFalse,
+			status.ReasonRouteConflict,
+			"HTTPRoute's Match has conflict with other HTTPRoute's Match",
+		)
+	} else {
+		// Add each route to the relevant vhost(s)/svhosts(s).
+		for host := range hosts {
+			for _, route := range routes {
+				switch {
+				case listener.tlsSecret != nil:
+					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+					svhost.Secret = listener.tlsSecret
+					svhost.AddRoute(route)
+				default:
+					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+					vhost.AddRoute(route)
 				}
 			}
 		}
-
 	}
 }
 
@@ -1474,12 +1480,12 @@ func (p *GatewayAPIProcessor) hasConflictRoute(listener *listenerInfo, hosts set
 			switch {
 			case listener.tlsSecret != nil:
 				svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
-				if svhost.HasConflictHTTPRoute(route) {
+				if svhost.HasConflictRoute(route) {
 					return true
 				}
 			default:
 				vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
-				if vhost.HasConflictHTTPRoute(route) {
+				if vhost.HasConflictRoute(route) {
 					return true
 				}
 			}
