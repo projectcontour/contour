@@ -278,7 +278,6 @@ func TestHasConflictHTTPRoute(t *testing.T) {
 			},
 			rs: []Route{
 				{
-					Kind:               KindHTTPRoute,
 					Name:               "a",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/path1"),
@@ -368,7 +367,7 @@ func TestHasConflictHTTPRoute(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			c.vHost.AddRoute(&c.rs[0])
 
-			assert.Equal(t, c.vHost.HasConflictHTTPRoute(&c.rs[1]), c.expectConflict)
+			assert.Equal(t, c.vHost.HasConflictRoute(&c.rs[1]), c.expectConflict)
 		})
 	}
 }

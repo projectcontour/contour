@@ -394,23 +394,6 @@ func (r *Route) HasPathRegex() bool {
 	return ok
 }
 
-const KindHTTPProxy = "HTTPProxy"
-
-// SameRoute returns whether the route is the same as passed in route
-func (r *Route) SameRoute(route *Route) bool {
-	if r == nil && route == nil {
-		return true
-	}
-	if r == nil || route == nil {
-		return false
-	}
-	return r.Name == route.Name && r.Namespace == route.Namespace
-}
-
-func (r *Route) IsHTTPRoute() bool {
-	return r.Kind == KindHTTPRoute
-}
-
 // RouteTimeoutPolicy defines the timeout policy for a route.
 type RouteTimeoutPolicy struct {
 	// ResponseTimeout is the timeout applied to the response
@@ -780,13 +763,10 @@ func (v *VirtualHost) AddRoute(route *Route) {
 	v.Routes[conditionsToString(route)] = route
 }
 
-// HasConflictRoute returns true HTTPRoute type and there is existing Path + Headers
+// HasConflictRoute returns true if there is existing Path + Headers
 // + QueryParams combination match this route candidate.
-func (v *VirtualHost) HasConflictHTTPRoute(route *Route) bool {
-	if !route.IsHTTPRoute() {
-		return false
-	}
-	if r, ok := v.Routes[conditionsToString(route)]; ok && !r.SameRoute(route) {
+func (v *VirtualHost) HasConflictRoute(route *Route) bool {
+	if _, ok := v.Routes[conditionsToString(route)]; ok {
 		return true
 	}
 	return false
