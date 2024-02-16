@@ -1011,69 +1011,193 @@ func TestSortRoutes(t *testing.T) {
 }
 
 func TestHasConflictRoute(t *testing.T) {
-	time1 := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
-	time2 := time.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
-	time3 := time.Date(2023, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+	host1 := "test.projectcontour.io"
+	host2 := "test1.projectcontour.io"
+	hosts := sets.New(
+		host1,
+		host2,
+	)
+	listener := &listenerInfo{
+		listener: gatewayapi_v1.Listener{
+			Name: "l1",
+			AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+				Namespaces: &gatewayapi_v1.RouteNamespaces{
+					From: ptr.To(gatewayapi_v1.NamespacesFromSame),
+				},
+			},
+		},
+		dagListenerName: "l1",
+		allowedKinds:    []gatewayapi_v1.Kind{KindHTTPRoute},
+		ready:           true,
+	}
+	tlsListener := &listenerInfo{
+		listener: gatewayapi_v1.Listener{
+			Name: "ltls",
+			AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+				Namespaces: &gatewayapi_v1.RouteNamespaces{
+					From: ptr.To(gatewayapi_v1.NamespacesFromSame),
+				},
+			},
+		},
+		allowedKinds:    []gatewayapi_v1.Kind{KindHTTPRoute},
+		ready:           true,
+		dagListenerName: "ltls",
+		tlsSecret:       &Secret{},
+	}
 	tests := []struct {
-		name     string
-		m        map[types.NamespacedName]*gatewayapi_v1.HTTPRoute
-		routes   []*Route
-		expected []*gatewayapi_v1.HTTPRoute
+		name             string
+		existingRoutes   []*Route
+		routes           []*Route
+		listener         *listenerInfo
+		expectedConflict bool
 	}{
 		{
-			name: "3 httproutes, with different timestamp, earlier one should be first ",
-			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
+			name: "There are 2 existing route, the 3rd route to add doesn't have conflict, listen doesn't have tls, no conflict expected",
+			existingRoutes: []*Route{
 				{
-					Namespace: "ns", Name: "name1",
-				}: {
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace:         "ns",
-						Name:              "name3",
-						CreationTimestamp: meta_v1.NewTime(time3),
+					Name:               "route1",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
 					},
 				},
 				{
-					Namespace: "ns", Name: "name2",
-				}: {
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace:         "ns",
-						Name:              "name2",
-						CreationTimestamp: meta_v1.NewTime(time2),
-					},
-				},
-				{
-					Namespace: "ns", Name: "name3",
-				}: {
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace:         "ns",
-						Name:              "name1",
-						CreationTimestamp: meta_v1.NewTime(time1),
+					Kind:               KindHTTPRoute,
+					Name:               "route2",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
 					},
 				},
 			},
-			expected: []*gatewayapi_v1.HTTPRoute{
+			routes: []*Route{
 				{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace:         "ns",
-						Name:              "name1",
-						CreationTimestamp: meta_v1.NewTime(time1),
-					},
-				},
-				{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace:         "ns",
-						Name:              "name2",
-						CreationTimestamp: meta_v1.NewTime(time2),
-					},
-				},
-				{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace:         "ns",
-						Name:              "name3",
-						CreationTimestamp: meta_v1.NewTime(time3),
+					Kind:               KindHTTPRoute,
+					Name:               "route3",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
 					},
 				},
 			},
+			listener: listener,
+		},
+		{
+			name: "There are 2 existing route, the 3rd route to add doesn't have conflict, listen has tls, no conflict expected",
+			existingRoutes: []*Route{
+				{
+					Name:               "route1",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "route2",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+					},
+				},
+			},
+			routes: []*Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "route3",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
+					},
+				},
+			},
+			listener: tlsListener,
+		},
+		{
+			name: "There are 2 existing route, the 3rd route to add is conflict with 2nd route, listen doesn't have tls, expect conflicts",
+			existingRoutes: []*Route{
+				{
+					Name:               "route1",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "route2",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			routes: []*Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "route3",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			listener:         listener,
+			expectedConflict: true,
+		},
+		{
+			name: "There are 1 existing route, the 2nd route to add is conflict with 1st route, listen has tls, expect conflicts",
+			existingRoutes: []*Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "route1",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			routes: []*Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "route2",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			listener:         tlsListener,
+			expectedConflict: true,
 		},
 	}
 
@@ -1081,26 +1205,44 @@ func TestHasConflictRoute(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
-			}
-			listener := &listenerInfo{
-				listener: gatewayapi_v1.Listener{
-					Name: "http-1",
-					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1.RouteNamespaces{
-							From: ptr.To(gatewayapi_v1.NamespacesFromSame),
+				dag: &DAG{
+					Listeners: map[string]*Listener{
+						tlsListener.dagListenerName: {
+							svhostsByName: map[string]*SecureVirtualHost{
+								host1: {
+									VirtualHost: VirtualHost{
+										Name:   host1,
+										Routes: make(map[string]*Route),
+									},
+								},
+							},
+						},
+						listener.dagListenerName: {
+							vhostsByName: map[string]*VirtualHost{
+								host2: {
+									Routes: make(map[string]*Route),
+								},
+							},
 						},
 					},
 				},
-				allowedKinds: []gatewayapi_v1.Kind{"HTTPRoute"},
-				ready:        true,
 			}
-			hosts := sets.New(
-				"test.projectcontour.io",
-				"test1.projectcontour.io",
-			)
+			for host := range hosts {
+				for _, route := range tc.existingRoutes {
+					switch {
+					case tc.listener.tlsSecret != nil:
+						svhost := processor.dag.EnsureSecureVirtualHost(tc.listener.dagListenerName, host)
+						svhost.Secret = listener.tlsSecret
+						svhost.AddRoute(route)
+					default:
+						vhost := processor.dag.EnsureVirtualHost(tc.listener.dagListenerName, host)
+						vhost.AddRoute(route)
+					}
+				}
+			}
 
-			res := processor.hasConflictRoute(listener, hosts, tc.routes)
-			assert.Equal(t, tc.expected, res)
+			res := processor.hasConflictRoute(tc.listener, hosts, tc.routes)
+			assert.Equal(t, tc.expectedConflict, res)
 		})
 	}
 }
