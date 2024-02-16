@@ -1446,7 +1446,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 		routes = append(routes, routesPerRule...)
 	}
 
-	// check all the routes at once in case there is conclict
+	// check all the routes at once in case there is conflict
 	if p.hasConflictRoute(listener, hosts, routes) {
 		// skip adding the route to svhost or vhost since it's marked as conflict route
 		routeAccessor.AddCondition(
@@ -2460,10 +2460,8 @@ func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewaya
 	sort.SliceStable(routes, func(i, j int) bool {
 		// if the creation time is the same, compare the route name
 		if routes[i].CreationTimestamp.Equal(&routes[j].CreationTimestamp) {
-			if routes[i].Name == routes[j].Name {
-				return routes[i].Namespace < routes[j].Namespace
-			}
-			return routes[i].Name < routes[j].Name
+			return fmt.Sprintf("%s/%s", routes[i].Namespace, routes[i].Name) <
+				fmt.Sprintf("%s/%s", routes[j].Namespace, routes[j].Name)
 		}
 		return routes[i].CreationTimestamp.Before(&routes[j].CreationTimestamp)
 	})

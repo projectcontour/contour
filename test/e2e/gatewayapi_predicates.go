@@ -19,6 +19,8 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	"github.com/projectcontour/contour/internal/status"
 )
 
 // GatewayClassAccepted returns true if the gateway has a .status.conditions
@@ -119,6 +121,23 @@ func HTTPRouteAccepted(route *gatewayapi_v1.HTTPRoute) bool {
 	return false
 }
 
+// HTTPRouteNotAcceptedDueToConflict returns true if the route has a .status.conditions
+// entry of "Accepted: false" && "Reason: RouteConflict" && "Message: HTTPRoute's Match has
+// conflict with other HTTPRoute's Match"
+func HTTPRouteNotAcceptedDueToConflict(route *gatewayapi_v1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteConflict), "HTTPRoute's Match has conflict with other HTTPRoute's Match") {
+			return false
+		}
+	}
+
+	return false
+}
+
 // HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
 func HTTPRouteIgnoredByContour(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
@@ -188,6 +207,16 @@ func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
 func conditionExists(conditions []meta_v1.Condition, conditionType string, conditionStatus meta_v1.ConditionStatus) bool {
 	for _, cond := range conditions {
 		if cond.Type == conditionType && cond.Status == conditionStatus {
+			return true
+		}
+	}
+
+	return false
+}
+
+func conditionExistsWithAllKeys(conditions []meta_v1.Condition, conditionType string, conditionStatus meta_v1.ConditionStatus, reason, message string) bool {
+	for _, cond := range conditions {
+		if cond.Type == conditionType && cond.Status == conditionStatus && cond.Reason == reason && cond.Message == message {
 			return true
 		}
 	}

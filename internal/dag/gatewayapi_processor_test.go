@@ -836,7 +836,7 @@ func TestSortRoutes(t *testing.T) {
 			},
 		},
 		{
-			name: "3 httproutes with same creation timestamp, smaller name comes first ",
+			name: "3 httproutes with same creation timestamps, same namespaces, smaller name comes first",
 			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
 				{
 					Namespace: "ns", Name: "name3",
@@ -884,6 +884,61 @@ func TestSortRoutes(t *testing.T) {
 				{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace:         "ns",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+		},
+		{
+			name: "3 httproutes with same creation timestamp, smaller namespaces comes first",
+			m: map[types.NamespacedName]*gatewayapi_v1.HTTPRoute{
+				{
+					Namespace: "ns3", Name: "name1",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns3",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns2", Name: "name2",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns2",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					Namespace: "ns1", Name: "name3",
+				}: {
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+			},
+			expected: []*gatewayapi_v1.HTTPRoute{
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns1",
+						Name:              "name3",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns2",
+						Name:              "name2",
+						CreationTimestamp: meta_v1.NewTime(time1),
+					},
+				},
+				{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace:         "ns3",
 						Name:              "name3",
 						CreationTimestamp: meta_v1.NewTime(time1),
 					},

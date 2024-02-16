@@ -5511,6 +5511,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1.HTTPRouteRule{{
+						// changed to different matches in case there is conflict with above HTTPRoute
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchExact, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
@@ -5575,7 +5576,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								},
 								Headers: []gatewayapi_v1.HTTPHeaderMatch{
 									{
-										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact), // <---- unknown type to break the test
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
 										Name:  gatewayapi_v1.HTTPHeaderName("foo"),
 										Value: "bar",
 									},
