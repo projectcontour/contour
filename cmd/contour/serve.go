@@ -25,6 +25,7 @@ import (
 	"github.com/alecthomas/kingpin/v2"
 	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	core_v1 "k8s.io/api/core/v1"
@@ -749,6 +750,16 @@ func (s *Server) doServe() error {
 	if err := s.mgr.Add(notifier); err != nil {
 		return err
 	}
+
+	// Start a process to monitor the path of mounted configMap `/config`
+	// so that it can restart contour if the configMap gets updated.
+	watch, err := initializeWatch(defaultConfigPath, s.log.WithField("context", "fsnotify-watcher"))
+	if err != nil {
+		s.log.WithField("context", "fsnotify-watcher").Fatalf("fail to initialize watch on configMap path '/config': %v\n", err)
+	}
+	defer func(watch *fsnotify.Watcher) {
+		_ = watch.Close() // ignore explicitly when the watch closes
+	}(watch)
 
 	// GO!
 	return s.mgr.Start(signals.SetupSignalHandler())
