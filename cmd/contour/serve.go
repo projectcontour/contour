@@ -753,13 +753,18 @@ func (s *Server) doServe() error {
 
 	// Start a process to monitor the path of mounted configMap `/config`
 	// so that it can restart contour if the configMap gets updated.
-	watch, err := initializeWatch(defaultConfigPath, s.log.WithField("context", "fsnotify-watcher"))
-	if err != nil {
-		s.log.WithField("context", "fsnotify-watcher").Fatalf("fail to initialize watch on configMap path '/config': %v\n", err)
+	if _, err := os.Stat(defaultConfigPath); !os.IsNotExist(err) {
+		s.log.WithField("context", "fsnotify-watcher").Infof("starting fsnotify-watcher to monitor path %s", defaultConfigPath)
+		watch, err := initializeWatch(defaultConfigPath, s.log.WithField("context", "fsnotify-watcher"))
+		if err != nil {
+			s.log.WithField("context", "fsnotify-watcher").Fatalf("fail to initialize watch on configMap path '/config': %v\n", err)
+		}
+		defer func(watch *fsnotify.Watcher) {
+			_ = watch.Close() // ignore explicitly when the watch closes
+		}(watch)
+	} else if err != nil {
+		return err
 	}
-	defer func(watch *fsnotify.Watcher) {
-		_ = watch.Close() // ignore explicitly when the watch closes
-	}(watch)
 
 	// GO!
 	return s.mgr.Start(signals.SetupSignalHandler())
