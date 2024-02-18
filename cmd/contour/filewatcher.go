@@ -35,7 +35,7 @@ func initializeWatch(path string, log logrus.FieldLogger) (*fsnotify.Watcher, er
 				log.Warningf("watcher receives err: %v\n", err)
 			case event := <-watch.Events:
 				if event.Op != fsnotify.Chmod {
-					log.Fatalf("restarting contour because received event %v on file %s\n", event.Op, path)
+					log.Fatalf("restarting contour because received event %v on file %s\n", event.Op.String(), path)
 				} else {
 					log.Printf("watcher receives %s on the mounted file %s\n", event.Op.String(), event.Name)
 				}

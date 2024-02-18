@@ -15,6 +15,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -753,7 +754,7 @@ func (s *Server) doServe() error {
 
 	// Start a process to monitor the path of mounted configMap `/config`
 	// so that it can restart contour if the configMap gets updated.
-	if _, err := os.Stat(defaultConfigPath); !os.IsNotExist(err) {
+	if _, err := os.Stat(defaultConfigPath); err == nil {
 		s.log.WithField("context", "fsnotify-watcher").Infof("starting fsnotify-watcher to monitor path %s", defaultConfigPath)
 		watch, err := initializeWatch(defaultConfigPath, s.log.WithField("context", "fsnotify-watcher"))
 		if err != nil {
@@ -762,7 +763,9 @@ func (s *Server) doServe() error {
 		defer func(watch *fsnotify.Watcher) {
 			_ = watch.Close() // ignore explicitly when the watch closes
 		}(watch)
-	} else if err != nil {
+	} else if !errors.Is(err, os.ErrNotExist) {
+		// other kind of error other than file doesn't exist
+		s.log.WithField("context", "fsnotify-watcher").Infof("failed to check whether %s exist", defaultConfigPath)
 		return err
 	}
 
