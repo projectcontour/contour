@@ -455,6 +455,8 @@ func TestBackendTLSPolicyPrecedenceOverUpstreamProtocolAnnotationWithHTTPRoute(t
 	})
 }
 
+// Test that a unique cluster name is generated when there is an HTTPProxy with upstream TLS settings
+// and an HTTPRoute with a BackendTLSPolicy, configured with unique TLS settings, targeting the same service.
 func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		for _, processor := range b.Processors {
@@ -477,10 +479,8 @@ func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
 	caSecret := featuretests.CASecret(t, "backendcacert", &featuretests.CACertificate)
 	rh.OnAdd(caSecret)
 
-	sec1 := featuretests.TLSSecret(t, "sec1", &featuretests.ClientCertificate)
-	sec2 := featuretests.CASecret(t, "sec2", &featuretests.CACertificate)
+	sec1 := featuretests.CASecret(t, "sec1", &featuretests.CACertificate)
 	rh.OnAdd(sec1)
-	rh.OnAdd(sec2)
 
 	svc := fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
@@ -574,7 +574,7 @@ func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
 			TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
 				CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
 					Kind: "Secret",
-					Name: gatewayapi_v1.ObjectName(sec2.Name),
+					Name: gatewayapi_v1.ObjectName(sec1.Name),
 				}},
 				Hostname: "subjname",
 			},
@@ -584,8 +584,8 @@ func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
 	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(
-				cluster("default/backend/443/867941ed65", "default/backend/http", "default_backend_443"),
-				sec2,
+				cluster("default/backend/443/242c9163af", "default/backend/http", "default_backend_443"),
+				sec1,
 				"subjname",
 				"",
 				nil,
