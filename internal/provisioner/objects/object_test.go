@@ -18,35 +18,35 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/provisioner"
-	"github.com/projectcontour/contour/internal/provisioner/model"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	pkgclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/projectcontour/contour/internal/provisioner"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
 func TestEnsureObject_ErrorGettingObject(t *testing.T) {
 	// An empty scheme is used to trigger an error getting the object.
 	client := fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build()
 
-	want := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	want := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 		},
 	}
 
-	require.ErrorContains(t, EnsureObject(context.Background(), client, want, nil, &corev1.Service{}), "failed to get resource obj-ns/obj-name")
+	require.ErrorContains(t, EnsureObject(context.Background(), client, want, nil, &core_v1.Service{}), "failed to get resource obj-ns/obj-name")
 }
 
 func TestEnsureObject_NonExistentObjectIsCreated(t *testing.T) {
@@ -55,20 +55,20 @@ func TestEnsureObject_NonExistentObjectIsCreated(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	want := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	want := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 		},
 	}
 
-	require.NoError(t, EnsureObject(context.Background(), client, want, nil, &corev1.Service{}))
+	require.NoError(t, EnsureObject(context.Background(), client, want, nil, &core_v1.Service{}))
 
-	got := &corev1.Service{}
+	got := &core_v1.Service{}
 	require.NoError(t, client.Get(context.Background(), pkgclient.ObjectKeyFromObject(want), got))
 
 	assert.Equal(t, want, got)
@@ -78,12 +78,12 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 	scheme, err := provisioner.CreateScheme()
 	require.NoError(t, err)
 
-	existing := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	existing := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:       "obj-ns",
 			Name:            "obj-name",
 			ResourceVersion: "1",
@@ -92,12 +92,12 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-	desired := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	desired := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 			Annotations: map[string]string{
@@ -106,7 +106,7 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 		},
 	}
 
-	updater := func(ctx context.Context, client pkgclient.Client, current, desired *corev1.Service) error {
+	updater := func(ctx context.Context, client pkgclient.Client, current, desired *core_v1.Service) error {
 		// Set another annotation on "desired" so we can validate that
 		// updater is actually being called.
 		desired = desired.DeepCopy()
@@ -114,13 +114,13 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 		return client.Update(ctx, desired)
 	}
 
-	require.NoError(t, EnsureObject(context.Background(), client, desired, updater, &corev1.Service{}))
+	require.NoError(t, EnsureObject(context.Background(), client, desired, updater, &core_v1.Service{}))
 
 	want := desired.DeepCopy()
 	want.ResourceVersion = "2"
 	want.Annotations["called-updater"] = "true"
 
-	got := &corev1.Service{}
+	got := &core_v1.Service{}
 	require.NoError(t, client.Get(context.Background(), pkgclient.ObjectKeyFromObject(want), got))
 
 	assert.Equal(t, want, got)
@@ -130,12 +130,12 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 	scheme, err := provisioner.CreateScheme()
 	require.NoError(t, err)
 
-	existing := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	existing := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 		},
@@ -143,12 +143,12 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
-	desired := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	desired := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 			Annotations: map[string]string{
@@ -157,11 +157,11 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 		},
 	}
 
-	updater := func(ctx context.Context, client pkgclient.Client, current, desired *corev1.Service) error {
+	updater := func(ctx context.Context, client pkgclient.Client, current, desired *core_v1.Service) error {
 		return errors.New("update error")
 	}
 
-	require.ErrorContains(t, EnsureObject(context.Background(), client, desired, updater, &corev1.Service{}), "update error")
+	require.ErrorContains(t, EnsureObject(context.Background(), client, desired, updater, &core_v1.Service{}), "update error")
 }
 
 func TestEnsureObjectDeleted_ObjectNotFound(t *testing.T) {
@@ -170,12 +170,12 @@ func TestEnsureObjectDeleted_ObjectNotFound(t *testing.T) {
 
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-	svc := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	svc := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 		},
@@ -188,12 +188,12 @@ func TestEnsureObjectDeleted_ErrorGettingObject(t *testing.T) {
 	// An empty scheme is used to trigger an error getting the object.
 	client := fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build()
 
-	svc := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	svc := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 		},
@@ -206,12 +206,12 @@ func TestEnsureObjectDeleted_ObjectExistsWithoutLabels(t *testing.T) {
 	scheme, err := provisioner.CreateScheme()
 	require.NoError(t, err)
 
-	existing := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	existing := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 		},
@@ -222,7 +222,7 @@ func TestEnsureObjectDeleted_ObjectExistsWithoutLabels(t *testing.T) {
 	require.NoError(t, EnsureObjectDeleted(context.Background(), client, existing, model.Default("projectcontour", "contour")))
 
 	// Ensure service still exists.
-	res := &corev1.Service{}
+	res := &core_v1.Service{}
 	require.NoError(t, client.Get(context.Background(), pkgclient.ObjectKeyFromObject(existing), res))
 }
 
@@ -230,12 +230,12 @@ func TestEnsureObjectDeleted_ObjectExistsWithNonMatchingLabels(t *testing.T) {
 	scheme, err := provisioner.CreateScheme()
 	require.NoError(t, err)
 
-	existing := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	existing := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 			Labels: map[string]string{
@@ -249,7 +249,7 @@ func TestEnsureObjectDeleted_ObjectExistsWithNonMatchingLabels(t *testing.T) {
 	require.NoError(t, EnsureObjectDeleted(context.Background(), client, existing, model.Default("projectcontour", "contour")))
 
 	// Ensure service still exists.
-	res := &corev1.Service{}
+	res := &core_v1.Service{}
 	require.NoError(t, client.Get(context.Background(), pkgclient.ObjectKeyFromObject(existing), res))
 }
 
@@ -257,12 +257,12 @@ func TestEnsureObjectDeleted_ObjectExistsWithMatchingLabels(t *testing.T) {
 	scheme, err := provisioner.CreateScheme()
 	require.NoError(t, err)
 
-	existing := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
+	existing := &core_v1.Service{
+		TypeMeta: meta_v1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
 			Labels: map[string]string{
@@ -276,6 +276,6 @@ func TestEnsureObjectDeleted_ObjectExistsWithMatchingLabels(t *testing.T) {
 	require.NoError(t, EnsureObjectDeleted(context.Background(), client, existing, model.Default("projectcontour", "contour")))
 
 	// Ensure service no longer exists.
-	res := &corev1.Service{}
+	res := &core_v1.Service{}
 	require.True(t, apierrors.IsNotFound(client.Get(context.Background(), pkgclient.ObjectKeyFromObject(existing), res)))
 }

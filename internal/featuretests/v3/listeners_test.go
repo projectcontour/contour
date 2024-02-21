@@ -16,29 +16,29 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
@@ -48,8 +48,8 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 	return []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(
 			conf,
-			contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
-			contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
+			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
+			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			port,
 		),
 		&xdscache_v3.SecretCache{},
@@ -65,7 +65,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// assert that without any ingress objects registered
 	// there are no active listeners
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			statsListener(),
@@ -75,7 +75,7 @@ func TestNonTLSListener(t *testing.T) {
 	})
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
 	// i1 is a simple ingress, no hostname, no tls.
@@ -88,7 +88,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			statsListener(),
@@ -108,7 +108,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// update i1 to i2 and verify that ingress_http has gone.
 	rh.OnUpdate(i1, i2)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -127,7 +127,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// update i2 to i3 and check that ingress_http has returned
 	rh.OnUpdate(i2, i3)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			statsListener(),
@@ -140,7 +140,7 @@ func TestAdminPortListener(t *testing.T) {
 	_, c, done := setup(t, customAdminPort(t, 9001))
 	defer done()
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoyAdminListener(9001),
 			statsListener(),
@@ -153,18 +153,10 @@ func TestTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
@@ -193,7 +185,7 @@ func TestTLSListener(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -202,16 +194,16 @@ func TestTLSListener(t *testing.T) {
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(i1)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
-				FilterChains: []*envoy_listener_v3.FilterChain{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls("kuard.example.com", s1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
@@ -248,15 +240,15 @@ func TestTLSListener(t *testing.T) {
 
 	// update i1 to i2 and verify that ingress_http has gone.
 	rh.OnUpdate(i1, i2)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
-				FilterChains: []*envoy_listener_v3.FilterChain{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls("kuard.example.com", s1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
@@ -270,7 +262,7 @@ func TestTLSListener(t *testing.T) {
 
 	// delete secret and assert that ingress_https is removed
 	rh.OnDelete(s1)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -282,39 +274,31 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// p1 is a tls httpproxy
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -323,25 +307,25 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	}
 
 	// p2 is a tls httpproxy
-	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p2 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.3",
 					MaximumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -353,20 +337,20 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh.OnAdd(secret1)
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
 
-	l1 := &envoy_listener_v3.Listener{
+	l1 := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", secret1,
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
@@ -380,7 +364,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(p1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l1,
@@ -392,7 +376,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	// delete secret and assert both listeners are removed because the
 	// httpproxy is no longer valid.
 	rh.OnDelete(secret1)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -402,19 +386,19 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh.OnDelete(p1)
 	// add secret
 	rh.OnAdd(secret1)
-	l2 := &envoy_listener_v3.Listener{
+	l2 := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
-					envoy_tls_v3.TlsParameters_TLSv1_3,
-					envoy_tls_v3.TlsParameters_TLSv1_3,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -426,7 +410,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	rh.OnAdd(p2)
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l2,
@@ -442,39 +426,31 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	})
 	defer done()
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// p1 is a tls httpproxy
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.2",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -485,19 +461,19 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	// add secret
 	rh.OnAdd(secret1)
 
-	l1 := &envoy_listener_v3.Listener{
+	l1 := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
-					envoy_tls_v3.TlsParameters_TLSv1_2,
-					envoy_tls_v3.TlsParameters_TLSv1_2,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 					[]string{"ECDHE-ECDSA-AES256-GCM-SHA384"},
 					nil,
 					"h2", "http/1.1"),
@@ -512,7 +488,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 
 	rh.OnAdd(p1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l1,
@@ -526,22 +502,14 @@ func TestLDSFilter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -570,15 +538,15 @@ func TestLDSFilter(t *testing.T) {
 
 	// add ingress and fetch ingress_https
 	rh.OnAdd(i1)
-	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
-				FilterChains: []*envoy_listener_v3.FilterChain{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls("kuard.example.com", s1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
@@ -590,7 +558,7 @@ func TestLDSFilter(t *testing.T) {
 	})
 
 	// fetch ingress_http
-	c.Request(listenerType, "ingress_http").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "ingress_http").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 		),
@@ -598,7 +566,7 @@ func TestLDSFilter(t *testing.T) {
 	})
 
 	// fetch something non existent.
-	c.Request(listenerType, "HTTP").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "HTTP").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 	})
 }
@@ -608,7 +576,7 @@ func TestLDSStreamEmpty(t *testing.T) {
 	defer done()
 
 	// assert that streaming LDS with no ingresses does not stall.
-	c.Request(listenerType, "ingress_http").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "ingress_http").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		TypeUrl:     listenerType,
 		Nonce:       "0",
@@ -623,7 +591,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 
 	// assert that without any ingress objects registered
 	// there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			statsListener(),
@@ -633,11 +601,11 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	})
 
 	s1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -655,7 +623,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	httpListener := defaultHTTPListener()
 	httpListener.ListenerFilters = envoy_v3.ListenerFilters(envoy_v3.ProxyProtocol())
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			httpListener,
@@ -672,22 +640,14 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	})
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -713,7 +673,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
 		),
@@ -729,21 +689,21 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	httpListener := defaultHTTPListener()
 	httpListener.ListenerFilters = envoy_v3.ListenerFilters(envoy_v3.ProxyProtocol())
 
-	httpsListener := &envoy_listener_v3.Listener{
+	httpsListener := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.ProxyProtocol(),
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			httpListener,
 			httpsListener,
@@ -767,22 +727,14 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	})
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -808,7 +760,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			statsListener(),
@@ -826,20 +778,20 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	httpListener := defaultHTTPListener()
 	httpListener.Address = envoy_v3.SocketAddress("127.0.0.100", 9100)
 
-	httpsListener := &envoy_listener_v3.Listener{
+	httpsListener := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("127.0.0.200", 9200),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			httpListener,
 			httpsListener,
@@ -856,23 +808,15 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	})
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -898,7 +842,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			statsListener(),
@@ -911,29 +855,29 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(
-		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
+		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 	)
 
-	httpsListener := &envoy_listener_v3.Listener{
+	httpsListener := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
 				envoy_v3.HTTPConnectionManagerBuilder().
 					AddFilter(envoy_v3.FilterMisdirectedRequests("kuard.example.com")).
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
 					MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/https_access.log", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/https_access.log", "", nil, contour_v1alpha1.LogLevelInfo)).
 					Get(),
 				nil, "h2", "http/1.1"),
 		},
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			httpListener,
@@ -950,7 +894,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	defer done()
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
 			statsListener(),
@@ -959,34 +903,26 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Nonce:   "0",
 	})
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	// p1 is a httpproxy that has TLS
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: "secret",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -995,7 +931,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	}
 
 	svc1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 8080})
 
 	// add secret
 	rh.OnAdd(s1)
@@ -1006,20 +942,20 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	// add httpproxy
 	rh.OnAdd(p1)
 
-	ingressHTTPS := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("example.com", s1,
 				httpsFilterFor("example.com"),
 				nil, "h2", "http/1.1"),
 		},
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
 			defaultHTTPListener(),
@@ -1039,37 +975,29 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 
 	defer done()
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a tls httpproxy
-	p1 := &contour_api_v1.HTTPProxy{
+	p1 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1078,19 +1006,19 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	l1 := &envoy_listener_v3.Listener{
+	l1 := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
-					envoy_tls_v3.TlsParameters_TLSv1_2,
-					envoy_tls_v3.TlsParameters_TLSv1_3,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -1101,7 +1029,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	}
 
 	// verify that p1's TLS 1.1 minimum has been upgraded to 1.2
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l1,
@@ -1111,23 +1039,23 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	})
 
 	// p2 is a tls httpproxy
-	p2 := &contour_api_v1.HTTPProxy{
+	p2 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
 					MaximumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1136,19 +1064,19 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	}
 	rh.OnUpdate(p1, p2)
 
-	l2 := &envoy_listener_v3.Listener{
+	l2 := &envoy_config_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.TLSInspector(),
 		),
-		FilterChains: []*envoy_listener_v3.FilterChain{
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
-					envoy_tls_v3.TlsParameters_TLSv1_3,
-					envoy_tls_v3.TlsParameters_TLSv1_3,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -1159,7 +1087,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	}
 
 	// verify that p2's TLS 1.3 minimum has NOT been downgraded to 1.2
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l2,
@@ -1174,22 +1102,22 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("marketing/green").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
-	child := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	child := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "marketing",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "green",
 					Port: 80,
 				}},
@@ -1198,17 +1126,17 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(child)
 
-	root := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	root := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
-			Includes: []contour_api_v1.Include{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Includes: []contour_v1.Include{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 				Name:      child.Name,
@@ -1220,7 +1148,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 
 	// verify that port 80 is present because while it is not possible to
 	// delegate to it, child can host a vhost which opens port 80.
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
 			statsListener(),
@@ -1237,23 +1165,23 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a httpproxy
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1268,13 +1196,13 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		RequestTimeout(timeout.DurationSetting(0)).
 		NumTrustedHops(1).
 		DefaultFilters().
 		Get())
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			httpListener,
 			statsListener(),
@@ -1285,29 +1213,29 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 
 func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
-		conf.ServerHeaderTransformation = contour_api_v1alpha1.AppendIfAbsentServerHeader
+		conf.ServerHeaderTransformation = contour_v1alpha1.AppendIfAbsentServerHeader
 	})
 
 	defer done()
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a httpproxy
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1322,13 +1250,13 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		RequestTimeout(timeout.DurationSetting(0)).
-		ServerHeaderTransformation(contour_api_v1alpha1.AppendIfAbsentServerHeader).
+		ServerHeaderTransformation(contour_v1alpha1.AppendIfAbsentServerHeader).
 		DefaultFilters().
 		Get())
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			httpListener,
 			statsListener(),
@@ -1349,35 +1277,28 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
-	tlssecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tlscert",
-			Namespace: "projectcontour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	tlssecret := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(tlssecret)
 
 	rh.OnAdd(gc)
 
-	rh.OnAdd(&gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	rh.OnAdd(&gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(gc.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(gc.Name),
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "http",
 					Port:     80,
 					Protocol: gatewayapi_v1.HTTPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -1385,15 +1306,15 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
+						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
+						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -1401,12 +1322,12 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "tls",
 					Port:     8443,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
+						Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -1414,9 +1335,9 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "tcp",
 					Port:     27017,
 					Protocol: gatewayapi_v1.TCPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -1424,22 +1345,22 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 0),
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https", 0),
 				},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
 			}},
@@ -1464,8 +1385,8 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	rh.OnAdd(&gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "tcp", 0),
 				},
 			},
@@ -1476,10 +1397,10 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	})
 
 	// Address should come from listener HTTP address.
-	c.Request(listenerType, "http-80").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "http-80").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:          "http-80",
 				Address:       envoy_v3.SocketAddress("127.0.0.100", 8080),
 				FilterChains:  envoy_v3.FilterChains(httpFilterForGateway()),
@@ -1489,10 +1410,10 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	})
 
 	// Address should come from listener HTTPS address.
-	c.Request(listenerType, "https-443").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "https-443").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("127.0.0.200", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
@@ -1509,17 +1430,17 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	})
 
 	// Address should come from listener HTTPS address.
-	c.Request(listenerType, "https-8443").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "https-8443").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "https-8443",
 				Address: envoy_v3.SocketAddress("127.0.0.200", 16443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
-					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_config_listener_v3.FilterChainMatch{
 						ServerNames: []string{"tcp.projectcontour.io"},
 					},
 					Filters: envoy_v3.Filters(
@@ -1532,12 +1453,12 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	})
 
 	// Address should come from listener HTTP address.
-	c.Request(listenerType, "tcp-27017").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "tcp-27017").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-27017",
 				Address: envoy_v3.SocketAddress("127.0.0.100", 35017),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-27017", "default/svc1/80/da39a3ee5e"),
 					),
@@ -1552,7 +1473,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 func TestSocketOptions(t *testing.T) {
 	// Configure non-default socket options for HTTP and HTTPS listeners.
 	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
-		conf.SocketOptions = &contour_api_v1alpha1.SocketOptions{
+		conf.SocketOptions = &contour_v1alpha1.SocketOptions{
 			TOS:          32,
 			TrafficClass: 64,
 		}
@@ -1560,35 +1481,27 @@ func TestSocketOptions(t *testing.T) {
 	defer done()
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
-	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
 	// p1 is a tls httpproxy
-	p1 := &contour_api_v1.HTTPProxy{
+	p1 := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: "secret",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1600,43 +1513,43 @@ func TestSocketOptions(t *testing.T) {
 	socketOpts := envoy_v3.NewSocketOptions().TCPKeepalive().Build()
 
 	// Verify that the given socket options are set on the HTTP and HTTPS listeners.
-	socketOpts = append(socketOpts, &envoy_core_v3.SocketOption{
+	socketOpts = append(socketOpts, &envoy_config_core_v3.SocketOption{
 		Description: "Set IPv4 TOS field",
 		Level:       envoy.IPPROTO_IP,
 		Name:        envoy.IP_TOS,
-		State:       envoy_core_v3.SocketOption_STATE_LISTENING,
-		Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: int64(32)},
-	}, &envoy_core_v3.SocketOption{
+		State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
+		Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: int64(32)},
+	}, &envoy_config_core_v3.SocketOption{
 		Description: "Set IPv6 Traffic Class field",
 		Level:       envoy.IPPROTO_IPV6,
 		Name:        envoy.IPV6_TCLASS,
-		State:       envoy_core_v3.SocketOption_STATE_LISTENING,
-		Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: int64(64)},
+		State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
+		Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: int64(64)},
 	})
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 				),
 				SocketOptions: socketOpts,
 			},
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
 				),
-				FilterChains: []*envoy_listener_v3.FilterChain{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					envoy_v3.FilterChainTLS(
 						"kuard.example.com",
 						envoy_v3.DownstreamTLSContext(
 							&dag.Secret{Object: secret1},
-							envoy_tls_v3.TlsParameters_TLSv1_2,
-							envoy_tls_v3.TlsParameters_TLSv1_3,
+							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 							nil,
 							nil,
 							"h2", "http/1.1"),

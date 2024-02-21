@@ -31,24 +31,25 @@ import (
 	"time"
 
 	"github.com/onsi/gomega/gexec"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/pkg/config"
 	"gopkg.in/yaml.v3"
 	apps_v1 "k8s.io/api/apps/v1"
 	batch_v1 "k8s.io/api/batch/v1"
-	coordinationv1 "k8s.io/api/coordination/v1"
-	v1 "k8s.io/api/core/v1"
+	coordination_v1 "k8s.io/api/coordination/v1"
+	core_v1 "k8s.io/api/core/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 // EnvoyDeploymentMode determines how Envoy is deployed (daemonset or deployment)
@@ -81,11 +82,11 @@ type Deployment struct {
 	// EnvoyDeploymentMode determines how Envoy is deployed (daemonset or deployment)
 	EnvoyDeploymentMode
 
-	Namespace                 *v1.Namespace
-	ContourServiceAccount     *v1.ServiceAccount
-	EnvoyServiceAccount       *v1.ServiceAccount
-	ContourConfigMap          *v1.ConfigMap
-	CertgenServiceAccount     *v1.ServiceAccount
+	Namespace                 *core_v1.Namespace
+	ContourServiceAccount     *core_v1.ServiceAccount
+	EnvoyServiceAccount       *core_v1.ServiceAccount
+	ContourConfigMap          *core_v1.ConfigMap
+	CertgenServiceAccount     *core_v1.ServiceAccount
 	CertgenRoleBinding        *rbac_v1.RoleBinding
 	CertgenRole               *rbac_v1.Role
 	CertgenJob                *batch_v1.Job
@@ -93,28 +94,28 @@ type Deployment struct {
 	ContourRoleBinding        *rbac_v1.RoleBinding
 	ContourClusterRole        *rbac_v1.ClusterRole
 	ContourRole               *rbac_v1.Role
-	ContourService            *v1.Service
-	EnvoyService              *v1.Service
+	ContourService            *core_v1.Service
+	EnvoyService              *core_v1.Service
 	ContourDeployment         *apps_v1.Deployment
 	EnvoyDaemonSet            *apps_v1.DaemonSet
 	EnvoyDeployment           *apps_v1.Deployment
 
 	// Optional volumes that will be attached to Envoy daemonset.
-	EnvoyExtraVolumes      []v1.Volume
-	EnvoyExtraVolumeMounts []v1.VolumeMount
+	EnvoyExtraVolumes      []core_v1.Volume
+	EnvoyExtraVolumeMounts []core_v1.VolumeMount
 
 	// Ratelimit deployment.
 	RateLimitDeployment       *apps_v1.Deployment
-	RateLimitService          *v1.Service
-	RateLimitExtensionService *contour_api_v1alpha1.ExtensionService
+	RateLimitService          *core_v1.Service
+	RateLimitExtensionService *contour_v1alpha1.ExtensionService
 
 	// Global External Authorization deployment.
 	GlobalExtAuthDeployment       *apps_v1.Deployment
-	GlobalExtAuthService          *v1.Service
-	GlobalExtAuthExtensionService *contour_api_v1alpha1.ExtensionService
+	GlobalExtAuthService          *core_v1.Service
+	GlobalExtAuthExtensionService *contour_v1alpha1.ExtensionService
 
 	//TODO: lewgun
-	GlobalExtProcExtensionService *contour_api_v1alpha1.ExtensionService
+	GlobalExtProcExtensionService *contour_v1alpha1.ExtensionService
 }
 
 // UnmarshalResources unmarshals resources from rendered Contour manifest in
@@ -147,11 +148,11 @@ func (d *Deployment) UnmarshalResources() error {
 	defer deploymentFile.Close()
 	decoderDeployment := apimachinery_util_yaml.NewYAMLToJSONDecoder(deploymentFile)
 
-	d.Namespace = new(v1.Namespace)
-	d.ContourServiceAccount = new(v1.ServiceAccount)
-	d.EnvoyServiceAccount = new(v1.ServiceAccount)
-	d.ContourConfigMap = new(v1.ConfigMap)
-	d.CertgenServiceAccount = new(v1.ServiceAccount)
+	d.Namespace = new(core_v1.Namespace)
+	d.ContourServiceAccount = new(core_v1.ServiceAccount)
+	d.EnvoyServiceAccount = new(core_v1.ServiceAccount)
+	d.ContourConfigMap = new(core_v1.ConfigMap)
+	d.CertgenServiceAccount = new(core_v1.ServiceAccount)
 	d.CertgenRoleBinding = new(rbac_v1.RoleBinding)
 	d.CertgenRole = new(rbac_v1.Role)
 	d.CertgenJob = new(batch_v1.Job)
@@ -159,8 +160,8 @@ func (d *Deployment) UnmarshalResources() error {
 	d.ContourRoleBinding = new(rbac_v1.RoleBinding)
 	d.ContourClusterRole = new(rbac_v1.ClusterRole)
 	d.ContourRole = new(rbac_v1.Role)
-	d.ContourService = new(v1.Service)
-	d.EnvoyService = new(v1.Service)
+	d.ContourService = new(core_v1.Service)
+	d.EnvoyService = new(core_v1.Service)
 	d.ContourDeployment = new(apps_v1.Deployment)
 	d.EnvoyDaemonSet = new(apps_v1.DaemonSet)
 	d.EnvoyDeployment = new(apps_v1.Deployment)
@@ -219,7 +220,7 @@ func (d *Deployment) UnmarshalResources() error {
 	if err := decoder.Decode(d.RateLimitDeployment); err != nil {
 		return err
 	}
-	d.RateLimitService = new(v1.Service)
+	d.RateLimitService = new(core_v1.Service)
 	if err := decoder.Decode(d.RateLimitService); err != nil {
 		return err
 	}
@@ -230,7 +231,7 @@ func (d *Deployment) UnmarshalResources() error {
 	}
 	defer rLESFile.Close()
 	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rLESFile)
-	d.RateLimitExtensionService = new(contour_api_v1alpha1.ExtensionService)
+	d.RateLimitExtensionService = new(contour_v1alpha1.ExtensionService)
 
 	if err := decoder.Decode(d.RateLimitExtensionService); err != nil {
 		return err
@@ -251,7 +252,7 @@ func (d *Deployment) UnmarshalResources() error {
 	if err := decoder.Decode(d.GlobalExtAuthDeployment); err != nil {
 		return err
 	}
-	d.GlobalExtAuthService = new(v1.Service)
+	d.GlobalExtAuthService = new(core_v1.Service)
 	if err := decoder.Decode(d.GlobalExtAuthService); err != nil {
 		return err
 	}
@@ -262,7 +263,7 @@ func (d *Deployment) UnmarshalResources() error {
 	}
 	defer rGlobalExtAuthExtSvcFile.Close()
 	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rGlobalExtAuthExtSvcFile)
-	d.GlobalExtAuthExtensionService = new(contour_api_v1alpha1.ExtensionService)
+	d.GlobalExtAuthExtensionService = new(contour_v1alpha1.ExtensionService)
 
 	return decoder.Decode(d.GlobalExtAuthExtensionService)
 }
@@ -276,9 +277,9 @@ func (d *Deployment) ensureResource(new, existing client.Object) error {
 		return err
 	}
 	new.SetResourceVersion(existing.GetResourceVersion())
-	// If a v1.Service, pass along existing cluster IP and healthcheck node port.
-	if newS, ok := new.(*v1.Service); ok {
-		existingS := existing.(*v1.Service)
+	// If a core_v1.Service, pass along existing cluster IP and healthcheck node port.
+	if newS, ok := new.(*core_v1.Service); ok {
+		existingS := existing.(*core_v1.Service)
 		newS.Spec.ClusterIP = existingS.Spec.ClusterIP
 		newS.Spec.ClusterIPs = existingS.Spec.ClusterIPs
 		newS.Spec.HealthCheckNodePort = existingS.Spec.HealthCheckNodePort
@@ -287,23 +288,23 @@ func (d *Deployment) ensureResource(new, existing client.Object) error {
 }
 
 func (d *Deployment) EnsureNamespace() error {
-	return d.ensureResource(d.Namespace, new(v1.Namespace))
+	return d.ensureResource(d.Namespace, new(core_v1.Namespace))
 }
 
 func (d *Deployment) EnsureContourServiceAccount() error {
-	return d.ensureResource(d.ContourServiceAccount, new(v1.ServiceAccount))
+	return d.ensureResource(d.ContourServiceAccount, new(core_v1.ServiceAccount))
 }
 
 func (d *Deployment) EnsureEnvoyServiceAccount() error {
-	return d.ensureResource(d.EnvoyServiceAccount, new(v1.ServiceAccount))
+	return d.ensureResource(d.EnvoyServiceAccount, new(core_v1.ServiceAccount))
 }
 
 func (d *Deployment) EnsureContourConfigMap() error {
-	return d.ensureResource(d.ContourConfigMap, new(v1.ConfigMap))
+	return d.ensureResource(d.ContourConfigMap, new(core_v1.ConfigMap))
 }
 
 func (d *Deployment) EnsureCertgenServiceAccount() error {
-	return d.ensureResource(d.CertgenServiceAccount, new(v1.ServiceAccount))
+	return d.ensureResource(d.CertgenServiceAccount, new(core_v1.ServiceAccount))
 }
 
 func (d *Deployment) EnsureCertgenRoleBinding() error {
@@ -348,11 +349,11 @@ func (d *Deployment) EnsureContourRole() error {
 }
 
 func (d *Deployment) EnsureContourService() error {
-	return d.ensureResource(d.ContourService, new(v1.Service))
+	return d.ensureResource(d.ContourService, new(core_v1.Service))
 }
 
 func (d *Deployment) EnsureEnvoyService() error {
-	return d.ensureResource(d.EnvoyService, new(v1.Service))
+	return d.ensureResource(d.EnvoyService, new(core_v1.Service))
 }
 
 func (d *Deployment) EnsureContourDeployment() error {
@@ -384,8 +385,8 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 		setNamespace = namespace
 	}
 
-	configMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+	configMap := &core_v1.ConfigMap{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ratelimit-config",
 			Namespace: setNamespace,
 		},
@@ -393,7 +394,7 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 			"ratelimit-config.yaml": configContents,
 		},
 	}
-	if err := d.ensureResource(configMap, new(v1.ConfigMap)); err != nil {
+	if err := d.ensureResource(configMap, new(core_v1.ConfigMap)); err != nil {
 		return err
 	}
 
@@ -406,9 +407,9 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 			}
 			deployment.Spec.Template.Spec.Containers[i].Env = append(
 				deployment.Spec.Template.Spec.Containers[i].Env,
-				v1.EnvVar{Name: "HOST", Value: "::"},
-				v1.EnvVar{Name: "GRPC_HOST", Value: "::"},
-				v1.EnvVar{Name: "DEBUG_HOST", Value: "::"},
+				core_v1.EnvVar{Name: "HOST", Value: "::"},
+				core_v1.EnvVar{Name: "GRPC_HOST", Value: "::"},
+				core_v1.EnvVar{Name: "DEBUG_HOST", Value: "::"},
 			)
 		}
 	}
@@ -418,13 +419,13 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 
 	service := d.RateLimitService.DeepCopy()
 	service.Namespace = setNamespace
-	if err := d.ensureResource(service, new(v1.Service)); err != nil {
+	if err := d.ensureResource(service, new(core_v1.Service)); err != nil {
 		return err
 	}
 
 	extSvc := d.RateLimitExtensionService.DeepCopy()
 	extSvc.Namespace = setNamespace
-	return d.ensureResource(extSvc, new(contour_api_v1alpha1.ExtensionService))
+	return d.ensureResource(extSvc, new(contour_v1alpha1.ExtensionService))
 }
 
 func (d *Deployment) EnsureGlobalExternalAuthResources(namespace string) error {
@@ -441,14 +442,14 @@ func (d *Deployment) EnsureGlobalExternalAuthResources(namespace string) error {
 
 	service := d.GlobalExtAuthService.DeepCopy()
 	service.Namespace = setNamespace
-	if err := d.ensureResource(service, new(v1.Service)); err != nil {
+	if err := d.ensureResource(service, new(core_v1.Service)); err != nil {
 		return err
 	}
 
 	extSvc := d.GlobalExtAuthExtensionService.DeepCopy()
 	extSvc.Namespace = setNamespace
 
-	return d.ensureResource(extSvc, new(contour_api_v1alpha1.ExtensionService))
+	return d.ensureResource(extSvc, new(contour_v1alpha1.ExtensionService))
 }
 
 // Convenience method for deploying the pieces of the deployment needed for
@@ -502,8 +503,8 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		os.RemoveAll(bFile.Name())
 	}()
 
-	bootstrapConfigMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+	bootstrapConfigMap := &core_v1.ConfigMap{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "envoy-bootstrap",
 			Namespace: d.Namespace.Name,
 		},
@@ -511,7 +512,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 			"envoy.json": string(bootstrapContents),
 		},
 	}
-	if err := d.ensureResource(bootstrapConfigMap, new(v1.ConfigMap)); err != nil {
+	if err := d.ensureResource(bootstrapConfigMap, new(core_v1.ConfigMap)); err != nil {
 		return err
 	}
 
@@ -525,31 +526,31 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	// The envoy deployment uses host ports, so can have at most
 	// one replica per node, and our cluster only has one worker
 	// node, so scale the deployment to 1.
-	d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
+	d.EnvoyDeployment.Spec.Replicas = ptr.To(int32(1))
 
 	return d.EnsureEnvoyDeployment()
 }
 
-func (d *Deployment) mutatePodTemplate(pts v1.PodTemplateSpec) v1.PodTemplateSpec {
+func (d *Deployment) mutatePodTemplate(pts core_v1.PodTemplateSpec) core_v1.PodTemplateSpec {
 	// Add bootstrap ConfigMap as volume and add envoy admin volume on Envoy pods (also removes cert volume).
-	pts.Spec.Volumes = []v1.Volume{{
+	pts.Spec.Volumes = []core_v1.Volume{{
 		Name: "envoy-config",
-		VolumeSource: v1.VolumeSource{
-			ConfigMap: &v1.ConfigMapVolumeSource{
-				LocalObjectReference: v1.LocalObjectReference{
+		VolumeSource: core_v1.VolumeSource{
+			ConfigMap: &core_v1.ConfigMapVolumeSource{
+				LocalObjectReference: core_v1.LocalObjectReference{
 					Name: "envoy-bootstrap",
 				},
 			},
 		},
 	}, {
 		Name: "envoy-admin",
-		VolumeSource: v1.VolumeSource{
-			EmptyDir: &v1.EmptyDirVolumeSource{},
+		VolumeSource: core_v1.VolumeSource{
+			EmptyDir: &core_v1.EmptyDirVolumeSource{},
 		},
 	}}
 
 	// Remove cert volume mount.
-	pts.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
+	pts.Spec.Containers[1].VolumeMounts = []core_v1.VolumeMount{
 		pts.Spec.Containers[1].VolumeMounts[0], // Config mount
 		pts.Spec.Containers[1].VolumeMounts[2], // Admin mount
 	}
@@ -565,11 +566,11 @@ func (d *Deployment) mutatePodTemplate(pts v1.PodTemplateSpec) v1.PodTemplateSpe
 
 	// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
 	pts.Spec.Containers[0].Ports = append(pts.Spec.Containers[0].Ports,
-		v1.ContainerPort{
+		core_v1.ContainerPort{
 			Name:          "metrics",
 			ContainerPort: 8002,
 			HostPort:      8002,
-			Protocol:      v1.ProtocolTCP,
+			Protocol:      core_v1.ProtocolTCP,
 		})
 
 	return pts
@@ -608,7 +609,7 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 // Starts local contour, applying arguments and marshaling config into config
 // file. Returns running Contour command and config file so we can clean them
 // up.
-func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfiguration *contour_api_v1alpha1.ContourConfiguration, additionalArgs ...string) (*gexec.Session, string, error) {
+func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfiguration *contour_v1alpha1.ContourConfiguration, additionalArgs ...string) (*gexec.Session, string, error) {
 	var content []byte
 	var configReferenceName string
 	var contourServeArgs []string
@@ -624,8 +625,8 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		// Set the xds server to the defined testing port as well as enable insecure communication.
 		contourConfiguration.Spec.XDSServer.Port = port
 		contourConfiguration.Spec.XDSServer.Address = listenAllAddress()
-		contourConfiguration.Spec.XDSServer.TLS = &contour_api_v1alpha1.TLS{
-			Insecure: ref.To(true),
+		contourConfiguration.Spec.XDSServer.TLS = &contour_v1alpha1.TLS{
+			Insecure: ptr.To(true),
 		}
 
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
@@ -704,8 +705,8 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 	// Look for the ENV variable to tell if this test run should use
 	// the ContourConfiguration file or the ContourConfiguration CRD.
 	if useContourConfiguration, variableFound := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); variableFound && useContourConfiguration == "true" {
-		cc := &contour_api_v1alpha1.ContourConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
+		cc := &contour_v1alpha1.ContourConfiguration{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      configFile,
 				Namespace: "projectcontour",
 			},
@@ -773,7 +774,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		return fmt.Errorf("invalid certgen job containers, expected 1, got %d", l)
 	}
 	d.CertgenJob.Spec.Template.Spec.Containers[0].Image = d.contourImage
-	d.CertgenJob.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	d.CertgenJob.Spec.Template.Spec.Containers[0].ImagePullPolicy = core_v1.PullIfNotPresent
 	if err := d.EnsureCertgenJob(); err != nil {
 		return err
 	}
@@ -800,7 +801,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		return fmt.Errorf("invalid contour deployment containers, expected 1, got %d", l)
 	}
 	d.ContourDeployment.Spec.Template.Spec.Containers[0].Image = d.contourImage
-	d.ContourDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	d.ContourDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = core_v1.PullIfNotPresent
 	if startContourDeployment {
 		if err := d.EnsureContourDeployment(); err != nil {
 			return err
@@ -811,7 +812,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		}
 	}
 
-	var envoyPodSpec *v1.PodSpec
+	var envoyPodSpec *core_v1.PodSpec
 	if d.EnvoyDeploymentMode == DeploymentMode {
 		envoyPodSpec = &d.EnvoyDeployment.Spec.Template.Spec
 	} else {
@@ -823,18 +824,18 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		return fmt.Errorf("invalid envoy %s init containers, expected 1, got %d", d.EnvoyDeploymentMode, l)
 	}
 	envoyPodSpec.InitContainers[0].Image = d.contourImage
-	envoyPodSpec.InitContainers[0].ImagePullPolicy = v1.PullIfNotPresent
+	envoyPodSpec.InitContainers[0].ImagePullPolicy = core_v1.PullIfNotPresent
 	if l := len(envoyPodSpec.Containers); l != 2 {
 		return fmt.Errorf("invalid envoy %s containers, expected 2, got %d", d.EnvoyDeploymentMode, l)
 	}
 	envoyPodSpec.Containers[0].Image = d.contourImage
-	envoyPodSpec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	envoyPodSpec.Containers[0].ImagePullPolicy = core_v1.PullIfNotPresent
 
 	if d.EnvoyDeploymentMode == DeploymentMode {
 		// The envoy deployment uses host ports, so can have at most
 		// one replica per node, and our cluster only has one worker
 		// node, so scale the deployment to 1.
-		d.EnvoyDeployment.Spec.Replicas = ref.To(int32(1))
+		d.EnvoyDeployment.Spec.Replicas = ptr.To(int32(1))
 
 		if err := d.EnsureEnvoyDeployment(); err != nil {
 			return err
@@ -863,8 +864,8 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 func (d *Deployment) DeleteResourcesForInclusterContour() error {
 	// Also need to delete leader election resources to ensure
 	// multiple test runs can be run cleanly.
-	leaderElectionLease := &coordinationv1.Lease{
-		ObjectMeta: metav1.ObjectMeta{
+	leaderElectionLease := &coordination_v1.Lease{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "leader-elect",
 			Namespace: d.Namespace.Name,
 		},
@@ -913,7 +914,7 @@ func (d *Deployment) DumpContourLogs() error {
 		return err
 	}
 
-	pods := new(v1.PodList)
+	pods := new(core_v1.PodList)
 	podListOptions := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels),
 		Namespace:     d.ContourDeployment.Namespace,
@@ -922,11 +923,11 @@ func (d *Deployment) DumpContourLogs() error {
 		return err
 	}
 
-	podLogOptions := &v1.PodLogOptions{
+	podLogOptions := &core_v1.PodLogOptions{
 		Container: "contour",
 	}
 	for _, pod := range pods.Items {
-		if pod.Status.Phase == v1.PodFailed {
+		if pod.Status.Phase == core_v1.PodFailed {
 			continue
 		}
 
@@ -951,7 +952,7 @@ func (d *Deployment) DumpContourLogs() error {
 func (d *Deployment) EnsureDeleted(obj client.Object) error {
 	// Delete the object; if it already doesn't exist,
 	// then we're done.
-	err := d.client.Delete(context.Background(), obj, &client.DeleteOptions{PropagationPolicy: ref.To(metav1.DeletePropagationBackground)})
+	err := d.client.Delete(context.Background(), obj, &client.DeleteOptions{PropagationPolicy: ptr.To(meta_v1.DeletePropagationBackground)})
 	if api_errors.IsNotFound(err) {
 		return nil
 	}

@@ -18,10 +18,11 @@ package httpproxy
 
 import (
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testExactPathCondition(namespace string) {
@@ -35,89 +36,89 @@ func testExactPathCondition(namespace string) {
 		f.Fixtures.Echo.Deploy(serviceNamespace, "echo-green")
 		f.Fixtures.Echo.Deploy(serviceNamespace, "echo-default")
 
-		serviceProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		serviceProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: serviceNamespace,
 				Name:      "echo-exact",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "exactpathcondition.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-blue",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/blue",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-blue",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Exact: "/common/exact-blue",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-green",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/common/exact-blue/",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-green",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Exact: "/blue-exact-green",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-green",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Exact: "/blue/exact-green",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-default",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/",
 							},

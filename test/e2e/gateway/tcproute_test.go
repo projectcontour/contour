@@ -17,15 +17,16 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testTCPRoute(namespace string, gateway types.NamespacedName) {
@@ -35,22 +36,22 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
 		route := &gatewayapi_v1alpha2.TCPRoute{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "tcproute-1",
 			},
 			Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 						{
-							Namespace: ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
-							Name:      gatewayapi_v1beta1.ObjectName(gateway.Name),
+							Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+							Name:      gatewayapi_v1.ObjectName(gateway.Name),
 						},
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.TCPRouteRule{
 					{
-						BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ref.To(int32(1))),
+						BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ptr.To(int32(1))),
 					},
 				},
 			},

@@ -19,10 +19,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/leadership"
-	"github.com/projectcontour/contour/internal/leadership/mocks"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/projectcontour/contour/internal/leadership"
+	"github.com/projectcontour/contour/internal/leadership/mocks"
 )
 
 func TestNotifier(t *testing.T) {

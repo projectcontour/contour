@@ -18,16 +18,16 @@ import (
 	"strings"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/sirupsen/logrus"
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/xds"
-
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type ExtensionServiceProcessor struct {
@@ -60,7 +60,7 @@ func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
 		}
 
 		if len(validCondition.Errors) == 0 {
-			validCondition.Status = contour_api_v1.ConditionTrue
+			validCondition.Status = contour_v1.ConditionTrue
 			validCondition.Reason = "Valid"
 			validCondition.Message = "Valid ExtensionService"
 		}
@@ -86,12 +86,12 @@ func ExtensionClusterName(meta types.NamespacedName) string {
 // on the corresponding CRD.
 func (p *ExtensionServiceProcessor) buildExtensionService(
 	cache *KubernetesCache,
-	ext *contour_api_v1alpha1.ExtensionService,
-	validCondition *contour_api_v1.DetailedCondition,
+	ext *contour_v1alpha1.ExtensionService,
+	validCondition *contour_v1.DetailedCondition,
 ) *ExtensionCluster {
 	rtp, ctp, err := timeoutPolicy(ext.Spec.TimeoutPolicy, p.ConnectTimeout)
 	if err != nil {
-		validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TimeoutPolicyNotValid",
+		validCondition.AddErrorf(contour_v1.ConditionTypeSpecError, "TimeoutPolicyNotValid",
 			"spec.timeoutPolicy failed to parse: %s", err)
 	}
 
@@ -100,7 +100,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// Since the client certificate is configured by admin, explicit delegation is not required.
 		clientCertSecret, err = cache.LookupTLSSecretInsecure(*p.ClientCertificate)
 		if err != nil {
-			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
+			validCondition.AddErrorf(contour_v1.ConditionTypeTLSError, "SecretNotValid",
 				"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
 		}
 	}
@@ -125,7 +125,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)
 	switch lbPolicy {
 	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
-		validCondition.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+		validCondition.AddWarningf(contour_v1.ConditionTypeSpecError, "IgnoredField",
 			"ignoring field %q; %s load balancer policy is not supported for ExtensionClusters",
 			".Spec.LoadBalancerPolicy", lbPolicy)
 		// Reset load balancer policy to ensure the default.
@@ -157,10 +157,10 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		uv, err := cache.LookupUpstreamValidation(v, caCertNamespacedName, ext.Namespace)
 		if err != nil {
 			if _, ok := err.(DelegationNotPermittedError); ok {
-				validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+				validCondition.AddErrorf(contour_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
 					"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
 			} else {
-				validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TLSUpstreamValidation",
+				validCondition.AddErrorf(contour_v1.ConditionTypeSpecError, "TLSUpstreamValidation",
 					"TLS upstream validation policy error: %s", err.Error())
 			}
 			return nil
@@ -178,7 +178,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		extension.SNI = uv.SubjectNames[0]
 
 		if extension.Protocol != "h2" {
-			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "InconsistentProtocol",
+			validCondition.AddErrorf(contour_v1.ConditionTypeSpecError, "InconsistentProtocol",
 				"upstream TLS validation not supported for %q protocol", extension.Protocol)
 		}
 	}
@@ -195,7 +195,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 		svc, port, err := cache.LookupService(svcName, intstr.FromInt(target.Port))
 		if err != nil {
-			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
+			validCondition.AddErrorf(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 				"unresolved service %q: %s", svcName, err)
 			continue
 		}
@@ -204,8 +204,8 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// TODO(youngnick): If ExternalName support is added, we must pass down the EnableExternalNameService bool
 		// and check it first.
 		if svc.Spec.ExternalName != "" {
-			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "UnsupportedServiceType",
-				"Service %q is of unsupported type %q.", svcName, corev1.ServiceTypeExternalName)
+			validCondition.AddErrorf(contour_v1.ConditionTypeServiceError, "UnsupportedServiceType",
+				"Service %q is of unsupported type %q.", svcName, core_v1.ServiceTypeExternalName)
 			continue
 		}
 

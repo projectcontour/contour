@@ -14,8 +14,8 @@
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // HTTPProxySpec defines the spec of the CRD.
@@ -41,6 +41,27 @@ type HTTPProxySpec struct {
 	// +optional
 	IngressClassName string `json:"ingressClassName,omitempty"`
 }
+
+// Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.
+//
+// This validation is based off of the corresponding Kubernetes validation:
+// https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187
+//
+// This is used for Namespace name validation here:
+// https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63
+//
+// Valid values include:
+//
+// * "example"
+//
+// Invalid values include:
+//
+// * "example.com" - "." is an invalid character
+//
+// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
+// +kubebuilder:validation:MinLength=1
+// +kubebuilder:validation:MaxLength=63
+type Namespace string
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
 type Include struct {
@@ -1690,7 +1711,7 @@ type HTTPProxyStatus struct {
 	Description string `json:"description,omitempty"`
 	// +optional
 	// LoadBalancer contains the current status of the load balancer.
-	LoadBalancer corev1.LoadBalancerStatus `json:"loadBalancer,omitempty"`
+	LoadBalancer core_v1.LoadBalancerStatus `json:"loadBalancer,omitempty"`
 	// +optional
 	// Conditions contains information about the current status of the HTTPProxy,
 	// in an upstream-friendly container.
@@ -1723,8 +1744,8 @@ type HTTPProxyStatus struct {
 // +kubebuilder:resource:scope=Namespaced,path=httpproxies,shortName=proxy;proxies,singular=httpproxy
 // +kubebuilder:subresource:status
 type HTTPProxy struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
+	meta_v1.TypeMeta   `json:",inline"`
+	meta_v1.ObjectMeta `json:"metadata"`
 
 	Spec HTTPProxySpec `json:"spec"`
 	// Status is a container for computed information about the HTTPProxy.
@@ -1737,9 +1758,9 @@ type HTTPProxy struct {
 
 // HTTPProxyList is a list of HTTPProxies.
 type HTTPProxyList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
-	Items           []HTTPProxy `json:"items"`
+	meta_v1.TypeMeta `json:",inline"`
+	meta_v1.ListMeta `json:"metadata"`
+	Items            []HTTPProxy `json:"items"`
 }
 
 // SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
@@ -1773,3 +1794,6 @@ type SlowStartPolicy struct {
 	// +kubebuilder:validation:Maximum=100
 	MinimumWeightPercent uint32 `json:"minWeightPercent"`
 }
+
+// +kubebuilder:validation:Enum=grpcroutes;tlsroutes;extensionservices;backendtlspolicies
+type Feature string

@@ -16,45 +16,46 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	"github.com/stretchr/testify/assert"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSecret(t *testing.T) {
 	tests := map[string]struct {
 		secret *dag.Secret
-		want   *envoy_tls_v3.Secret
+		want   *envoy_transport_socket_tls_v3.Secret
 	}{
 		"simple secret": {
 			secret: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
 					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("cert"),
-						v1.TLSPrivateKeyKey: []byte("key"),
+						core_v1.TLSCertKey:       []byte("cert"),
+						core_v1.TLSPrivateKeyKey: []byte("key"),
 					},
 				},
 			},
-			want: &envoy_tls_v3.Secret{
+			want: &envoy_transport_socket_tls_v3.Secret{
 				Name: "default/simple/cd1b506996",
-				Type: &envoy_tls_v3.Secret_TlsCertificate{
-					TlsCertificate: &envoy_tls_v3.TlsCertificate{
-						PrivateKey: &envoy_core_v3.DataSource{
-							Specifier: &envoy_core_v3.DataSource_InlineBytes{
+				Type: &envoy_transport_socket_tls_v3.Secret_TlsCertificate{
+					TlsCertificate: &envoy_transport_socket_tls_v3.TlsCertificate{
+						PrivateKey: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte("key"),
 							},
 						},
-						CertificateChain: &envoy_core_v3.DataSource{
-							Specifier: &envoy_core_v3.DataSource_InlineBytes{
+						CertificateChain: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte("cert"),
 							},
 						},
@@ -79,14 +80,14 @@ func TestSecretname(t *testing.T) {
 	}{
 		"simple": {
 			secret: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
 					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("cert"),
-						v1.TLSPrivateKeyKey: []byte("key"),
+						core_v1.TLSCertKey:       []byte("cert"),
+						core_v1.TLSPrivateKeyKey: []byte("key"),
 					},
 				},
 			},
@@ -94,14 +95,14 @@ func TestSecretname(t *testing.T) {
 		},
 		"far too long": {
 			secret: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "must-be-in-want-of-a-wife",
 						Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
 					},
 					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("cert"),
-						v1.TLSPrivateKeyKey: []byte("key"),
+						core_v1.TLSCertKey:       []byte("cert"),
+						core_v1.TLSPrivateKeyKey: []byte("key"),
 					},
 				},
 			},

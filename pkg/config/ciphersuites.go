@@ -14,7 +14,7 @@
 package config
 
 import (
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // TLSCiphers holds a list of TLS ciphers
@@ -29,18 +29,18 @@ type TLSCiphers []string
 //
 // The commented ciphers are left in place to simplify updating this list for future
 // versions of envoy.
-var DefaultTLSCiphers = TLSCiphers(contour_api_v1alpha1.DefaultTLSCiphers)
+var DefaultTLSCiphers = TLSCiphers(contour_v1alpha1.DefaultTLSCiphers)
 
 // ValidTLSCiphers contains the list of TLS ciphers that Envoy supports
 // See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 // Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
-var ValidTLSCiphers = contour_api_v1alpha1.ValidTLSCiphers
+var ValidTLSCiphers = contour_v1alpha1.ValidTLSCiphers
 
 // SanitizeCipherSuites trims a list of ciphers to remove whitespace and
 // duplicates, returning the passed in default if the corrected list is empty.
 // The ciphers argument should be a list of valid ciphers.
 func SanitizeCipherSuites(ciphers []string) []string {
-	e := &contour_api_v1alpha1.EnvoyTLS{
+	e := &contour_v1alpha1.EnvoyTLS{
 		CipherSuites: ciphers,
 	}
 	return e.SanitizedCipherSuites()
@@ -48,7 +48,7 @@ func SanitizeCipherSuites(ciphers []string) []string {
 
 // Validate ciphers. Returns error on unsupported cipher.
 func (tlsCiphers TLSCiphers) Validate() error {
-	e := &contour_api_v1alpha1.EnvoyTLS{
+	e := &contour_v1alpha1.EnvoyTLS{
 		CipherSuites: tlsCiphers,
 	}
 	return e.Validate()

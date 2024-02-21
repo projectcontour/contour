@@ -16,17 +16,17 @@ package equality_test
 import (
 	"testing"
 
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/dataplane"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
-	"github.com/projectcontour/contour/internal/ref"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var (
@@ -34,7 +34,7 @@ var (
 	testNs    = testName + "-ns"
 	testImage = "test-image:main"
 	cntr      = &model.Contour{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNs,
 		},
@@ -44,43 +44,43 @@ var (
 func TestDaemonSetConfigChanged(t *testing.T) {
 	testCases := []struct {
 		description string
-		mutate      func(ds *appsv1.DaemonSet)
+		mutate      func(ds *apps_v1.DaemonSet)
 		expect      bool
 	}{
 		{
 			description: "if nothing changes",
-			mutate:      func(_ *appsv1.DaemonSet) {},
+			mutate:      func(_ *apps_v1.DaemonSet) {},
 			expect:      false,
 		},
 		{
 			description: "if labels are changed",
-			mutate: func(ds *appsv1.DaemonSet) {
+			mutate: func(ds *apps_v1.DaemonSet) {
 				ds.Labels = map[string]string{}
 			},
 			expect: true,
 		},
 		{
 			description: "if selector is changed",
-			mutate: func(ds *appsv1.DaemonSet) {
-				ds.Spec.Selector = &metav1.LabelSelector{}
+			mutate: func(ds *apps_v1.DaemonSet) {
+				ds.Spec.Selector = &meta_v1.LabelSelector{}
 			},
 			expect: true,
 		},
 		{
 			description: "if the container image is changed",
-			mutate: func(ds *appsv1.DaemonSet) {
+			mutate: func(ds *apps_v1.DaemonSet) {
 				ds.Spec.Template.Spec.Containers[0].Image = "foo:latest"
 			},
 			expect: true,
 		},
 		{
 			description: "if a volume is changed",
-			mutate: func(ds *appsv1.DaemonSet) {
-				ds.Spec.Template.Spec.Volumes = []corev1.Volume{
+			mutate: func(ds *apps_v1.DaemonSet) {
+				ds.Spec.Template.Spec.Volumes = []core_v1.Volume{
 					{
 						Name: "foo",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
+						VolumeSource: core_v1.VolumeSource{
+							HostPath: &core_v1.HostPathVolumeSource{
 								Path: "/foo",
 							},
 						},
@@ -91,21 +91,21 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 		},
 		{
 			description: "if container commands are changed",
-			mutate: func(ds *appsv1.DaemonSet) {
+			mutate: func(ds *apps_v1.DaemonSet) {
 				ds.Spec.Template.Spec.Containers[0].Command = []string{"foo"}
 			},
 			expect: true,
 		},
 		{
 			description: "if container args are changed",
-			mutate: func(ds *appsv1.DaemonSet) {
+			mutate: func(ds *apps_v1.DaemonSet) {
 				ds.Spec.Template.Spec.Containers[0].Args = []string{"foo", "bar", "baz"}
 			},
 			expect: true,
 		},
 		{
 			description: "if probe values are set to default values",
-			mutate: func(ds *appsv1.DaemonSet) {
+			mutate: func(ds *apps_v1.DaemonSet) {
 				for i, c := range ds.Spec.Template.Spec.Containers {
 					if c.Name == dataplane.EnvoyContainerName {
 						ds.Spec.Template.Spec.Containers[i].ReadinessProbe.TimeoutSeconds = int32(1)
@@ -140,43 +140,43 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 func TestDeploymentConfigChanged(t *testing.T) {
 	testCases := []struct {
 		description string
-		mutate      func(deployment *appsv1.Deployment)
+		mutate      func(deployment *apps_v1.Deployment)
 		expect      bool
 	}{
 		{
 			description: "if nothing changes",
-			mutate:      func(_ *appsv1.Deployment) {},
+			mutate:      func(_ *apps_v1.Deployment) {},
 			expect:      false,
 		},
 		{
 			description: "if replicas is changed",
-			mutate: func(deploy *appsv1.Deployment) {
+			mutate: func(deploy *apps_v1.Deployment) {
 				deploy.Spec.Replicas = nil
 			},
 			expect: true,
 		},
 		{
 			description: "if selector is changed",
-			mutate: func(deploy *appsv1.Deployment) {
-				deploy.Spec.Selector = &metav1.LabelSelector{}
+			mutate: func(deploy *apps_v1.Deployment) {
+				deploy.Spec.Selector = &meta_v1.LabelSelector{}
 			},
 			expect: true,
 		},
 		{
 			description: "if the container image is changed",
-			mutate: func(deploy *appsv1.Deployment) {
+			mutate: func(deploy *apps_v1.Deployment) {
 				deploy.Spec.Template.Spec.Containers[0].Image = "foo:latest"
 			},
 			expect: true,
 		},
 		{
 			description: "if a volume is changed",
-			mutate: func(deploy *appsv1.Deployment) {
-				deploy.Spec.Template.Spec.Volumes = []corev1.Volume{
+			mutate: func(deploy *apps_v1.Deployment) {
+				deploy.Spec.Template.Spec.Volumes = []core_v1.Volume{
 					{
 						Name: "foo",
-						VolumeSource: corev1.VolumeSource{
-							HostPath: &corev1.HostPathVolumeSource{
+						VolumeSource: core_v1.VolumeSource{
+							HostPath: &core_v1.HostPathVolumeSource{
 								Path: "/foo",
 							},
 						},
@@ -187,21 +187,21 @@ func TestDeploymentConfigChanged(t *testing.T) {
 		},
 		{
 			description: "if container commands are changed",
-			mutate: func(deploy *appsv1.Deployment) {
+			mutate: func(deploy *apps_v1.Deployment) {
 				deploy.Spec.Template.Spec.Containers[0].Command = []string{"foo"}
 			},
 			expect: true,
 		},
 		{
 			description: "if container args are changed",
-			mutate: func(deploy *appsv1.Deployment) {
+			mutate: func(deploy *apps_v1.Deployment) {
 				deploy.Spec.Template.Spec.Containers[0].Args = []string{"foo", "bar", "baz"}
 			},
 			expect: true,
 		},
 		{
 			description: "if probe values are set to default values",
-			mutate: func(deployment *appsv1.Deployment) {
+			mutate: func(deployment *apps_v1.Deployment) {
 				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.ProbeHandler.HTTPGet.Scheme = "HTTP"
 				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.TimeoutSeconds = int32(1)
 				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.PeriodSeconds = int32(10)
@@ -234,24 +234,24 @@ func TestDeploymentConfigChanged(t *testing.T) {
 func TestClusterIpServiceChanged(t *testing.T) {
 	testCases := []struct {
 		description string
-		mutate      func(service *corev1.Service)
+		mutate      func(service *core_v1.Service)
 		expect      bool
 	}{
 		{
 			description: "if nothing changed",
-			mutate:      func(_ *corev1.Service) {},
+			mutate:      func(_ *core_v1.Service) {},
 			expect:      false,
 		},
 		{
 			description: "if the port number changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Ports[0].Port = int32(1234)
 			},
 			expect: true,
 		},
 		{
 			description: "if the target port number changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				intStrPort := intstr.IntOrString{IntVal: int32(1234)}
 				svc.Spec.Ports[0].TargetPort = intStrPort
 			},
@@ -259,24 +259,24 @@ func TestClusterIpServiceChanged(t *testing.T) {
 		},
 		{
 			description: "if the port name changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Ports[0].Name = "foo"
 			},
 			expect: true,
 		},
 		{
 			description: "if the port protocol changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.Ports[0].Protocol = corev1.ProtocolUDP
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.Ports[0].Protocol = core_v1.ProtocolUDP
 			},
 			expect: true,
 		},
 		{
 			description: "if ports are added",
-			mutate: func(svc *corev1.Service) {
-				port := corev1.ServicePort{
+			mutate: func(svc *core_v1.Service) {
+				port := core_v1.ServicePort{
 					Name:       "foo",
-					Protocol:   corev1.ProtocolUDP,
+					Protocol:   core_v1.ProtocolUDP,
 					Port:       int32(1234),
 					TargetPort: intstr.IntOrString{IntVal: int32(1234)},
 				}
@@ -286,43 +286,43 @@ func TestClusterIpServiceChanged(t *testing.T) {
 		},
 		{
 			description: "if ports are removed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.Ports = []corev1.ServicePort{}
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.Ports = []core_v1.ServicePort{}
 			},
 			expect: true,
 		},
 		{
 			description: "if the cluster IP changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.ClusterIP = "1.2.3.4"
 			},
 			expect: false,
 		},
 		{
 			description: "if selector changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Selector = map[string]string{"foo": "bar"}
 			},
 			expect: true,
 		},
 		{
 			description: "if ip family policy changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.IPFamilyPolicy = ref.To(corev1.IPFamilyPolicyRequireDualStack)
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.IPFamilyPolicy = ptr.To(core_v1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},
 		{
 			description: "if service type changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.Type = core_v1.ServiceTypeLoadBalancer
 			},
 			expect: true,
 		},
 		{
 			description: "if session affinity changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.SessionAffinity = corev1.ServiceAffinityClientIP
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.SessionAffinity = core_v1.ServiceAffinityClientIP
 			},
 			expect: true,
 		},
@@ -346,24 +346,24 @@ func TestClusterIpServiceChanged(t *testing.T) {
 func TestLoadBalancerServiceChanged(t *testing.T) {
 	testCases := []struct {
 		description string
-		mutate      func(service *corev1.Service)
+		mutate      func(service *core_v1.Service)
 		expect      bool
 	}{
 		{
 			description: "if nothing changed",
-			mutate:      func(_ *corev1.Service) {},
+			mutate:      func(_ *core_v1.Service) {},
 			expect:      false,
 		},
 		{
 			description: "if the port number changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Ports[0].Port = int32(1234)
 			},
 			expect: true,
 		},
 		{
 			description: "if the target port number changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				intStrPort := intstr.IntOrString{IntVal: int32(1234)}
 				svc.Spec.Ports[0].TargetPort = intStrPort
 			},
@@ -371,24 +371,24 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 		},
 		{
 			description: "if the port name changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Ports[0].Name = "foo"
 			},
 			expect: true,
 		},
 		{
 			description: "if the port protocol changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.Ports[0].Protocol = corev1.ProtocolUDP
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.Ports[0].Protocol = core_v1.ProtocolUDP
 			},
 			expect: true,
 		},
 		{
 			description: "if ports are added",
-			mutate: func(svc *corev1.Service) {
-				port := corev1.ServicePort{
+			mutate: func(svc *core_v1.Service) {
+				port := core_v1.ServicePort{
 					Name:       "foo",
-					Protocol:   corev1.ProtocolUDP,
+					Protocol:   core_v1.ProtocolUDP,
 					Port:       int32(1234),
 					TargetPort: intstr.IntOrString{IntVal: int32(1234)},
 				}
@@ -398,63 +398,63 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 		},
 		{
 			description: "if ports are removed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.Ports = []corev1.ServicePort{}
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.Ports = []core_v1.ServicePort{}
 			},
 			expect: true,
 		},
 		{
 			description: "if the cluster IP changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.ClusterIP = "1.2.3.4"
 			},
 			expect: false,
 		},
 		{
 			description: "if selector changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Selector = map[string]string{"foo": "bar"}
 			},
 			expect: true,
 		},
 		{
 			description: "if service type changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.Type = corev1.ServiceTypeClusterIP
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.Type = core_v1.ServiceTypeClusterIP
 			},
 			expect: true,
 		},
 		{
 			description: "if session affinity changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.SessionAffinity = corev1.ServiceAffinityClientIP
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.SessionAffinity = core_v1.ServiceAffinityClientIP
 			},
 			expect: true,
 		},
 		{
 			description: "if external traffic policy changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.ExternalTrafficPolicy = core_v1.ServiceExternalTrafficPolicyTypeCluster
 			},
 			expect: true,
 		},
 		{
 			description: "if ip family policy changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.IPFamilyPolicy = ref.To(corev1.IPFamilyPolicyRequireDualStack)
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.IPFamilyPolicy = ptr.To(core_v1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},
 		{
 			description: "if annotations have changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Annotations = map[string]string{}
 			},
 			expect: true,
 		},
 		{
 			description: "if load balancer IP changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.LoadBalancerIP = "5.6.7.8"
 			},
 			expect: true,
@@ -514,32 +514,32 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 func TestNodePortServiceChanged(t *testing.T) {
 	testCases := []struct {
 		description string
-		mutate      func(service *corev1.Service)
+		mutate      func(service *core_v1.Service)
 		expect      bool
 	}{
 		{
 			description: "if nothing changed",
-			mutate:      func(_ *corev1.Service) {},
+			mutate:      func(_ *core_v1.Service) {},
 			expect:      false,
 		},
 		{
 			description: "if the nodeport port number changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Ports[0].NodePort = int32(1234)
 			},
 			expect: true,
 		},
 		{
 			description: "if the number of ports changed",
-			mutate: func(svc *corev1.Service) {
+			mutate: func(svc *core_v1.Service) {
 				svc.Spec.Ports = append(svc.Spec.Ports, svc.Spec.Ports[0])
 			},
 			expect: true,
 		},
 		{
 			description: "if ip family policy changed",
-			mutate: func(svc *corev1.Service) {
-				svc.Spec.IPFamilyPolicy = ref.To(corev1.IPFamilyPolicyRequireDualStack)
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.IPFamilyPolicy = ptr.To(core_v1.IPFamilyPolicyRequireDualStack)
 			},
 			expect: true,
 		},

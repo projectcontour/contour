@@ -18,35 +18,35 @@ import (
 	"testing"
 	"time"
 
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
-	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestRouteCacheContents(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_route_v3.RouteConfiguration
+		contents map[string]*envoy_config_route_v3.RouteConfiguration
 		want     []proto.Message
 	}{
 		"empty": {
@@ -54,7 +54,7 @@ func TestRouteCacheContents(t *testing.T) {
 			want:     nil,
 		},
 		"simple": {
-			contents: map[string]*envoy_route_v3.RouteConfiguration{
+			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
 				},
@@ -63,10 +63,10 @@ func TestRouteCacheContents(t *testing.T) {
 				},
 			},
 			want: []proto.Message{
-				&envoy_route_v3.RouteConfiguration{
+				&envoy_config_route_v3.RouteConfiguration{
 					Name: "ingress_http",
 				},
-				&envoy_route_v3.RouteConfiguration{
+				&envoy_config_route_v3.RouteConfiguration{
 					Name: "ingress_https",
 				},
 			},
@@ -85,48 +85,48 @@ func TestRouteCacheContents(t *testing.T) {
 
 func TestRouteCacheQuery(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_route_v3.RouteConfiguration
+		contents map[string]*envoy_config_route_v3.RouteConfiguration
 		query    []string
 		want     []proto.Message
 	}{
 		"exact match": {
-			contents: map[string]*envoy_route_v3.RouteConfiguration{
+			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
 				},
 			},
 			query: []string{"ingress_http"},
 			want: []proto.Message{
-				&envoy_route_v3.RouteConfiguration{
+				&envoy_config_route_v3.RouteConfiguration{
 					Name: "ingress_http",
 				},
 			},
 		},
 		"partial match": {
-			contents: map[string]*envoy_route_v3.RouteConfiguration{
+			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
 				},
 			},
 			query: []string{"stats-handler", "ingress_http"},
 			want: []proto.Message{
-				&envoy_route_v3.RouteConfiguration{
+				&envoy_config_route_v3.RouteConfiguration{
 					Name: "ingress_http",
 				},
-				&envoy_route_v3.RouteConfiguration{
+				&envoy_config_route_v3.RouteConfiguration{
 					Name: "stats-handler",
 				},
 			},
 		},
 		"no match": {
-			contents: map[string]*envoy_route_v3.RouteConfiguration{
+			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
 				"ingress_http": {
 					Name: "ingress_http",
 				},
 			},
 			query: []string{"stats-handler"},
 			want: []proto.Message{
-				&envoy_route_v3.RouteConfiguration{
+				&envoy_config_route_v3.RouteConfiguration{
 					Name: "stats-handler",
 				},
 			},
@@ -147,7 +147,7 @@ func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs                []any
 		fallbackCertificate *types.NamespacedName
-		want                map[string]*envoy_route_v3.RouteConfiguration
+		want                map[string]*envoy_config_route_v3.RouteConfiguration
 	}{
 		"nothing": {
 			objs: nil,
@@ -158,7 +158,7 @@ func TestRouteVisit(t *testing.T) {
 		"one http only ingress with service": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -166,13 +166,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -183,7 +183,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -194,7 +194,7 @@ func TestRouteVisit(t *testing.T) {
 		"one http only ingress with regex match": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -211,13 +211,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -228,7 +228,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routeRegex("/[^/]+/invoices(/.*|/?)"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -238,30 +238,30 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"one http only httpproxy": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -272,7 +272,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
@@ -283,7 +283,7 @@ func TestRouteVisit(t *testing.T) {
 		"default backend ingress with secret": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -295,21 +295,21 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -320,7 +320,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -331,7 +331,7 @@ func TestRouteVisit(t *testing.T) {
 		"vhost ingress with secret": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -357,21 +357,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -383,7 +383,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -391,7 +391,7 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -401,44 +401,44 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"simple httpproxy with secret": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 8080,
 							}},
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -450,11 +450,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -464,7 +464,7 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/8080/da39a3ee5e"),
 						},
@@ -475,7 +475,7 @@ func TestRouteVisit(t *testing.T) {
 		"simple tls ingress with allow-http:false": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -504,21 +504,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -531,7 +531,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http"),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -542,7 +542,7 @@ func TestRouteVisit(t *testing.T) {
 		"simple tls ingress with force-ssl-redirect": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -571,21 +571,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -597,11 +597,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -611,7 +611,7 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -622,7 +622,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress with websocket annotation": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -656,13 +656,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -674,11 +674,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/ws1"),
 							Action: websocketroute("default/kuard/8080/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -689,7 +689,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress invalid timeout": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -700,13 +700,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -717,7 +717,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -728,7 +728,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress infinite timeout": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -739,13 +739,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -756,7 +756,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routetimeout("default/kuard/8080/da39a3ee5e", 0),
 						},
@@ -767,7 +767,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress 90 second timeout": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -778,13 +778,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -795,7 +795,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routetimeout("default/kuard/8080/da39a3ee5e", 90*time.Second),
 						},
@@ -806,7 +806,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress different path matches": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -817,32 +817,32 @@ func TestRouteVisit(t *testing.T) {
 									Paths: []networking_v1.HTTPIngressPath{
 										{
 											Path:     "/",
-											PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+											PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo",
-											PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+											PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo",
-											PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+											PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo2",
-											PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+											PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo3[a|b]?",
-											PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+											PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo4",
-											PathType: (*networking_v1.PathType)(ref.To("Exact")),
+											PathType: (*networking_v1.PathType)(ptr.To("Exact")),
 											Backend:  *backend("kuard", 8080),
 										},
 									},
@@ -851,13 +851,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -868,27 +868,27 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routeExact("/foo4"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routeRegex("/foo3[a|b]?"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/foo2"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefixIngress("/foo"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/foo"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
@@ -899,7 +899,7 @@ func TestRouteVisit(t *testing.T) {
 		"vhost name exceeds 60 chars": { // projectcontour/contour#25
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "my-service-name",
 						Namespace: "default",
 					},
@@ -922,13 +922,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       80,
@@ -940,7 +940,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/kuard/80/da39a3ee5e"),
 						},
@@ -951,7 +951,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress retry-on": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -962,13 +962,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -979,7 +979,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 1, 0),
 						},
@@ -990,7 +990,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress retry-on, num-retries": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -1002,13 +1002,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -1019,7 +1019,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0),
 						},
@@ -1031,7 +1031,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress num-retries disabled": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -1043,13 +1043,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -1060,7 +1060,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0),
 						},
@@ -1072,7 +1072,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress retry-on, per-try-timeout": {
 			objs: []any{
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -1084,13 +1084,13 @@ func TestRouteVisit(t *testing.T) {
 						DefaultBackend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -1101,7 +1101,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 1, 150*time.Millisecond),
 						},
@@ -1112,37 +1112,37 @@ func TestRouteVisit(t *testing.T) {
 
 		"httpproxy num-retries disabled": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
-							RetryPolicy: &contour_api_v1.RetryPolicy{
+							RetryPolicy: &contour_v1.RetryPolicy{
 								NumRetries: -1,
-								RetryOn:    []contour_api_v1.RetryOn{"5xx", "gateway-error"},
+								RetryOn:    []contour_v1.RetryOn{"5xx", "gateway-error"},
 							},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1153,7 +1153,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 0, 0),
 						},
@@ -1164,20 +1164,20 @@ func TestRouteVisit(t *testing.T) {
 
 		"httpproxy no weights defined": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1187,26 +1187,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1217,12 +1217,12 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -1238,20 +1238,20 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy one weight defined": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1262,26 +1262,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1292,12 +1292,12 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 0),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
@@ -1313,20 +1313,20 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy all weights defined": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name:   "backend",
 								Port:   80,
 								Weight: 22,
@@ -1338,26 +1338,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1368,12 +1368,12 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 22),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 50),
@@ -1389,28 +1389,28 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy w/ missing fqdn": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{},
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1424,20 +1424,20 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with pathPrefix": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1447,26 +1447,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1477,12 +1477,12 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -1498,20 +1498,20 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with mirror policy": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1522,26 +1522,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1552,7 +1552,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: withMirrorPolicy(routecluster("default/backend/80/da39a3ee5e"), "default/backendtwo/80/da39a3ee5e"),
 						},
@@ -1562,23 +1562,23 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with pathPrefix with tls": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1588,34 +1588,34 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1626,11 +1626,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -1640,12 +1640,12 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -1660,27 +1660,27 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with pathPrefix includes": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Includes: []contour_api_v1.Include{{
+						Includes: []contour_v1.Include{{
 							Name:      "child",
 							Namespace: "teama",
-							Conditions: []contour_api_v1.MatchCondition{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/blog",
 							}},
 						}},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -1690,56 +1690,56 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "child",
 						Namespace: "teama",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+					Spec: contour_v1.HTTPProxySpec{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/info",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "teama",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1750,16 +1750,16 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/blog/info"),
 							Action: routecluster("teama/backend/80/da39a3ee5e"),
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -1775,34 +1775,34 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with corsPolicy": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							CORSPolicy: &contour_api_v1.CORSPolicy{
+							CORSPolicy: &contour_v1.CORSPolicy{
 								AllowOrigin:  []string{"*"},
-								AllowMethods: []contour_api_v1.CORSHeaderValue{"GET, PUT, POST"},
+								AllowMethods: []contour_v1.CORSHeaderValue{"GET, PUT, POST"},
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1813,18 +1813,18 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.CORSVirtualHost("www.example.com",
-						&envoy_cors_v3.CorsPolicy{
+						&envoy_filter_http_cors_v3.CorsPolicy{
 							AllowCredentials:          &wrapperspb.BoolValue{Value: false},
 							AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
-							AllowOriginStringMatch: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							AllowOriginStringMatch: []*envoy_matcher_v3.StringMatcher{{
+								MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 									Exact: "*",
 								},
 								IgnoreCase: true,
 							}},
 							AllowMethods: "GET, PUT, POST",
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
@@ -1834,45 +1834,45 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with corsPolicy with tls": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							CORSPolicy: &contour_api_v1.CORSPolicy{
+							CORSPolicy: &contour_v1.CORSPolicy{
 								AllowOrigin:  []string{"*"},
-								AllowMethods: []contour_api_v1.CORSHeaderValue{"GET, PUT, POST"},
+								AllowMethods: []contour_v1.CORSHeaderValue{"GET, PUT, POST"},
 							},
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1883,22 +1883,22 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.CORSVirtualHost("www.example.com",
-						&envoy_cors_v3.CorsPolicy{
+						&envoy_filter_http_cors_v3.CorsPolicy{
 							AllowCredentials:          &wrapperspb.BoolValue{Value: false},
 							AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
-							AllowOriginStringMatch: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							AllowOriginStringMatch: []*envoy_matcher_v3.StringMatcher{{
+								MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 									Exact: "*",
 								},
 								IgnoreCase: true,
 							}},
 							AllowMethods: "GET, PUT, POST",
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -1908,18 +1908,18 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.CORSVirtualHost("www.example.com",
-						&envoy_cors_v3.CorsPolicy{
+						&envoy_filter_http_cors_v3.CorsPolicy{
 							AllowCredentials:          &wrapperspb.BoolValue{Value: false},
 							AllowPrivateNetworkAccess: &wrapperspb.BoolValue{Value: false},
-							AllowOriginStringMatch: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							AllowOriginStringMatch: []*envoy_matcher_v3.StringMatcher{{
+								MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 									Exact: "*",
 								},
 								IgnoreCase: true,
 							}},
 							AllowMethods: "GET, PUT, POST",
 						},
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 						},
@@ -1928,38 +1928,38 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header contains conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}, {
-								Header: &contour_api_v1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:     "x-header",
 									Contains: "abc",
 								},
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1970,7 +1970,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
@@ -1983,41 +1983,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header notcontains conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &contour_api_v1.HeaderMatchCondition{
+									Header: &contour_v1.HeaderMatchCondition{
 										Name:        "x-header",
 										NotContains: "abc",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2028,7 +2028,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
@@ -2042,41 +2042,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header exact match conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &contour_api_v1.HeaderMatchCondition{
+									Header: &contour_v1.HeaderMatchCondition{
 										Name:  "x-header",
 										Exact: "abc",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2087,7 +2087,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
@@ -2101,41 +2101,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header exact not match conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &contour_api_v1.HeaderMatchCondition{
+									Header: &contour_v1.HeaderMatchCondition{
 										Name:     "x-header",
 										NotExact: "abc",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2146,7 +2146,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								Value:     "abc",
@@ -2160,41 +2160,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header present conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &contour_api_v1.HeaderMatchCondition{
+									Header: &contour_v1.HeaderMatchCondition{
 										Name:    "x-header",
 										Present: true,
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2205,7 +2205,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								MatchType: "present",
@@ -2218,41 +2218,41 @@ func TestRouteVisit(t *testing.T) {
 
 		"httpproxy with header regex conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									Header: &contour_api_v1.HeaderMatchCondition{
+									Header: &contour_v1.HeaderMatchCondition{
 										Name:  "x-header",
 										Regex: "foo.*",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2263,7 +2263,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithHeaderConditions("/", dag.HeaderMatchCondition{
 								Name:      "x-header",
 								MatchType: "regex",
@@ -2276,38 +2276,38 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with query parameter contains conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}, {
-								QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+								QueryParameter: &contour_v1.QueryParameterMatchCondition{
 									Name:     "param",
 									Contains: "abc",
 								},
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2318,7 +2318,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 								Name:      "param",
 								Value:     "abc",
@@ -2331,41 +2331,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header prefix conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+									QueryParameter: &contour_v1.QueryParameterMatchCondition{
 										Name:   "param",
 										Prefix: "abc",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2376,7 +2376,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 								Name:      "param",
 								Value:     "abc",
@@ -2389,41 +2389,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with header suffix conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+									QueryParameter: &contour_v1.QueryParameterMatchCondition{
 										Name:   "param",
 										Suffix: "abc",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2434,7 +2434,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 								Name:      "param",
 								Value:     "abc",
@@ -2447,42 +2447,42 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with query parameter exact match conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+									QueryParameter: &contour_v1.QueryParameterMatchCondition{
 										Name:       "param",
 										Exact:      "abc",
 										IgnoreCase: true,
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2493,7 +2493,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 								Name:       "param",
 								Value:      "abc",
@@ -2507,41 +2507,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with query parameter regex match conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+									QueryParameter: &contour_v1.QueryParameterMatchCondition{
 										Name:  "param",
 										Regex: "^abc.*",
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2552,7 +2552,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 								Name:      "param",
 								Value:     "^abc.*",
@@ -2565,41 +2565,41 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with query parameter present conditions": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{
 								{
 									Prefix: "/",
 								},
 								{
-									QueryParameter: &contour_api_v1.QueryParameterMatchCondition{
+									QueryParameter: &contour_v1.QueryParameterMatchCondition{
 										Name:    "param",
 										Present: true,
 									},
 								},
 							},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2610,7 +2610,7 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefixWithQueryParameterConditions("/", dag.QueryParamMatchCondition{
 								Name:      "param",
 								MatchType: "present",
@@ -2622,25 +2622,25 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"httpproxy with route-level header manipulation": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
-							RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-								Set: []contour_api_v1.HeaderValue{{
+							RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+								Set: []contour_v1.HeaderValue{{
 									Name:  "In-Foo",
 									Value: "bar",
 								}},
@@ -2648,8 +2648,8 @@ func TestRouteVisit(t *testing.T) {
 									"In-Baz",
 								},
 							},
-							ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
-								Set: []contour_api_v1.HeaderValue{{
+							ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+								Set: []contour_v1.HeaderValue{{
 									Name:  "Out-Foo",
 									Value: "bar",
 								}},
@@ -2660,13 +2660,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2677,29 +2677,29 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
 										Cluster: "default/backend/80/da39a3ee5e",
 									},
 								},
 							},
-							RequestHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
-								Header: &envoy_core_v3.HeaderValue{
+							RequestHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{{
+								Header: &envoy_config_core_v3.HeaderValue{
 									Key:   "In-Foo",
 									Value: "bar",
 								},
-								AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+								AppendAction: envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 							}},
 							RequestHeadersToRemove: []string{"In-Baz"},
-							ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
-								Header: &envoy_core_v3.HeaderValue{
+							ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{{
+								Header: &envoy_config_core_v3.HeaderValue{
 									Key:   "Out-Foo",
 									Value: "bar",
 								},
-								AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+								AppendAction: envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 							}},
 							ResponseHeadersToRemove: []string{"Out-Baz"},
 						},
@@ -2713,24 +2713,24 @@ func TestRouteVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -2740,42 +2740,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2786,11 +2786,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -2800,12 +2800,12 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -2818,12 +2818,12 @@ func TestRouteVisit(t *testing.T) {
 					)),
 				envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG,
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -2842,24 +2842,24 @@ func TestRouteVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: false,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -2869,24 +2869,24 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-enabled",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -2896,42 +2896,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2942,11 +2942,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("projectcontour.io",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -2954,11 +2954,11 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -2968,12 +2968,12 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/projectcontour.io",
 					envoy_v3.VirtualHost("projectcontour.io",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -2986,12 +2986,12 @@ func TestRouteVisit(t *testing.T) {
 					)),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3004,12 +3004,12 @@ func TestRouteVisit(t *testing.T) {
 					)),
 				envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG,
 					envoy_v3.VirtualHost("projectcontour.io",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3028,24 +3028,24 @@ func TestRouteVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -3055,24 +3055,24 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-enabled",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -3082,42 +3082,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -3128,11 +3128,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("projectcontour.io",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -3140,11 +3140,11 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -3154,12 +3154,12 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/projectcontour.io",
 					envoy_v3.VirtualHost("projectcontour.io",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3172,12 +3172,12 @@ func TestRouteVisit(t *testing.T) {
 					)),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3190,12 +3190,12 @@ func TestRouteVisit(t *testing.T) {
 					)),
 				envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG,
 					envoy_v3.VirtualHost("projectcontour.io",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3206,12 +3206,12 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 					), envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3230,24 +3230,24 @@ func TestRouteVisit(t *testing.T) {
 				Namespace: "badnamespace",
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -3257,42 +3257,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -3308,24 +3308,24 @@ func TestRouteVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: false,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -3335,42 +3335,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -3381,11 +3381,11 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -3395,12 +3395,12 @@ func TestRouteVisit(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Route{
-								Route: &envoy_route_v3.RouteAction{
-									ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-										WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Action: &envoy_config_route_v3.Route_Route{
+								Route: &envoy_config_route_v3.RouteAction{
+									ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+										WeightedClusters: &envoy_config_route_v3.WeightedCluster{
 											Clusters: weightedClusters(
 												weightedCluster("default/backend/80/da39a3ee5e", 1),
 												weightedCluster("default/backendtwo/80/da39a3ee5e", 1),
@@ -3415,17 +3415,17 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"direct response on configuration error": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "missing-backend-service",
 								Port: 80,
 							}},
@@ -3436,10 +3436,10 @@ func TestRouteVisit(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_DirectResponse{
-								DirectResponse: &envoy_route_v3.DirectResponseAction{
+							Action: &envoy_config_route_v3.Route_DirectResponse{
+								DirectResponse: &envoy_config_route_v3.DirectResponseAction{
 									Status: http.StatusServiceUnavailable,
 								},
 							},
@@ -3463,25 +3463,25 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 	tests := map[string]struct {
 		objs                []any
 		fallbackCertificate *types.NamespacedName
-		want                map[string]*envoy_route_v3.RouteConfiguration
+		want                map[string]*envoy_config_route_v3.RouteConfiguration
 	}{
 		"HTTP virtual host, authcontext override": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
-							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.AuthorizationPolicy{
 								Context: map[string]string{
 									"header_2": "new_message_2",
 									"header_3": "message_3",
@@ -3490,19 +3490,19 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 						}},
 					},
 				},
-				&contour_api_v1alpha1.ExtensionService{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1alpha1.ExtensionService{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "test",
 						Namespace: "ns",
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -3513,13 +3513,13 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 							TypedPerFilterConfig: map[string]*anypb.Any{
-								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+										CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
 											ContextExtensions: map[string]string{
 												"header_1": "message_1",
 												"header_2": "new_message_2",
@@ -3536,39 +3536,39 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 		},
 		"HTTP virtual host, auth disabled for a route": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
-							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.AuthorizationPolicy{
 								Disabled: true,
 							},
 						}},
 					},
 				},
-				&contour_api_v1alpha1.ExtensionService{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1alpha1.ExtensionService{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "test",
 						Namespace: "ns",
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -3579,12 +3579,12 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 							TypedPerFilterConfig: map[string]*anypb.Any{
-								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
 										Disabled: true,
 									},
 								}),
@@ -3596,24 +3596,24 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 		},
 		"HTTPs virtual host, authcontext override": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
-							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.AuthorizationPolicy{
 								Context: map[string]string{
 									"header_2": "new_message_2",
 									"header_3": "message_3",
@@ -3622,27 +3622,27 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&contour_api_v1alpha1.ExtensionService{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1alpha1.ExtensionService{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "test",
 						Namespace: "ns",
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -3653,11 +3653,11 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 			want: routeConfigurations(
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match: routePrefix("/"),
-							Action: &envoy_route_v3.Route_Redirect{
-								Redirect: &envoy_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+							Action: &envoy_config_route_v3.Route_Redirect{
+								Redirect: &envoy_config_route_v3.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 										HttpsRedirect: true,
 									},
 								},
@@ -3667,13 +3667,13 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 				),
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routecluster("default/backend/80/da39a3ee5e"),
 							TypedPerFilterConfig: map[string]*anypb.Any{
-								"envoy.filters.http.ext_authz": protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-									Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-										CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+										CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
 											ContextExtensions: map[string]string{
 												"header_1": "message_1",
 												"header_2": "new_message_2",
@@ -3970,35 +3970,35 @@ func TestSortLongestRouteFirst(t *testing.T) {
 	}
 }
 
-func routecluster(cluster string) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+func routecluster(cluster string) *envoy_config_route_v3.Route_Route {
+	return &envoy_config_route_v3.Route_Route{
+		Route: &envoy_config_route_v3.RouteAction{
+			ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
 	}
 }
 
-func websocketroute(c string) *envoy_route_v3.Route_Route {
+func websocketroute(c string) *envoy_config_route_v3.Route_Route {
 	r := routecluster(c)
 	r.Route.UpgradeConfigs = append(r.Route.UpgradeConfigs,
-		&envoy_route_v3.RouteAction_UpgradeConfig{
+		&envoy_config_route_v3.RouteAction_UpgradeConfig{
 			UpgradeType: "websocket",
 		},
 	)
 	return r
 }
 
-func routetimeout(cluster string, timeout time.Duration) *envoy_route_v3.Route_Route {
+func routetimeout(cluster string, timeout time.Duration) *envoy_config_route_v3.Route_Route {
 	r := routecluster(cluster)
 	r.Route.Timeout = durationpb.New(timeout)
 	return r
 }
 
-func routeretry(cluster, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_route_v3.Route_Route {
+func routeretry(cluster, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_config_route_v3.Route_Route {
 	r := routecluster(cluster)
-	r.Route.RetryPolicy = &envoy_route_v3.RetryPolicy{
+	r.Route.RetryPolicy = &envoy_config_route_v3.RetryPolicy{
 		RetryOn: retryOn,
 	}
 	if numRetries > 0 {
@@ -4010,7 +4010,7 @@ func routeretry(cluster, retryOn string, numRetries uint32, perTryTimeout time.D
 	return r
 }
 
-func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.RegexMatchCondition{
 			Regex: regex,
@@ -4019,7 +4019,7 @@ func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_route_
 	})
 }
 
-func routePrefixIngress(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefixIngress(prefix string, headers ...dag.HeaderMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix:          prefix,
@@ -4029,7 +4029,7 @@ func routePrefixIngress(prefix string, headers ...dag.HeaderMatchCondition) *env
 	})
 }
 
-func routePrefix(prefix string) *envoy_route_v3.RouteMatch {
+func routePrefix(prefix string) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
@@ -4037,7 +4037,7 @@ func routePrefix(prefix string) *envoy_route_v3.RouteMatch {
 	})
 }
 
-func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
@@ -4046,7 +4046,7 @@ func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCo
 	})
 }
 
-func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.QueryParamMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.QueryParamMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
@@ -4055,7 +4055,7 @@ func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.Q
 	})
 }
 
-func routeExact(path string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routeExact(path string, headers ...dag.HeaderMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.ExactMatchCondition{
 			Path: path,
@@ -4064,29 +4064,29 @@ func routeExact(path string, headers ...dag.HeaderMatchCondition) *envoy_route_v
 	})
 }
 
-func weightedClusters(first, second *envoy_route_v3.WeightedCluster_ClusterWeight, rest ...*envoy_route_v3.WeightedCluster_ClusterWeight) []*envoy_route_v3.WeightedCluster_ClusterWeight {
-	return append([]*envoy_route_v3.WeightedCluster_ClusterWeight{first, second}, rest...)
+func weightedClusters(first, second *envoy_config_route_v3.WeightedCluster_ClusterWeight, rest ...*envoy_config_route_v3.WeightedCluster_ClusterWeight) []*envoy_config_route_v3.WeightedCluster_ClusterWeight {
+	return append([]*envoy_config_route_v3.WeightedCluster_ClusterWeight{first, second}, rest...)
 }
 
-func weightedCluster(name string, weight uint32) *envoy_route_v3.WeightedCluster_ClusterWeight {
-	return &envoy_route_v3.WeightedCluster_ClusterWeight{
+func weightedCluster(name string, weight uint32) *envoy_config_route_v3.WeightedCluster_ClusterWeight {
+	return &envoy_config_route_v3.WeightedCluster_ClusterWeight{
 		Name:   name,
 		Weight: wrapperspb.UInt32(weight),
 	}
 }
 
-func routeConfigurations(rcs ...*envoy_route_v3.RouteConfiguration) map[string]*envoy_route_v3.RouteConfiguration {
-	m := make(map[string]*envoy_route_v3.RouteConfiguration)
+func routeConfigurations(rcs ...*envoy_config_route_v3.RouteConfiguration) map[string]*envoy_config_route_v3.RouteConfiguration {
+	m := make(map[string]*envoy_config_route_v3.RouteConfiguration)
 	for _, rc := range rcs {
 		m[rc.Name] = rc
 	}
 	return m
 }
 
-func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string) *envoy_route_v3.Route_Route {
-	route.Route.RequestMirrorPolicies = []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
+func withMirrorPolicy(route *envoy_config_route_v3.Route_Route, mirror string) *envoy_config_route_v3.Route_Route {
+	route.Route.RequestMirrorPolicies = []*envoy_config_route_v3.RouteAction_RequestMirrorPolicy{{
 		Cluster: mirror,
-		RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+		RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
 			DefaultValue: &envoy_type_v3.FractionalPercent{
 				Numerator:   100,
 				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
@@ -4110,13 +4110,13 @@ func buildDAGGlobalExtAuth(t *testing.T, fallbackCertificate *types.NamespacedNa
 			},
 			&dag.HTTPProxyProcessor{
 				FallbackCertificate: fallbackCertificate,
-				GlobalExternalAuthorization: &contour_api_v1.AuthorizationServer{
-					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+				GlobalExternalAuthorization: &contour_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_v1.ExtensionServiceReference{
 						Name:      "test",
 						Namespace: "ns",
 					},
 					FailOpen: false,
-					AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.AuthorizationPolicy{
 						Context: map[string]string{
 							"header_1": "message_1",
 							"header_2": "message_2",

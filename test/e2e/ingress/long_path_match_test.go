@@ -21,11 +21,12 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testLongPathMatch(namespace string) {
@@ -37,49 +38,49 @@ func testLongPathMatch(namespace string) {
 		reallyLongPrefixMatch := "/" + strings.Repeat("b", 500)
 		longRegexMatch := "/" + strings.Repeat("c", 200) + ".*"
 
-		i := &networkingv1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+		i := &networking_v1.Ingress{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "long-patch-match",
 			},
-			Spec: networkingv1.IngressSpec{
-				Rules: []networkingv1.IngressRule{
+			Spec: networking_v1.IngressSpec{
+				Rules: []networking_v1.IngressRule{
 					{
 						Host: "long-patch-match.ingress.projectcontour.io",
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
+						IngressRuleValue: networking_v1.IngressRuleValue{
+							HTTP: &networking_v1.HTTPIngressRuleValue{
+								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networkingv1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     longPrefixMatch,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
 												Name: "echo",
-												Port: networkingv1.ServiceBackendPort{
+												Port: networking_v1.ServiceBackendPort{
 													Number: 80,
 												},
 											},
 										},
 									},
 									{
-										PathType: ref.To(networkingv1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     reallyLongPrefixMatch,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
 												Name: "echo",
-												Port: networkingv1.ServiceBackendPort{
+												Port: networking_v1.ServiceBackendPort{
 													Number: 80,
 												},
 											},
 										},
 									},
 									{
-										PathType: ref.To(networkingv1.PathTypeImplementationSpecific),
+										PathType: ptr.To(networking_v1.PathTypeImplementationSpecific),
 										Path:     longRegexMatch,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
 												Name: "echo",
-												Port: networkingv1.ServiceBackendPort{
+												Port: networking_v1.ServiceBackendPort{
 													Number: 80,
 												},
 											},

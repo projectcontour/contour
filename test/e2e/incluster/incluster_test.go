@@ -24,13 +24,14 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 var f = e2e.NewFramework(true)
@@ -64,7 +65,7 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Incluster", func() {
-	var contourConfig *contour_api_v1alpha1.ContourConfiguration
+	var contourConfig *contour_v1alpha1.ContourConfiguration
 
 	BeforeEach(func() {
 		contourConfig = e2e.DefaultContourConfiguration()
@@ -87,7 +88,7 @@ var _ = Describe("Incluster", func() {
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(contourConfig))
 		require.Eventually(f.T(), func() bool {
-			pods := new(v1.PodList)
+			pods := new(core_v1.PodList)
 			podListOptions := &client.ListOptions{
 				LabelSelector: labels.SelectorFromSet(f.Deployment.ContourDeployment.Spec.Selector.MatchLabels),
 				Namespace:     f.Deployment.ContourDeployment.Namespace,
@@ -125,13 +126,13 @@ var _ = Describe("Incluster", func() {
 	})
 
 	Context("contour with memory limits", func() {
-		var originalResourceReq v1.ResourceRequirements
+		var originalResourceReq core_v1.ResourceRequirements
 		BeforeEach(func() {
 			originalResourceReq = f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources
 			// Set memory limit low so we can check if Contour is OOM-killed.
-			f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources = v1.ResourceRequirements{
-				Limits: v1.ResourceList{
-					v1.ResourceMemory: resource.MustParse("100Mi"),
+			f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources = core_v1.ResourceRequirements{
+				Limits: core_v1.ResourceList{
+					core_v1.ResourceMemory: resource.MustParse("100Mi"),
 				},
 			}
 		})

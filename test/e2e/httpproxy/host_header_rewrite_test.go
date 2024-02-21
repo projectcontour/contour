@@ -20,12 +20,13 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testHostRewriteLiteral(namespace string) {
@@ -34,25 +35,25 @@ func testHostRewriteLiteral(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-header-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "hostheaderrewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "ingress-conformance-echo",
 								Port: 80,
 							},
 						},
-						RequestHeadersPolicy: &contourv1.HeadersPolicy{
-							Set: []contourv1.HeaderValue{
+						RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+							Set: []contour_v1.HeaderValue{
 								{
 									Name:  "Host",
 									Value: "rewritten.com",
@@ -88,25 +89,25 @@ func testHostRewriteHeaderHTTPService(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-header-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "dynamichostrewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "ingress-conformance-echo",
 								Port: 80,
 							},
 						},
-						RequestHeadersPolicy: &contourv1.HeadersPolicy{
-							Set: []contourv1.HeaderValue{
+						RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+							Set: []contour_v1.HeaderValue{
 								{
 									Name:  "Host",
 									Value: "%REQ(x-host-rewrite)%",
@@ -144,28 +145,28 @@ func testHostRewriteHeaderHTTPSService(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 		f.Certs.CreateSelfSignedCert(namespace, "ingress-conformance-echo", "ingress-conformance-echo", "https.hostheaderrewrite.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-header-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "https.dynamichostrewrite.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "ingress-conformance-echo",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "ingress-conformance-echo",
 								Port: 80,
 							},
 						},
-						RequestHeadersPolicy: &contourv1.HeadersPolicy{
-							Set: []contourv1.HeaderValue{
+						RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+							Set: []contour_v1.HeaderValue{
 								{
 									Name:  "Host",
 									Value: "%REQ(x-host-rewrite)%",
@@ -203,15 +204,15 @@ func testHostRewriteHeaderExternalNameService(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-		externalNameService := &corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
+		externalNameService := &core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "external-name-service",
 			},
-			Spec: corev1.ServiceSpec{
-				Type:         corev1.ServiceTypeExternalName,
+			Spec: core_v1.ServiceSpec{
+				Type:         core_v1.ServiceTypeExternalName,
 				ExternalName: "ingress-conformance-echo." + namespace,
-				Ports: []corev1.ServicePort{
+				Ports: []core_v1.ServicePort{
 					{
 						Name: "http",
 						Port: 80,
@@ -221,25 +222,25 @@ func testHostRewriteHeaderExternalNameService(namespace string) {
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), externalNameService))
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-header-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "externalhostheaderrewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: externalNameService.Name,
 								Port: 80,
 							},
 						},
-						RequestHeadersPolicy: &contourv1.HeadersPolicy{
-							Set: []contourv1.HeaderValue{
+						RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+							Set: []contour_v1.HeaderValue{
 								{
 									Name:  "Host",
 									Value: "%REQ(x-host-rewrite)%",

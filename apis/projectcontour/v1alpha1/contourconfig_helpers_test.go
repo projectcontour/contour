@@ -17,22 +17,23 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestContourConfigurationSpecValidate(t *testing.T) {
 	t.Run("xds server type validation", func(t *testing.T) {
-		c := v1alpha1.ContourConfigurationSpec{
-			XDSServer: &v1alpha1.XDSServerConfig{},
+		c := contour_v1alpha1.ContourConfigurationSpec{
+			XDSServer: &contour_v1alpha1.XDSServerConfig{},
 		}
 
-		c.XDSServer.Type = v1alpha1.ContourServerType
+		c.XDSServer.Type = contour_v1alpha1.ContourServerType
 		require.NoError(t, c.Validate())
 
-		c.XDSServer.Type = v1alpha1.EnvoyServerType
+		c.XDSServer.Type = contour_v1alpha1.EnvoyServerType
 		require.NoError(t, c.Validate())
 
 		c.XDSServer.Type = "foo"
@@ -40,13 +41,13 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 	})
 
 	t.Run("envoy validation", func(t *testing.T) {
-		c := v1alpha1.ContourConfigurationSpec{
-			Envoy: &v1alpha1.EnvoyConfig{
-				Metrics: &v1alpha1.MetricsConfig{
+		c := contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Metrics: &contour_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8080,
 				},
-				Health: &v1alpha1.HealthConfig{
+				Health: &contour_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8080,
 				},
@@ -54,14 +55,14 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		}
 		require.NoError(t, c.Validate())
 
-		c = v1alpha1.ContourConfigurationSpec{
-			Envoy: &v1alpha1.EnvoyConfig{
-				Metrics: &v1alpha1.MetricsConfig{
-					TLS:     &v1alpha1.MetricsTLS{},
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Metrics: &contour_v1alpha1.MetricsConfig{
+					TLS:     &contour_v1alpha1.MetricsTLS{},
 					Address: "0.0.0.0",
 					Port:    8080,
 				},
-				Health: &v1alpha1.HealthConfig{
+				Health: &contour_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8080,
 				},
@@ -69,45 +70,45 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		}
 		require.Error(t, c.Validate())
 
-		c = v1alpha1.ContourConfigurationSpec{
-			Envoy: &v1alpha1.EnvoyConfig{
-				DefaultHTTPVersions: []v1alpha1.HTTPVersionType{v1alpha1.HTTPVersion1, v1alpha1.HTTPVersion2},
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				DefaultHTTPVersions: []contour_v1alpha1.HTTPVersionType{contour_v1alpha1.HTTPVersion1, contour_v1alpha1.HTTPVersion2},
 			},
 		}
 		require.NoError(t, c.Validate())
 
-		c = v1alpha1.ContourConfigurationSpec{
-			Envoy: &v1alpha1.EnvoyConfig{
-				DefaultHTTPVersions: []v1alpha1.HTTPVersionType{v1alpha1.HTTPVersion1, v1alpha1.HTTPVersion2, "foo"},
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				DefaultHTTPVersions: []contour_v1alpha1.HTTPVersionType{contour_v1alpha1.HTTPVersion1, contour_v1alpha1.HTTPVersion2, "foo"},
 			},
 		}
 		require.Error(t, c.Validate())
 
-		c = v1alpha1.ContourConfigurationSpec{
-			Envoy: &v1alpha1.EnvoyConfig{
-				Cluster: &v1alpha1.ClusterParameters{},
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Cluster: &contour_v1alpha1.ClusterParameters{},
 			},
 		}
 
-		c.Envoy.Cluster.DNSLookupFamily = v1alpha1.AutoClusterDNSFamily
+		c.Envoy.Cluster.DNSLookupFamily = contour_v1alpha1.AutoClusterDNSFamily
 		require.NoError(t, c.Validate())
 
-		c.Envoy.Cluster.DNSLookupFamily = v1alpha1.IPv4ClusterDNSFamily
+		c.Envoy.Cluster.DNSLookupFamily = contour_v1alpha1.IPv4ClusterDNSFamily
 		require.NoError(t, c.Validate())
 
-		c.Envoy.Cluster.DNSLookupFamily = v1alpha1.IPv6ClusterDNSFamily
+		c.Envoy.Cluster.DNSLookupFamily = contour_v1alpha1.IPv6ClusterDNSFamily
 		require.NoError(t, c.Validate())
 
-		c.Envoy.Cluster.DNSLookupFamily = v1alpha1.AllClusterDNSFamily
+		c.Envoy.Cluster.DNSLookupFamily = contour_v1alpha1.AllClusterDNSFamily
 		require.NoError(t, c.Validate())
 
 		c.Envoy.Cluster.DNSLookupFamily = "foo"
 		require.Error(t, c.Validate())
 
-		c = v1alpha1.ContourConfigurationSpec{
-			Envoy: &v1alpha1.EnvoyConfig{
-				Listener: &v1alpha1.EnvoyListenerConfig{
-					TLS: &v1alpha1.EnvoyTLS{},
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					TLS: &contour_v1alpha1.EnvoyTLS{},
 				},
 			},
 		}
@@ -163,42 +164,42 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 	})
 
 	t.Run("gateway validation", func(t *testing.T) {
-		c := v1alpha1.ContourConfigurationSpec{
-			Gateway: &v1alpha1.GatewayConfig{},
+		c := contour_v1alpha1.ContourConfigurationSpec{
+			Gateway: &contour_v1alpha1.GatewayConfig{},
 		}
 
-		c.Gateway.ControllerName = "foo"
+		c.Gateway.GatewayRef = contour_v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
 		require.NoError(t, c.Validate())
 
-		c.Gateway.ControllerName = ""
-		c.Gateway.GatewayRef = &v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
-		require.NoError(t, c.Validate())
+		// empty namespace is not allowed
+		c.Gateway.GatewayRef = contour_v1alpha1.NamespacedName{Name: "name"}
+		require.Error(t, c.Validate())
 
-		c.Gateway.ControllerName = "foo"
-		c.Gateway.GatewayRef = &v1alpha1.NamespacedName{Namespace: "ns", Name: "name"}
+		// empty name is not allowed
+		c.Gateway.GatewayRef = contour_v1alpha1.NamespacedName{Namespace: "ns"}
 		require.Error(t, c.Validate())
 	})
 
 	t.Run("tracing validation", func(t *testing.T) {
-		c := v1alpha1.ContourConfigurationSpec{
-			Tracing: &v1alpha1.TracingConfig{},
+		c := contour_v1alpha1.ContourConfigurationSpec{
+			Tracing: &contour_v1alpha1.TracingConfig{},
 		}
 
 		require.Error(t, c.Validate())
 
-		c.Tracing.ExtensionService = &v1alpha1.NamespacedName{
+		c.Tracing.ExtensionService = &contour_v1alpha1.NamespacedName{
 			Name:      "otel-collector",
 			Namespace: "projectcontour",
 		}
 		require.NoError(t, c.Validate())
 
-		c.Tracing.OverallSampling = ref.To("number")
+		c.Tracing.OverallSampling = ptr.To("number")
 		require.Error(t, c.Validate())
 
-		c.Tracing.OverallSampling = ref.To("10")
+		c.Tracing.OverallSampling = ptr.To("10")
 		require.NoError(t, c.Validate())
 
-		customTags := []*v1alpha1.CustomTag{
+		customTags := []*contour_v1alpha1.CustomTag{
 			{
 				TagName: "first tag",
 				Literal: "literal",
@@ -207,21 +208,21 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Tracing.CustomTags = customTags
 		require.NoError(t, c.Validate())
 
-		customTags = append(customTags, &v1alpha1.CustomTag{
+		customTags = append(customTags, &contour_v1alpha1.CustomTag{
 			TagName:           "second tag",
 			RequestHeaderName: "x-custom-header",
 		})
 		c.Tracing.CustomTags = customTags
 		require.NoError(t, c.Validate())
 
-		customTags = append(customTags, &v1alpha1.CustomTag{
+		customTags = append(customTags, &contour_v1alpha1.CustomTag{
 			TagName:           "first tag",
 			RequestHeaderName: "x-custom-header",
 		})
 		c.Tracing.CustomTags = customTags
 		require.Error(t, c.Validate())
 
-		customTags = []*v1alpha1.CustomTag{
+		customTags = []*contour_v1alpha1.CustomTag{
 			{
 				TagName:           "first tag",
 				Literal:           "literal",
@@ -240,7 +241,7 @@ func TestSanitizeCipherSuites(t *testing.T) {
 	}{
 		"no ciphers": {
 			ciphers: nil,
-			want:    v1alpha1.DefaultTLSCiphers,
+			want:    contour_v1alpha1.DefaultTLSCiphers,
 		},
 		"valid list": {
 			ciphers: []string{
@@ -267,7 +268,7 @@ func TestSanitizeCipherSuites(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			e := &v1alpha1.EnvoyTLS{
+			e := &contour_v1alpha1.EnvoyTLS{
 				CipherSuites: tc.ciphers,
 			}
 			assert.Equal(t, tc.want, e.SanitizedCipherSuites())
@@ -277,20 +278,20 @@ func TestSanitizeCipherSuites(t *testing.T) {
 
 // TestAccessLogFormatExtensions tests that command operators requiring extensions are recognized for given access log format.
 func TestAccessLogFormatExtensions(t *testing.T) {
-	e1 := v1alpha1.EnvoyLogging{
-		AccessLogFormat:       v1alpha1.EnvoyAccessLog,
+	e1 := contour_v1alpha1.EnvoyLogging{
+		AccessLogFormat:       contour_v1alpha1.EnvoyAccessLog,
 		AccessLogFormatString: "[%START_TIME%] \"%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%\"\n",
 	}
 	assert.Equal(t, []string{"envoy.formatter.req_without_query"}, e1.AccessLogFormatterExtensions())
 
-	e2 := v1alpha1.EnvoyLogging{
-		AccessLogFormat:     v1alpha1.JSONAccessLog,
+	e2 := contour_v1alpha1.EnvoyLogging{
+		AccessLogFormat:     contour_v1alpha1.JSONAccessLog,
 		AccessLogJSONFields: []string{"@timestamp", "path=%REQ_WITHOUT_QUERY(X-ENVOY-ORIGINAL-PATH?:PATH)%"},
 	}
 	assert.Equal(t, []string{"envoy.formatter.req_without_query"}, e2.AccessLogFormatterExtensions())
 
-	e3 := v1alpha1.EnvoyLogging{
-		AccessLogFormat: v1alpha1.EnvoyAccessLog,
+	e3 := contour_v1alpha1.EnvoyLogging{
+		AccessLogFormat: contour_v1alpha1.EnvoyAccessLog,
 	}
 	assert.Empty(t, e3.AccessLogFormatterExtensions())
 }
@@ -298,27 +299,27 @@ func TestAccessLogFormatExtensions(t *testing.T) {
 func TestFeatureFlagsValidate(t *testing.T) {
 	tests := []struct {
 		name     string
-		flags    v1alpha1.FeatureFlags
+		flags    contour_v1alpha1.FeatureFlags
 		expected error
 	}{
 		{
 			name:     "valid flag",
-			flags:    v1alpha1.FeatureFlags{"useEndpointSlices"},
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices"},
 			expected: nil,
 		},
 		{
 			name:     "invalid flag",
-			flags:    v1alpha1.FeatureFlags{"invalidFlag"},
+			flags:    contour_v1alpha1.FeatureFlags{"invalidFlag"},
 			expected: fmt.Errorf("invalid contour configuration, unknown feature flag:invalidFlag"),
 		},
 		{
 			name:     "mix of valid and invalid flags",
-			flags:    v1alpha1.FeatureFlags{"useEndpointSlices", "invalidFlag"},
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices", "invalidFlag"},
 			expected: fmt.Errorf("invalid contour configuration, unknown feature flag:invalidFlag"),
 		},
 		{
 			name:     "empty flags",
-			flags:    v1alpha1.FeatureFlags{},
+			flags:    contour_v1alpha1.FeatureFlags{},
 			expected: nil,
 		},
 	}

@@ -28,14 +28,13 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - envoy
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: envoy
               topologyKey: "kubernetes.io/hostname"
+            weight: 100
       containers:
         - command:
             - /bin/contour
@@ -63,7 +62,7 @@ spec:
             - --log-level info
           command:
             - envoy
-          image: docker.io/envoyproxy/envoy:v1.28.0
+          image: docker.io/envoyproxy/envoy:v1.29.1
           imagePullPolicy: IfNotPresent
           name: envoy
           env:

@@ -14,13 +14,13 @@
 package v3
 
 import (
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 )
 
-// SafeRegexMatch returns a matcher.RegexMatcher for the supplied regex.
+// SafeRegexMatch returns a envoy_matcher_v3.RegexMatcher for the supplied regex.
 // SafeRegexMatch does not escape regex meta characters.
-func SafeRegexMatch(regex string) *matcher.RegexMatcher {
-	return &matcher.RegexMatcher{
+func SafeRegexMatch(regex string) *envoy_matcher_v3.RegexMatcher {
+	return &envoy_matcher_v3.RegexMatcher{
 		Regex: regex,
 	}
 }

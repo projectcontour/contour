@@ -14,16 +14,17 @@
 package v3
 
 import (
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 const (
@@ -31,18 +32,18 @@ const (
 	metricsCaBundleSDSName   = "metrics-ca-certificate"
 )
 
-// StatsListeners returns an array of *envoy_listener_v3.Listeners,
+// StatsListeners returns an array of *envoy_config_listener_v3.Listeners,
 // either single HTTP listener or HTTP and HTTPS listeners depending on config.
 // The listeners are configured to serve:
 //   - prometheus metrics on /stats (either over HTTP or HTTPS)
 //   - readiness probe on /ready (always over HTTP)
-func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_api_v1alpha1.HealthConfig) []*envoy_listener_v3.Listener {
-	var listeners []*envoy_listener_v3.Listener
+func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alpha1.HealthConfig) []*envoy_config_listener_v3.Listener {
+	var listeners []*envoy_config_listener_v3.Listener
 
 	switch {
 	// Create HTTPS listener for metrics and HTTP listener for health.
 	case metrics.TLS != nil:
-		listeners = []*envoy_listener_v3.Listener{{
+		listeners = []*envoy_config_listener_v3.Listener{{
 			Name:          "stats",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
@@ -59,7 +60,7 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 	// Create combined HTTP listener for metrics and health.
 	case (metrics.Address == health.Address) &&
 		(metrics.Port == health.Port):
-		listeners = []*envoy_listener_v3.Listener{{
+		listeners = []*envoy_config_listener_v3.Listener{{
 			Name:          "stats-health",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
@@ -68,7 +69,7 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 
 	// Create separate HTTP listeners for metrics and health.
 	default:
-		listeners = []*envoy_listener_v3.Listener{{
+		listeners = []*envoy_config_listener_v3.Listener{{
 			Name:          "stats",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
@@ -84,10 +85,10 @@ func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_a
 	return listeners
 }
 
-// AdminListener returns a *envoy_listener_v3.Listener configured to serve Envoy
+// AdminListener returns a *envoy_config_listener_v3.Listener configured to serve Envoy
 // debug routes from the admin webpage.
-func AdminListener(port int) *envoy_listener_v3.Listener {
-	return &envoy_listener_v3.Listener{
+func AdminListener(port int) *envoy_config_listener_v3.Listener {
+	return &envoy_config_listener_v3.Listener{
 		Name:    "envoy-admin",
 		Address: SocketAddress("127.0.0.1", port),
 		FilterChains: filterChain("envoy-admin", nil,
@@ -110,18 +111,18 @@ func AdminListener(port int) *envoy_listener_v3.Listener {
 }
 
 // filterChain returns a filter chain used by static listeners.
-func filterChain(statsPrefix string, transportSocket *envoy_core_v3.TransportSocket, routes *http.HttpConnectionManager_RouteConfig) []*envoy_listener_v3.FilterChain {
-	return []*envoy_listener_v3.FilterChain{{
-		Filters: []*envoy_listener_v3.Filter{{
+func filterChain(statsPrefix string, transportSocket *envoy_config_core_v3.TransportSocket, routes *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig) []*envoy_config_listener_v3.FilterChain {
+	return []*envoy_config_listener_v3.FilterChain{{
+		Filters: []*envoy_config_listener_v3.Filter{{
 			Name: wellknown.HTTPConnectionManager,
-			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+			ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{
 					StatPrefix:     statsPrefix,
 					RouteSpecifier: routes,
-					HttpFilters: []*http.HttpFilter{{
+					HttpFilters: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{{
 						Name: wellknown.Router,
-						ConfigType: &http.HttpFilter_TypedConfig{
-							TypedConfig: protobuf.MustMarshalAny(&envoy_router_v3.Router{}),
+						ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+							TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_router_v3.Router{}),
 						},
 					}},
 					NormalizePath: wrapperspb.Bool(true),
@@ -133,10 +134,10 @@ func filterChain(statsPrefix string, transportSocket *envoy_core_v3.TransportSoc
 }
 
 // routeForAdminInterface creates static RouteConfig that forwards requested prefixes to Envoy admin interface.
-func routeForAdminInterface(prefixes ...string) *http.HttpConnectionManager_RouteConfig {
-	config := &http.HttpConnectionManager_RouteConfig{
-		RouteConfig: &envoy_route_v3.RouteConfiguration{
-			VirtualHosts: []*envoy_route_v3.VirtualHost{{
+func routeForAdminInterface(prefixes ...string) *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig {
+	config := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig{
+		RouteConfig: &envoy_config_route_v3.RouteConfiguration{
+			VirtualHosts: []*envoy_config_route_v3.VirtualHost{{
 				Name:    "backend",
 				Domains: []string{"*"},
 			}},
@@ -145,15 +146,15 @@ func routeForAdminInterface(prefixes ...string) *http.HttpConnectionManager_Rout
 
 	for _, prefix := range prefixes {
 		config.RouteConfig.VirtualHosts[0].Routes = append(config.RouteConfig.VirtualHosts[0].Routes,
-			&envoy_route_v3.Route{
-				Match: &envoy_route_v3.RouteMatch{
-					PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
+			&envoy_config_route_v3.Route{
+				Match: &envoy_config_route_v3.RouteMatch{
+					PathSpecifier: &envoy_config_route_v3.RouteMatch_Prefix{
 						Prefix: prefix,
 					},
 				},
-				Action: &envoy_route_v3.Route_Route{
-					Route: &envoy_route_v3.RouteAction{
-						ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+				Action: &envoy_config_route_v3.Route_Route{
+					Route: &envoy_config_route_v3.RouteAction{
+						ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
 							Cluster: "envoy-admin",
 						},
 					},
@@ -166,14 +167,14 @@ func routeForAdminInterface(prefixes ...string) *http.HttpConnectionManager_Rout
 
 // downstreamTLSContext creates TLS context when HTTPS is used to protect Envoy stats endpoint.
 // Certificates and key are hardcoded to the SDS secrets which are returned by StatsSecrets.
-func downstreamTLSContext(clientValidation bool) *envoy_tls_v3.DownstreamTlsContext {
-	context := &envoy_tls_v3.DownstreamTlsContext{
-		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
-			TlsParams: &envoy_tls_v3.TlsParameters{
-				TlsMinimumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
-				TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
+func downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
+	context := &envoy_transport_socket_tls_v3.DownstreamTlsContext{
+		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
+				TlsMinimumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+				TlsMaximumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 			},
-			TlsCertificateSdsSecretConfigs: []*envoy_tls_v3.SdsSecretConfig{{
+			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name:      metricsServerCertSDSName,
 				SdsConfig: ConfigSource("contour"),
 			}},
@@ -181,8 +182,8 @@ func downstreamTLSContext(clientValidation bool) *envoy_tls_v3.DownstreamTlsCont
 	}
 
 	if clientValidation {
-		context.CommonTlsContext.ValidationContextType = &envoy_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
-			ValidationContextSdsSecretConfig: &envoy_tls_v3.SdsSecretConfig{
+		context.CommonTlsContext.ValidationContextType = &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
+			ValidationContextSdsSecretConfig: &envoy_transport_socket_tls_v3.SdsSecretConfig{
 				Name:      metricsCaBundleSDSName,
 				SdsConfig: ConfigSource("contour"),
 			},
@@ -194,22 +195,22 @@ func downstreamTLSContext(clientValidation bool) *envoy_tls_v3.DownstreamTlsCont
 }
 
 // StatsSecrets returns SDS secrets that refer to local file paths in Envoy container.
-func StatsSecrets(metricsTLS *contour_api_v1alpha1.MetricsTLS) []*envoy_tls_v3.Secret {
-	secrets := []*envoy_tls_v3.Secret{}
+func StatsSecrets(metricsTLS *contour_v1alpha1.MetricsTLS) []*envoy_transport_socket_tls_v3.Secret {
+	secrets := []*envoy_transport_socket_tls_v3.Secret{}
 
 	if metricsTLS != nil {
 		if metricsTLS.CertFile != "" && metricsTLS.KeyFile != "" {
-			secrets = append(secrets, &envoy_tls_v3.Secret{
+			secrets = append(secrets, &envoy_transport_socket_tls_v3.Secret{
 				Name: metricsServerCertSDSName,
-				Type: &envoy_tls_v3.Secret_TlsCertificate{
-					TlsCertificate: &envoy_tls_v3.TlsCertificate{
-						CertificateChain: &envoy_core_v3.DataSource{
-							Specifier: &envoy_core_v3.DataSource_Filename{
+				Type: &envoy_transport_socket_tls_v3.Secret_TlsCertificate{
+					TlsCertificate: &envoy_transport_socket_tls_v3.TlsCertificate{
+						CertificateChain: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_Filename{
 								Filename: metricsTLS.CertFile,
 							},
 						},
-						PrivateKey: &envoy_core_v3.DataSource{
-							Specifier: &envoy_core_v3.DataSource_Filename{
+						PrivateKey: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_Filename{
 								Filename: metricsTLS.KeyFile,
 							},
 						},
@@ -218,12 +219,12 @@ func StatsSecrets(metricsTLS *contour_api_v1alpha1.MetricsTLS) []*envoy_tls_v3.S
 			})
 		}
 		if metricsTLS.CAFile != "" {
-			secrets = append(secrets, &envoy_tls_v3.Secret{
+			secrets = append(secrets, &envoy_transport_socket_tls_v3.Secret{
 				Name: metricsCaBundleSDSName,
-				Type: &envoy_tls_v3.Secret_ValidationContext{
-					ValidationContext: &envoy_tls_v3.CertificateValidationContext{
-						TrustedCa: &envoy_core_v3.DataSource{
-							Specifier: &envoy_core_v3.DataSource_Filename{
+				Type: &envoy_transport_socket_tls_v3.Secret_ValidationContext{
+					ValidationContext: &envoy_transport_socket_tls_v3.CertificateValidationContext{
+						TrustedCa: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_Filename{
 								Filename: metricsTLS.CAFile,
 							},
 						},

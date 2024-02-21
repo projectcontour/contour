@@ -25,9 +25,6 @@ import (
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/projectcontour/yages/yages"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -36,7 +33,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testGRPCServicePlaintext(namespace string) {
@@ -46,30 +47,30 @@ func testGRPCServicePlaintext(namespace string) {
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "grpc-echo-plaintext.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "grpc-echo-plaintext",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "grpc-echo-plaintext.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
 						// So we can make TLS and non-TLs requests.
 						PermitInsecure: true,
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name:     "grpc-echo",
 								Port:     9000,
-								Protocol: ref.To("h2c"),
+								Protocol: ptr.To("h2c"),
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/yages.Echo/Ping",
 							},
@@ -132,25 +133,25 @@ func testGRPCWeb(namespace string) {
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "grpc-web.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "grpc-web",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "grpc-web.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name:     "grpc-echo",
 								Port:     9000,
-								Protocol: ref.To("h2c"),
+								Protocol: ptr.To("h2c"),
 							},
 						},
 					},

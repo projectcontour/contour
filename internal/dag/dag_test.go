@@ -18,7 +18,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -76,10 +76,12 @@ func TestSecureVirtualHostValid(t *testing.T) {
 
 func TestPeerValidationContext(t *testing.T) {
 	pvc1 := PeerValidationContext{
-		CACertificate: &Secret{
-			Object: &v1.Secret{
-				Data: map[string][]byte{
-					CACertificateKey: []byte("cacert"),
+		CACertificates: []*Secret{
+			{
+				Object: &core_v1.Secret{
+					Data: map[string][]byte{
+						CACertificateKey: []byte("cacert"),
+					},
 				},
 			},
 		},
@@ -87,13 +89,45 @@ func TestPeerValidationContext(t *testing.T) {
 	}
 	pvc2 := PeerValidationContext{}
 	var pvc3 *PeerValidationContext
+	pvc4 := PeerValidationContext{
+		CACertificates: []*Secret{
+			{
+				Object: &core_v1.Secret{
+					Data: map[string][]byte{
+						CACertificateKey: []byte("-cacert-"),
+					},
+				},
+			},
+			{
+				Object: &core_v1.Secret{
+					Data: map[string][]byte{
+						CACertificateKey: []byte("-cacert2-"),
+					},
+				},
+			},
+			{
+				Object: &core_v1.Secret{
+					Data: map[string][]byte{},
+				},
+			},
+			nil,
+		},
+		SubjectNames: []string{"subject"},
+	}
+	pvc5 := PeerValidationContext{
+		CACertificates: []*Secret{},
+	}
 
-	assert.Equal(t, "subject", pvc1.GetSubjectNames()[0])
+	assert.ElementsMatch(t, []string{"subject"}, pvc1.GetSubjectNames())
 	assert.Equal(t, []byte("cacert"), pvc1.GetCACertificate())
 	assert.Equal(t, []string(nil), pvc2.GetSubjectNames())
 	assert.Equal(t, []byte(nil), pvc2.GetCACertificate())
 	assert.Equal(t, []string(nil), pvc3.GetSubjectNames())
 	assert.Equal(t, []byte(nil), pvc3.GetCACertificate())
+	assert.ElementsMatch(t, []string{"subject"}, pvc4.GetSubjectNames())
+	assert.Equal(t, []byte("-cacert--cacert2-"), pvc4.GetCACertificate())
+	assert.Equal(t, []string(nil), pvc5.GetSubjectNames())
+	assert.Equal(t, []byte(nil), pvc5.GetCACertificate())
 }
 
 func TestObserverFunc(t *testing.T) {

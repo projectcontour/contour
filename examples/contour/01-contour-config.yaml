@@ -13,7 +13,8 @@ data:
     #
     # Specify the Gateway API configuration.
     # gateway:
-    #   controllerName: projectcontour.io/gateway-controller
+    #   namespace: projectcontour
+    #   name: contour
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true

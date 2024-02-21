@@ -19,12 +19,13 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
@@ -33,18 +34,18 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "globalratelimitvhostnontls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -71,13 +72,13 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			}
 
 			// Add a global rate limit policy on the virtual host.
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
+			p.Spec.VirtualHost.RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Value: "vhostlimit",
 									},
 								},
@@ -116,18 +117,18 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "globalratelimitroutenontls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "globalratelimitroutenontls.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -135,13 +136,13 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/unlimited",
 							},
@@ -167,13 +168,13 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
+			p.Spec.Routes[0].RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Key:   "route_limit_key",
 										Value: "routelimit",
 									},
@@ -224,21 +225,21 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitvhosttls.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "globalratelimitvhosttls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "globalratelimitvhosttls.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -265,13 +266,13 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 				return err
 			}
 
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
+			p.Spec.VirtualHost.RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Value: "tlsvhostlimit",
 									},
 								},
@@ -311,21 +312,21 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "globalratelimitroutetls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "globalratelimitroutetls.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -333,13 +334,13 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/unlimited",
 							},
@@ -365,13 +366,13 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
+			p.Spec.Routes[0].RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Value: "tlsroutelimit",
 									},
 								},
@@ -420,24 +421,24 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "globalratelimitvhostnontls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/echo",
 							},
@@ -464,13 +465,13 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 			}
 
 			// Add a global rate limit policy on the virtual host.
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
+			p.Spec.VirtualHost.RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Value: "randomvalue",
 									},
 								},
@@ -498,8 +499,8 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 			}
 
 			// Set disabled to false explicitly on the route.
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
+			p.Spec.Routes[0].RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
 					Disabled: false,
 				},
 			}
@@ -522,24 +523,24 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "globalratelimitvhostnontls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "globalratelimitvhostnontls.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/echo",
 							},
@@ -566,13 +567,13 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 			}
 
 			// Add a global rate limit policy on the virtual host.
-			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
-					Descriptors: []contourv1.RateLimitDescriptor{
+			p.Spec.VirtualHost.RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{
 						{
-							Entries: []contourv1.RateLimitDescriptorEntry{
+							Entries: []contour_v1.RateLimitDescriptorEntry{
 								{
-									GenericKey: &contourv1.GenericKeyDescriptor{
+									GenericKey: &contour_v1.GenericKeyDescriptor{
 										Value: "randomvalue",
 									},
 								},
@@ -600,8 +601,8 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 			}
 
 			// Disable Vhost global rate limit policy on the route.
-			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-				Global: &contourv1.GlobalRateLimitPolicy{
+			p.Spec.Routes[0].RateLimitPolicy = &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
 					Disabled: true,
 				},
 			}

@@ -29,19 +29,20 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gmeasure"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 var (
@@ -76,27 +77,27 @@ var _ = BeforeSuite(func() {
 		"projectcontour.bench-workload": "app",
 	}
 	// Add resource limits to Contour Deployment.
-	f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("1"),
-			corev1.ResourceMemory: resource.MustParse("2Gi"),
+	f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Resources = core_v1.ResourceRequirements{
+		Limits: core_v1.ResourceList{
+			core_v1.ResourceCPU:    resource.MustParse("1"),
+			core_v1.ResourceMemory: resource.MustParse("2Gi"),
 		},
 	}
 	// Add metrics port to Envoy DaemonSet.
 	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].Ports = append(
 		f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].Ports,
-		corev1.ContainerPort{
+		core_v1.ContainerPort{
 			Name:          "metrics",
 			HostPort:      8002,
 			ContainerPort: 8002,
-			Protocol:      corev1.ProtocolTCP,
+			Protocol:      core_v1.ProtocolTCP,
 		},
 	)
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 
 	require.Eventually(f.T(), func() bool {
-		s := &corev1.Service{}
+		s := &core_v1.Service{}
 		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), s); err != nil {
 			return false
 		}
@@ -116,28 +117,28 @@ var _ = Describe("Benchmark", func() {
 	f.NamespacedTest("sequential-service-creation", func(namespace string) {
 		Context("with many services created sequentially", func() {
 			deployApp := func(name string) {
-				deployment := &appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
+				deployment := &apps_v1.Deployment{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},
-					Spec: appsv1.DeploymentSpec{
-						Selector: &metav1.LabelSelector{
+					Spec: apps_v1.DeploymentSpec{
+						Selector: &meta_v1.LabelSelector{
 							MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
+						Template: core_v1.PodTemplateSpec{
+							ObjectMeta: meta_v1.ObjectMeta{
 								Labels: map[string]string{"app.kubernetes.io/name": name},
 							},
-							Spec: corev1.PodSpec{
+							Spec: core_v1.PodSpec{
 								NodeSelector: map[string]string{
 									"projectcontour.bench-workload": "app",
 								},
-								Containers: []corev1.Container{
+								Containers: []core_v1.Container{
 									{
 										Name:  "conformance-echo",
 										Image: "gcr.io/k8s-staging-ingressconformance/echoserver@sha256:dc59c3e517399b436fa9db58f16506bd37f3cd831a7298eaf01bd5762ec514e1",
-										Env: []corev1.EnvVar{
+										Env: []core_v1.EnvVar{
 											{
 												Name:  "INGRESS_NAME",
 												Value: name,
@@ -148,30 +149,30 @@ var _ = Describe("Benchmark", func() {
 											},
 											{
 												Name: "POD_NAME",
-												ValueFrom: &corev1.EnvVarSource{
-													FieldRef: &corev1.ObjectFieldSelector{
+												ValueFrom: &core_v1.EnvVarSource{
+													FieldRef: &core_v1.ObjectFieldSelector{
 														FieldPath: "metadata.name",
 													},
 												},
 											},
 											{
 												Name: "NAMESPACE",
-												ValueFrom: &corev1.EnvVarSource{
-													FieldRef: &corev1.ObjectFieldSelector{
+												ValueFrom: &core_v1.EnvVarSource{
+													FieldRef: &core_v1.ObjectFieldSelector{
 														FieldPath: "metadata.namespace",
 													},
 												},
 											},
 										},
-										Ports: []corev1.ContainerPort{
+										Ports: []core_v1.ContainerPort{
 											{
 												Name:          "http-api",
 												ContainerPort: 3000,
 											},
 										},
-										ReadinessProbe: &corev1.Probe{
-											ProbeHandler: corev1.ProbeHandler{
-												HTTPGet: &corev1.HTTPGetAction{
+										ReadinessProbe: &core_v1.Probe{
+											ProbeHandler: core_v1.ProbeHandler{
+												HTTPGet: &core_v1.HTTPGetAction{
 													Path: "/health",
 													Port: intstr.FromInt(3000),
 												},
@@ -185,13 +186,13 @@ var _ = Describe("Benchmark", func() {
 				}
 				require.NoError(f.T(), f.Client.Create(context.TODO(), deployment))
 
-				service := &corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				service := &core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},
-					Spec: corev1.ServiceSpec{
-						Ports: []corev1.ServicePort{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{
 							{
 								Name:       "http",
 								Port:       80,
@@ -205,30 +206,30 @@ var _ = Describe("Benchmark", func() {
 
 				// Wait for deployment availability before we continue.
 				require.Eventually(f.T(), func() bool {
-					d := &appsv1.Deployment{}
+					d := &apps_v1.Deployment{}
 					if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(deployment), d); err != nil {
 						return false
 					}
 					for _, c := range d.Status.Conditions {
-						return c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionTrue
+						return c.Type == apps_v1.DeploymentAvailable && c.Status == core_v1.ConditionTrue
 					}
 					return false
 				}, time.Minute*2, f.RetryInterval)
 			}
 
 			deployHTTPProxy := func(name string) {
-				p := &contourv1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				p := &contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      name,
 					},
-					Spec: contourv1.HTTPProxySpec{
-						VirtualHost: &contourv1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: name + ".projectcontour.io",
 						},
-						Routes: []contourv1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Services: []contourv1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: name,
 										Port: 80,
@@ -250,7 +251,7 @@ var _ = Describe("Benchmark", func() {
 				// Warm up Envoy on each worker node to ensure no outliers.
 				deployApp("warm-up")
 				deployHTTPProxy("warm-up")
-				nodes := &corev1.NodeList{}
+				nodes := &core_v1.NodeList{}
 				labelSelector := &client.ListOptions{
 					LabelSelector: labels.SelectorFromSet(f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.NodeSelector),
 				}
@@ -259,7 +260,7 @@ var _ = Describe("Benchmark", func() {
 				for _, node := range nodes.Items {
 					nodeExternalIP := ""
 					for _, a := range node.Status.Addresses {
-						if a.Type == corev1.NodeExternalIP {
+						if a.Type == core_v1.NodeExternalIP {
 							nodeExternalIP = a.Address
 						}
 					}

@@ -14,26 +14,27 @@
 package v3
 
 import (
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // UpstreamTLSTransportSocket returns a custom transport socket using the UpstreamTlsContext provided.
-func UpstreamTLSTransportSocket(tls *envoy_tls_v3.UpstreamTlsContext) *envoy_core_v3.TransportSocket {
-	return &envoy_core_v3.TransportSocket{
+func UpstreamTLSTransportSocket(tls *envoy_transport_socket_tls_v3.UpstreamTlsContext) *envoy_config_core_v3.TransportSocket {
+	return &envoy_config_core_v3.TransportSocket{
 		Name: "envoy.transport_sockets.tls",
-		ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
+		ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(tls),
 		},
 	}
 }
 
 // DownstreamTLSTransportSocket returns a custom transport socket using the DownstreamTlsContext provided.
-func DownstreamTLSTransportSocket(tls *envoy_tls_v3.DownstreamTlsContext) *envoy_core_v3.TransportSocket {
-	return &envoy_core_v3.TransportSocket{
+func DownstreamTLSTransportSocket(tls *envoy_transport_socket_tls_v3.DownstreamTlsContext) *envoy_config_core_v3.TransportSocket {
+	return &envoy_config_core_v3.TransportSocket{
 		Name: "envoy.transport_sockets.tls",
-		ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
+		ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(tls),
 		},
 	}

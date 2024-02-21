@@ -18,13 +18,13 @@ import (
 	"os"
 	"path"
 
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // writeSecret writes out a given Secret to a file.
-func writeSecret(f *os.File, secret *corev1.Secret) error {
+func writeSecret(f *os.File, secret *core_v1.Secret) error {
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	return s.Encode(secret, f)
 }

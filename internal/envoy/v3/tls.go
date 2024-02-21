@@ -14,16 +14,16 @@
 package v3
 
 import (
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 )
 
-func ParseTLSVersion(version string) envoy_tls_v3.TlsParameters_TlsProtocol {
+func ParseTLSVersion(version string) envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol {
 	switch version {
 	case "1.2":
-		return envoy_tls_v3.TlsParameters_TLSv1_2
+		return envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2
 	case "1.3":
-		return envoy_tls_v3.TlsParameters_TLSv1_3
+		return envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3
 	default:
-		return envoy_tls_v3.TlsParameters_TLS_AUTO
+		return envoy_transport_socket_tls_v3.TlsParameters_TLS_AUTO
 	}
 }
