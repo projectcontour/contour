@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
@@ -320,7 +319,7 @@ func TestFeatureFlagsValidate(t *testing.T) {
 		},
 		{
 			name:     "valid flag: false",
-			flags:    v1alpha1.FeatureFlags{"useEndpointSlices=false"},
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=false"},
 			expected: nil,
 		},
 
