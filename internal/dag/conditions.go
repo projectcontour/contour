@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"strings"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 // mergePathMatchConditions merges the given slice of prefix, regex or exact MatchConditions into a single
@@ -29,7 +29,7 @@ import (
 // In case there is a regex condition present the entire condition becomes a regex condition.
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
-func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
+func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition {
 	mergedPath := ""
 	isRegex := false
 
@@ -84,7 +84,7 @@ func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondit
 
 // pathMatchConditionsValid validates a slice of MatchConditions can be correctly merged.
 // It encodes the business rules about what is allowed for MatchConditions.
-func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
+func pathMatchConditionsValid(conds []contour_v1.MatchCondition) error {
 	prefixCount := 0
 	exactCount := 0
 	regexCount := 0
@@ -121,7 +121,7 @@ func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 }
 
 // includeMatchConditionsValid validates the MatchConditions supplied in the includes
-func includeMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
+func includeMatchConditionsValid(conds []contour_v1.MatchCondition) error {
 	for _, cond := range conds {
 		if cond.Exact != "" {
 			return fmt.Errorf("exact conditions are not allowed in includes block")
@@ -134,8 +134,8 @@ func includeMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 	return nil
 }
 
-func mergeHeaderMatchConditions(conds []contour_api_v1.MatchCondition) []HeaderMatchCondition {
-	var headerConditions []contour_api_v1.HeaderMatchCondition
+func mergeHeaderMatchConditions(conds []contour_v1.MatchCondition) []HeaderMatchCondition {
+	var headerConditions []contour_v1.HeaderMatchCondition
 	for _, cond := range conds {
 		if cond.Header != nil {
 			headerConditions = append(headerConditions, *cond.Header)
@@ -145,8 +145,8 @@ func mergeHeaderMatchConditions(conds []contour_api_v1.MatchCondition) []HeaderM
 	return headerMatchConditions(headerConditions)
 }
 
-func mergeQueryParamMatchConditions(conds []contour_api_v1.MatchCondition) []QueryParamMatchCondition {
-	var queryParameterConditions []contour_api_v1.QueryParameterMatchCondition
+func mergeQueryParamMatchConditions(conds []contour_v1.MatchCondition) []QueryParamMatchCondition {
+	var queryParameterConditions []contour_v1.QueryParameterMatchCondition
 	for _, cond := range conds {
 		if cond.QueryParameter != nil {
 			queryParameterConditions = append(queryParameterConditions, *cond.QueryParameter)
@@ -156,7 +156,7 @@ func mergeQueryParamMatchConditions(conds []contour_api_v1.MatchCondition) []Que
 	return queryParameterMatchConditions(queryParameterConditions)
 }
 
-func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []HeaderMatchCondition {
+func headerMatchConditions(conditions []contour_v1.HeaderMatchCondition) []HeaderMatchCondition {
 	var hc []HeaderMatchCondition
 
 	for _, cond := range conditions {
@@ -215,7 +215,7 @@ func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []H
 	return hc
 }
 
-func queryParameterMatchConditions(conditions []contour_api_v1.QueryParameterMatchCondition) []QueryParamMatchCondition {
+func queryParameterMatchConditions(conditions []contour_v1.QueryParameterMatchCondition) []QueryParamMatchCondition {
 	var qpc []QueryParamMatchCondition
 
 	for _, cond := range conditions {
@@ -276,8 +276,8 @@ func queryParameterMatchConditions(conditions []contour_api_v1.QueryParameterMat
 //
 // Note that there are additional, more complex scenarios that we could check for here. For
 // example, "exact: foo" and "notcontains: <any substring of foo>" are contradictory.
-func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) error {
-	seenMatchConditions := map[contour_api_v1.HeaderMatchCondition]bool{}
+func headerMatchConditionsValid(conditions []contour_v1.MatchCondition) error {
+	seenMatchConditions := map[contour_v1.HeaderMatchCondition]bool{}
 	headersWithExactMatch := map[string]bool{}
 
 	for _, v := range conditions {
@@ -288,14 +288,14 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 		headerName := strings.ToLower(v.Header.Name)
 		switch {
 		case v.Header.Present:
-			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
+			if seenMatchConditions[contour_v1.HeaderMatchCondition{
 				Name:       headerName,
 				NotPresent: true,
 			}] {
 				return errors.New("cannot specify contradictory 'present' and 'notpresent' conditions for the same route and header")
 			}
 		case v.Header.NotPresent:
-			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
+			if seenMatchConditions[contour_v1.HeaderMatchCondition{
 				Name:    headerName,
 				Present: true,
 			}] {
@@ -309,7 +309,7 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 			headersWithExactMatch[headerName] = true
 
 			// look for a NotExact condition on the same header with the same value
-			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
+			if seenMatchConditions[contour_v1.HeaderMatchCondition{
 				Name:     headerName,
 				NotExact: v.Header.Exact,
 			}] {
@@ -317,7 +317,7 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 			}
 		case v.Header.NotExact != "":
 			// look for an Exact condition on the same header with the same value
-			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
+			if seenMatchConditions[contour_v1.HeaderMatchCondition{
 				Name:  headerName,
 				Exact: v.Header.NotExact,
 			}] {
@@ -325,7 +325,7 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 			}
 		case v.Header.Contains != "":
 			// look for a NotContains condition on the same header with the same value
-			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
+			if seenMatchConditions[contour_v1.HeaderMatchCondition{
 				Name:        headerName,
 				NotContains: v.Header.Contains,
 			}] {
@@ -333,7 +333,7 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 			}
 		case v.Header.NotContains != "":
 			// look for a Contains condition on the same header with the same value
-			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
+			if seenMatchConditions[contour_v1.HeaderMatchCondition{
 				Name:     headerName,
 				Contains: v.Header.NotContains,
 			}] {
@@ -361,7 +361,7 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 //   - more than one condition is set in the same match condition branch
 //   - more than 1 'exact' condition for the same query parameter
 //   - invalid regular expression is specified for the Regex condition
-func queryParameterMatchConditionsValid(conditions []contour_api_v1.MatchCondition) error {
+func queryParameterMatchConditionsValid(conditions []contour_v1.MatchCondition) error {
 	queryParametersWithExactMatch := map[string]bool{}
 
 	for _, v := range conditions {

@@ -22,10 +22,11 @@ import (
 	"strings"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/validation"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // ServerType is the name of a xDS server implementation.
@@ -46,18 +47,10 @@ func (s ServerType) Validate() error {
 	}
 }
 
-// Validate the GatewayConfig.
+// Validate ensures that GatewayRef namespace/name is specified.
 func (g *GatewayParameters) Validate() error {
-	if g == nil {
-		return nil
-	}
-
-	if len(g.ControllerName) == 0 && g.GatewayRef == nil {
-		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
-	}
-
-	if len(g.ControllerName) > 0 && g.GatewayRef != nil {
-		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
+	if g != nil && (g.GatewayRef.Namespace == "" || g.GatewayRef.Name == "") {
+		return fmt.Errorf("invalid Gateway parameters specified: gateway ref namespace and name must be provided")
 	}
 
 	return nil
@@ -120,7 +113,7 @@ const (
 type AccessLogType string
 
 func (a AccessLogType) Validate() error {
-	return contour_api_v1alpha1.AccessLogType(a).Validate()
+	return contour_v1alpha1.AccessLogType(a).Validate()
 }
 
 const (
@@ -131,20 +124,20 @@ const (
 type AccessLogFields []string
 
 func (a AccessLogFields) Validate() error {
-	return contour_api_v1alpha1.AccessLogJSONFields(a).Validate()
+	return contour_v1alpha1.AccessLogJSONFields(a).Validate()
 }
 
 func (a AccessLogFields) AsFieldMap() map[string]string {
-	return contour_api_v1alpha1.AccessLogJSONFields(a).AsFieldMap()
+	return contour_v1alpha1.AccessLogJSONFields(a).AsFieldMap()
 }
 
 // AccessLogFormatterExtensions returns a list of formatter extension names required by the access log format.
 func (p Parameters) AccessLogFormatterExtensions() []string {
-	el := &contour_api_v1alpha1.EnvoyLogging{
-		AccessLogFormat:       contour_api_v1alpha1.AccessLogType(p.AccessLogFormat),
+	el := &contour_v1alpha1.EnvoyLogging{
+		AccessLogFormat:       contour_v1alpha1.AccessLogType(p.AccessLogFormat),
 		AccessLogFormatString: p.AccessLogFormatString,
-		AccessLogJSONFields:   contour_api_v1alpha1.AccessLogJSONFields(p.AccessLogFields),
-		AccessLogLevel:        contour_api_v1alpha1.AccessLogLevel(p.AccessLogLevel),
+		AccessLogJSONFields:   contour_v1alpha1.AccessLogJSONFields(p.AccessLogFields),
+		AccessLogLevel:        contour_v1alpha1.AccessLogLevel(p.AccessLogLevel),
 	}
 	return el.AccessLogFormatterExtensions()
 }
@@ -242,7 +235,7 @@ func (t ProtocolParameters) Validate() error {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
 
-	return contour_api_v1alpha1.ValidateTLSProtocolVersions(t.MinimumProtocolVersion, t.MaximumProtocolVersion)
+	return contour_v1alpha1.ValidateTLSProtocolVersions(t.MinimumProtocolVersion, t.MaximumProtocolVersion)
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -254,21 +247,9 @@ type ServerParameters struct {
 
 // GatewayParameters holds the configuration for Gateway API controllers.
 type GatewayParameters struct {
-	// ControllerName is used to determine whether Contour should reconcile a
-	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-	// If unset, the gatewayclass controller will not be started.
-	// Exactly one of ControllerName or GatewayRef must be set.
-	//
-	// Deprecated: users should use GatewayRef, or the Gateway provisioner,
-	// in place of this field. This field will be removed in a future release.
-	ControllerName string `yaml:"controllerName,omitempty"`
-
-	// GatewayRef defines a specific Gateway that this Contour
-	// instance corresponds to. If set, Contour will reconcile
-	// only this gateway, and will not reconcile any gateway
-	// classes.
-	// Exactly one of ControllerName or GatewayRef must be set.
-	GatewayRef *NamespacedName `yaml:"gatewayRef,omitempty"`
+	// GatewayRef defines the specific Gateway that this Contour
+	// instance corresponds to.
+	GatewayRef NamespacedName `yaml:"gatewayRef"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.
@@ -460,7 +441,7 @@ type ClusterParameters struct {
 	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
 	//
 	// +optional
-	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuit-breakers,omitempty"`
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuit-breakers,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	UpstreamTLS ProtocolParameters `yaml:"upstream-tls,omitempty"`
@@ -867,7 +848,7 @@ type RateLimitService struct {
 
 	// DefaultGlobalRateLimitPolicy allows setting a default global rate limit policy for all HTTPProxy
 	// HTTPProxy can overwrite this configuration.
-	DefaultGlobalRateLimitPolicy *contour_api_v1.GlobalRateLimitPolicy `yaml:"defaultGlobalRateLimitPolicy,omitempty"`
+	DefaultGlobalRateLimitPolicy *contour_v1.GlobalRateLimitPolicy `yaml:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
 // MetricsParameters defines configuration for metrics server endpoints in both
@@ -973,7 +954,7 @@ func (p *MetricsServerParameters) HasTLS() bool {
 type AccessLogLevel string
 
 func (a AccessLogLevel) Validate() error {
-	return contour_api_v1alpha1.AccessLogLevel(a).Validate()
+	return contour_v1alpha1.AccessLogLevel(a).Validate()
 }
 
 const (
@@ -1009,7 +990,7 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	if err := contour_api_v1alpha1.AccessLogFormatString(p.AccessLogFormatString).Validate(); err != nil {
+	if err := contour_v1alpha1.AccessLogFormatString(p.AccessLogFormatString).Validate(); err != nil {
 		return err
 	}
 

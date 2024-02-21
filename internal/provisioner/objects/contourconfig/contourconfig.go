@@ -16,19 +16,19 @@ package contourconfig
 import (
 	"context"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-
-	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EnsureContourConfig ensures that a ContourConfiguration exists for the given contour.
 func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	desired := &contour_api_v1alpha1.ContourConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+	desired := &contour_v1alpha1.ContourConfiguration{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:   contour.Namespace,
 			Name:        contour.ContourConfigurationName(),
 			Labels:      contour.CommonLabels(),
@@ -45,7 +45,7 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 	// being configured correctly for the Gateway being provisioned.
 	setGatewayConfig(desired, contour)
 
-	updater := func(ctx context.Context, cli client.Client, current, desired *contour_api_v1alpha1.ContourConfiguration) error {
+	updater := func(ctx context.Context, cli client.Client, current, desired *contour_v1alpha1.ContourConfiguration) error {
 		maybeUpdated := current.DeepCopy()
 		setGatewayConfig(maybeUpdated, contour)
 
@@ -55,21 +55,21 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 		return nil
 	}
 
-	return objects.EnsureObject(ctx, cli, desired, updater, new(contour_api_v1alpha1.ContourConfiguration))
+	return objects.EnsureObject(ctx, cli, desired, updater, new(contour_v1alpha1.ContourConfiguration))
 }
 
-func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {
-	config.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
-		GatewayRef: &contour_api_v1alpha1.NamespacedName{
+func setGatewayConfig(config *contour_v1alpha1.ContourConfiguration, contour *model.Contour) {
+	config.Spec.Gateway = &contour_v1alpha1.GatewayConfig{
+		GatewayRef: contour_v1alpha1.NamespacedName{
 			Namespace: contour.Namespace,
 			Name:      contour.Name,
 		},
 	}
 
 	if config.Spec.Envoy == nil {
-		config.Spec.Envoy = &contour_api_v1alpha1.EnvoyConfig{}
+		config.Spec.Envoy = &contour_v1alpha1.EnvoyConfig{}
 	}
-	config.Spec.Envoy.Service = &contour_api_v1alpha1.NamespacedName{
+	config.Spec.Envoy.Service = &contour_v1alpha1.NamespacedName{
 		Namespace: contour.Namespace,
 		Name:      contour.EnvoyServiceName(),
 	}
@@ -77,8 +77,8 @@ func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour
 
 // EnsureContourConfigDeleted deletes a ContourConfig for the provided contour, if the configured owner labels exist.
 func EnsureContourConfigDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	obj := &contour_api_v1alpha1.ContourConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
+	obj := &contour_v1alpha1.ContourConfiguration{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: contour.Namespace,
 			Name:      contour.ContourConfigurationName(),
 		},

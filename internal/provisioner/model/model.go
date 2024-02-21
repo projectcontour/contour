@@ -14,13 +14,14 @@
 package model
 
 import (
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 const (
@@ -37,7 +38,7 @@ const (
 // for the given namespace/name.
 func Default(namespace, name string) *Contour {
 	return &Contour{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
 		},
@@ -45,33 +46,33 @@ func Default(namespace, name string) *Contour {
 			ContourReplicas:       2,
 			EnvoyWorkloadType:     WorkloadTypeDaemonSet,
 			EnvoyReplicas:         2, // ignored if not provisioning Envoy as a deployment.
-			EnvoyLogLevel:         contourv1alpha1.InfoLog,
+			EnvoyLogLevel:         contour_v1alpha1.InfoLog,
 			EnvoyBaseID:           0,
 			EnvoyMaxHeapSizeBytes: 0,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
-					ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
-					IPFamilyPolicy:        corev1.IPFamilyPolicySingleStack,
+					ExternalTrafficPolicy: core_v1.ServiceExternalTrafficPolicyTypeLocal,
+					IPFamilyPolicy:        core_v1.IPFamilyPolicySingleStack,
 				},
 			},
-			EnvoyDaemonSetUpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				Type: appsv1.RollingUpdateDaemonSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: ref.To(intstr.FromString("10%")),
+			EnvoyDaemonSetUpdateStrategy: apps_v1.DaemonSetUpdateStrategy{
+				Type: apps_v1.RollingUpdateDaemonSetStrategyType,
+				RollingUpdate: &apps_v1.RollingUpdateDaemonSet{
+					MaxUnavailable: ptr.To(intstr.FromString("10%")),
 				},
 			},
-			EnvoyDeploymentStrategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge: ref.To(intstr.FromString("10%")),
+			EnvoyDeploymentStrategy: apps_v1.DeploymentStrategy{
+				Type: apps_v1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &apps_v1.RollingUpdateDeployment{
+					MaxSurge: ptr.To(intstr.FromString("10%")),
 				},
 			},
-			ContourDeploymentStrategy: appsv1.DeploymentStrategy{
-				Type: appsv1.RollingUpdateDeploymentStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge:       ref.To(intstr.FromString("50%")),
-					MaxUnavailable: ref.To(intstr.FromString("25%")),
+			ContourDeploymentStrategy: apps_v1.DeploymentStrategy{
+				Type: apps_v1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &apps_v1.RollingUpdateDeployment{
+					MaxSurge:       ptr.To(intstr.FromString("50%")),
+					MaxUnavailable: ptr.To(intstr.FromString("25%")),
 				},
 			},
 			ResourceLabels:        map[string]string{},
@@ -84,7 +85,7 @@ func Default(namespace, name string) *Contour {
 
 // Contour is the representation of an instance of Contour + Envoy.
 type Contour struct {
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	meta_v1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the desired state of Contour.
 	Spec ContourSpec `json:"spec,omitempty"`
@@ -172,7 +173,7 @@ type ContourSpec struct {
 
 	// ContourLogLevel sets the log level for Contour
 	// Allowed values are "info", "debug".
-	ContourLogLevel contourv1alpha1.LogLevel
+	ContourLogLevel contour_v1alpha1.LogLevel
 
 	// NodePlacement enables scheduling of Contour and Envoy pods onto specific nodes.
 	//
@@ -187,7 +188,7 @@ type ContourSpec struct {
 	EnableExternalNameService *bool
 
 	// RuntimeSettings is any user-defined ContourConfigurationSpec to use when provisioning.
-	RuntimeSettings *contourv1alpha1.ContourConfigurationSpec
+	RuntimeSettings *contour_v1alpha1.ContourConfigurationSpec
 
 	// EnvoyWorkloadType is the way to deploy Envoy, either "DaemonSet" or "Deployment".
 	EnvoyWorkloadType WorkloadType
@@ -199,15 +200,15 @@ type ContourSpec struct {
 	// An update strategy to replace existing Envoy DaemonSet pods with new pods.
 	// when envoy be running as a `Deployment`,it's must be nil
 	// +optional
-	EnvoyDaemonSetUpdateStrategy appsv1.DaemonSetUpdateStrategy
+	EnvoyDaemonSetUpdateStrategy apps_v1.DaemonSetUpdateStrategy
 
 	// The deployment strategy to use to replace existing Envoy pods with new ones.
 	// when envoy be running as a `DaemonSet`,it's must be nil
-	EnvoyDeploymentStrategy appsv1.DeploymentStrategy
+	EnvoyDeploymentStrategy apps_v1.DeploymentStrategy
 
 	// The deployment strategy to use to replace existing Contour pods with new ones.
 	// when envoy be running as a `DaemonSet`,it's must be nil
-	ContourDeploymentStrategy appsv1.DeploymentStrategy
+	ContourDeploymentStrategy apps_v1.DeploymentStrategy
 
 	// ResourceLabels is a set of labels to add to the provisioned resources.
 	ResourceLabels map[string]string
@@ -216,10 +217,10 @@ type ContourSpec struct {
 	ResourceAnnotations map[string]string
 
 	// EnvoyExtraVolumes holds the extra volumes to add to envoy's pod.
-	EnvoyExtraVolumes []corev1.Volume
+	EnvoyExtraVolumes []core_v1.Volume
 
 	// EnvoyExtraVolumeMounts holds the extra volume mounts to add to envoy's pod(normally used with envoyExtraVolumes).
-	EnvoyExtraVolumeMounts []corev1.VolumeMount
+	EnvoyExtraVolumeMounts []core_v1.VolumeMount
 
 	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
 	// the annotations: "prometheus.io/scrape", "prometheus.io/port", "prometheus.io/path" will be overwritten with predefined value.
@@ -230,14 +231,14 @@ type ContourSpec struct {
 	ContourPodAnnotations map[string]string
 
 	// Compute Resources required by envoy container.
-	EnvoyResources corev1.ResourceRequirements
+	EnvoyResources core_v1.ResourceRequirements
 
 	// Compute Resources required by contour container.
-	ContourResources corev1.ResourceRequirements
+	ContourResources core_v1.ResourceRequirements
 
 	// EnvoyLogLevel sets the log level for Envoy
 	// Allowed values are "trace", "debug", "info", "warn", "error", "critical", "off".
-	EnvoyLogLevel contourv1alpha1.LogLevel
+	EnvoyLogLevel contour_v1alpha1.LogLevel
 
 	// The base ID to use when allocating shared memory regions.
 	// if Envoy needs to be run multiple times on the same machine, each running Envoy will need a unique base ID
@@ -253,18 +254,38 @@ type ContourSpec struct {
 	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
 	// to only watch these set of namespaces
 	// default is nil, contour will watch resource of all namespaces
-	WatchNamespaces []string
+	WatchNamespaces []contour_v1.Namespace
+
+	// DisabledFeatures defines an array of resources that will be ignored by
+	// contour reconciler.
+	DisabledFeatures []contour_v1.Feature
+}
+
+func NamespacesToStrings(ns []contour_v1.Namespace) []string {
+	res := make([]string, len(ns))
+	for i, n := range ns {
+		res[i] = string(n)
+	}
+	return res
+}
+
+func FeaturesToStrings(fs []contour_v1.Feature) []string {
+	res := make([]string, len(fs))
+	for i := range fs {
+		res[i] = string(fs[i])
+	}
+	return res
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.
-type WorkloadType = contourv1alpha1.WorkloadType
+type WorkloadType = contour_v1alpha1.WorkloadType
 
 const (
 	// A Kubernetes DaemonSet.
-	WorkloadTypeDaemonSet = contourv1alpha1.WorkloadTypeDaemonSet
+	WorkloadTypeDaemonSet = contour_v1alpha1.WorkloadTypeDaemonSet
 
 	// A Kubernetes Deployment.
-	WorkloadTypeDeployment = contourv1alpha1.WorkloadTypeDeployment
+	WorkloadTypeDeployment = contour_v1alpha1.WorkloadTypeDeployment
 )
 
 // NodePlacement describes node scheduling configuration of Contour and Envoy pods.
@@ -297,7 +318,7 @@ type ContourNodePlacement struct {
 	//
 	// See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 	// for additional details.
-	Tolerations []corev1.Toleration
+	Tolerations []core_v1.Toleration
 }
 
 // EnvoyNodePlacement describes node scheduling configuration for Envoy pods.
@@ -320,7 +341,7 @@ type EnvoyNodePlacement struct {
 	//
 	// See https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 	// for additional details.
-	Tolerations []corev1.Toleration
+	Tolerations []core_v1.Toleration
 }
 
 // NamespaceSpec defines the schema of a Contour namespace.
@@ -404,30 +425,30 @@ type EnvoyNetworkPublishing struct {
 	// IPFamilyPolicy represents the dual-stack-ness requested or required by
 	// this Service. If there is no value provided, then this field will be set
 	// to SingleStack.
-	IPFamilyPolicy corev1.IPFamilyPolicy
+	IPFamilyPolicy core_v1.IPFamilyPolicy
 
 	// ExternalTrafficPolicy describes how nodes distribute service traffic they
 	// receive on one of the Service's "externally-facing" addresses (NodePorts, ExternalIPs,
 	// and LoadBalancer IPs).
 	//
 	// If unset, defaults to "Local".
-	ExternalTrafficPolicy corev1.ServiceExternalTrafficPolicyType
+	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicyType
 }
 
-type NetworkPublishingType = contourv1alpha1.NetworkPublishingType
+type NetworkPublishingType = contour_v1alpha1.NetworkPublishingType
 
 const (
 	// LoadBalancerServicePublishingType publishes a network endpoint using a Kubernetes
 	// LoadBalancer Service.
-	LoadBalancerServicePublishingType NetworkPublishingType = contourv1alpha1.LoadBalancerServicePublishingType
+	LoadBalancerServicePublishingType NetworkPublishingType = contour_v1alpha1.LoadBalancerServicePublishingType
 
 	// NodePortServicePublishingType publishes a network endpoint using a Kubernetes
 	// NodePort Service.
-	NodePortServicePublishingType NetworkPublishingType = contourv1alpha1.NodePortServicePublishingType
+	NodePortServicePublishingType NetworkPublishingType = contour_v1alpha1.NodePortServicePublishingType
 
 	// ClusterIPServicePublishingType publishes a network endpoint using a Kubernetes
 	// ClusterIP Service.
-	ClusterIPServicePublishingType NetworkPublishingType = contourv1alpha1.ClusterIPServicePublishingType
+	ClusterIPServicePublishingType NetworkPublishingType = contour_v1alpha1.ClusterIPServicePublishingType
 )
 
 // LoadBalancerStrategy holds parameters for a load balancer.

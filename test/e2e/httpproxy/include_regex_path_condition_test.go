@@ -19,11 +19,12 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testIncludeRegexCondition(namespace string) {
@@ -42,34 +43,34 @@ func testIncludeRegexCondition(namespace string) {
 		f.Fixtures.Echo.Deploy(echo1Namespace, "echo-1")
 		f.Fixtures.Echo.Deploy(echo2Namespace, "echo-2")
 
-		echo1Proxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		echo1Proxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: echo1Namespace,
 				Name:      "echo-1",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				Routes: []contourv1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-1",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/us-west-3/.*",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-1",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/us-west-1/.*",
 							},
@@ -81,34 +82,34 @@ func testIncludeRegexCondition(namespace string) {
 
 		require.NoError(t, f.Client.Create(context.TODO(), echo1Proxy))
 
-		echo2Proxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		echo2Proxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: echo2Namespace,
 				Name:      "echo-2",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				Routes: []contourv1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-2",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-2",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/(dev|staging)/.*",
 							},
@@ -120,20 +121,20 @@ func testIncludeRegexCondition(namespace string) {
 
 		require.NoError(t, f.Client.Create(context.TODO(), echo2Proxy))
 
-		rootProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		rootProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "echo",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "includeregexmatch.projectcontour.io",
 				},
-				Includes: []contourv1.Include{
+				Includes: []contour_v1.Include{
 					{
 						Name:      echo1Proxy.Name,
 						Namespace: echo1Proxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/echo1",
 							},
@@ -142,7 +143,7 @@ func testIncludeRegexCondition(namespace string) {
 					{
 						Name:      echo2Proxy.Name,
 						Namespace: echo2Proxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/echo2",
 							},
@@ -152,20 +153,20 @@ func testIncludeRegexCondition(namespace string) {
 			},
 		}
 
-		invalidRootProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		invalidRootProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "echo-invalid",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "regex-condition-invalid.projectcontour.io",
 				},
-				Includes: []contourv1.Include{
+				Includes: []contour_v1.Include{
 					{
 						Name:      echo1Proxy.Name,
 						Namespace: echo1Proxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/echo.*",
 							},

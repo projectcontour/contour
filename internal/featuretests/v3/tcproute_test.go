@@ -16,21 +16,20 @@ package v3
 import (
 	"testing"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
 )
 
 func TestTCPRoute(t *testing.T) {
@@ -38,40 +37,40 @@ func TestTCPRoute(t *testing.T) {
 	defer done()
 
 	svc1 := fixture.NewService("backend-1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	svc2 := fixture.NewService("backend-2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(svc1)
 	rh.OnAdd(svc2)
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta:   metav1.TypeMeta{},
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
+		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+		Status: gatewayapi_v1.GatewayClassStatus{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
 	})
 
-	gateway := &gatewayapi_v1beta1.Gateway{
+	gateway := &gatewayapi_v1.Gateway{
 		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "tcp-1",
 				Port:     10000,
 				Protocol: gatewayapi_v1.TCPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
@@ -82,12 +81,12 @@ func TestTCPRoute(t *testing.T) {
 	route1 := &gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
-						Name:        gatewayapi_v1beta1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1beta1.SectionName("tcp-1")),
+						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
+						Name:        gatewayapi_v1.ObjectName("contour"),
+						SectionName: ptr.To(gatewayapi_v1.SectionName("tcp-1")),
 					},
 				},
 			},
@@ -98,13 +97,13 @@ func TestTCPRoute(t *testing.T) {
 	}
 	rh.OnAdd(route1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-10000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 18000),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-10000", "default/backend-1/80/da39a3ee5e"),
 					),
@@ -118,13 +117,13 @@ func TestTCPRoute(t *testing.T) {
 	// check that there is no route config
 	require.Empty(t, c.Request(routeType).Resources)
 
-	gateway.Spec.Listeners = append(gateway.Spec.Listeners, gatewayapi_v1beta1.Listener{
+	gateway.Spec.Listeners = append(gateway.Spec.Listeners, gatewayapi_v1.Listener{
 		Name:     "tcp-2",
 		Port:     10001,
 		Protocol: gatewayapi_v1.TCPProtocolType,
-		AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-			Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-				From: ref.To(gatewayapi_v1.NamespacesFromAll),
+		AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+			Namespaces: &gatewayapi_v1.RouteNamespaces{
+				From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 			},
 		},
 	})
@@ -136,9 +135,9 @@ func TestTCPRoute(t *testing.T) {
 			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
-						Name:        gatewayapi_v1beta1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1beta1.SectionName("tcp-2")),
+						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
+						Name:        gatewayapi_v1.ObjectName("contour"),
+						SectionName: ptr.To(gatewayapi_v1.SectionName("tcp-2")),
 					},
 				},
 			},
@@ -149,23 +148,23 @@ func TestTCPRoute(t *testing.T) {
 	}
 	rh.OnAdd(route2)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			statsListener(),
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-10000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 18000),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-10000", "default/backend-1/80/da39a3ee5e"),
 					),
 				}},
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "tcp-10001",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 18001),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("tcp-10001", "default/backend-2/80/da39a3ee5e"),
 					),
@@ -185,46 +184,46 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	defer done()
 
 	svc1 := fixture.NewService("backend-1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(svc1)
 
 	sec1 := featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate)
 	rh.OnAdd(sec1)
 
-	rh.OnAdd(&gatewayapi_v1beta1.GatewayClass{
-		TypeMeta:   metav1.TypeMeta{},
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
+		TypeMeta:   meta_v1.TypeMeta{},
 		ObjectMeta: fixture.ObjectMeta("test-gc"),
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+		Status: gatewayapi_v1.GatewayClassStatus{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
 	})
 
-	gateway := &gatewayapi_v1beta1.Gateway{
+	gateway := &gatewayapi_v1.Gateway{
 		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "tls",
 					Port:     5000,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
+						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
+						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
 						},
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -236,12 +235,12 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	route1 := &gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-1"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
-						Namespace:   ref.To(gatewayapi_v1beta1.Namespace("projectcontour")),
-						Name:        gatewayapi_v1beta1.ObjectName("contour"),
-						SectionName: ref.To(gatewayapi_v1beta1.SectionName("tls")),
+						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
+						Name:        gatewayapi_v1.ObjectName("contour"),
+						SectionName: ptr.To(gatewayapi_v1.SectionName("tls")),
 					},
 				},
 			},
@@ -252,9 +251,9 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 	}
 	rh.OnAdd(route1)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
+			&envoy_config_listener_v3.Listener{
 				Name:    "https-5000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
 				ListenerFilters: envoy_v3.ListenerFilters(

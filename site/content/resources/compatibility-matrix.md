@@ -10,8 +10,12 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
 | --------------- | :------------------- | ------------------- | --------------------|
-| main            | [1.29.0][46]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| main            | [1.29.1][46]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| 1.28.1          | [1.29.1][46]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| 1.28.0          | [1.29.1][46]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| 1.27.1          | [1.28.1][47]         | 1.28, 1.27, 1.26    | [0.8.1][109]        |
 | 1.27.0          | [1.28.0][45]         | 1.28, 1.27, 1.26    | [0.8.1][109]        |
+| 1.26.2          | [1.27.3][48]         | 1.28, 1.27, 1.26    | [0.8.1][109]        |
 | 1.26.1          | [1.27.2][42]         | 1.28, 1.27, 1.26    | [0.8.1][109]        |
 | 1.26.0          | [1.27.0][41]         | 1.28, 1.27, 1.26    | [0.8.0][108]        |
 | 1.25.3          | [1.26.6][43]         | 1.27, 1.26, 1.25    | [0.6.2][107]        |
@@ -174,7 +178,9 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [43]: https://www.envoyproxy.io/docs/envoy/v1.26.6/version_history/v1.26/v1.26.6
 [44]: https://www.envoyproxy.io/docs/envoy/v1.25.11/version_history/v1.25/v1.25.11
 [45]: https://www.envoyproxy.io/docs/envoy/v1.28.0/version_history/v1.28/v1.28.0
-[46]: https://www.envoyproxy.io/docs/envoy/v1.29.0/version_history/v1.29/v1.29.0
+[46]: https://www.envoyproxy.io/docs/envoy/v1.29.1/version_history/v1.29/v1.29.1
+[47]: https://www.envoyproxy.io/docs/envoy/v1.28.1/version_history/v1.28/v1.28.1
+[48]: https://www.envoyproxy.io/docs/envoy/v1.27.3/version_history/v1.27/v1.27.3
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.29.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.29.1
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -226,7 +226,9 @@ lint-flags:
 .PHONY: format
 format: ## Run gofumpt to format the codebase.
 	@echo Running gofumpt...
-	@./hack/gofumpt -l -w -extra .
+	@go run mvdan.cc/gofumpt@v0.5.0 -l -w -extra .
+	@echo Running gci...
+	@go run github.com/daixiang0/gci@v0.12.1 write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation

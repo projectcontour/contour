@@ -18,14 +18,14 @@ import (
 	"sort"
 	"testing"
 
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func checkServiceHasPort(t *testing.T, svc *corev1.Service, port int32) {
+func checkServiceHasPort(t *testing.T, svc *core_v1.Service, port int32) {
 	t.Helper()
 
 	for _, p := range svc.Spec.Ports {
@@ -36,7 +36,7 @@ func checkServiceHasPort(t *testing.T, svc *corev1.Service, port int32) {
 	t.Errorf("service is missing port %q", port)
 }
 
-func checkServiceHasNodeport(t *testing.T, svc *corev1.Service, port int32) {
+func checkServiceHasNodeport(t *testing.T, svc *core_v1.Service, port int32) {
 	t.Helper()
 
 	for _, p := range svc.Spec.Ports {
@@ -47,7 +47,7 @@ func checkServiceHasNodeport(t *testing.T, svc *corev1.Service, port int32) {
 	t.Errorf("service is missing nodeport %q", port)
 }
 
-func checkServiceHasTargetPort(t *testing.T, svc *corev1.Service, port int32) {
+func checkServiceHasTargetPort(t *testing.T, svc *core_v1.Service, port int32) {
 	t.Helper()
 
 	intStrPort := intstr.IntOrString{IntVal: port}
@@ -59,7 +59,7 @@ func checkServiceHasTargetPort(t *testing.T, svc *corev1.Service, port int32) {
 	t.Errorf("service is missing targetPort %d", port)
 }
 
-func checkServiceHasPortName(t *testing.T, svc *corev1.Service, name string) {
+func checkServiceHasPortName(t *testing.T, svc *core_v1.Service, name string) {
 	t.Helper()
 
 	for _, p := range svc.Spec.Ports {
@@ -70,7 +70,7 @@ func checkServiceHasPortName(t *testing.T, svc *corev1.Service, name string) {
 	t.Errorf("service is missing port name %q", name)
 }
 
-func checkServiceHasPortProtocol(t *testing.T, svc *corev1.Service, protocol corev1.Protocol) {
+func checkServiceHasPortProtocol(t *testing.T, svc *core_v1.Service, protocol core_v1.Protocol) {
 	t.Helper()
 
 	for _, p := range svc.Spec.Ports {
@@ -81,7 +81,7 @@ func checkServiceHasPortProtocol(t *testing.T, svc *corev1.Service, protocol cor
 	t.Errorf("service is missing port protocol %q", protocol)
 }
 
-func checkServiceHasAnnotations(t *testing.T, svc *corev1.Service, expectedKeys ...string) {
+func checkServiceHasAnnotations(t *testing.T, svc *core_v1.Service, expectedKeys ...string) {
 	t.Helper()
 
 	// get all of the actual annotation keys from the service
@@ -108,7 +108,7 @@ func checkServiceHasAnnotations(t *testing.T, svc *corev1.Service, expectedKeys 
 	}
 }
 
-func checkServiceHasType(t *testing.T, svc *corev1.Service, svcType corev1.ServiceType) {
+func checkServiceHasType(t *testing.T, svc *core_v1.Service, svcType core_v1.ServiceType) {
 	t.Helper()
 
 	if svc.Spec.Type != svcType {
@@ -116,7 +116,7 @@ func checkServiceHasType(t *testing.T, svc *corev1.Service, svcType corev1.Servi
 	}
 }
 
-func checkServiceHasExternalTrafficPolicy(t *testing.T, svc *corev1.Service, policy corev1.ServiceExternalTrafficPolicyType) {
+func checkServiceHasExternalTrafficPolicy(t *testing.T, svc *core_v1.Service, policy core_v1.ServiceExternalTrafficPolicyType) {
 	t.Helper()
 
 	if svc.Spec.ExternalTrafficPolicy != policy {
@@ -124,7 +124,7 @@ func checkServiceHasExternalTrafficPolicy(t *testing.T, svc *corev1.Service, pol
 	}
 }
 
-func checkServiceHasNoExternalTrafficPolicy(t *testing.T, svc *corev1.Service) {
+func checkServiceHasNoExternalTrafficPolicy(t *testing.T, svc *core_v1.Service) {
 	t.Helper()
 
 	if svc.Spec.ExternalTrafficPolicy != "" {
@@ -132,7 +132,7 @@ func checkServiceHasNoExternalTrafficPolicy(t *testing.T, svc *corev1.Service) {
 	}
 }
 
-func checkServiceHasIPFamilyPolicy(t *testing.T, svc *corev1.Service, policy corev1.IPFamilyPolicy) {
+func checkServiceHasIPFamilyPolicy(t *testing.T, svc *core_v1.Service, policy core_v1.IPFamilyPolicy) {
 	t.Helper()
 
 	if *svc.Spec.IPFamilyPolicy != policy {
@@ -140,7 +140,7 @@ func checkServiceHasIPFamilyPolicy(t *testing.T, svc *corev1.Service, policy cor
 	}
 }
 
-func checkServiceHasLoadBalancerAddress(t *testing.T, svc *corev1.Service, address string) {
+func checkServiceHasLoadBalancerAddress(t *testing.T, svc *core_v1.Service, address string) {
 	t.Helper()
 
 	if svc.Spec.LoadBalancerIP != address {
@@ -156,7 +156,7 @@ func TestDesiredContourService(t *testing.T) {
 	checkServiceHasPort(t, svc, xdsPort)
 	checkServiceHasTargetPort(t, svc, xdsPort)
 	checkServiceHasPortName(t, svc, "xds")
-	checkServiceHasPortProtocol(t, svc, corev1.ProtocolTCP)
+	checkServiceHasPortProtocol(t, svc, core_v1.ProtocolTCP)
 }
 
 func TestDesiredEnvoyService(t *testing.T) {
@@ -181,9 +181,9 @@ func TestDesiredEnvoyService(t *testing.T) {
 	}
 
 	svc := DesiredEnvoyService(cntr)
-	checkServiceHasType(t, svc, corev1.ServiceTypeNodePort)
-	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
-	checkServiceHasIPFamilyPolicy(t, svc, corev1.IPFamilyPolicySingleStack)
+	checkServiceHasType(t, svc, core_v1.ServiceTypeNodePort)
+	checkServiceHasExternalTrafficPolicy(t, svc, core_v1.ServiceExternalTrafficPolicyTypeLocal)
+	checkServiceHasIPFamilyPolicy(t, svc, core_v1.IPFamilyPolicySingleStack)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPPort)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPSPort)
 	checkServiceHasNodeport(t, svc, 30081)
@@ -193,25 +193,25 @@ func TestDesiredEnvoyService(t *testing.T) {
 	}
 	checkServiceHasPortName(t, svc, "http")
 	checkServiceHasPortName(t, svc, "https")
-	checkServiceHasPortProtocol(t, svc, corev1.ProtocolTCP)
+	checkServiceHasPortProtocol(t, svc, core_v1.ProtocolTCP)
 
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
-	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = corev1.IPFamilyPolicyRequireDualStack
+	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = core_v1.IPFamilyPolicyRequireDualStack
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasNoExternalTrafficPolicy(t, svc)
-	checkServiceHasIPFamilyPolicy(t, svc, corev1.IPFamilyPolicyRequireDualStack)
+	checkServiceHasIPFamilyPolicy(t, svc, core_v1.IPFamilyPolicyRequireDualStack)
 
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
-	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
-	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = corev1.IPFamilyPolicyPreferDualStack
+	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = core_v1.ServiceExternalTrafficPolicyTypeCluster
+	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = core_v1.IPFamilyPolicyPreferDualStack
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 	svc = DesiredEnvoyService(cntr)
-	checkServiceHasType(t, svc, corev1.ServiceTypeLoadBalancer)
-	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeCluster)
-	checkServiceHasIPFamilyPolicy(t, svc, corev1.IPFamilyPolicyPreferDualStack)
+	checkServiceHasType(t, svc, core_v1.ServiceTypeLoadBalancer)
+	checkServiceHasExternalTrafficPolicy(t, svc, core_v1.ServiceExternalTrafficPolicyTypeCluster)
+	checkServiceHasIPFamilyPolicy(t, svc, core_v1.IPFamilyPolicyPreferDualStack)
 	checkServiceHasAnnotations(t, svc, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
 	// Test proxy protocol for AWS Classic load balancer (when provider params are specified).
@@ -281,6 +281,6 @@ func TestDesiredEnvoyService(t *testing.T) {
 	// Set network publishing type to ClusterIPService and verify the service type is as expected.
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
 	svc = DesiredEnvoyService(cntr)
-	checkServiceHasType(t, svc, corev1.ServiceTypeClusterIP)
+	checkServiceHasType(t, svc, core_v1.ServiceTypeClusterIP)
 	checkServiceHasAnnotations(t, svc) // passing no keys means we expect no annotations
 }

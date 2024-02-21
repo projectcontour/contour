@@ -28,7 +28,7 @@ import (
 	"time"
 
 	apps_v1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -45,8 +45,8 @@ type Provisioner struct {
 
 	contourImage string
 
-	Namespace                     *v1.Namespace
-	ServiceAccount                *v1.ServiceAccount
+	Namespace                     *core_v1.Namespace
+	ServiceAccount                *core_v1.ServiceAccount
 	ProvisionerClusterRole        *rbac_v1.ClusterRole
 	LeaderElectionRole            *rbac_v1.Role
 	LeaderElectionRoleBinding     *rbac_v1.RoleBinding
@@ -81,8 +81,8 @@ func (p *Provisioner) UnmarshalResources() error {
 
 	decoder := apimachinery_util_yaml.NewYAMLToJSONDecoder(bytes.NewBuffer(yaml))
 
-	p.Namespace = new(v1.Namespace)
-	p.ServiceAccount = new(v1.ServiceAccount)
+	p.Namespace = new(core_v1.Namespace)
+	p.ServiceAccount = new(core_v1.ServiceAccount)
 	p.ProvisionerClusterRole = new(rbac_v1.ClusterRole)
 	p.LeaderElectionRole = new(rbac_v1.Role)
 	p.LeaderElectionRoleBinding = new(rbac_v1.RoleBinding)
@@ -116,9 +116,9 @@ func (p *Provisioner) ensureResource(new, existing client.Object) error {
 		return err
 	}
 	new.SetResourceVersion(existing.GetResourceVersion())
-	// If a v1.Service, pass along existing cluster IP and healthcheck node port.
-	if newS, ok := new.(*v1.Service); ok {
-		existingS := existing.(*v1.Service)
+	// If a core_v1.Service, pass along existing cluster IP and healthcheck node port.
+	if newS, ok := new.(*core_v1.Service); ok {
+		existingS := existing.(*core_v1.Service)
 		newS.Spec.ClusterIP = existingS.Spec.ClusterIP
 		newS.Spec.ClusterIPs = existingS.Spec.ClusterIPs
 		newS.Spec.HealthCheckNodePort = existingS.Spec.HealthCheckNodePort
@@ -136,8 +136,8 @@ func (p *Provisioner) EnsureResourcesForInclusterProvisioner() error {
 	}
 
 	resources := []resource{
-		{new: p.Namespace, existing: new(v1.Namespace)},
-		{new: p.ServiceAccount, existing: new(v1.ServiceAccount)},
+		{new: p.Namespace, existing: new(core_v1.Namespace)},
+		{new: p.ServiceAccount, existing: new(core_v1.ServiceAccount)},
 		{new: p.ProvisionerClusterRole, existing: new(rbac_v1.ClusterRole)},
 		{new: p.LeaderElectionRole, existing: new(rbac_v1.Role)},
 		{new: p.LeaderElectionRoleBinding, existing: new(rbac_v1.RoleBinding)},
@@ -150,7 +150,7 @@ func (p *Provisioner) EnsureResourcesForInclusterProvisioner() error {
 	}
 
 	p.Deployment.Spec.Template.Spec.Containers[0].Image = p.contourImage
-	p.Deployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	p.Deployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = core_v1.PullIfNotPresent
 
 	// Set the --contour-image flag to the CI image
 

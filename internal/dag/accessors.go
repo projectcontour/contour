@@ -18,11 +18,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/xds"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/xds"
 )
 
 // EnsureService looks for a Kubernetes service in the cache matching the provided
@@ -72,7 +73,7 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port, healthPort int, cac
 	}, nil
 }
 
-func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
+func validateExternalName(svc *core_v1.Service, enableExternalNameSvc bool) error {
 	// If this isn't an ExternalName Service, we're all good here.
 	en := externalName(svc)
 	if en == "" {
@@ -118,7 +119,7 @@ func toContourProtocol(appProtocol string) (string, bool) {
 	return proto, ok
 }
 
-func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
+func upstreamProtocol(svc *core_v1.Service, port core_v1.ServicePort) string {
 	// if appProtocol is not nil, check it only
 	if port.AppProtocol != nil {
 		proto, _ := toContourProtocol(*port.AppProtocol)
@@ -133,8 +134,8 @@ func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	return proto
 }
 
-func externalName(svc *v1.Service) string {
-	if svc.Spec.Type != v1.ServiceTypeExternalName {
+func externalName(svc *core_v1.Service) string {
+	if svc.Spec.Type != core_v1.ServiceTypeExternalName {
 		return ""
 	}
 	return svc.Spec.ExternalName

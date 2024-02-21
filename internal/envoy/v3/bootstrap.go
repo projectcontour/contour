@@ -25,24 +25,25 @@ import (
 	"time"
 
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
-	envoy_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_config_overload_v3 "github.com/envoyproxy/go-control-plane/envoy/config/overload/v3"
-	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
+	envoy_access_logger_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_regex_engines_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/regex_engines/v3"
 	envoy_fixed_heap_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/fixed_heap/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/timeout"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
@@ -159,14 +160,14 @@ func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 	return steps, nil
 }
 
-func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
-	bootstrap := &envoy_bootstrap_v3.Bootstrap{
-		LayeredRuntime: &envoy_bootstrap_v3.LayeredRuntime{
-			Layers: []*envoy_bootstrap_v3.RuntimeLayer{
+func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootstrap {
+	bootstrap := &envoy_config_bootstrap_v3.Bootstrap{
+		LayeredRuntime: &envoy_config_bootstrap_v3.LayeredRuntime{
+			Layers: []*envoy_config_bootstrap_v3.RuntimeLayer{
 				{
 					Name: "dynamic",
-					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_RtdsLayer_{
-						RtdsLayer: &envoy_bootstrap_v3.RuntimeLayer_RtdsLayer{
+					LayerSpecifier: &envoy_config_bootstrap_v3.RuntimeLayer_RtdsLayer_{
+						RtdsLayer: &envoy_config_bootstrap_v3.RuntimeLayer_RtdsLayer{
 							Name:       DynamicRuntimeLayerName,
 							RtdsConfig: ConfigSource("contour"),
 						},
@@ -179,47 +180,47 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				// See https://www.envoyproxy.io/docs/envoy/latest/configuration/operations/runtime#admin-console
 				{
 					Name: "admin",
-					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_AdminLayer_{
-						AdminLayer: &envoy_bootstrap_v3.RuntimeLayer_AdminLayer{},
+					LayerSpecifier: &envoy_config_bootstrap_v3.RuntimeLayer_AdminLayer_{
+						AdminLayer: &envoy_config_bootstrap_v3.RuntimeLayer_AdminLayer{},
 					},
 				},
 			},
 		},
-		DynamicResources: &envoy_bootstrap_v3.Bootstrap_DynamicResources{
+		DynamicResources: &envoy_config_bootstrap_v3.Bootstrap_DynamicResources{
 			LdsConfig: ConfigSource("contour"),
 			CdsConfig: ConfigSource("contour"),
 		},
-		StaticResources: &envoy_bootstrap_v3.Bootstrap_StaticResources{
-			Clusters: []*envoy_cluster_v3.Cluster{{
+		StaticResources: &envoy_config_bootstrap_v3.Bootstrap_StaticResources{
+			Clusters: []*envoy_config_cluster_v3.Cluster{{
 				DnsLookupFamily:      parseDNSLookupFamily(c.DNSLookupFamily),
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.GetXdsGRPCPort())}, "_"),
 				ConnectTimeout:       durationpb.New(5 * time.Second),
-				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetXdsAddress(), envoy_cluster_v3.Cluster_STRICT_DNS),
-				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetXdsAddress(), envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LbPolicy:             envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "contour",
 					Endpoints: Endpoints(
 						SocketAddress(c.GetXdsAddress(), c.GetXdsGRPCPort()),
 					),
 				},
-				UpstreamConnectionOptions: &envoy_cluster_v3.UpstreamConnectionOptions{
-					TcpKeepalive: &envoy_core_v3.TcpKeepalive{
+				UpstreamConnectionOptions: &envoy_config_cluster_v3.UpstreamConnectionOptions{
+					TcpKeepalive: &envoy_config_core_v3.TcpKeepalive{
 						KeepaliveProbes:   wrapperspb.UInt32(3),
 						KeepaliveTime:     wrapperspb.UInt32(30),
 						KeepaliveInterval: wrapperspb.UInt32(5),
 					},
 				},
 				TypedExtensionProtocolOptions: protocolOptions(HTTPVersion2, timeout.DefaultSetting(), nil),
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
-						Priority:           envoy_core_v3.RoutingPriority_HIGH,
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						Priority:           envoy_config_core_v3.RoutingPriority_HIGH,
 						MaxConnections:     wrapperspb.UInt32(100000),
 						MaxPendingRequests: wrapperspb.UInt32(100000),
 						MaxRequests:        wrapperspb.UInt32(60000000),
 						MaxRetries:         wrapperspb.UInt32(50),
 					}, {
-						Priority:           envoy_core_v3.RoutingPriority_DEFAULT,
+						Priority:           envoy_config_core_v3.RoutingPriority_DEFAULT,
 						MaxConnections:     wrapperspb.UInt32(100000),
 						MaxPendingRequests: wrapperspb.UInt32(100000),
 						MaxRequests:        wrapperspb.UInt32(60000000),
@@ -230,9 +231,9 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				Name:                 "envoy-admin",
 				AltStatName:          strings.Join([]string{c.Namespace, "envoy-admin", strconv.Itoa(c.GetAdminPort())}, "_"),
 				ConnectTimeout:       durationpb.New(250 * time.Millisecond),
-				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_cluster_v3.Cluster_STATIC),
-				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_config_cluster_v3.Cluster_STATIC),
+				LbPolicy:             envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "envoy-admin",
 					Endpoints: Endpoints(
 						UnixSocketAddress(c.GetAdminAddress()),
@@ -240,11 +241,11 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				},
 			}},
 		},
-		DefaultRegexEngine: &envoy_core_v3.TypedExtensionConfig{
+		DefaultRegexEngine: &envoy_config_core_v3.TypedExtensionConfig{
 			Name:        "envoy.regex_engines.google_re2",
 			TypedConfig: protobuf.MustMarshalAny(&envoy_regex_engines_v3.GoogleRE2{}),
 		},
-		Admin: &envoy_bootstrap_v3.Admin{
+		Admin: &envoy_config_bootstrap_v3.Admin{
 			AccessLog: adminAccessLog(c.GetAdminAccessLogPath()),
 			Address:   UnixSocketAddress(c.GetAdminAddress()),
 		},
@@ -301,7 +302,7 @@ func adminAccessLog(logPath string) []*envoy_config_accesslog_v3.AccessLog {
 		{
 			Name: "envoy.access_loggers.file",
 			ConfigType: &envoy_config_accesslog_v3.AccessLog_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_access_logger_file_v3.FileAccessLog{
 					Path: logPath,
 				}),
 			},
@@ -309,37 +310,37 @@ func adminAccessLog(logPath string) []*envoy_config_accesslog_v3.AccessLog {
 	}
 }
 
-func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsContext {
-	context := &envoy_tls_v3.UpstreamTlsContext{
-		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
-			TlsParams: &envoy_tls_v3.TlsParameters{
-				TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
+func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_transport_socket_tls_v3.UpstreamTlsContext {
+	context := &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
+				TlsMaximumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 			},
-			TlsCertificates: []*envoy_tls_v3.TlsCertificate{{
-				CertificateChain: &envoy_core_v3.DataSource{
-					Specifier: &envoy_core_v3.DataSource_Filename{
+			TlsCertificates: []*envoy_transport_socket_tls_v3.TlsCertificate{{
+				CertificateChain: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_Filename{
 						Filename: c.GrpcClientCert,
 					},
 				},
-				PrivateKey: &envoy_core_v3.DataSource{
-					Specifier: &envoy_core_v3.DataSource_Filename{
+				PrivateKey: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_Filename{
 						Filename: c.GrpcClientKey,
 					},
 				},
 			}},
-			ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContext{
-				ValidationContext: &envoy_tls_v3.CertificateValidationContext{
-					TrustedCa: &envoy_core_v3.DataSource{
-						Specifier: &envoy_core_v3.DataSource_Filename{
+			ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContext{
+				ValidationContext: &envoy_transport_socket_tls_v3.CertificateValidationContext{
+					TrustedCa: &envoy_config_core_v3.DataSource{
+						Specifier: &envoy_config_core_v3.DataSource_Filename{
 							Filename: c.GrpcCABundle,
 						},
 					},
 					// TODO(youngnick): Does there need to be a flag wired down to here?
-					MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
+					MatchTypedSubjectAltNames: []*envoy_transport_socket_tls_v3.SubjectAltNameMatcher{
 						{
-							SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
-							Matcher: &matcher.StringMatcher{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							SanType: envoy_transport_socket_tls_v3.SubjectAltNameMatcher_DNS,
+							Matcher: &envoy_matcher_v3.StringMatcher{
+								MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 									Exact: "contour",
 								},
 							},
@@ -352,30 +353,30 @@ func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsC
 	return context
 }
 
-func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_tls_v3.UpstreamTlsContext {
-	return &envoy_tls_v3.UpstreamTlsContext{
-		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
-			TlsParams: &envoy_tls_v3.TlsParameters{
-				TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
+func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_transport_socket_tls_v3.UpstreamTlsContext {
+	return &envoy_transport_socket_tls_v3.UpstreamTlsContext{
+		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
+				TlsMaximumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 			},
-			TlsCertificateSdsSecretConfigs: []*envoy_tls_v3.SdsSecretConfig{{
+			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name: "contour_xds_tls_certificate",
-				SdsConfig: &envoy_core_v3.ConfigSource{
-					ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_PathConfigSource{
-						PathConfigSource: &envoy_core_v3.PathConfigSource{
+				SdsConfig: &envoy_config_core_v3.ConfigSource{
+					ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
+					ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_PathConfigSource{
+						PathConfigSource: &envoy_config_core_v3.PathConfigSource{
 							Path: certificateSdsFile,
 						},
 					},
 				},
 			}},
-			ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
-				ValidationContextSdsSecretConfig: &envoy_tls_v3.SdsSecretConfig{
+			ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
+				ValidationContextSdsSecretConfig: &envoy_transport_socket_tls_v3.SdsSecretConfig{
 					Name: "contour_xds_tls_validation_context",
-					SdsConfig: &envoy_core_v3.ConfigSource{
-						ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
-						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_PathConfigSource{
-							PathConfigSource: &envoy_core_v3.PathConfigSource{
+					SdsConfig: &envoy_config_core_v3.ConfigSource{
+						ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
+						ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_PathConfigSource{
+							PathConfigSource: &envoy_config_core_v3.PathConfigSource{
 								Path: validationSdsFile,
 							},
 						},
@@ -389,17 +390,17 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 // tlsCertificateSdsSecretConfig creates DiscoveryResponse with file based SDS resource
 // including paths to TLS certificates and key
 func tlsCertificateSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_discovery_v3.DiscoveryResponse {
-	secret := &envoy_tls_v3.Secret{
+	secret := &envoy_transport_socket_tls_v3.Secret{
 		Name: "contour_xds_tls_certificate",
-		Type: &envoy_tls_v3.Secret_TlsCertificate{
-			TlsCertificate: &envoy_tls_v3.TlsCertificate{
-				CertificateChain: &envoy_core_v3.DataSource{
-					Specifier: &envoy_core_v3.DataSource_Filename{
+		Type: &envoy_transport_socket_tls_v3.Secret_TlsCertificate{
+			TlsCertificate: &envoy_transport_socket_tls_v3.TlsCertificate{
+				CertificateChain: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_Filename{
 						Filename: c.GrpcClientCert,
 					},
 				},
-				PrivateKey: &envoy_core_v3.DataSource{
-					Specifier: &envoy_core_v3.DataSource_Filename{
+				PrivateKey: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_Filename{
 						Filename: c.GrpcClientKey,
 					},
 				},
@@ -415,20 +416,20 @@ func tlsCertificateSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_disc
 // validationContextSdsSecretConfig creates DiscoveryResponse with file based SDS resource
 // including path to CA certificate bundle
 func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_discovery_v3.DiscoveryResponse {
-	secret := &envoy_tls_v3.Secret{
+	secret := &envoy_transport_socket_tls_v3.Secret{
 		Name: "contour_xds_tls_validation_context",
-		Type: &envoy_tls_v3.Secret_ValidationContext{
-			ValidationContext: &envoy_tls_v3.CertificateValidationContext{
-				TrustedCa: &envoy_core_v3.DataSource{
-					Specifier: &envoy_core_v3.DataSource_Filename{
+		Type: &envoy_transport_socket_tls_v3.Secret_ValidationContext{
+			ValidationContext: &envoy_transport_socket_tls_v3.CertificateValidationContext{
+				TrustedCa: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_Filename{
 						Filename: c.GrpcCABundle,
 					},
 				},
-				MatchTypedSubjectAltNames: []*envoy_tls_v3.SubjectAltNameMatcher{
+				MatchTypedSubjectAltNames: []*envoy_transport_socket_tls_v3.SubjectAltNameMatcher{
 					{
-						SanType: envoy_tls_v3.SubjectAltNameMatcher_DNS,
-						Matcher: &matcher.StringMatcher{
-							MatchPattern: &matcher.StringMatcher_Exact{
+						SanType: envoy_transport_socket_tls_v3.SubjectAltNameMatcher_DNS,
+						Matcher: &envoy_matcher_v3.StringMatcher{
+							MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 								Exact: "contour",
 							},
 						},

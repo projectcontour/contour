@@ -18,9 +18,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/projectcontour/contour/internal/build"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/projectcontour/contour/internal/build"
 )
 
 // Metrics provide Prometheus metrics for the app

@@ -19,7 +19,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -27,13 +27,13 @@ func Test_parseStatusFlag(t *testing.T) {
 	tests := []struct {
 		name   string
 		status string
-		want   v1.LoadBalancerStatus
+		want   core_v1.LoadBalancerStatus
 	}{
 		{
 			name:   "IPv4",
 			status: "10.0.0.1",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "10.0.0.1",
 					},
@@ -43,8 +43,8 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "IPv6",
 			status: "2001:4860:4860::8888",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "2001:4860:4860::8888",
 					},
@@ -54,8 +54,8 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "arbitrary string",
 			status: "anarbitrarystring",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						Hostname: "anarbitrarystring",
 					},
@@ -65,8 +65,8 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "WhitespacePadded",
 			status: "  anarbitrarystring      ",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						Hostname: "anarbitrarystring",
 					},
@@ -76,23 +76,23 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "Empty",
 			status: "",
-			want:   v1.LoadBalancerStatus{},
+			want:   core_v1.LoadBalancerStatus{},
 		},
 		{
 			name:   "EmptyComma",
 			status: ",",
-			want:   v1.LoadBalancerStatus{},
+			want:   core_v1.LoadBalancerStatus{},
 		},
 		{
 			name:   "EmptySpace",
 			status: "    ",
-			want:   v1.LoadBalancerStatus{},
+			want:   core_v1.LoadBalancerStatus{},
 		},
 		{
 			name:   "SingleComma",
 			status: "10.0.0.1,",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "10.0.0.1",
 					},
@@ -102,8 +102,8 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "SingleCommaBefore",
 			status: ",10.0.0.1",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "10.0.0.1",
 					},
@@ -113,8 +113,8 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "Multi",
 			status: "10.0.0.1,2001:4860:4860::8888,anarbitrarystring",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "10.0.0.1",
 					},
@@ -130,8 +130,8 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "MultiSpace",
 			status: "10.0.0.1, 2001:4860:4860::8888, anarbitrarystring",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			want: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "10.0.0.1",
 					},
@@ -155,20 +155,20 @@ func Test_parseStatusFlag(t *testing.T) {
 func Test_lbAddress(t *testing.T) {
 	tests := []struct {
 		name string
-		lb   v1.LoadBalancerStatus
+		lb   core_v1.LoadBalancerStatus
 		want string
 	}{
 		{
 			name: "empty Loadbalancer",
-			lb: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{},
+			lb: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{},
 			},
 			want: "",
 		},
 		{
 			name: "IP address loadbalancer",
-			lb: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			lb: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						IP: "10.0.0.1",
 					},
@@ -178,8 +178,8 @@ func Test_lbAddress(t *testing.T) {
 		},
 		{
 			name: "Hostname loadbalancer",
-			lb: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{
+			lb: core_v1.LoadBalancerStatus{
+				Ingress: []core_v1.LoadBalancerIngress{
 					{
 						Hostname: "somedomain.com",
 					},

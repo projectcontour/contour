@@ -47,7 +47,7 @@ export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
 1. Generate a new set of versioned docs, plus a changelog:
-    
+
     ```bash
     go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
@@ -143,9 +143,6 @@ export CONTOUR_RELEASE_VERSION=v1.11.1
 export CONTOUR_RELEASE_VERSION_MAJOR=1
 export CONTOUR_RELEASE_VERSION_MINOR=11
 export CONTOUR_PREVIOUS_VERSION=v1.11.0
-
-export KUBERNETES_MIN_VERSION=1.20
-export KUBERNETES_MAX_VERSION=1.22
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 ```

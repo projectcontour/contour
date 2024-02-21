@@ -18,13 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,7 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 const (
@@ -45,14 +44,14 @@ const (
 
 // gatewayClassReconciler reconciles GatewayClass objects.
 type gatewayClassReconciler struct {
-	gatewayController gatewayapi_v1beta1.GatewayController
+	gatewayController gatewayapi_v1.GatewayController
 	client            client.Client
 	log               logr.Logger
 }
 
 func NewGatewayClassController(mgr manager.Manager, gatewayController string) (controller.Controller, error) {
 	r := &gatewayClassReconciler{
-		gatewayController: gatewayapi_v1beta1.GatewayController(gatewayController),
+		gatewayController: gatewayapi_v1.GatewayController(gatewayController),
 		client:            mgr.GetClient(),
 		log:               ctrl.Log.WithName("gatewayclass-controller"),
 	}
@@ -63,7 +62,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	}
 
 	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &gatewayapi_v1beta1.GatewayClass{}),
+		source.Kind(mgr.GetCache(), &gatewayapi_v1.GatewayClass{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -73,7 +72,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	// Watch ContourDeployments since they can be used as parameters for
 	// GatewayClasses.
 	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &contour_api_v1alpha1.ContourDeployment{}),
+		source.Kind(mgr.GetCache(), &contour_v1alpha1.ContourDeployment{}),
 		handler.EnqueueRequestsFromMapFunc(r.mapContourDeploymentToGatewayClasses),
 	); err != nil {
 		return nil, err
@@ -83,7 +82,7 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 }
 
 func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
-	gatewayClass, ok := obj.(*gatewayapi_v1beta1.GatewayClass)
+	gatewayClass, ok := obj.(*gatewayapi_v1.GatewayClass)
 	if !ok {
 		return false
 	}
@@ -95,7 +94,7 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 // for all provisioner-controlled GatewayClasses that have a ParametersRef to
 // the specified ContourDeployment object.
 func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(ctx context.Context, contourDeployment client.Object) []reconcile.Request {
-	var gatewayClasses gatewayapi_v1beta1.GatewayClassList
+	var gatewayClasses gatewayapi_v1.GatewayClassList
 	if err := r.client.List(ctx, &gatewayClasses); err != nil {
 		r.log.Error(err, "error listing gateway classes")
 		return nil
@@ -129,7 +128,7 @@ func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(ctx contex
 }
 
 func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	gatewayClass := &gatewayapi_v1beta1.GatewayClass{}
+	gatewayClass := &gatewayapi_v1.GatewayClass{}
 	if err := r.client.Get(ctx, req.NamespacedName, gatewayClass); err != nil {
 		// GatewayClass no longer exists, nothing to do.
 		if errors.IsNotFound(err) {
@@ -149,7 +148,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	// Collect various status conditions here so we can update using
 	// setConditions.
-	statusConditions := map[string]metav1.Condition{}
+	statusConditions := map[string]meta_v1.Condition{}
 
 	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion)] = r.getSupportedVersionCondition(ctx)
 
@@ -158,9 +157,9 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, fmt.Errorf("error checking gateway class's parametersRef: %w", err)
 	}
 	if !ok {
-		statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = metav1.Condition{
+		statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = meta_v1.Condition{
 			Type:    string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-			Status:  metav1.ConditionFalse,
+			Status:  meta_v1.ConditionFalse,
 			Reason:  string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 			Message: "Invalid ParametersRef, must be a reference to an existing namespaced projectcontour.io/ContourDeployment resource",
 		}
@@ -178,7 +177,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		if params.Spec.Envoy != nil {
 			switch params.Spec.Envoy.WorkloadType {
 			// valid values, nothing to do
-			case "", contour_api_v1alpha1.WorkloadTypeDaemonSet, contour_api_v1alpha1.WorkloadTypeDeployment:
+			case "", contour_v1alpha1.WorkloadTypeDaemonSet, contour_v1alpha1.WorkloadTypeDeployment:
 			// invalid value, set message
 			default:
 				msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.workloadType %q, must be DaemonSet or Deployment", params.Spec.Envoy.WorkloadType)
@@ -188,7 +187,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			if params.Spec.Envoy.NetworkPublishing != nil {
 				switch params.Spec.Envoy.NetworkPublishing.Type {
 				// valid values, nothing to do
-				case "", contour_api_v1alpha1.LoadBalancerServicePublishingType, contour_api_v1alpha1.NodePortServicePublishingType, contour_api_v1alpha1.ClusterIPServicePublishingType:
+				case "", contour_v1alpha1.LoadBalancerServicePublishingType, contour_v1alpha1.NodePortServicePublishingType, contour_v1alpha1.ClusterIPServicePublishingType:
 				// invalid value, set message
 				default:
 					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.type %q, must be LoadBalancerService, NoderPortService or ClusterIPService",
@@ -197,7 +196,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				}
 
 				switch params.Spec.Envoy.NetworkPublishing.IPFamilyPolicy {
-				case "", corev1.IPFamilyPolicySingleStack, corev1.IPFamilyPolicyPreferDualStack, corev1.IPFamilyPolicyRequireDualStack:
+				case "", core_v1.IPFamilyPolicySingleStack, core_v1.IPFamilyPolicyPreferDualStack, core_v1.IPFamilyPolicyRequireDualStack:
 				default:
 					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.ipFamilyPolicy %q, must be SingleStack, PreferDualStack or RequireDualStack",
 						params.Spec.Envoy.NetworkPublishing.IPFamilyPolicy)
@@ -205,7 +204,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				}
 
 				switch params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy {
-				case "", corev1.ServiceExternalTrafficPolicyTypeCluster, corev1.ServiceExternalTrafficPolicyTypeLocal:
+				case "", core_v1.ServiceExternalTrafficPolicyTypeCluster, core_v1.ServiceExternalTrafficPolicyTypeLocal:
 				default:
 					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.externalTrafficPolicy %q, must be Local or Cluster",
 						params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy)
@@ -228,8 +227,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 			switch params.Spec.Envoy.LogLevel {
 			// valid values, nothing to do.
-			case "", contour_api_v1alpha1.TraceLog, contour_api_v1alpha1.DebugLog, contour_api_v1alpha1.InfoLog,
-				contour_api_v1alpha1.WarnLog, contour_api_v1alpha1.ErrorLog, contour_api_v1alpha1.CriticalLog, contour_api_v1alpha1.OffLog:
+			case "", contour_v1alpha1.TraceLog, contour_v1alpha1.DebugLog, contour_v1alpha1.InfoLog,
+				contour_v1alpha1.WarnLog, contour_v1alpha1.ErrorLog, contour_v1alpha1.CriticalLog, contour_v1alpha1.OffLog:
 			// invalid value, set message.
 			default:
 				msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.logLevel %q, must be trace, debug, info, warn, error, critical or off",
@@ -239,9 +238,9 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 
 		if len(invalidParamsMessages) > 0 {
-			statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = metav1.Condition{
+			statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = meta_v1.Condition{
 				Type:    string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-				Status:  metav1.ConditionFalse,
+				Status:  meta_v1.ConditionFalse,
 				Reason:  string(gatewayapi_v1.GatewayClassReasonInvalidParameters),
 				Message: strings.Join(invalidParamsMessages, "; "),
 			}
@@ -253,9 +252,9 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 	}
 
-	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = metav1.Condition{
+	statusConditions[string(gatewayapi_v1.GatewayClassConditionStatusAccepted)] = meta_v1.Condition{
 		Type:    string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-		Status:  metav1.ConditionTrue,
+		Status:  meta_v1.ConditionTrue,
 		Reason:  string(gatewayapi_v1.GatewayClassReasonAccepted),
 		Message: "GatewayClass has been accepted by the controller",
 	}
@@ -266,8 +265,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass *gatewayapi_v1beta1.GatewayClass, newConds map[string]metav1.Condition) error {
-	var unchangedConds, updatedConds []metav1.Condition
+func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass *gatewayapi_v1.GatewayClass, newConds map[string]meta_v1.Condition) error {
+	var unchangedConds, updatedConds []meta_v1.Condition
 	for _, existing := range gatewayClass.Status.Conditions {
 		if cond, ok := newConds[existing.Type]; ok {
 			if existing.Status == cond.Status {
@@ -283,7 +282,7 @@ func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass
 		}
 	}
 
-	transitionTime := metav1.Now()
+	transitionTime := meta_v1.Now()
 	for _, c := range newConds {
 		r.log.WithValues("gatewayclass-name", gatewayClass.Name).Info(fmt.Sprintf("setting gateway class's %s condition to %s", c.Type, c.Status))
 		c.ObservedGeneration = gatewayClass.Generation
@@ -300,15 +299,15 @@ func (r *gatewayClassReconciler) setConditions(ctx context.Context, gatewayClass
 	return nil
 }
 
-func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Context) metav1.Condition {
-	cond := metav1.Condition{
+func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Context) meta_v1.Condition {
+	cond := meta_v1.Condition{
 		Type: string(gatewayapi_v1.GatewayClassConditionStatusSupportedVersion),
 		// Assume false until we get to the happy case.
-		Status: metav1.ConditionFalse,
+		Status: meta_v1.ConditionFalse,
 		Reason: string(gatewayapi_v1.GatewayClassReasonUnsupportedVersion),
 	}
 	gatewayClassCRD := &apiextensions_v1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "gatewayclasses." + gatewayapi_v1.GroupName,
 		},
 	}
@@ -330,7 +329,7 @@ func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Contex
 	}
 
 	// No errors found, we can return true.
-	cond.Status = metav1.ConditionTrue
+	cond.Status = meta_v1.ConditionTrue
 	cond.Reason = string(gatewayapi_v1.GatewayClassReasonSupportedVersion)
 	cond.Message = fmt.Sprintf("Gateway API CRD bundle version %s is supported.", gatewayAPICRDBundleSupportedVersion)
 	return cond
@@ -338,7 +337,7 @@ func (r *gatewayClassReconciler) getSupportedVersionCondition(ctx context.Contex
 
 // isValidParametersRef returns true if the provided ParametersReference is
 // to a ContourDeployment resource that exists.
-func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *gatewayapi_v1beta1.ParametersReference) (bool, *contour_api_v1alpha1.ContourDeployment, error) {
+func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *gatewayapi_v1.ParametersReference) (bool, *contour_v1alpha1.ContourDeployment, error) {
 	if ref == nil {
 		return true, nil, nil
 	}
@@ -352,7 +351,7 @@ func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *
 		Name:      ref.Name,
 	}
 
-	params := &contour_api_v1alpha1.ContourDeployment{}
+	params := &contour_v1alpha1.ContourDeployment{}
 	if err := r.client.Get(ctx, key, params); err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil, nil
@@ -363,11 +362,11 @@ func (r *gatewayClassReconciler) isValidParametersRef(ctx context.Context, ref *
 	return true, params, nil
 }
 
-func isContourDeploymentRef(ref *gatewayapi_v1beta1.ParametersReference) bool {
+func isContourDeploymentRef(ref *gatewayapi_v1.ParametersReference) bool {
 	if ref == nil {
 		return false
 	}
-	if string(ref.Group) != contour_api_v1alpha1.GroupVersion.Group {
+	if string(ref.Group) != contour_v1alpha1.GroupVersion.Group {
 		return false
 	}
 	if string(ref.Kind) != "ContourDeployment" {

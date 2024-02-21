@@ -18,15 +18,16 @@ import (
 	"net"
 	"strings"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
 // loadBalancerStatusWriter orchestrates LoadBalancer address status
@@ -37,8 +38,8 @@ import (
 //
 //  1. On startup the loadBalancerStatusWriter waits to be elected leader.
 //  2. Once elected leader, the loadBalancerStatusWriter waits to receive a
-//     v1.LoadBalancerStatus value.
-//  3. Once a v1.LoadBalancerStatus value has been received, the
+//     core_v1.LoadBalancerStatus value.
+//  3. Once a core_v1.LoadBalancerStatus value has been received, the
 //     cached address is updated so that it will be applied to objects
 //     received in any subsequent informer events.
 //  4. All Ingress, HTTPProxy and Gateway objects are listed from the informer
@@ -48,13 +49,12 @@ import (
 //  5. If the worker is stopped, the informer continues but no further
 //     status updates are made.
 type loadBalancerStatusWriter struct {
-	log                   logrus.FieldLogger
-	cache                 cache.Cache
-	lbStatus              chan v1.LoadBalancerStatus
-	statusUpdater         k8s.StatusUpdater
-	ingressClassNames     []string
-	gatewayControllerName string
-	gatewayRef            *types.NamespacedName
+	log               logrus.FieldLogger
+	cache             cache.Cache
+	lbStatus          chan core_v1.LoadBalancerStatus
+	statusUpdater     k8s.StatusUpdater
+	ingressClassNames []string
+	gatewayRef        *types.NamespacedName
 }
 
 func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
@@ -72,25 +72,24 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 
 			return log
 		}(),
-		Cache:                 isw.cache,
-		IngressClassNames:     isw.ingressClassNames,
-		GatewayControllerName: isw.gatewayControllerName,
-		GatewayRef:            isw.gatewayRef,
-		StatusUpdater:         isw.statusUpdater,
+		Cache:             isw.cache,
+		IngressClassNames: isw.ingressClassNames,
+		GatewayRef:        isw.gatewayRef,
+		StatusUpdater:     isw.statusUpdater,
 	}
 
 	// Create informers for the types that need load balancer
 	// address status. The cache should have already started
 	// informers, so new informers will auto-start.
 	resources := []client.Object{
-		&contour_api_v1.HTTPProxy{},
+		&contour_v1.HTTPProxy{},
 		&networking_v1.Ingress{},
 	}
 
-	// Only create Gateway informer if a controller or specific gateway was provided,
+	// Only create Gateway informer if a gateway was provided,
 	// otherwise the API may not exist in the cluster.
-	if len(isw.gatewayControllerName) > 0 || isw.gatewayRef != nil {
-		resources = append(resources, &gatewayapi_v1beta1.Gateway{})
+	if isw.gatewayRef != nil {
+		resources = append(resources, &gatewayapi_v1.Gateway{})
 	}
 
 	for _, r := range resources {
@@ -112,7 +111,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 			// informer from here. Clear the load balancer
 			// status so that subsequent informer events
 			// will have no effect.
-			u.Set(v1.LoadBalancerStatus{})
+			u.Set(core_v1.LoadBalancerStatus{})
 			return nil
 		case lbs := <-isw.lbStatus:
 			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).
@@ -129,7 +128,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 				}
 			}
 
-			var proxyList contour_api_v1.HTTPProxyList
+			var proxyList contour_v1.HTTPProxyList
 			if err := isw.cache.List(context.Background(), &proxyList); err != nil {
 				isw.log.WithError(err).WithField("kind", "HTTPProxy").Error("failed to list objects")
 			} else {
@@ -138,10 +137,10 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 				}
 			}
 
-			// Only list Gateways if a controller or specific gateway was configured,
+			// Only list Gateways if a gateway was configured,
 			// otherwise the API may not exist in the cluster.
-			if len(isw.gatewayControllerName) > 0 || isw.gatewayRef != nil {
-				var gatewayList gatewayapi_v1beta1.GatewayList
+			if isw.gatewayRef != nil {
+				var gatewayList gatewayapi_v1.GatewayList
 				if err := isw.cache.List(context.Background(), &gatewayList); err != nil {
 					isw.log.WithError(err).WithField("kind", "Gateway").Error("failed to list objects")
 				} else {
@@ -154,9 +153,9 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 	}
 }
 
-func parseStatusFlag(status string) v1.LoadBalancerStatus {
+func parseStatusFlag(status string) core_v1.LoadBalancerStatus {
 	// Support ','-separated lists.
-	var ingresses []v1.LoadBalancerIngress
+	var ingresses []core_v1.LoadBalancerIngress
 
 	for _, item := range strings.Split(status, ",") {
 		item = strings.TrimSpace(item)
@@ -165,25 +164,25 @@ func parseStatusFlag(status string) v1.LoadBalancerStatus {
 		}
 
 		// Use the parseability by net.ParseIP as a signal, since we need
-		// to pass a string into the v1.LoadBalancerIngress anyway.
+		// to pass a string into the core_v1.LoadBalancerIngress anyway.
 		if ip := net.ParseIP(item); ip != nil {
-			ingresses = append(ingresses, v1.LoadBalancerIngress{
+			ingresses = append(ingresses, core_v1.LoadBalancerIngress{
 				IP: item,
 			})
 		} else {
-			ingresses = append(ingresses, v1.LoadBalancerIngress{
+			ingresses = append(ingresses, core_v1.LoadBalancerIngress{
 				Hostname: item,
 			})
 		}
 	}
 
-	return v1.LoadBalancerStatus{
+	return core_v1.LoadBalancerStatus{
 		Ingress: ingresses,
 	}
 }
 
 // lbAddress gets the string representation of the first address, for logging.
-func lbAddress(lb v1.LoadBalancerStatus) string {
+func lbAddress(lb core_v1.LoadBalancerStatus) string {
 	if len(lb.Ingress) == 0 {
 		return ""
 	}

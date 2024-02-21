@@ -3,10 +3,8 @@
 vendor/
 .vs/
 .idea/
-# TODO(youngnick): Move these out of the repo root.
-localenvoyconfig.yaml
-securelocalenvoyconfig.yaml
 ./certs/
+/contour
 
 # Netlify stuff
 .vagrant

@@ -16,24 +16,26 @@ package v3
 import (
 	"testing"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 )
 
 func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
@@ -55,20 +57,20 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 	rh.OnAdd(caSecret)
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 443})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
 	rh.OnAdd(svc)
 
 	proxy := fixture.NewProxy("authenticated").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "www.example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name:     svc.Name,
 					Port:     443,
-					Protocol: ref.To("tls"),
-					UpstreamValidation: &projcontour.UpstreamValidation{
+					Protocol: ptr.To("tls"),
+					UpstreamValidation: &contour_v1.UpstreamValidation{
 						CACertificate: caSecret.Name,
 						SubjectName:   "subjname",
 					},
@@ -77,7 +79,7 @@ func TestUpstreamTLSWithHTTPProxy(t *testing.T) {
 		})
 	rh.OnAdd(proxy)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(
 				cluster("default/backend/443/950c17581f", "default/backend/http", "default_backend_443"),
@@ -109,11 +111,11 @@ func TestUpstreamTLSWithIngress(t *testing.T) {
 
 	s1 := fixture.NewService("kuard").
 		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend").
-		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
+		WithPorts(core_v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -123,7 +125,7 @@ func TestUpstreamTLSWithIngress(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(
 				cluster("default/kuard/443/4929fca9d4", "default/kuard/securebackend", "default_kuard_443"),
@@ -158,20 +160,20 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 
 	rh.OnAdd(featuretests.CASecret(t, "ns/cacert", &featuretests.CACertificate))
 
-	rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
+	rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(core_v1.ServicePort{Port: 8081}))
 
-	rh.OnAdd(featuretests.Endpoints("ns", "svc1", corev1.EndpointSubset{
+	rh.OnAdd(featuretests.Endpoints("ns", "svc1", core_v1.EndpointSubset{
 		Addresses: featuretests.Addresses("192.168.183.20"),
 		Ports:     featuretests.Ports(featuretests.Port("", 8081)),
 	}))
 
-	ext := &v1alpha1.ExtensionService{
+	ext := &contour_v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
-		Spec: v1alpha1.ExtensionServiceSpec{
-			Services: []v1alpha1.ExtensionServiceTarget{
+		Spec: contour_v1alpha1.ExtensionServiceSpec{
+			Services: []contour_v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 			},
-			UpstreamValidation: &contour_api_v1.UpstreamValidation{
+			UpstreamValidation: &contour_v1.UpstreamValidation{
 				CACertificate: "cacert",
 				SubjectName:   "ext.projectcontour.io",
 			},
@@ -182,26 +184,26 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 
 	// Enabling validation add SNI as well as CA and server altname validation.
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
-		&envoy_v3_tls.UpstreamTlsContext{
+		&envoy_transport_socket_tls_v3.UpstreamTlsContext{
 			Sni: "ext.projectcontour.io",
-			CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-				TlsParams: &envoy_v3_tls.TlsParameters{
-					TlsMinimumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_2,
-					TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_2,
+			CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+				TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
+					TlsMinimumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+					TlsMaximumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 				},
 				AlpnProtocols: []string{"h2"},
-				ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
-					ValidationContext: &envoy_v3_tls.CertificateValidationContext{
-						TrustedCa: &envoy_core_v3.DataSource{
-							Specifier: &envoy_core_v3.DataSource_InlineBytes{
+				ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContext{
+					ValidationContext: &envoy_transport_socket_tls_v3.CertificateValidationContext{
+						TrustedCa: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 								InlineBytes: featuretests.PEMBytes(t, &featuretests.CACertificate),
 							},
 						},
-						MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+						MatchTypedSubjectAltNames: []*envoy_transport_socket_tls_v3.SubjectAltNameMatcher{
 							{
-								SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
-								Matcher: &matcher.StringMatcher{
-									MatchPattern: &matcher.StringMatcher_Exact{
+								SanType: envoy_transport_socket_tls_v3.SubjectAltNameMatcher_DNS,
+								Matcher: &envoy_matcher_v3.StringMatcher{
+									MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 										Exact: "ext.projectcontour.io",
 									},
 								},
@@ -213,13 +215,242 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 		},
 	)
 
-	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
-				&envoy_cluster_v3.Cluster{TransportSocket: tlsSocket},
+				&envoy_config_cluster_v3.Cluster{TransportSocket: tlsSocket},
 			),
 		),
+	})
+}
+
+func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		for _, processor := range b.Processors {
+			if gatewayAPIProcessor, ok := processor.(*dag.GatewayAPIProcessor); ok {
+				gatewayAPIProcessor.UpstreamTLS = &dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
+				}
+			}
+		}
+	})
+	defer done()
+
+	sec1 := featuretests.TLSSecret(t, "sec1", &featuretests.ClientCertificate)
+	sec2 := featuretests.CASecret(t, "sec2", &featuretests.CACertificate)
+	rh.OnAdd(sec1)
+	rh.OnAdd(sec2)
+
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
+		TypeMeta:   meta_v1.TypeMeta{},
+		ObjectMeta: fixture.ObjectMeta("test-gc"),
+		Spec: gatewayapi_v1.GatewayClassSpec{
+			ControllerName: "projectcontour.io/contour",
+		},
+		Status: gatewayapi_v1.GatewayClassStatus{
+			Conditions: []meta_v1.Condition{
+				{
+					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+					Status: meta_v1.ConditionTrue,
+				},
+			},
+		},
+	})
+
+	gateway := &gatewayapi_v1.Gateway{
+		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
+				Name:     "http",
+				Port:     80,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(gateway)
+
+	svc := fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
+	rh.OnAdd(svc)
+
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authenticated",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("backend", 443, 1),
+			}},
+		},
+	})
+
+	rh.OnAdd(&gatewayapi_v1alpha2.BackendTLSPolicy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authenticated",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+			TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+				PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+					Kind: "Service",
+					Name: "backend",
+				},
+			},
+			TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+				CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+					Kind: "Secret",
+					Name: gatewayapi_v1.ObjectName(sec2.Name),
+				}},
+				Hostname: "subjname",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(
+				cluster("default/backend/443/867941ed65", "default/backend/http", "default_backend_443"),
+				sec2,
+				"subjname",
+				"",
+				nil,
+				&dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
+				}),
+		),
+		TypeUrl: clusterType,
+	})
+}
+
+func TestBackendTLSPolicyPrecedenceOverUpstreamProtocolAnnotationWithHTTPRoute(t *testing.T) {
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		for _, processor := range b.Processors {
+			if gatewayAPIProcessor, ok := processor.(*dag.GatewayAPIProcessor); ok {
+				gatewayAPIProcessor.UpstreamTLS = &dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
+				}
+			}
+		}
+	})
+	defer done()
+
+	sec1 := featuretests.CASecret(t, "sec1", &featuretests.CACertificate)
+	rh.OnAdd(sec1)
+
+	rh.OnAdd(&gatewayapi_v1.GatewayClass{
+		TypeMeta:   meta_v1.TypeMeta{},
+		ObjectMeta: fixture.ObjectMeta("test-gc"),
+		Spec: gatewayapi_v1.GatewayClassSpec{
+			ControllerName: "projectcontour.io/contour",
+		},
+		Status: gatewayapi_v1.GatewayClassStatus{
+			Conditions: []meta_v1.Condition{
+				{
+					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
+					Status: meta_v1.ConditionTrue,
+				},
+			},
+		},
+	})
+
+	gateway := &gatewayapi_v1.Gateway{
+		ObjectMeta: fixture.ObjectMeta("projectcontour/contour"),
+		Spec: gatewayapi_v1.GatewaySpec{
+			Listeners: []gatewayapi_v1.Listener{{
+				Name:     "http",
+				Port:     80,
+				Protocol: gatewayapi_v1.HTTPProtocolType,
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(gateway)
+
+	svc := fixture.NewService("backend").
+		Annotate("projectcontour.io/upstream-protocol.h2", "443").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
+	rh.OnAdd(svc)
+
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authenticated",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("backend", 443, 1),
+			}},
+		},
+	})
+
+	rh.OnAdd(&gatewayapi_v1alpha2.BackendTLSPolicy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authenticated",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
+			TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
+				PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
+					Kind: "Service",
+					Name: "backend",
+				},
+			},
+			TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
+				CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+					Kind: "Secret",
+					Name: gatewayapi_v1.ObjectName(sec1.Name),
+				}},
+				Hostname: "subjname",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			tlsCluster(
+				cluster("default/backend/443/242c9163af", "default/backend/http", "default_backend_443"),
+				sec1,
+				"subjname",
+				"",
+				nil,
+				&dag.UpstreamTLS{
+					MinimumProtocolVersion: "1.2",
+					MaximumProtocolVersion: "1.2",
+				}),
+		),
+		TypeUrl: clusterType,
 	})
 }

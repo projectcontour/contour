@@ -16,11 +16,12 @@ package ingressclass
 import (
 	"testing"
 
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 func TestMatchesIngress(t *testing.T) {
@@ -28,7 +29,7 @@ func TestMatchesIngress(t *testing.T) {
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{}, nil))
 	// Annotation set to default, no spec field set, class not configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "contour",
 			},
@@ -37,12 +38,12 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set to default, class not configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("contour"),
+			IngressClassName: ptr.To("contour"),
 		},
 	}, nil))
 	// Annotation set, no spec field set, class not configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -51,14 +52,14 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set, class not configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, nil))
 	// No annotation, no spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{}, []string{"something"}))
 	// Annotation set, no spec field set, class configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -67,12 +68,12 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set, class configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("something"),
+			IngressClassName: ptr.To("something"),
 		},
 	}, []string{"something"}))
 	// Annotation set, no spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -81,34 +82,34 @@ func TestMatchesIngress(t *testing.T) {
 	// No annotation set, spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"something"}))
 	// Annotation set, spec field set, class configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"something"}))
 	// Annotation set, spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("something"),
+			IngressClassName: ptr.To("something"),
 		},
 	}, []string{"something"}))
 	// Multiple classes: Annotation set, no spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -117,29 +118,29 @@ func TestMatchesIngress(t *testing.T) {
 	// Multiple classes: No annotation set, spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"something", "somethingelse"}))
 	// Multiple classes: Annotation set, spec field set, class configured
 	assert.True(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("aclass"),
+			IngressClassName: ptr.To("aclass"),
 		},
 	}, []string{"somethingelse", "something"}))
 	// Multiple classes: Annotation set, spec field set, class configured
 	assert.False(t, MatchesIngress(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
 		},
 		Spec: networking_v1.IngressSpec{
-			IngressClassName: ref.To("something"),
+			IngressClassName: ptr.To("something"),
 		},
 	}, []string{"something", "somethingelse"}))
 }
@@ -149,7 +150,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{}, nil))
 	// Annotation set to default, no spec field set, class not configured
 	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "contour",
 			},
@@ -163,7 +164,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, nil))
 	// Annotation set, no spec field set, class not configured
 	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -179,7 +180,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{}, []string{"something"}))
 	// Annotation set, no spec field set, class configured
 	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -193,7 +194,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"something"}))
 	// Annotation set, no spec field set, class configured
 	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -207,7 +208,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"something"}))
 	// Annotation set, spec field set, class configured
 	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -218,7 +219,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"something"}))
 	// Annotation set, spec field set, class configured
 	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -229,7 +230,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"something"}))
 	// Multiple classes: Annotation set, no spec field set, class configured
 	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -243,7 +244,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"athing", "something", "somethingelse"}))
 	// Multiple classes: Annotation set, no spec field set, class configured
 	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -257,7 +258,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"somethingelse", "something"}))
 	// Multiple classes: Annotation set, spec field set, class configured
 	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -268,7 +269,7 @@ func TestMatchesHTTPProxy(t *testing.T) {
 	}, []string{"somethingelse", "something"}))
 	// Multiple classes: Annotation set, spec field set, class configured
 	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},

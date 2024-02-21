@@ -17,6 +17,15 @@ import (
 	"context"
 	"fmt"
 
+	core_v1 "k8s.io/api/core/v1"
+	rbac_v1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrole"
@@ -25,14 +34,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/rolebinding"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/serviceaccount"
 	"github.com/projectcontour/contour/internal/provisioner/slice"
-
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EnsureRBAC ensures all the necessary RBAC resources exist for the
@@ -81,7 +82,7 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		// includes contour's namespace if it's not inside watchNamespaces
-		ns := contour.Spec.WatchNamespaces
+		ns := model.NamespacesToStrings(contour.Spec.WatchNamespaces)
 		if !slice.ContainsString(ns, contour.Namespace) {
 			ns = append(ns, contour.Namespace)
 		}
@@ -124,8 +125,8 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		contour.EnvoyRBACNames(),
 	} {
 		if len(name.RoleBinding) > 0 {
-			deletions = append(deletions, &rbacv1.RoleBinding{
-				ObjectMeta: metav1.ObjectMeta{
+			deletions = append(deletions, &rbac_v1.RoleBinding{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: contour.Namespace,
 					Name:      name.RoleBinding,
 				},
@@ -133,8 +134,8 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.Role) > 0 {
-			deletions = append(deletions, &rbacv1.Role{
-				ObjectMeta: metav1.ObjectMeta{
+			deletions = append(deletions, &rbac_v1.Role{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: contour.Namespace,
 					Name:      name.Role,
 				},
@@ -142,8 +143,8 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.ClusterRoleBinding) > 0 {
-			deletions = append(deletions, &rbacv1.ClusterRoleBinding{
-				ObjectMeta: metav1.ObjectMeta{
+			deletions = append(deletions, &rbac_v1.ClusterRoleBinding{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: contour.Namespace,
 					Name:      name.ClusterRoleBinding,
 				},
@@ -151,8 +152,8 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.ClusterRole) > 0 {
-			deletions = append(deletions, &rbacv1.ClusterRole{
-				ObjectMeta: metav1.ObjectMeta{
+			deletions = append(deletions, &rbac_v1.ClusterRole{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: contour.Namespace,
 					Name:      name.ClusterRole,
 				},
@@ -160,8 +161,8 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.ServiceAccount) > 0 {
-			deletions = append(deletions, &corev1.ServiceAccount{
-				ObjectMeta: metav1.ObjectMeta{
+			deletions = append(deletions, &core_v1.ServiceAccount{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: contour.Namespace,
 					Name:      name.ServiceAccount,
 				},
@@ -178,12 +179,12 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 	return nil
 }
 
-func validateNamespacesExist(ctx context.Context, cli client.Client, ns []string) error {
+func validateNamespacesExist(ctx context.Context, cli client.Client, ns []contour_v1.Namespace) error {
 	errs := []error{}
 	for _, n := range ns {
-		namespace := &corev1.Namespace{}
+		namespace := &core_v1.Namespace{}
 		// Check if the namespace exists
-		err := cli.Get(ctx, types.NamespacedName{Name: n}, namespace)
+		err := cli.Get(ctx, types.NamespacedName{Name: string(n)}, namespace)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("failed to find namespace %s in watchNamespace. Please make sure it exist", n))
