@@ -132,7 +132,7 @@ spec:
     - conditions:
         - prefix: /disabled
       extProcPolicy:
-        disabled: true  # diabled for /disabled
+        disabled: true  # disabled for /disabled
       services:
         - name: http-echo-service
           port: 5678
@@ -468,7 +468,7 @@ type Route struct {
 ### Contour Configuration changes
 
 An external processing service can be configured in the Contour config file.
-This External processing configuration will be used for all HTTP & HTTPS(if not ovrride at VirtualHost and/or Route Level) routes.
+This External processing configuration will be used for all HTTP & HTTPS(if not override at VirtualHost and/or Route Level) routes.
 
 ```go
 type Parameters struct {
