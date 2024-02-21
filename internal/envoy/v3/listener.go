@@ -28,7 +28,7 @@ import (
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
+	envoy_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_filter_http_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
@@ -848,24 +848,23 @@ end
 	}
 }
 
-func makeProcessMode(mode *contour_v1.ProcessingMode) *envoy_ext_proc_v3.ProcessingMode {
+func makeProcessMode(mode *contour_v1.ProcessingMode) *envoy_filter_http_ext_proc_v3.ProcessingMode {
+	reqHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
 
-	reqHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
-	respHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
+	reqBodyMode := envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.RequestBodyMode)]
+	respBodyMode := envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.ResponseBodyMode)]
 
-	reqBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.RequestBodyMode)]
-	respBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.ResponseBodyMode)]
+	reqTrailerMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respTrailerMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
 
-	reqTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
-	respTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
-
-	return &envoy_ext_proc_v3.ProcessingMode{
-		RequestHeaderMode:   envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
-		ResponseHeaderMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
-		RequestBodyMode:     envoy_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
-		ResponseBodyMode:    envoy_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
-		RequestTrailerMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
-		ResponseTrailerMode: envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
+	return &envoy_filter_http_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
+		ResponseHeaderMode:  envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
+		RequestBodyMode:     envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
+		ResponseBodyMode:    envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
+		RequestTrailerMode:  envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
+		ResponseTrailerMode: envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
 	}
 }
 
@@ -886,7 +885,7 @@ func filterExtProc(extProc *dag.ExternalProcessor) *envoy_filter_network_http_co
 		extProc.MutationRules = &contour_v1.HeaderMutationRules{}
 	}
 
-	extProcConfig := envoy_ext_proc_v3.ExternalProcessor{
+	extProcConfig := envoy_filter_http_ext_proc_v3.ExternalProcessor{
 		GrpcService:            GrpcService(extProc.ExtProcService.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout),
 		FailureModeAllow:       extProc.FailOpen,
 		ProcessingMode:         makeProcessMode(extProc.ProcessingMode),

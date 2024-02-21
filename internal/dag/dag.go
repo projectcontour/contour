@@ -27,7 +27,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -278,7 +278,7 @@ type InternalRedirectPolicy struct {
 // Overrides that may be set on a per-route basis
 type ExtProcOverrides struct {
 	// Set a different processing mode for this route than the default.
-	ProcessingMode *contour_api_v1.ProcessingMode
+	ProcessingMode *contour_v1.ProcessingMode
 
 	// Set a different gRPC service for this route than the default.
 	ExtProcService  *ExtensionCluster
@@ -907,7 +907,7 @@ type ExternalProcessor struct {
 	FailOpen bool
 
 	// Phase determines where in the filter chain this extProc is to be injected.
-	Phase contour_api_v1.ProcessingPhase
+	Phase contour_v1.ProcessingPhase
 
 	// Priority determines ordering of processing filters in the same phase. When multiple extProc are applied to the same workload in the same phase,
 	// they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
@@ -915,11 +915,11 @@ type ExternalProcessor struct {
 	Priority int32
 
 	// Specifies default options for how HTTP headers, trailers, and bodies are sent.
-	ProcessingMode *contour_api_v1.ProcessingMode
+	ProcessingMode *contour_v1.ProcessingMode
 
 	// Rules that determine what modifications an external processing server may
 	// make to message headers.
-	MutationRules *contour_api_v1.HeaderMutationRules
+	MutationRules *contour_v1.HeaderMutationRules
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client

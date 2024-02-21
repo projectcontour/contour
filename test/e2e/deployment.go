@@ -114,7 +114,7 @@ type Deployment struct {
 	GlobalExtAuthService          *core_v1.Service
 	GlobalExtAuthExtensionService *contour_v1alpha1.ExtensionService
 
-	//TODO: lewgun
+	// TODO: lewgun
 	GlobalExtProcExtensionService *contour_v1alpha1.ExtensionService
 }
 

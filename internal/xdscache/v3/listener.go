@@ -25,7 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/types"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
@@ -210,10 +210,10 @@ type GlobalExtProcConfig struct {
 	ExtensionServiceConfig
 	FailOpen bool
 
-	Phase          contour_api_v1.ProcessingPhase
+	Phase          contour_v1.ProcessingPhase
 	Priority       int32
-	ProcessingMode *contour_api_v1.ProcessingMode
-	MutationRules  *contour_api_v1.HeaderMutationRules
+	ProcessingMode *contour_v1.ProcessingMode
+	MutationRules  *contour_v1.HeaderMutationRules
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)

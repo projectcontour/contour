@@ -702,7 +702,6 @@ func TestIncludeMatchConditionsIdentical(t *testing.T) {
 }
 
 func TestValidateExternalAuthExtensionService(t *testing.T) {
-
 	tests := map[string]struct {
 		ref                 contour_v1.ExtensionServiceReference
 		wantValidCond       *contour_v1.DetailedCondition

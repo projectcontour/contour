@@ -160,7 +160,6 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		// Apply per-route external processing policy modifications.
 		if dagRoute.ExtProcDisabled {
 			route.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = routeExtProcDisabled()
-
 		} else if dagRoute.ExtProcOverrides != nil {
 			route.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = routeExtProcOverrides(dagRoute.ExtProcOverrides)
 		}
@@ -224,7 +223,6 @@ func routeExtProcDisabled() *anypb.Any {
 */
 
 func routeExtProcOverrides(overrides *dag.ExtProcOverrides) *anypb.Any {
-
 	reqHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.RequestHeaderMode)]
 	respHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.ResponseHeaderMode)]
 

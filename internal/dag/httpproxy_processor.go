@@ -1479,7 +1479,8 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(
 	auth *contour_v1.AuthorizationServer,
 	validCond *contour_v1.DetailedCondition,
-	httpproxy *contour_v1.HTTPProxy) *ExternalAuthorization {
+	httpproxy *contour_v1.HTTPProxy,
+) *ExternalAuthorization {
 	ok, extSvc := validateExtensionService(
 		defaultExtensionRef(auth.ExtensionServiceRef),
 		validCond,
@@ -1518,8 +1519,8 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(
 func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 	extProcessor *contour_v1.ExternalProcessor,
 	validCond *contour_v1.DetailedCondition,
-	httpproxy *contour_v1.HTTPProxy) []*ExternalProcessor {
-
+	httpproxy *contour_v1.HTTPProxy,
+) []*ExternalProcessor {
 	var extProcs []*ExternalProcessor
 	for _, ep := range extProcessor.Processors {
 		ok, extSvc := validateExtensionService(
@@ -1551,8 +1552,10 @@ func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 	return extProcs
 }
 
-const versionErorrFormat = "%s specifies an unsupported resource version %q"
-const extSvcNotFound = "%s extension service %q not found"
+const (
+	versionErorrFormat = "%s specifies an unsupported resource version %q"
+	extSvcNotFound     = "%s extension service %q not found"
+)
 
 func validateExtensionService(
 	ref contour_v1.ExtensionServiceReference,
@@ -1597,8 +1600,8 @@ func determineExtensionServiceTimeout(
 	errorType string,
 	respTimeout string,
 	validCond *contour_v1.DetailedCondition,
-	ext *ExtensionCluster) (bool, *timeout.Setting) {
-
+	ext *ExtensionCluster,
+) (bool, *timeout.Setting) {
 	tout, err := timeout.Parse(respTimeout)
 	if err != nil {
 		reason := "AuthResponseTimeoutInvalid"
@@ -1622,8 +1625,8 @@ func determineExtensionServiceTimeout(
 func (p *HTTPProxyProcessor) computeSecureVirtualHostExtProc(
 	validCond *contour_v1.DetailedCondition,
 	httpproxy *contour_v1.HTTPProxy,
-	svhost *SecureVirtualHost) bool {
-
+	svhost *SecureVirtualHost,
+) bool {
 	if httpproxy.Spec.VirtualHost.ExtProcConfigured() && !httpproxy.Spec.VirtualHost.DisableExtProc() {
 		eps := p.computeVirtualHostExtProcs(httpproxy.Spec.VirtualHost.ExternalProcessor, validCond, httpproxy)
 		if eps == nil {
