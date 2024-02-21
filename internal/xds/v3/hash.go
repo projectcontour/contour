@@ -14,7 +14,7 @@
 package v3
 
 import (
-	envoy_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 )
 
 // nolint:revive
@@ -25,7 +25,7 @@ const CONSTANT_HASH_VALUE = "contour"
 // service-node flag configured on Envoy.
 type ConstantHash struct{}
 
-func (c ConstantHash) ID(*envoy_config_v3.Node) string {
+func (c ConstantHash) ID(*envoy_config_core_v3.Node) string {
 	return CONSTANT_HASH_VALUE
 }
 

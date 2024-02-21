@@ -21,7 +21,7 @@ import (
 )
 
 func TestNamespacedNameFrom(t *testing.T) {
-	run := func(testName string, got types.NamespacedName, want types.NamespacedName) {
+	run := func(testName string, got, want types.NamespacedName) {
 		t.Helper()
 		t.Run(testName, func(t *testing.T) {
 			t.Helper()

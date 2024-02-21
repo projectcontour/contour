@@ -17,23 +17,24 @@ import (
 	"testing"
 	"time"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	envoy_filter_http_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 func TestLocalRateLimitConfig(t *testing.T) {
@@ -59,7 +60,7 @@ func TestLocalRateLimitConfig(t *testing.T) {
 			},
 			statPrefix: "stat-prefix",
 			want: protobuf.MustMarshalAny(
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&envoy_filter_http_local_ratelimit_v3.LocalRateLimit{
 					StatPrefix: "stat-prefix",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     100,
@@ -67,17 +68,17 @@ func TestLocalRateLimitConfig(t *testing.T) {
 						FillInterval:  durationpb.New(time.Second),
 					},
 					Status: &envoy_type_v3.HttpStatus{Code: envoy_type_v3.StatusCode_ServiceUnavailable},
-					ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{
-						{Header: &envoy_core_v3.HeaderValue{Key: "X-Header-1", Value: "foo"}, AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD},
-						{Header: &envoy_core_v3.HeaderValue{Key: "X-Header-2", Value: "bar"}, AppendAction: envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD},
+					ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{
+						{Header: &envoy_config_core_v3.HeaderValue{Key: "X-Header-1", Value: "foo"}, AppendAction: envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD},
+						{Header: &envoy_config_core_v3.HeaderValue{Key: "X-Header-2", Value: "bar"}, AppendAction: envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD},
 					},
-					FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
+					FilterEnabled: &envoy_config_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
 							Numerator:   100,
 							Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 						},
 					},
-					FilterEnforced: &envoy_core_v3.RuntimeFractionalPercent{
+					FilterEnforced: &envoy_config_core_v3.RuntimeFractionalPercent{
 						DefaultValue: &envoy_type_v3.FractionalPercent{
 							Numerator:   100,
 							Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
@@ -97,7 +98,7 @@ func TestLocalRateLimitConfig(t *testing.T) {
 func TestGlobalRateLimits(t *testing.T) {
 	tests := map[string]struct {
 		descriptors []*dag.RateLimitDescriptor
-		want        []*envoy_route_v3.RateLimit
+		want        []*envoy_config_route_v3.RateLimit
 	}{
 		"nil descriptors": {
 			descriptors: nil,
@@ -159,24 +160,24 @@ func TestGlobalRateLimits(t *testing.T) {
 					},
 				},
 			},
-			want: []*envoy_route_v3.RateLimit{
+			want: []*envoy_config_route_v3.RateLimit{
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{
 									DescriptorValue: "generic-key-val",
 								},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{
 									DescriptorKey:   "generic-key-custom-key",
 									DescriptorValue: "generic-key-val",
 								},
@@ -185,23 +186,23 @@ func TestGlobalRateLimits(t *testing.T) {
 					},
 				},
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RequestHeaders_{
-								RequestHeaders: &envoy_route_v3.RateLimit_Action_RequestHeaders{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RequestHeaders_{
+								RequestHeaders: &envoy_config_route_v3.RateLimit_Action_RequestHeaders{
 									HeaderName:    "X-Header-1",
 									DescriptorKey: "foo",
 								},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{
 									DescriptorValue: "generic-key-val-2",
 								},
 							},
@@ -209,16 +210,16 @@ func TestGlobalRateLimits(t *testing.T) {
 					},
 				},
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_HeaderValueMatch_{
-								HeaderValueMatch: &envoy_route_v3.RateLimit_Action_HeaderValueMatch{
-									Headers: []*envoy_route_v3.HeaderMatcher{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_HeaderValueMatch_{
+								HeaderValueMatch: &envoy_config_route_v3.RateLimit_Action_HeaderValueMatch{
+									Headers: []*envoy_config_route_v3.HeaderMatcher{
 										{
 											Name: "A-Header",
-											HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
-												StringMatch: &matcher.StringMatcher{
-													MatchPattern: &matcher.StringMatcher_Exact{
+											HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+												StringMatch: &envoy_matcher_v3.StringMatcher{
+													MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
 														Exact: "foo",
 													},
 												},
@@ -241,13 +242,12 @@ func TestGlobalRateLimits(t *testing.T) {
 			assert.Equal(t, tc.want, got)
 		})
 	}
-
 }
 
 func TestGlobalRateLimitFilter(t *testing.T) {
 	tests := map[string]struct {
 		cfg  *GlobalRateLimitConfig
-		want *http.HttpFilter
+		want *envoy_filter_network_http_connection_manager_v3.HttpFilter
 	}{
 		"nil config produces nil filter": {
 			cfg:  nil,
@@ -260,23 +260,23 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				Domain:           "domain",
 				FailOpen:         false,
 			},
-			want: &http.HttpFilter{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: true,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+						RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
 										Authority:   "extension.projectcontour.ratelimit",
 									},
 								},
 							},
-							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+							TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 						},
 					}),
 				},
@@ -289,23 +289,23 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				Domain:           "domain",
 				FailOpen:         true,
 			},
-			want: &http.HttpFilter{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: false,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+						RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
 										Authority:   "extension.projectcontour.ratelimit",
 									},
 								},
 							},
-							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+							TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 						},
 					}),
 				},
@@ -319,23 +319,23 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				Domain:           "domain",
 				FailOpen:         false,
 			},
-			want: &http.HttpFilter{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: true,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+						RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
 										Authority:   "some-server.com",
 									},
 								},
 							},
-							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+							TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 						},
 					}),
 				},
@@ -349,25 +349,25 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				FailOpen:                true,
 				EnableXRateLimitHeaders: true,
 			},
-			want: &http.HttpFilter{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: false,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+						RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
 										Authority:   "extension.projectcontour.ratelimit",
 									},
 								},
 							},
-							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+							TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 						},
-						EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+						EnableXRatelimitHeaders: envoy_filter_http_ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 					}),
 				},
 			},
@@ -380,23 +380,23 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				FailOpen:                    true,
 				EnableResourceExhaustedCode: true,
 			},
-			want: &http.HttpFilter{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         durationpb.New(7 * time.Second),
 						FailureModeDeny: false,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+						RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/ratelimit",
 										Authority:   "extension.projectcontour.ratelimit",
 									},
 								},
 							},
-							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+							TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 						},
 						RateLimitedAsResourceExhausted: true,
 					}),
@@ -422,21 +422,21 @@ func TestRateLimitPerRoute(t *testing.T) {
 			cfg: &dag.RateLimitPerRoute{
 				VhRateLimits: dag.VhRateLimitsOverride,
 			},
-			want: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimitPerRoute{
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimitPerRoute{
 				VhRateLimits: 0,
 			}),
 		}, "VhRateLimits in Include mode": {
 			cfg: &dag.RateLimitPerRoute{
 				VhRateLimits: dag.VhRateLimitsInclude,
 			},
-			want: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimitPerRoute{
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimitPerRoute{
 				VhRateLimits: 1,
 			}),
 		}, "VhRateLimits in Ignore mode": {
 			cfg: &dag.RateLimitPerRoute{
 				VhRateLimits: dag.VhRateLimitsIgnore,
 			},
-			want: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimitPerRoute{
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimitPerRoute{
 				VhRateLimits: 2,
 			}),
 		},

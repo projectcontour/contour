@@ -16,14 +16,15 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
@@ -31,14 +32,14 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	proxy403 := fixture.NewProxy("simple-403").WithSpec(
-		contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "directresponse.projectcontour.io"},
-			Routes: []contour_api_v1.Route{{
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "directresponse.projectcontour.io"},
+			Routes: []contour_v1.Route{{
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 					StatusCode: 403,
 					Body:       "forbidden",
 				},
@@ -47,18 +48,18 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 
 	rh.OnAdd(proxy403)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("directresponse.projectcontour.io",
 
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match: routePrefix("/"),
-						Action: &envoy_route_v3.Route_DirectResponse{
-							DirectResponse: &envoy_route_v3.DirectResponseAction{
+						Action: &envoy_config_route_v3.Route_DirectResponse{
+							DirectResponse: &envoy_config_route_v3.DirectResponseAction{
 								Status: 403,
-								Body: &envoy_core_v3.DataSource{
-									Specifier: &envoy_core_v3.DataSource_InlineString{
+								Body: &envoy_config_core_v3.DataSource{
+									Specifier: &envoy_config_core_v3.DataSource_InlineString{
 										InlineString: "forbidden",
 									},
 								},
@@ -72,10 +73,10 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 	})
 
 	proxyNobody := fixture.NewProxy("simple-nobody").WithSpec(
-		contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "directresponse.projectcontour.io"},
-			Routes: []contour_api_v1.Route{{
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "directresponse.projectcontour.io"},
+			Routes: []contour_v1.Route{{
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 					StatusCode: 200,
 				},
 			}},
@@ -83,15 +84,15 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy403, proxyNobody)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("directresponse.projectcontour.io",
 
-					&envoy_route_v3.Route{
+					&envoy_config_route_v3.Route{
 						Match: routePrefix("/"),
-						Action: &envoy_route_v3.Route_DirectResponse{
-							DirectResponse: &envoy_route_v3.DirectResponseAction{
+						Action: &envoy_config_route_v3.Route_DirectResponse{
+							DirectResponse: &envoy_config_route_v3.DirectResponseAction{
 								Status: 200,
 							},
 						},
@@ -103,14 +104,14 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 	})
 
 	proxyInvalid := fixture.NewProxy("simple-multiple-match").WithSpec(
-		contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "directresponse.projectcontour.io"},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "directresponse.projectcontour.io"},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 					StatusCode: 200,
 				},
 			}},
@@ -118,7 +119,7 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxyNobody, proxyInvalid)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http"),
 		),

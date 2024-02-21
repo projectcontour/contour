@@ -19,10 +19,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil/promlint"
 	dto "github.com/prometheus/client_model/go"
+
+	"github.com/projectcontour/contour/internal/metrics"
 )
 
 // Collect all the label names for this metric and return them as
@@ -79,7 +80,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	f, err := os.OpenFile("table.md", os.O_CREATE|os.O_RDWR, 0644)
+	f, err := os.OpenFile("table.md", os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}

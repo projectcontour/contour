@@ -31,26 +31,26 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // needed if tests are run against GCP
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	// needed if tests are run against GCP
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // Framework provides a collection of helpful functions for
@@ -102,10 +102,10 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
-	require.NoError(t, contourv1.AddToScheme(scheme))
-	require.NoError(t, contourv1alpha1.AddToScheme(scheme))
+	require.NoError(t, contour_v1.AddToScheme(scheme))
+	require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
 	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(scheme))
-	require.NoError(t, gatewayapi_v1beta1.AddToScheme(scheme))
+	require.NoError(t, gatewayapi_v1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
@@ -279,9 +279,11 @@ func (f *Framework) T() ginkgo.GinkgoTInterface {
 	return f.t
 }
 
-type NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
-type NamespacedTestBody func(string)
-type TestBody func()
+type (
+	NamespacedGatewayTestBody func(ns string, gw types.NamespacedName)
+	NamespacedTestBody        func(string)
+	TestBody                  func()
+)
 
 func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody, additionalNamespaces ...string) {
 	ginkgo.Context("with namespace: "+namespace, func() {
@@ -305,7 +307,7 @@ func (f *Framework) Test(body TestBody) {
 }
 
 // CreateHTTPProxy creates the provided HTTPProxy and returns any relevant error.
-func (f *Framework) CreateHTTPProxy(proxy *contourv1.HTTPProxy) error {
+func (f *Framework) CreateHTTPProxy(proxy *contour_v1.HTTPProxy) error {
 	return f.Client.Create(context.TODO(), proxy)
 }
 
@@ -334,16 +336,19 @@ func createAndWaitFor[T client.Object](t require.TestingT, client client.Client,
 	return obj, true
 }
 
-func updateAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
-	require.NoError(t, client.Update(context.Background(), obj))
+func updateAndWaitFor[T client.Object](t require.TestingT, cli client.Client, obj T, mutate func(T), condition func(T) bool, interval, timeout time.Duration) (T, bool) {
+	key := client.ObjectKeyFromObject(obj)
 
-	key := types.NamespacedName{
-		Namespace: obj.GetNamespace(),
-		Name:      obj.GetName(),
-	}
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := cli.Get(context.TODO(), key, obj); err != nil {
+			return err
+		}
+		mutate(obj)
+		return cli.Update(context.Background(), obj)
+	}))
 
 	if err := wait.PollUntilContextTimeout(context.Background(), interval, timeout, true, func(ctx context.Context) (bool, error) {
-		if err := client.Get(ctx, key, obj); err != nil {
+		if err := cli.Get(ctx, key, obj); err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
@@ -361,13 +366,13 @@ func updateAndWaitFor[T client.Object](t require.TestingT, client client.Client,
 
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {
+func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contour_v1.HTTPProxy, condition func(*contour_v1.HTTPProxy) bool) (*contour_v1.HTTPProxy, bool) {
 	return createAndWaitFor(f.t, f.Client, proxy, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateHTTPRouteAndWaitFor creates the provided HTTPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1beta1.HTTPRoute, condition func(*gatewayapi_v1beta1.HTTPRoute) bool) (*gatewayapi_v1beta1.HTTPRoute, bool) {
+func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1.HTTPRoute, condition func(*gatewayapi_v1.HTTPRoute) bool) (*gatewayapi_v1.HTTPRoute, bool) {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
@@ -383,19 +388,25 @@ func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
+// CreateBackendTLSPolicy creates the provided BackendTLSPolicy in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha2.BackendTLSPolicy, condition func(*gatewayapi_v1alpha2.BackendTLSPolicy) bool) (*gatewayapi_v1alpha2.BackendTLSPolicy, bool) {
+	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
+}
+
 // CreateNamespace creates a namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateNamespace(name string) {
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+	ns := &core_v1.Namespace{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:   name,
 			Labels: map[string]string{"contour-e2e-ns": "true"},
 		},
 	}
 	key := client.ObjectKeyFromObject(ns)
 
-	existing := &corev1.Namespace{}
-	if err := f.Client.Get(context.Background(), key, existing); err == nil && existing.Status.Phase == corev1.NamespaceTerminating {
+	existing := &core_v1.Namespace{}
+	if err := f.Client.Get(context.Background(), key, existing); err == nil && existing.Status.Phase == core_v1.NamespaceTerminating {
 		// Got an existing namespace and it's terminating: give it a chance to go
 		// away.
 		require.Eventually(f.t, func() bool {
@@ -410,8 +421,8 @@ func (f *Framework) CreateNamespace(name string) {
 // DeleteNamespace deletes the namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
+	ns := &core_v1.Namespace{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: name,
 		},
 	}
@@ -427,19 +438,19 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 
 // CreateGatewayAndWaitFor creates a gateway in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1beta1.Gateway, condition func(*gatewayapi_v1beta1.Gateway) bool) (*gatewayapi_v1beta1.Gateway, bool) {
+func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1.Gateway, condition func(*gatewayapi_v1.Gateway) bool) (*gatewayapi_v1.Gateway, bool) {
 	return createAndWaitFor(f.t, f.Client, gateway, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateGatewayClassAndWaitFor creates a GatewayClass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1beta1.GatewayClass, condition func(*gatewayapi_v1beta1.GatewayClass) bool) (*gatewayapi_v1beta1.GatewayClass, bool) {
+func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1.GatewayClass, condition func(*gatewayapi_v1.GatewayClass) bool) (*gatewayapi_v1.GatewayClass, bool) {
 	return createAndWaitFor(f.t, f.Client, gatewayClass, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // DeleteGateway deletes the provided gateway in the Kubernetes API
 // or fails the test if it encounters an error.
-func (f *Framework) DeleteGateway(gw *gatewayapi_v1beta1.Gateway, waitForDeletion bool) error {
+func (f *Framework) DeleteGateway(gw *gatewayapi_v1.Gateway, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gw))
 
 	if waitForDeletion {
@@ -453,7 +464,7 @@ func (f *Framework) DeleteGateway(gw *gatewayapi_v1beta1.Gateway, waitForDeletio
 
 // DeleteGatewayClass deletes the provided gatewayclass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1beta1.GatewayClass, waitForDeletion bool) error {
+func (f *Framework) DeleteGatewayClass(gwc *gatewayapi_v1.GatewayClass, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gwc))
 
 	if waitForDeletion {
@@ -494,8 +505,7 @@ func UsingContourConfigCRD() bool {
 
 // HTTPProxyValid returns true if the proxy has a .status.currentStatus
 // of "valid".
-func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
-
+func HTTPProxyValid(proxy *contour_v1.HTTPProxy) bool {
 	if proxy == nil {
 		return false
 	}
@@ -506,24 +516,23 @@ func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
 
 	cond := proxy.Status.GetConditionFor("Valid")
 	return cond.Status == "True"
-
 }
 
 // HTTPProxyInvalid returns true if the proxy has a .status.currentStatus
 // of "invalid".
-func HTTPProxyInvalid(proxy *contourv1.HTTPProxy) bool {
+func HTTPProxyInvalid(proxy *contour_v1.HTTPProxy) bool {
 	return proxy != nil && proxy.Status.CurrentStatus == "invalid"
 }
 
 // HTTPProxyNotReconciled returns true if the proxy has a .status.currentStatus
 // of "NotReconciled".
-func HTTPProxyNotReconciled(proxy *contourv1.HTTPProxy) bool {
+func HTTPProxyNotReconciled(proxy *contour_v1.HTTPProxy) bool {
 	return proxy != nil && proxy.Status.CurrentStatus == "NotReconciled"
 }
 
 // HTTPProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid condition.
 // If there are no errors, the return value will be empty.
-func HTTPProxyErrors(proxy *contourv1.HTTPProxy) string {
+func HTTPProxyErrors(proxy *contour_v1.HTTPProxy) string {
 	cond := proxy.Status.GetConditionFor("Valid")
 	errors := cond.Errors
 	if len(errors) > 0 {
@@ -535,7 +544,7 @@ func HTTPProxyErrors(proxy *contourv1.HTTPProxy) string {
 
 // DetailedConditionInvalid returns true if the provided detailed condition
 // list contains a condition of type "Valid" and status "False".
-func DetailedConditionInvalid(conditions []contourv1.DetailedCondition) bool {
+func DetailedConditionInvalid(conditions []contour_v1.DetailedCondition) bool {
 	for _, c := range conditions {
 		if c.Condition.Type == "Valid" {
 			return c.Condition.Status == "False"

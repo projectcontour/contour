@@ -21,34 +21,35 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testInternalRedirectValidation(namespace string) {
 	Specify("invalid cross scheme mode", func() {
 		t := f.T()
 
-		p := &contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "invalid-cross-scheme",
 			},
-			Spec: contour_api_v1.HTTPProxySpec{
-				VirtualHost: &contour_api_v1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "example.com",
 				},
-				Routes: []contour_api_v1.Route{{
-					Services: []contour_api_v1.Service{{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{{
 						Name: "ingress-conformance-echo",
 						Port: 80,
 					}},
-					InternalRedirectPolicy: &contour_api_v1.HTTPInternalRedirectPolicy{
+					InternalRedirectPolicy: &contour_v1.HTTPInternalRedirectPolicy{
 						AllowCrossSchemeRedirect: "MaybeSafe",
 					},
 				}},
@@ -57,28 +58,28 @@ func testInternalRedirectValidation(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid AllowCrossSchemeRedirect to be rejected.")
+		require.Error(t, err, "Expected invalid AllowCrossSchemeRedirect to be rejected.")
 	})
 
 	Specify("invalid redirect code", func() {
 		t := f.T()
 
-		p := &contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "invalid-redirect-code",
 			},
-			Spec: contour_api_v1.HTTPProxySpec{
-				VirtualHost: &contour_api_v1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "example.com",
 				},
-				Routes: []contour_api_v1.Route{{
-					Services: []contour_api_v1.Service{{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{{
 						Name: "ingress-conformance-echo",
 						Port: 80,
 					}},
-					InternalRedirectPolicy: &contour_api_v1.HTTPInternalRedirectPolicy{
-						RedirectResponseCodes: []contour_api_v1.RedirectResponseCode{301, 310},
+					InternalRedirectPolicy: &contour_v1.HTTPInternalRedirectPolicy{
+						RedirectResponseCodes: []contour_v1.RedirectResponseCode{301, 310},
 					},
 				}},
 			},
@@ -86,7 +87,7 @@ func testInternalRedirectValidation(namespace string) {
 
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid RedirectResponseCodes to be rejected.")
+		require.Error(t, err, "Expected invalid RedirectResponseCodes to be rejected.")
 	})
 }
 
@@ -100,19 +101,18 @@ func testInternalRedirectPolicy(namespace string) {
 	})
 }
 
-func doInternalRedirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
-
+func doInternalRedirectTest(namespace string, proxy *contour_v1.HTTPProxy, t GinkgoTInterface) {
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
-	envoyService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	envoyService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "envoy-service",
 		},
-		Spec: corev1.ServiceSpec{
-			Type:         corev1.ServiceTypeExternalName,
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
 			ExternalName: f.Deployment.EnvoyService.ObjectMeta.Name + "." + f.Deployment.EnvoyService.ObjectMeta.Namespace,
-			Ports: []corev1.ServicePort{
+			Ports: []core_v1.ServicePort{
 				{
 					Name: "http",
 					Port: 80,
@@ -162,69 +162,69 @@ func assertInternalRedirectRequest(t GinkgoTInterface, fqdn, path, expectedLocat
 	assert.Equal(t, expectedLocation, res.Headers.Get("Location"))
 }
 
-func getInternalRedirectHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
+func getInternalRedirectHTTPProxy(namespace string) *contour_v1.HTTPProxy {
 	fqdn := "internalredirectpolicy.projectcontour.io"
-	proxy := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "internal-redirect",
 			Namespace: namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: fqdn,
 			},
 
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				// Simple route that forward request to echo service
 				{
-					Conditions: []contour_api_v1.MatchCondition{{
+					Conditions: []contour_v1.MatchCondition{{
 						Prefix: "/echo",
 					}},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "echo",
 						Port: 80,
 					}},
 				},
 				// Route that returns a 302 redirect to the /echo route
 				{
-					Conditions: []contour_api_v1.MatchCondition{{
+					Conditions: []contour_v1.MatchCondition{{
 						Prefix: "/redirect",
 					}},
-					Services: []contour_api_v1.Service{},
-					RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-						Hostname:   ref.To(fqdn),
-						StatusCode: ref.To(302),
-						Path:       ref.To("/echo"),
+					Services: []contour_v1.Service{},
+					RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
+						Hostname:   ptr.To(fqdn),
+						StatusCode: ptr.To(302),
+						Path:       ptr.To("/echo"),
 					},
 				},
 				{
-					Conditions: []contour_api_v1.MatchCondition{{
+					Conditions: []contour_v1.MatchCondition{{
 						Prefix: "/internal-redirect",
 					}},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "envoy-service",
 						Port: 80,
 					}},
-					PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
-						ReplacePrefix: []contour_api_v1.ReplacePrefix{
+					PathRewritePolicy: &contour_v1.PathRewritePolicy{
+						ReplacePrefix: []contour_v1.ReplacePrefix{
 							{
 								Prefix:      "/internal-redirect",
 								Replacement: "/redirect",
 							},
 						},
 					},
-					InternalRedirectPolicy: &contour_api_v1.HTTPInternalRedirectPolicy{},
+					InternalRedirectPolicy: &contour_v1.HTTPInternalRedirectPolicy{},
 				},
 				{
-					Conditions: []contour_api_v1.MatchCondition{{
+					Conditions: []contour_v1.MatchCondition{{
 						Prefix: "/internal-redirect-301",
 					}},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "envoy-service",
 						Port: 80,
 					}},
-					PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
-						ReplacePrefix: []contour_api_v1.ReplacePrefix{
+					PathRewritePolicy: &contour_v1.PathRewritePolicy{
+						ReplacePrefix: []contour_v1.ReplacePrefix{
 							{
 								Prefix:      "/internal-redirect-301",
 								Replacement: "/redirect",
@@ -232,10 +232,11 @@ func getInternalRedirectHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
 						},
 					},
 					// only allows 301
-					InternalRedirectPolicy: &contour_api_v1.HTTPInternalRedirectPolicy{
-						RedirectResponseCodes: []contour_api_v1.RedirectResponseCode{301},
+					InternalRedirectPolicy: &contour_v1.HTTPInternalRedirectPolicy{
+						RedirectResponseCodes: []contour_v1.RedirectResponseCode{301},
 					},
-				}},
+				},
+			},
 		},
 	}
 

@@ -1176,6 +1176,14 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.Feature">Feature
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
+<p>
+</p>
 <h3 id="projectcontour.io/v1.GenericKeyDescriptor">GenericKeyDescriptor
 </h3>
 <p>
@@ -2676,6 +2684,27 @@ QueryParameterMatchCondition
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.Namespace">Namespace
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
+<p>
+<p>Namespace refers to a Kubernetes namespace. It must be a RFC 1123 label.</p>
+<p>This validation is based off of the corresponding Kubernetes validation:
+<a href="https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187">https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L187</a></p>
+<p>This is used for Namespace name validation here:
+<a href="https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63">https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/api/validation/generic.go#L63</a></p>
+<p>Valid values include:</p>
+<ul>
+<li>&ldquo;example&rdquo;</li>
+</ul>
+<p>Invalid values include:</p>
+<ul>
+<li>&ldquo;example.com&rdquo; - &ldquo;.&rdquo; is an invalid character</li>
+</ul>
+</p>
 <h3 id="projectcontour.io/v1.PathRewritePolicy">PathRewritePolicy
 </h3>
 <p>
@@ -6247,6 +6276,38 @@ map[string]string
 the annotations for Prometheus will be appended or overwritten with predefined value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>watchNamespaces</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Namespace">
+[]Namespace
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
+to only watch this subset of namespaces.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disabledFeatures</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Feature">
+[]Feature
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisabledFeatures defines an array of resources that will be ignored by
+contour reconciler.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
@@ -7595,22 +7656,6 @@ to toggle new contour features.</p>
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>controllerName</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ControllerName is used to determine whether Contour should reconcile a
-GatewayClass. The string takes the form of &ldquo;projectcontour.io/<namespace>/contour&rdquo;.
-If unset, the gatewayclass controller will not be started.
-Exactly one of ControllerName or GatewayRef must be set.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>gatewayRef</code>
 <br>
 <em>
@@ -7620,12 +7665,8 @@ NamespacedName
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>GatewayRef defines a specific Gateway that this Contour
-instance corresponds to. If set, Contour will reconcile
-only this gateway, and will not reconcile any gateway
-classes.
-Exactly one of ControllerName or GatewayRef must be set.</p>
+<p>GatewayRef defines the specific Gateway that this Contour
+instance corresponds to.</p>
 </td>
 </tr>
 </tbody>

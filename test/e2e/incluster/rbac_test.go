@@ -20,16 +20,17 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testProjectcontourResourcesRBAC(namespace string) {
@@ -42,13 +43,13 @@ func testProjectcontourResourcesRBAC(namespace string) {
 		f.Certs.CreateSelfSignedCert(otherNS, "delegated-cert", "delegated-cert", "rbac-test.projectcontour.io")
 
 		// HTTPProxy and TLSCertificateDelegation
-		t := &contourv1.TLSCertificateDelegation{
-			ObjectMeta: metav1.ObjectMeta{
+		t := &contour_v1.TLSCertificateDelegation{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: otherNS,
 				Name:      "rbac",
 			},
-			Spec: contourv1.TLSCertificateDelegationSpec{
-				Delegations: []contourv1.CertificateDelegation{
+			Spec: contour_v1.TLSCertificateDelegationSpec{
+				Delegations: []contour_v1.CertificateDelegation{
 					{
 						SecretName:       "delegated-cert",
 						TargetNamespaces: []string{namespace},
@@ -58,21 +59,21 @@ func testProjectcontourResourcesRBAC(namespace string) {
 		}
 		require.NoError(f.T(), f.Client.Create(context.TODO(), t))
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "rbac",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "rbac-test.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: otherNS + "/delegated-cert",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{Name: "invalid-service", Port: 80},
 						},
 					},
@@ -107,13 +108,13 @@ func testProjectcontourResourcesRBAC(namespace string) {
 		assert.Truef(f.T(), ok, "expected %d response code, got %d", 200, res.StatusCode)
 
 		// ExtensionService
-		e := &contourv1alpha1.ExtensionService{
-			ObjectMeta: metav1.ObjectMeta{
+		e := &contour_v1alpha1.ExtensionService{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "rbac",
 			},
-			Spec: contourv1alpha1.ExtensionServiceSpec{
-				Services: []contourv1alpha1.ExtensionServiceTarget{
+			Spec: contour_v1alpha1.ExtensionServiceSpec{
+				Services: []contour_v1alpha1.ExtensionServiceTarget{
 					{Name: "invalid-service", Port: 80},
 				},
 			},
@@ -132,25 +133,25 @@ func testIngressResourceRBAC(namespace string) {
 	Specify("Contour ClusterRole is set up to allow access to Ingress v1 resources and resource status", func() {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		i := &networkingv1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+		i := &networking_v1.Ingress{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "rbac",
 			},
-			Spec: networkingv1.IngressSpec{
-				Rules: []networkingv1.IngressRule{
+			Spec: networking_v1.IngressSpec{
+				Rules: []networking_v1.IngressRule{
 					{
 						Host: "rbac-test-ingress.projectcontour.io",
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
+						IngressRuleValue: networking_v1.IngressRuleValue{
+							HTTP: &networking_v1.HTTPIngressRuleValue{
+								Paths: []networking_v1.HTTPIngressPath{
 									{
-										PathType: ref.To(networkingv1.PathTypePrefix),
+										PathType: ptr.To(networking_v1.PathTypePrefix),
 										Path:     "/",
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
 												Name: "echo",
-												Port: networkingv1.ServiceBackendPort{Number: 80},
+												Port: networking_v1.ServiceBackendPort{Number: 80},
 											},
 										},
 									},

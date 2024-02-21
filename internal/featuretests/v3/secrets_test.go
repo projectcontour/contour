@@ -16,37 +16,29 @@ package v3
 import (
 	"testing"
 
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/stretchr/testify/assert"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSDSVisibility(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-	// add secret
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(s1)
 
 	// assert that the secret is _not_ visible as it is
 	// not referenced by any ingress/httpproxy
-	c.Request(secretType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   nil,
 		TypeUrl:     secretType,
@@ -55,7 +47,7 @@ func TestSDSVisibility(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -84,7 +76,7 @@ func TestSDSVisibility(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// i1 has a default route to backend:80, but there is no matching service.
-	c.Request(secretType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources:   nil,
 		TypeUrl:     secretType,
@@ -103,23 +95,14 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
-	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: "kubernetes.io/tls",
-		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	}
-	// add secret
+	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(s1)
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -145,7 +128,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(svc1)
 
 	res := c.Request(secretType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
 	// Equals(...) only checks resources, so explicitly
@@ -155,14 +138,14 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
 	res = c.Request(secretType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
 	assertEqualVersion(t, "2", res)
 
 	// s2 is not referenced by any active ingress object.
-	s2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "unrelated",
 			Namespace: "default",
 		},
@@ -172,7 +155,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(s2)
 
 	res = c.Request(secretType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
 	assertEqualVersion(t, "2", res)
@@ -181,7 +164,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	// bump the current version_info.
 	rh.OnDelete(s2)
 	res = c.Request(secretType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
 	assertEqualVersion(t, "2", res)
@@ -190,7 +173,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	// bump the current version_info.
 	rh.OnDelete(s1)
 	res = c.Request(secretType)
-	res.Equals(&envoy_discovery_v3.DiscoveryResponse{})
+	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
 	assertEqualVersion(t, "3", res)
 }
 
@@ -201,8 +184,8 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	defer done()
 
 	// s1 is NOT a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "invalid",
 			Namespace: "default",
 		},
@@ -216,7 +199,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -245,7 +228,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// SDS should be empty
-	c.Request(secretType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources:   nil,
 		TypeUrl:     secretType,
@@ -253,7 +236,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	})
 }
 
-func secret(sec *v1.Secret) *envoy_tls_v3.Secret {
+func secret(sec *core_v1.Secret) *envoy_transport_socket_tls_v3.Secret {
 	return envoy_v3.Secret(&dag.Secret{
 		Object: sec,
 	})

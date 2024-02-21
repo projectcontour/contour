@@ -3,9 +3,12 @@ name: Trivy Scan
 on:
   # Run weekly
   schedule:
-    - cron: '0 12 * * 1'
+  - cron: '0 12 * * 1'
   # Allow manual runs
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   trivy-scan:
@@ -13,15 +16,18 @@ jobs:
       matrix:
         branch:
         - main
+        - release-1.28
         - release-1.27
         - release-1.26
-        - release-1.25
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
+          persist-credentials: false
           ref: ${{ matrix.branch }}
-      - uses: aquasecurity/trivy-action@d43c1f16c00cfd3978dde6c07f4bbcf9eb6993ca # 0.16.1
+      - uses: aquasecurity/trivy-action@84384bd6e777ef152729993b8145ea352e9dd3ef # 0.17.0
         with:
           scanners: vuln
           scan-type: 'fs'
@@ -29,6 +35,6 @@ jobs:
           output: 'trivy-results.sarif'
           ignore-unfixed: true
           severity: 'HIGH,CRITICAL'
-      - uses: github/codeql-action/upload-sarif@012739e5082ff0c22ca6d6ab32e07c36df03c4a4 # v3.22.12
+      - uses: github/codeql-action/upload-sarif@379614612a29c9e28f31f39a59013eb8012a51f0 # v3.24.3
         with:
           sarif_file: 'trivy-results.sarif'

@@ -18,17 +18,20 @@ import (
 	"strings"
 	"testing"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestIsObjectEqual(t *testing.T) {
@@ -45,6 +48,16 @@ func TestIsObjectEqual(t *testing.T) {
 		{
 			name:     "Secret with metadata change",
 			filename: "testdata/secret-metadata-change.yaml",
+			equals:   true,
+		},
+		{
+			name:     "ConfigMap with content change",
+			filename: "testdata/configmap-content-change.yaml",
+			equals:   false,
+		},
+		{
+			name:     "ConfigMap with metadata change",
+			filename: "testdata/configmap-metadata-change.yaml",
 			equals:   true,
 		},
 		{
@@ -80,37 +93,37 @@ func TestIsObjectEqual(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
-	_ = v1.AddToScheme(scheme)
+	_ = core_v1.AddToScheme(scheme)
 	_ = networking_v1.AddToScheme(scheme)
-	_ = contour_api_v1.AddKnownTypes(scheme)
+	_ = contour_v1.AddKnownTypes(scheme)
 
 	deserializer := serializer.NewCodecFactory(scheme).UniversalDeserializer()
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			buf, err := os.ReadFile(tc.filename)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Each file contains two YAML records, which should be compared with each other.
 			objects := strings.Split(string(buf), "---")
-			assert.Equal(t, 2, len(objects), "expected 2 objects in file")
+			assert.Len(t, objects, 2, "expected 2 objects in file")
 
 			// Decode the objects.
 			oldObj, _, err := deserializer.Decode([]byte(objects[0]), nil, nil)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			newObj, _, err := deserializer.Decode([]byte(objects[1]), nil, nil)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			got, err := IsObjectEqual(oldObj.(client.Object), newObj.(client.Object))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tc.equals, got)
 		})
 	}
 }
 
 func TestIsEqualForResourceVersion(t *testing.T) {
-	oldS := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	oldS := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:            "test",
 			Namespace:       "default",
 			ResourceVersion: "123",
@@ -124,26 +137,30 @@ func TestIsEqualForResourceVersion(t *testing.T) {
 
 	// Objects with equal ResourceVersion should evaluate to true.
 	got, err := IsObjectEqual(oldS, newS)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, got)
 
 	// Differences in data should be ignored.
 	newS.Data["foo"] = []byte("baz")
 	got, err = IsObjectEqual(oldS, newS)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, got)
 }
 
-// TestIsEqualFallback compares with ConfigMap objects, which are not supported.
+// TestIsEqualFallback compares with ServiceAccount objects, which are not supported.
 func TestIsEqualFallback(t *testing.T) {
-	oldObj := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+	oldObj := &core_v1.ServiceAccount{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:            "test",
 			Namespace:       "default",
 			ResourceVersion: "123",
 		},
-		Data: map[string]string{
-			"foo": "bar",
+		Secrets: []core_v1.ObjectReference{
+			{
+				Kind:      "Secret",
+				Name:      "test",
+				Namespace: "default",
+			},
 		},
 	}
 
@@ -151,13 +168,13 @@ func TestIsEqualFallback(t *testing.T) {
 
 	// Any object (even unsupported types) with equal ResourceVersion should evaluate to true.
 	got, err := IsObjectEqual(oldObj, newObj)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, got)
 
 	// Unsupported types with unequal ResourceVersion should return an error.
 	newObj.ResourceVersion = "456"
 	got, err = IsObjectEqual(oldObj, newObj)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.False(t, got)
 }
 
@@ -172,23 +189,23 @@ func TestIsEqualForGeneration(t *testing.T) {
 
 		// Objects with equal Generation should evaluate to true.
 		got, err := IsObjectEqual(oldObj, newObj)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, got)
 
 		// Objects with unequal Generation should evaluate to false.
 		newObj.SetGeneration(oldObj.GetGeneration() + 1)
 		got, err = IsObjectEqual(oldObj, newObj)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.False(t, got)
 	}
 
 	run(t, &networking_v1.Ingress{})
-	run(t, &contour_api_v1.HTTPProxy{})
-	run(t, &contour_api_v1alpha1.ExtensionService{})
-	run(t, &contour_api_v1.TLSCertificateDelegation{})
-	run(t, &gatewayapi_v1beta1.GatewayClass{})
-	run(t, &gatewayapi_v1beta1.Gateway{})
-	run(t, &gatewayapi_v1beta1.HTTPRoute{})
+	run(t, &contour_v1.HTTPProxy{})
+	run(t, &contour_v1alpha1.ExtensionService{})
+	run(t, &contour_v1.TLSCertificateDelegation{})
+	run(t, &gatewayapi_v1.GatewayClass{})
+	run(t, &gatewayapi_v1.Gateway{})
+	run(t, &gatewayapi_v1.HTTPRoute{})
 	run(t, &gatewayapi_v1alpha2.TLSRoute{})
 	run(t, &gatewayapi_v1beta1.ReferenceGrant{})
 	run(t, &gatewayapi_v1alpha2.GRPCRoute{})

@@ -19,15 +19,16 @@ import (
 	"sort"
 	"testing"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	"github.com/projectcontour/contour/internal/dag"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_network_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/dag"
 )
 
 func shuffleSlice[T any](original []T) []T {
@@ -44,7 +45,7 @@ func TestInvalidSorter(t *testing.T) {
 }
 
 func TestSortRouteConfiguration(t *testing.T) {
-	want := []*envoy_route_v3.RouteConfiguration{
+	want := []*envoy_config_route_v3.RouteConfiguration{
 		{Name: "bar"},
 		{Name: "baz"},
 		{Name: "foo"},
@@ -52,7 +53,7 @@ func TestSortRouteConfiguration(t *testing.T) {
 		{Name: "same", InternalOnlyHeaders: []string{"a", "b"}},
 	}
 
-	have := []*envoy_route_v3.RouteConfiguration{
+	have := []*envoy_config_route_v3.RouteConfiguration{
 		want[3], // Ensure the "same" element stays stable.
 		want[4],
 		want[2],
@@ -65,7 +66,7 @@ func TestSortRouteConfiguration(t *testing.T) {
 }
 
 func TestSortVirtualHosts(t *testing.T) {
-	want := []*envoy_route_v3.VirtualHost{
+	want := []*envoy_config_route_v3.VirtualHost{
 		{Name: "bar"},
 		{Name: "baz"},
 		{Name: "foo"},
@@ -73,7 +74,7 @@ func TestSortVirtualHosts(t *testing.T) {
 		{Name: "same", Domains: []string{"a", "b"}},
 	}
 
-	have := []*envoy_route_v3.VirtualHost{
+	have := []*envoy_config_route_v3.VirtualHost{
 		want[3], // Ensure the "same" element stays stable.
 		want[4],
 		want[2],
@@ -116,7 +117,7 @@ func invertHeaderMatch(h dag.HeaderMatchCondition) dag.HeaderMatchCondition {
 	return h
 }
 
-func regexHeader(name string, value string) dag.HeaderMatchCondition {
+func regexHeader(name, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
 		MatchType: dag.HeaderMatchTypeRegex,
@@ -124,7 +125,7 @@ func regexHeader(name string, value string) dag.HeaderMatchCondition {
 	}
 }
 
-func exactHeader(name string, value string) dag.HeaderMatchCondition {
+func exactHeader(name, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
 		MatchType: dag.HeaderMatchTypeExact,
@@ -132,7 +133,7 @@ func exactHeader(name string, value string) dag.HeaderMatchCondition {
 	}
 }
 
-func containsHeader(name string, value string) dag.HeaderMatchCondition {
+func containsHeader(name, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
 		MatchType: dag.HeaderMatchTypeContains,
@@ -152,7 +153,7 @@ func ignoreCaseQueryParam(h dag.QueryParamMatchCondition) dag.QueryParamMatchCon
 	return h
 }
 
-func exactQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func exactQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeExact,
@@ -160,7 +161,7 @@ func exactQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func prefixQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func prefixQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypePrefix,
@@ -168,7 +169,7 @@ func prefixQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func suffixQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func suffixQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeSuffix,
@@ -176,7 +177,7 @@ func suffixQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func regexQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func regexQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeRegex,
@@ -184,7 +185,7 @@ func regexQueryParam(name string, value string) dag.QueryParamMatchCondition {
 	}
 }
 
-func containsQueryParam(name string, value string) dag.QueryParamMatchCondition {
+func containsQueryParam(name, value string) dag.QueryParamMatchCondition {
 	return dag.QueryParamMatchCondition{
 		Name:      name,
 		MatchType: dag.QueryParamMatchTypeContains,
@@ -203,7 +204,7 @@ func presentQueryParam(name string) dag.QueryParamMatchCondition {
 // others that have identical path matches, number of header matches, and
 // number of query matches.
 // This is mainly to support Gateway API route match preference.
-// See: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1beta1.HTTPRouteRule
+// See: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.HTTPRouteRule
 func TestSortRoutesPriority(t *testing.T) {
 	want := []*dag.Route{
 		{
@@ -344,7 +345,6 @@ func TestSortRoutesMethod(t *testing.T) {
 		},
 	}
 	shuffleAndCheckSort(t, want)
-
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
@@ -544,7 +544,7 @@ func TestSortRoutesQueryParams(t *testing.T) {
 }
 
 func TestSortSecrets(t *testing.T) {
-	want := []*envoy_tls_v3.Secret{
+	want := []*envoy_transport_socket_tls_v3.Secret{
 		{Name: "first"},
 		{Name: "second"},
 	}
@@ -619,7 +619,7 @@ func TestSortQueryParamMatchConditionsValue(t *testing.T) {
 }
 
 func TestSortClusters(t *testing.T) {
-	want := []*envoy_cluster_v3.Cluster{
+	want := []*envoy_config_cluster_v3.Cluster{
 		{Name: "first"},
 		{Name: "second"},
 	}
@@ -627,7 +627,7 @@ func TestSortClusters(t *testing.T) {
 }
 
 func TestSortClusterLoadAssignments(t *testing.T) {
-	want := []*envoy_endpoint_v3.ClusterLoadAssignment{
+	want := []*envoy_config_endpoint_v3.ClusterLoadAssignment{
 		{ClusterName: "first"},
 		{ClusterName: "second"},
 	}
@@ -635,7 +635,7 @@ func TestSortClusterLoadAssignments(t *testing.T) {
 }
 
 func TestSortHTTPWeightedClusters(t *testing.T) {
-	want := []*envoy_route_v3.WeightedCluster_ClusterWeight{
+	want := []*envoy_config_route_v3.WeightedCluster_ClusterWeight{
 		{
 			Name:   "first",
 			Weight: wrapperspb.UInt32(10),
@@ -653,7 +653,7 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 }
 
 func TestSortTCPWeightedClusters(t *testing.T) {
-	want := []*tcp.TcpProxy_WeightedCluster_ClusterWeight{
+	want := []*envoy_filter_network_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
 		{
 			Name:   "first",
 			Weight: 10,
@@ -671,7 +671,7 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 }
 
 func TestSortListeners(t *testing.T) {
-	want := []*envoy_listener_v3.Listener{
+	want := []*envoy_config_listener_v3.Listener{
 		{Name: "first"},
 		{Name: "second"},
 	}
@@ -679,13 +679,13 @@ func TestSortListeners(t *testing.T) {
 }
 
 func TestSortFilterChains(t *testing.T) {
-	names := func(n ...string) *envoy_listener_v3.FilterChainMatch {
-		return &envoy_listener_v3.FilterChainMatch{
+	names := func(n ...string) *envoy_config_listener_v3.FilterChainMatch {
+		return &envoy_config_listener_v3.FilterChainMatch{
 			ServerNames: n,
 		}
 	}
 
-	want := []*envoy_listener_v3.FilterChain{
+	want := []*envoy_config_listener_v3.FilterChain{
 		{
 			FilterChainMatch: names("first"),
 		},
@@ -701,11 +701,11 @@ func TestSortFilterChains(t *testing.T) {
 			FilterChainMatch: names("second", "aaaaa"),
 		},
 		{
-			FilterChainMatch: &envoy_listener_v3.FilterChainMatch{},
+			FilterChainMatch: &envoy_config_listener_v3.FilterChainMatch{},
 		},
 	}
 
-	have := []*envoy_listener_v3.FilterChain{
+	have := []*envoy_config_listener_v3.FilterChain{
 		want[1], // zzzzz
 		want[3], // blank
 		want[2], // aaaaa

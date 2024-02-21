@@ -19,11 +19,12 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testIncludePrefixCondition(namespace string) {
@@ -42,15 +43,15 @@ func testIncludePrefixCondition(namespace string) {
 		f.Fixtures.Echo.Deploy(appNamespace, "echo-app")
 		f.Fixtures.Echo.Deploy(adminNamespace, "echo-admin")
 
-		appProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		appProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: appNamespace,
 				Name:      "echo-app",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				Routes: []contourv1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-app",
 								Port: 80,
@@ -64,15 +65,15 @@ func testIncludePrefixCondition(namespace string) {
 		// it to be valid.
 		require.NoError(t, f.Client.Create(context.TODO(), appProxy))
 
-		adminProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		adminProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: adminNamespace,
 				Name:      "echo-admin",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				Routes: []contourv1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-admin",
 								Port: 80,
@@ -86,20 +87,20 @@ func testIncludePrefixCondition(namespace string) {
 		// it to be valid.
 		require.NoError(t, f.Client.Create(context.TODO(), adminProxy))
 
-		baseProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		baseProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "echo",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "includeprefixcondition.projectcontour.io",
 				},
-				Includes: []contourv1.Include{
+				Includes: []contour_v1.Include{
 					{
 						Name:      appProxy.Name,
 						Namespace: appProxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/",
 							},
@@ -108,7 +109,7 @@ func testIncludePrefixCondition(namespace string) {
 					{
 						Name:      adminProxy.Name,
 						Namespace: adminProxy.Namespace,
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/admin",
 							},

@@ -15,18 +15,20 @@ package deployment
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/provisioner/model"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
-func checkDeploymentHasEnvVar(t *testing.T, deploy *appsv1.Deployment, name string) {
+func checkDeploymentHasEnvVar(t *testing.T, deploy *apps_v1.Deployment, name string) {
 	t.Helper()
 
 	for _, envVar := range deploy.Spec.Template.Spec.Containers[0].Env {
@@ -37,7 +39,7 @@ func checkDeploymentHasEnvVar(t *testing.T, deploy *appsv1.Deployment, name stri
 	t.Errorf("deployment is missing environment variable %q", name)
 }
 
-func checkDeploymentHasContainer(t *testing.T, deploy *appsv1.Deployment, name string, expect bool) *corev1.Container {
+func checkDeploymentHasContainer(t *testing.T, deploy *apps_v1.Deployment, name string, expect bool) *core_v1.Container {
 	t.Helper()
 
 	if deploy.Spec.Template.Spec.Containers == nil {
@@ -58,7 +60,7 @@ func checkDeploymentHasContainer(t *testing.T, deploy *appsv1.Deployment, name s
 	return nil
 }
 
-func checkDeploymentHasLabels(t *testing.T, deploy *appsv1.Deployment, expected map[string]string) {
+func checkDeploymentHasLabels(t *testing.T, deploy *apps_v1.Deployment, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(deploy.Labels, expected) {
@@ -68,7 +70,7 @@ func checkDeploymentHasLabels(t *testing.T, deploy *appsv1.Deployment, expected 
 	t.Errorf("deployment has unexpected %q labels", deploy.Labels)
 }
 
-func checkPodHasAnnotations(t *testing.T, tmpl *corev1.PodTemplateSpec, annotations map[string]string) {
+func checkPodHasAnnotations(t *testing.T, tmpl *core_v1.PodTemplateSpec, annotations map[string]string) {
 	t.Helper()
 
 	for k, v := range annotations {
@@ -76,10 +78,9 @@ func checkPodHasAnnotations(t *testing.T, tmpl *corev1.PodTemplateSpec, annotati
 			t.Errorf("pod template has unexpected %q annotations", tmpl.Annotations)
 		}
 	}
-
 }
 
-func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string) {
+func checkContainerHasArg(t *testing.T, container *core_v1.Container, arg string) {
 	t.Helper()
 
 	for _, a := range container.Args {
@@ -90,7 +91,7 @@ func checkContainerHasArg(t *testing.T, container *corev1.Container, arg string)
 	t.Errorf("container is missing argument %q", arg)
 }
 
-func checkContainerHasImage(t *testing.T, container *corev1.Container, image string) {
+func checkContainerHasImage(t *testing.T, container *core_v1.Container, image string) {
 	t.Helper()
 
 	if container.Image == image {
@@ -99,7 +100,7 @@ func checkContainerHasImage(t *testing.T, container *corev1.Container, image str
 	t.Errorf("container is missing image %q", image)
 }
 
-func checkDeploymentHasNodeSelector(t *testing.T, deploy *appsv1.Deployment, expected map[string]string) {
+func checkDeploymentHasNodeSelector(t *testing.T, deploy *apps_v1.Deployment, expected map[string]string) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(deploy.Spec.Template.Spec.NodeSelector, expected) {
@@ -108,7 +109,7 @@ func checkDeploymentHasNodeSelector(t *testing.T, deploy *appsv1.Deployment, exp
 	t.Errorf("deployment has unexpected node selector %q", expected)
 }
 
-func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expected []corev1.Toleration) {
+func checkDeploymentHasTolerations(t *testing.T, deploy *apps_v1.Deployment, expected []core_v1.Toleration) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(deploy.Spec.Template.Spec.Tolerations, expected) {
@@ -117,7 +118,7 @@ func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expe
 	t.Errorf("deployment has unexpected tolerations %v", expected)
 }
 
-func checkDeploymentHasResourceRequirements(t *testing.T, deploy *appsv1.Deployment, expected corev1.ResourceRequirements) {
+func checkDeploymentHasResourceRequirements(t *testing.T, deploy *apps_v1.Deployment, expected core_v1.ResourceRequirements) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(deploy.Spec.Template.Spec.Containers[0].Resources, expected) {
@@ -126,7 +127,7 @@ func checkDeploymentHasResourceRequirements(t *testing.T, deploy *appsv1.Deploym
 	t.Errorf("daemonset has unexpected resource requirements %v", expected)
 }
 
-func checkDeploymentHasStrategy(t *testing.T, ds *appsv1.Deployment, expected appsv1.DeploymentStrategy) {
+func checkDeploymentHasStrategy(t *testing.T, ds *apps_v1.Deployment, expected apps_v1.DeploymentStrategy) {
 	t.Helper()
 
 	if apiequality.Semantic.DeepEqual(ds.Spec.Strategy, expected) {
@@ -141,14 +142,14 @@ func TestDesiredDeployment(t *testing.T) {
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
 
-	resQutoa := corev1.ResourceRequirements{
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("400m"),
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
+	resQutoa := core_v1.ResourceRequirements{
+		Limits: core_v1.ResourceList{
+			core_v1.ResourceCPU:    resource.MustParse("400m"),
+			core_v1.ResourceMemory: resource.MustParse("256Mi"),
 		},
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("25Mi"),
+		Requests: core_v1.ResourceList{
+			core_v1.ResourceCPU:    resource.MustParse("100m"),
+			core_v1.ResourceMemory: resource.MustParse("25Mi"),
 		},
 	}
 
@@ -162,7 +163,7 @@ func TestDesiredDeployment(t *testing.T) {
 	cntr.Spec.KubernetesLogLevel = 7
 
 	// Change the Contour log level to test --debug.
-	cntr.Spec.ContourLogLevel = v1alpha1.DebugLog
+	cntr.Spec.ContourLogLevel = contour_v1alpha1.DebugLog
 
 	cntr.Spec.ResourceLabels = map[string]string{
 		"key": "value",
@@ -213,17 +214,48 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourDeploymentStrategy)
 }
 
+func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
+	testCases := []struct {
+		description string
+		namespaces  []contour_v1.Namespace
+	}{
+		{
+			description: "several valid namespaces",
+			namespaces:  []contour_v1.Namespace{"ns1", "ns2"},
+		},
+		{
+			description: "single valid namespace",
+			namespaces:  []contour_v1.Namespace{"ns1"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "deploy-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			icName := "test-ic"
+			cntr.Spec.IngressClassName = &icName
+			// Change the Contour watch namespaces flag
+			cntr.Spec.WatchNamespaces = tc.namespaces
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
+			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(append(model.NamespacesToStrings(tc.namespaces), cntr.Namespace), ","))
+			checkContainerHasArg(t, container, arg)
+		})
+	}
+}
+
 func TestNodePlacementDeployment(t *testing.T) {
 	name := "selector-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
 
 	selectors := map[string]string{"node-role": "contour"}
-	tolerations := []corev1.Toleration{
+	tolerations := []core_v1.Toleration{
 		{
-			Operator: corev1.TolerationOpExists,
+			Operator: core_v1.TolerationOpExists,
 			Key:      "node-role",
 			Value:    "contour",
-			Effect:   corev1.TaintEffectNoSchedule,
+			Effect:   core_v1.TaintEffectNoSchedule,
 		},
 	}
 
@@ -238,5 +270,35 @@ func TestNodePlacementDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, selectors)
 	checkDeploymentHasTolerations(t, deploy, tolerations)
+}
 
+func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
+	testCases := []struct {
+		description      string
+		disabledFeatures []contour_v1.Feature
+	}{
+		{
+			description:      "disable 2 featuers",
+			disabledFeatures: []contour_v1.Feature{"tlsroutes", "grpcroutes"},
+		},
+		{
+			description:      "disable single feature",
+			disabledFeatures: []contour_v1.Feature{"tlsroutes"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			name := "deploy-test"
+			cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+			icName := "test-ic"
+			cntr.Spec.IngressClassName = &icName
+			cntr.Spec.DisabledFeatures = tc.disabledFeatures
+			// Change the Contour watch namespaces flag
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
+			arg := fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(tc.disabledFeatures), ","))
+			checkContainerHasArg(t, container, arg)
+		})
+	}
 }

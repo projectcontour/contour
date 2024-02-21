@@ -46,11 +46,11 @@ func TestTruncate(t *testing.T) {
 }
 
 func TestAnyPositive(t *testing.T) {
-	assert.Equal(t, false, AnyPositive(0))
-	assert.Equal(t, true, AnyPositive(1))
-	assert.Equal(t, false, AnyPositive(0, 0))
-	assert.Equal(t, true, AnyPositive(1, 0))
-	assert.Equal(t, true, AnyPositive(0, 1))
+	assert.False(t, AnyPositive(0))
+	assert.True(t, AnyPositive(1))
+	assert.False(t, AnyPositive(0, 0))
+	assert.True(t, AnyPositive(1, 0))
+	assert.True(t, AnyPositive(0, 1))
 }
 
 func TestHashname(t *testing.T) {

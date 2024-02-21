@@ -16,13 +16,13 @@
 package httpproxy
 
 import (
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testDirectResponseRule(namespace string) {
@@ -33,7 +33,7 @@ func testDirectResponseRule(namespace string) {
 	})
 }
 
-func doDirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
+func doDirectTest(namespace string, proxy *contour_v1.HTTPProxy, t GinkgoTInterface) {
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
 	_, ok := f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
@@ -47,7 +47,6 @@ func doDirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTIn
 
 	assertDirectResponseRequest(t, proxy.Spec.VirtualHost.Fqdn, "/directresponse-notfound",
 		"not found", 404)
-
 }
 
 func assertDirectResponseRequest(t GinkgoTInterface, fqdn, path, expectedBody string, expectedStatusCode int) {
@@ -61,34 +60,34 @@ func assertDirectResponseRequest(t GinkgoTInterface, fqdn, path, expectedBody st
 	assert.Equal(t, expectedBody, string(res.Body))
 }
 
-func getDirectResponseHTTPProxy(namespace string) *contour_api_v1.HTTPProxy {
-	return &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+func getDirectResponseHTTPProxy(namespace string) *contour_v1.HTTPProxy {
+	return &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "direct-response",
 			Namespace: namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "directresponse.projectcontour.io",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/directresponse-nobody",
 				}},
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{StatusCode: 200},
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{StatusCode: 200},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/directresponse",
 				}},
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 					StatusCode: 200,
 					Body:       "directResponse success",
 				},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/directresponse-notfound",
 				}},
-				DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 					StatusCode: 404,
 					Body:       "not found",
 				},

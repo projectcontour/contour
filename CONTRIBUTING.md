@@ -311,21 +311,30 @@ At a maintainer's discretion, pull requests with multiple commits can be merged 
 Merging pull requests with multiple commits can make sense in cases where a change involves code generation or mechanical changes that can be cleanly separated from semantic changes.
 The maintainer should review commit messages for each commit and make sure that each commit builds and passes tests.
 
+### Code formatting
+
+Contour utilizes [`gofumpt`](https://github.com/mvdan/gofumpt) for strict Golang formatting of the contour codebase.
+The `lint` CI job checks this to ensure all commits are formatted as expected.
+
+The `make format` target can be used to run `gofumpt` locally before making a PR.
+
 ### Import Aliases
 
 Naming is one of the most difficult things in software engineering.
-Contour uses the following pattern to name imports when referencing packages from other packages.
+Contour uses the following general pattern to name imports when referencing internal packages and packages from other projects.
 
 > thing_version: The name+package path of the thing and then the version separated by underscores
 
 Examples:
 
 ```
-contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 ```
+
+Exact patterns for import paths can be found in the `importas` linter settings in `.golangci.yml`
 
 ### Pre commit CI
 
@@ -384,6 +393,9 @@ In general, changes to the core processing pipeline should be accompanied by new
 | `internal/xdscache/v3/*_test.go` (specifically the `Test[Cluster\|Listener\|Route\|Secret]Visit` functions) | Tests conversion of Kubernetes config to Envoy config. |
 | `internal/featuretests/v3/*_test.go` | Tests conversion of Kubernetes config to Envoy config, using a ~full Contour event handler and xDS server. |
 | `test/e2e/[httpproxy\|gateway\|ingress]` | E2E tests with Contour running in a cluster. Verifies behavior of HTTP requests for configured proxies. |
+
+> **Note:**
+To compile code under folder `e2e` with VSCode, please add `"go.buildTags": "e2e,conformance"` to VSCode config file `settings.json`. Since tests under it have e2e and conformance build tags.
 
 
 ## DCO Sign off

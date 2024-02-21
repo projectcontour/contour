@@ -16,9 +16,10 @@ package k8s
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/projectcontour/contour/internal/fixture"
 )
 
 type countHandler struct {
@@ -66,5 +67,4 @@ func TestNamespaceFilter(t *testing.T) {
 
 	filter.OnDelete(fixture.NewProxy("ns1/proxy"))
 	assert.Equal(t, 1, counter.deleted)
-
 }

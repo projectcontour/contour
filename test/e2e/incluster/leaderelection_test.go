@@ -22,11 +22,11 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/stretchr/testify/require"
-	coordinationv1 "k8s.io/api/coordination/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	coordination_v1 "k8s.io/api/coordination/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,8 +39,8 @@ func testLeaderElection() {
 	// has set status on an object.
 	Specify("leader election resources are created as expected", func() {
 		getLeaderID := func() (string, error) {
-			leaderElectionLease := &coordinationv1.Lease{
-				ObjectMeta: metav1.ObjectMeta{
+			leaderElectionLease := &coordination_v1.Lease{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "leader-elect",
 					Namespace: f.Deployment.Namespace.Name,
 				},
@@ -49,7 +49,7 @@ func testLeaderElection() {
 				return "", err
 			}
 
-			leaseHolder := ref.Val(leaderElectionLease.Spec.HolderIdentity, "")
+			leaseHolder := ptr.Deref(leaderElectionLease.Spec.HolderIdentity, "")
 			if !strings.HasPrefix(leaseHolder, "contour-") {
 				return "", fmt.Errorf("invalid leader name: %q", leaseHolder)
 			}
@@ -70,7 +70,7 @@ func testLeaderElection() {
 
 		findEventsForLeader := func(leader string) func() bool {
 			return func() bool {
-				events := &corev1.EventList{}
+				events := &core_v1.EventList{}
 				listOptions := &client.ListOptions{
 					Namespace: f.Deployment.Namespace.Name,
 				}
@@ -89,8 +89,8 @@ func testLeaderElection() {
 		require.Eventually(f.T(), findEventsForLeader(originalLeader), f.RetryTimeout, f.RetryInterval)
 
 		// Delete contour leader pod.
-		leaderPod := &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
+		leaderPod := &core_v1.Pod{
+			ObjectMeta: meta_v1.ObjectMeta{
 				// Chop off _UUID suffix
 				Name:      podNameFromLeaderID(originalLeader),
 				Namespace: f.Deployment.Namespace.Name,
@@ -111,8 +111,8 @@ func testLeaderElection() {
 		require.Eventually(f.T(), findEventsForLeader(newLeader), f.RetryTimeout, f.RetryInterval)
 
 		// Check leader pod exists.
-		leaderPod = &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
+		leaderPod = &core_v1.Pod{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      podNameFromLeaderID(newLeader),
 				Namespace: f.Deployment.Namespace.Name,
 			},

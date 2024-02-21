@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
-
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
 // IngressProcessor translates Ingresses into DAG
@@ -68,7 +68,7 @@ type IngressProcessor struct {
 	SetSourceMetadataOnRoutes bool
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
-	GlobalCircuitBreakerDefaults *contour_api_v1alpha1.GlobalCircuitBreakerDefaults
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults
 
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
@@ -194,7 +194,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
 		// Default to implementation specific path matching if not set.
-		pathType := ref.Val(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
+		pathType := ptr.Deref(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
@@ -267,7 +267,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 }
 
 // route builds a dag.Route for the supplied Ingress.
-func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, serviceName string, servicePort int32, log logrus.FieldLogger) (*Route, error) {
+func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, serviceName string, servicePort int32, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,

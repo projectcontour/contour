@@ -17,18 +17,19 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/ref"
-
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/stretchr/testify/require"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+
+	"github.com/projectcontour/contour/internal/fixture"
 )
 
-func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...any) v1.ServicePort {
-	p := v1.ServicePort{
+func makeServicePort(name string, protocol core_v1.Protocol, port int32, extras ...any) core_v1.ServicePort {
+	p := core_v1.ServicePort{
 		Name:     name,
 		Protocol: protocol,
 		Port:     port,
@@ -39,65 +40,65 @@ func makeServicePort(name string, protocol v1.Protocol, port int32, extras ...an
 	}
 
 	if len(extras) > 1 {
-		p.AppProtocol = ref.To(extras[1].(string))
+		p.AppProtocol = ptr.To(extras[1].(string))
 	}
 
 	return p
-
 }
+
 func TestBuilderLookupService(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "includehealth",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080), makeServicePort("health", "TCP", 8998, 8998)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080), makeServicePort("health", "TCP", 8998, 8998)},
 		},
 	}
 
-	externalNameValid := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	externalNameValid := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "externalnamevalid",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Type:         v1.ServiceTypeExternalName,
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
 			ExternalName: "external.projectcontour.io",
-			Ports:        []v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
-	externalNameLocalhost := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	externalNameLocalhost := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "externalnamelocalhost",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Type:         v1.ServiceTypeExternalName,
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
 			ExternalName: "localhost",
-			Ports:        []v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
-	annotatedService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	annotatedService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        "annotated-service",
 			Namespace:   "default",
 			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443"},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Name:       "foo",
 				Protocol:   "TCP",
 				Port:       8443,
@@ -106,31 +107,31 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
-	appProtoService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	appProtoService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        "app-protocol-service",
 			Namespace:   "default",
 			Annotations: map[string]string{"projectcontour.io/upstream-protocol.tls": "8443,8444"},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{
 				{
 					Name:        "k8s-h2c",
 					Protocol:    "TCP",
-					AppProtocol: ref.To("kubernetes.io/h2c"),
+					AppProtocol: ptr.To("kubernetes.io/h2c"),
 					Port:        8443,
 				},
 				{
 					Name:        "k8s-wss",
 					Protocol:    "TCP",
-					AppProtocol: ref.To("kubernetes.io/wss"),
+					AppProtocol: ptr.To("kubernetes.io/wss"),
 					Port:        8444,
 				},
 			},
 		},
 	}
 
-	services := map[types.NamespacedName]*v1.Service{
+	services := map[types.NamespacedName]*core_v1.Service{
 		{Name: "service1", Namespace: "default"}:                             s1,
 		{Name: "servicehealthcheck", Namespace: "default"}:                   s2,
 		{Name: "externalnamevalid", Namespace: "default"}:                    externalNameValid,
@@ -254,11 +255,11 @@ func TestGetSingleListener(t *testing.T) {
 
 		got, gotErr := d.GetSingleListener("http")
 		assert.Equal(t, d.Listeners["http"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 
 		got, gotErr = d.GetSingleListener("https")
 		assert.Equal(t, d.Listeners["https"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 	})
 
 	t.Run("one HTTP listener, no HTTPS listener", func(t *testing.T) {
@@ -273,11 +274,11 @@ func TestGetSingleListener(t *testing.T) {
 
 		got, gotErr := d.GetSingleListener("http")
 		assert.Equal(t, d.Listeners["http"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 
 		got, gotErr = d.GetSingleListener("https")
 		assert.Nil(t, got)
-		assert.EqualError(t, gotErr, "no HTTPS listener configured")
+		require.EqualError(t, gotErr, "no HTTPS listener configured")
 	})
 
 	t.Run("many HTTP listeners, one HTTPS listener", func(t *testing.T) {
@@ -304,11 +305,11 @@ func TestGetSingleListener(t *testing.T) {
 
 		got, gotErr := d.GetSingleListener("http")
 		assert.Nil(t, got)
-		assert.EqualError(t, gotErr, "more than one HTTP listener configured")
+		require.EqualError(t, gotErr, "more than one HTTP listener configured")
 
 		got, gotErr = d.GetSingleListener("https")
 		assert.Equal(t, d.Listeners["https-1"], got)
-		assert.NoError(t, gotErr)
+		require.NoError(t, gotErr)
 	})
 }
 

@@ -21,7 +21,6 @@ import (
 )
 
 func TestValidAdminAddress(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		address string

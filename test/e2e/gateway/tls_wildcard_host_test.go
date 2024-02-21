@@ -19,14 +19,14 @@ import (
 	"crypto/tls"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testTLSWildcardHost(namespace string, gateway types.NamespacedName) {
@@ -36,23 +36,23 @@ func testTLSWildcardHost(namespace string, gateway types.NamespacedName) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		route := &gatewayapi_v1beta1.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
+		route := &gatewayapi_v1.HTTPRoute{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
 			},
-			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1beta1.Hostname{"*.wildcardhost.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			Spec: gatewayapi_v1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1.Hostname{"*.wildcardhost.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						{
-							Namespace:   ref.To(gatewayapi_v1beta1.Namespace(gateway.Namespace)),
-							Name:        gatewayapi_v1beta1.ObjectName(gateway.Name),
-							SectionName: ref.To(gatewayapi_v1beta1.SectionName("secure")),
+							Namespace:   ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+							Name:        gatewayapi_v1.ObjectName(gateway.Name),
+							SectionName: ptr.To(gatewayapi_v1.SectionName("secure")),
 						},
 					},
 				},
-				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+				Rules: []gatewayapi_v1.HTTPRouteRule{
 					{
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),

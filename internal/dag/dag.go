@@ -24,10 +24,11 @@ import (
 	"strings"
 	"time"
 
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // Observer is an interface for receiving notification of DAG updates.
@@ -668,7 +669,7 @@ type ClientCertificateDetails struct {
 type PeerValidationContext struct {
 	// CACertificate holds a reference to the Secret containing the CA to be used to
 	// verify the upstream connection.
-	CACertificate *Secret
+	CACertificates []*Secret
 	// SubjectNames holds optional subject names which Envoy will check against the
 	// certificate presented by the upstream. The first entry must match the value of SubjectName
 	SubjectNames []string
@@ -691,11 +692,18 @@ type PeerValidationContext struct {
 
 // GetCACertificate returns the CA certificate from PeerValidationContext.
 func (pvc *PeerValidationContext) GetCACertificate() []byte {
-	if pvc == nil || pvc.CACertificate == nil {
+	if pvc == nil || len(pvc.CACertificates) == 0 {
 		// No validation required.
 		return nil
 	}
-	return pvc.CACertificate.Object.Data[CACertificateKey]
+	var certs []byte
+	for _, cert := range pvc.CACertificates {
+		if cert == nil {
+			continue
+		}
+		certs = append(certs, cert.Object.Data[CACertificateKey]...)
+	}
+	return certs
 }
 
 // GetSubjectName returns the SubjectNames from PeerValidationContext.
@@ -770,10 +778,10 @@ func (v *VirtualHost) Valid() bool {
 type SecureVirtualHost struct {
 	VirtualHost
 
-	// TLS minimum protocol version. Defaults to envoy_tls_v3.TlsParameters_TLS_AUTO
+	// TLS minimum protocol version. Defaults to envoy_transport_socket_tls_v3.TlsParameters_TLS_AUTO
 	MinTLSVersion string
 
-	// TLS maximum protocol version. Defaults to envoy_tls_v3.TlsParameters_TLSv1_3
+	// TLS maximum protocol version. Defaults to envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3
 	MaxTLSVersion string
 
 	// The cert and key for this host.
@@ -1052,18 +1060,18 @@ type Cluster struct {
 }
 
 // WeightedService represents the load balancing weight of a
-// particular v1.Weighted port.
+// particular core_v1.Weighted port.
 type WeightedService struct {
 	// Weight is the integral load balancing weight.
 	Weight uint32
-	// ServiceName is the v1.Service name.
+	// ServiceName is the core_v1.Service name.
 	ServiceName string
-	// ServiceNamespace is the v1.Service namespace.
+	// ServiceNamespace is the core_v1.Service namespace.
 	ServiceNamespace string
 	// ServicePort is the port to which we forward traffic.
-	ServicePort v1.ServicePort
+	ServicePort core_v1.ServicePort
 	// HealthPort is the port for healthcheck.
-	HealthPort v1.ServicePort
+	HealthPort core_v1.ServicePort
 }
 
 // ServiceCluster capture the set of Kubernetes Services that will
@@ -1118,12 +1126,12 @@ func (s *ServiceCluster) Validate() error {
 }
 
 // AddService adds the given service with a default weight of 1.
-func (s *ServiceCluster) AddService(name types.NamespacedName, port v1.ServicePort) {
+func (s *ServiceCluster) AddService(name types.NamespacedName, port core_v1.ServicePort) {
 	s.AddWeightedService(1, name, port)
 }
 
 // AddWeightedService adds the given service with the given weight.
-func (s *ServiceCluster) AddWeightedService(weight uint32, name types.NamespacedName, port v1.ServicePort) {
+func (s *ServiceCluster) AddWeightedService(weight uint32, name types.NamespacedName, port core_v1.ServicePort) {
 	w := WeightedService{
 		Weight:           weight,
 		ServiceName:      name.Name,
@@ -1155,7 +1163,7 @@ func (s *ServiceCluster) Rebalance() {
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
-	Object         *v1.Secret
+	Object         *core_v1.Secret
 	ValidTLSSecret *SecretValidationStatus
 	ValidCASecret  *SecretValidationStatus
 	ValidCRLSecret *SecretValidationStatus
@@ -1171,12 +1179,12 @@ func (s *Secret) Data() map[string][]byte {
 
 // Cert returns the secret's tls certificate
 func (s *Secret) Cert() []byte {
-	return s.Object.Data[v1.TLSCertKey]
+	return s.Object.Data[core_v1.TLSCertKey]
 }
 
 // PrivateKey returns the secret's tls private key
 func (s *Secret) PrivateKey() []byte {
-	return s.Object.Data[v1.TLSPrivateKeyKey]
+	return s.Object.Data[core_v1.TLSPrivateKeyKey]
 }
 
 type SecretValidationStatus struct {

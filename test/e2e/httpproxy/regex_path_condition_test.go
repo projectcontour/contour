@@ -17,10 +17,11 @@ package httpproxy
 
 import (
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testRegexPathCondition(namespace string) {
@@ -34,89 +35,89 @@ func testRegexPathCondition(namespace string) {
 		f.Fixtures.Echo.Deploy(serviceNamespace, "echo-2")
 		f.Fixtures.Echo.Deploy(serviceNamespace, "echo-3")
 
-		serviceProxy := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		serviceProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: serviceNamespace,
 				Name:      "regex",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "regexpath.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-2",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/apiv1/prod-.+/",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-3",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/(local|global)/.*/",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-1",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/[a-zA-Z]+",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-3",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/[\\d]+/.+/",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-1",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/base/.*",
 							},
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-1",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Regex: "/",
 							},

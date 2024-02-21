@@ -21,14 +21,15 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testClientCertRevocation(namespace string) {
@@ -99,8 +100,8 @@ func testClientCertRevocation(namespace string) {
 
 		// Create Secret for CA that is used to validate client certificates.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ca",
 					Namespace: namespace,
 				},
@@ -112,23 +113,23 @@ func testClientCertRevocation(namespace string) {
 
 		// Create Secret for server TLS credentials.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "server-cert",
 					Namespace: namespace,
 				},
-				Type: corev1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: map[string][]byte{
-					corev1.TLSCertKey:       certPEMBytes(t, &server),
-					corev1.TLSPrivateKeyKey: keyPEMBytes(t, &server),
+					core_v1.TLSCertKey:       certPEMBytes(t, &server),
+					core_v1.TLSPrivateKeyKey: keyPEMBytes(t, &server),
 				},
 			},
 		))
 
 		// Create Secret with CRLs from all CAs, combined as a PEM bundle.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "all-crls",
 					Namespace: namespace,
 				},
@@ -140,8 +141,8 @@ func testClientCertRevocation(namespace string) {
 
 		// Create Secret with CRL from sub-CA only.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "only-revoked-sub-ca-crl",
 					Namespace: namespace,
 				},
@@ -152,25 +153,25 @@ func testClientCertRevocation(namespace string) {
 		))
 
 		// Create HTTPProxy that does full chain CRL check.
-		proxyWithFullCRLCheck := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyWithFullCRLCheck := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "crl-check-full",
 				Namespace: namespace,
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "crl-check-full.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "server-cert",
-						ClientValidation: &contourv1.DownstreamValidation{
+						ClientValidation: &contour_v1.DownstreamValidation{
 							CACertificate:             "ca",
 							CertificateRevocationList: "all-crls",
 						},
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -183,26 +184,26 @@ func testClientCertRevocation(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(proxyWithFullCRLCheck, e2e.HTTPProxyValid)
 
 		// Create HTTPProxy that does CRL check for leaf-certificates only.
-		proxyWithCRLLeafOnly := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyWithCRLLeafOnly := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "crl-check-leaf-only",
 				Namespace: namespace,
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "crl-check-leaf-only.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "server-cert",
-						ClientValidation: &contourv1.DownstreamValidation{
+						ClientValidation: &contour_v1.DownstreamValidation{
 							CACertificate:             "ca",
 							CertificateRevocationList: "only-revoked-sub-ca-crl",
 							OnlyVerifyLeafCertCrl:     true,
 						},
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -215,25 +216,25 @@ func testClientCertRevocation(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(proxyWithCRLLeafOnly, e2e.HTTPProxyValid)
 
 		// HTTPProxy with full chain revocation but refers to Secret with only partial set of CRLs.
-		proxyWithCRLMissing := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyWithCRLMissing := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "crl-check-full-but-missing-crl",
 				Namespace: namespace,
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "crl-check-full-but-missing-crl.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "server-cert",
-						ClientValidation: &contourv1.DownstreamValidation{
+						ClientValidation: &contour_v1.DownstreamValidation{
 							CACertificate:             "ca",
 							CertificateRevocationList: "only-revoked-sub-ca-crl",
 						},
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -349,23 +350,23 @@ func testClientCertRevocation(namespace string) {
 
 		// Create Secret for server credentials.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "server-cert",
 					Namespace: namespace,
 				},
-				Type: corev1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: map[string][]byte{
-					corev1.TLSCertKey:       certPEMBytes(t, &server),
-					corev1.TLSPrivateKeyKey: keyPEMBytes(t, &server),
+					core_v1.TLSCertKey:       certPEMBytes(t, &server),
+					core_v1.TLSPrivateKeyKey: keyPEMBytes(t, &server),
 				},
 			},
 		))
 
 		// Create Secret for CA to validate client certificates.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ca",
 					Namespace: namespace,
 				},
@@ -376,25 +377,25 @@ func testClientCertRevocation(namespace string) {
 		))
 
 		// Create HTTPProxy with client validation and CRL check.
-		proxyWithCRLCheck := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		proxyWithCRLCheck := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "crl-rotate",
 				Namespace: namespace,
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "crl-rotate.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "server-cert",
-						ClientValidation: &contourv1.DownstreamValidation{
+						ClientValidation: &contour_v1.DownstreamValidation{
 							CACertificate:             "ca",
 							CertificateRevocationList: "crl",
 						},
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -410,8 +411,8 @@ func testClientCertRevocation(namespace string) {
 
 		// Create Secret with CRL where client certificate is revoked.
 		require.NoError(t, f.Client.Create(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "crl",
 					Namespace: namespace,
 				},
@@ -439,8 +440,8 @@ func testClientCertRevocation(namespace string) {
 
 		// Update Secret with CRL where client certificate is not revoked.
 		require.NoError(t, f.Client.Update(context.TODO(),
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "crl",
 					Namespace: namespace,
 				},
@@ -456,7 +457,6 @@ func testClientCertRevocation(namespace string) {
 
 		require.NotNil(t, res, "expected 200 response code, request was never successful")
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
 	})
 }
 

@@ -16,8 +16,9 @@ package k8s
 import (
 	"fmt"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 // StatusUpdateCacher takes status updates and applies them to a cache, to be used for testing.
@@ -29,7 +30,7 @@ type StatusUpdateCacher struct {
 // the status cache.
 func (suc *StatusUpdateCacher) IsCacheable(obj any) bool {
 	switch obj.(type) {
-	case *contour_api_v1.HTTPProxy:
+	case *contour_v1.HTTPProxy:
 		return true
 	default:
 		return false
@@ -40,12 +41,11 @@ func (suc *StatusUpdateCacher) IsCacheable(obj any) bool {
 func (suc *StatusUpdateCacher) OnDelete(obj any) {
 	if suc.objectCache != nil {
 		switch o := obj.(type) {
-		case *contour_api_v1.HTTPProxy:
+		case *contour_v1.HTTPProxy:
 			delete(suc.objectCache, suc.objKey(o.Name, o.Namespace))
 		default:
 			panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 		}
-
 	}
 }
 
@@ -56,17 +56,15 @@ func (suc *StatusUpdateCacher) OnAdd(obj any) {
 	}
 
 	switch o := obj.(type) {
-	case *contour_api_v1.HTTPProxy:
+	case *contour_v1.HTTPProxy:
 		suc.objectCache[suc.objKey(o.Name, o.Namespace)] = o
 	default:
 		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 	}
-
 }
 
 // Get allows retrieval of objects from the cache.
 func (suc *StatusUpdateCacher) Get(name, namespace string) any {
-
 	if suc.objectCache == nil {
 		suc.objectCache = make(map[string]client.Object)
 	}
@@ -76,7 +74,6 @@ func (suc *StatusUpdateCacher) Get(name, namespace string) any {
 		return obj
 	}
 	return nil
-
 }
 
 func (suc *StatusUpdateCacher) Add(name, namespace string, obj client.Object) bool {
@@ -93,16 +90,15 @@ func (suc *StatusUpdateCacher) Add(name, namespace string, obj client.Object) bo
 	suc.objectCache[prefix] = obj
 
 	return true
-
 }
 
-func (suc *StatusUpdateCacher) GetStatus(obj any) (*contour_api_v1.HTTPProxyStatus, error) {
+func (suc *StatusUpdateCacher) GetStatus(obj any) (*contour_v1.HTTPProxyStatus, error) {
 	switch o := obj.(type) {
-	case *contour_api_v1.HTTPProxy:
+	case *contour_v1.HTTPProxy:
 		objectKey := suc.objKey(o.Name, o.Namespace)
 		cachedObj, ok := suc.objectCache[objectKey]
 		if ok {
-			if c, ok := cachedObj.(*contour_api_v1.HTTPProxy); ok {
+			if c, ok := cachedObj.(*contour_v1.HTTPProxy); ok {
 				return &c.Status, nil
 			}
 		}
@@ -113,7 +109,6 @@ func (suc *StatusUpdateCacher) GetStatus(obj any) (*contour_api_v1.HTTPProxyStat
 }
 
 func (suc *StatusUpdateCacher) objKey(name, namespace string) string {
-
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 

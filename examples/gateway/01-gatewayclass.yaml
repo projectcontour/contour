@@ -1,0 +1,7 @@
+---
+kind: GatewayClass
+apiVersion: gateway.networking.k8s.io/v1
+metadata:
+  name: example
+spec:
+  controllerName: projectcontour.io/gateway-controller

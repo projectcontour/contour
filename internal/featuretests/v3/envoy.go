@@ -19,41 +19,40 @@ import (
 	"path"
 	"time"
 
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_filter_network_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
-	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
-	"github.com/projectcontour/contour/internal/protobuf"
-	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/protobuf"
+	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 )
 
 // DefaultCluster returns a copy of the default Cluster, with each
 // Cluster given in the parameter slice merged on top. This makes it
 // relatively fluent to compose Clusters by tweaking a few fields.
-func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
+func DefaultCluster(clusters ...*envoy_config_cluster_v3.Cluster) *envoy_config_cluster_v3.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
-	defaults := &envoy_cluster_v3.Cluster{
+	defaults := &envoy_config_cluster_v3.Cluster{
 		ConnectTimeout: durationpb.New(2 * time.Second),
-		LbPolicy:       envoy_cluster_v3.Cluster_ROUND_ROBIN,
+		LbPolicy:       envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy_v3.ClusterCommonLBConfig(),
 	}
 
@@ -64,15 +63,15 @@ func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Clu
 	return defaults
 }
 
-func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, expectedStatuses []*envoy_type_v3.Int64Range) *envoy_cluster_v3.Cluster {
+func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string, expectedStatuses []*envoy_type_v3.Int64Range) *envoy_config_cluster_v3.Cluster {
 	c := cluster(name, servicename, statName)
-	c.HealthChecks = []*envoy_core_v3.HealthCheck{{
+	c.HealthChecks = []*envoy_config_core_v3.HealthCheck{{
 		Timeout:            durationpb.New(2 * time.Second),
 		Interval:           durationpb.New(10 * time.Second),
 		UnhealthyThreshold: wrapperspb.UInt32(3),
 		HealthyThreshold:   wrapperspb.UInt32(2),
-		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+		HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 				Host:             "contour-envoy-healthcheck",
 				Path:             healthCheckPath,
 				ExpectedStatuses: expectedStatuses,
@@ -83,12 +82,12 @@ func clusterWithHealthCheck(name, servicename, statName, healthCheckPath string,
 	return c
 }
 
-func externalNameCluster(name, servicename, statName, externalName string, port int) *envoy_cluster_v3.Cluster {
-	return DefaultCluster(&envoy_cluster_v3.Cluster{
+func externalNameCluster(name, servicename, statName, externalName string, port int) *envoy_config_cluster_v3.Cluster {
+	return DefaultCluster(&envoy_config_cluster_v3.Cluster{
 		Name:                 name,
-		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 		AltStatName:          statName,
-		LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+		LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: servicename,
 			Endpoints: envoy_v3.Endpoints(
 				envoy_v3.SocketAddress(externalName, port),
@@ -97,10 +96,10 @@ func externalNameCluster(name, servicename, statName, externalName string, port 
 	})
 }
 
-func routeCluster(cluster string, opts ...func(*envoy_route_v3.Route_Route)) *envoy_route_v3.Route_Route {
-	r := &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+func routeCluster(cluster string, opts ...func(*envoy_config_route_v3.Route_Route)) *envoy_config_route_v3.Route_Route {
+	r := &envoy_config_route_v3.Route_Route{
+		Route: &envoy_config_route_v3.RouteAction{
+			ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
@@ -113,7 +112,7 @@ func routeCluster(cluster string, opts ...func(*envoy_route_v3.Route_Route)) *en
 	return r
 }
 
-func routePrefix(prefix string) *envoy_route_v3.RouteMatch {
+func routePrefix(prefix string) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
@@ -121,7 +120,7 @@ func routePrefix(prefix string) *envoy_route_v3.RouteMatch {
 	})
 }
 
-func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
@@ -130,7 +129,7 @@ func routePrefixWithHeaderConditions(prefix string, headers ...dag.HeaderMatchCo
 	})
 }
 
-func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.QueryParamMatchCondition) *envoy_route_v3.RouteMatch {
+func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.QueryParamMatchCondition) *envoy_config_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
@@ -139,69 +138,69 @@ func routePrefixWithQueryParameterConditions(prefix string, queryParams ...dag.Q
 	})
 }
 
-func routeSegmentPrefix(prefix string) *envoy_route_v3.RouteMatch {
-	return &envoy_route_v3.RouteMatch{
-		PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+func routeSegmentPrefix(prefix string) *envoy_config_route_v3.RouteMatch {
+	return &envoy_config_route_v3.RouteMatch{
+		PathSpecifier: &envoy_config_route_v3.RouteMatch_PathSeparatedPrefix{
 			PathSeparatedPrefix: prefix,
 		},
 	}
 }
 
-func routeHostRewrite(cluster, newHostName string) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier:     &envoy_route_v3.RouteAction_Cluster{Cluster: cluster},
-			HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: newHostName},
+func routeHostRewrite(cluster, newHostName string) *envoy_config_route_v3.Route_Route {
+	return &envoy_config_route_v3.Route_Route{
+		Route: &envoy_config_route_v3.RouteAction{
+			ClusterSpecifier:     &envoy_config_route_v3.RouteAction_Cluster{Cluster: cluster},
+			HostRewriteSpecifier: &envoy_config_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: newHostName},
 		},
 	}
 }
 
-func routeHostRewriteHeader(cluster, hostnameHeader string) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier:     &envoy_route_v3.RouteAction_Cluster{Cluster: cluster},
-			HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteHeader{HostRewriteHeader: hostnameHeader},
+func routeHostRewriteHeader(cluster, hostnameHeader string) *envoy_config_route_v3.Route_Route {
+	return &envoy_config_route_v3.Route_Route{
+		Route: &envoy_config_route_v3.RouteAction{
+			ClusterSpecifier:     &envoy_config_route_v3.RouteAction_Cluster{Cluster: cluster},
+			HostRewriteSpecifier: &envoy_config_route_v3.RouteAction_HostRewriteHeader{HostRewriteHeader: hostnameHeader},
 		},
 	}
 }
 
-func upgradeHTTPS(match *envoy_route_v3.RouteMatch) *envoy_route_v3.Route {
-	return &envoy_route_v3.Route{
+func upgradeHTTPS(match *envoy_config_route_v3.RouteMatch) *envoy_config_route_v3.Route {
+	return &envoy_config_route_v3.Route{
 		Match:  match,
 		Action: envoy_v3.UpgradeHTTPS(),
 	}
 }
 
-func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
-	return DefaultCluster(&envoy_cluster_v3.Cluster{
+func cluster(name, servicename, statName string) *envoy_config_cluster_v3.Cluster {
+	return DefaultCluster(&envoy_config_cluster_v3.Cluster{
 		Name:                 name,
-		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 		AltStatName:          statName,
-		EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+		EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 			EdsConfig:   envoy_v3.ConfigSource("contour"),
 			ServiceName: servicename,
 		},
 	})
 }
 
-func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsCluster(c *envoy_config_cluster_v3.Cluster, ca *core_v1.Secret, subjectName, sni string, clientSecret *core_v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_config_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
 	}
 
+	// Secret for validation is optional.
+	var s []*dag.Secret
+	if ca != nil {
+		s = []*dag.Secret{{Object: ca}}
+	}
+
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: map[string][]byte{dag.CACertificateKey: ca},
-				}},
-				SubjectNames: []string{subjectName}},
+				CACertificates: s,
+				SubjectNames:   []string{subjectName},
+			},
 			sni,
 			secret,
 			upstreamTLS,
@@ -211,7 +210,7 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 	return c
 }
 
-func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, clientSecret *v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsClusterWithoutValidation(c *envoy_config_cluster_v3.Cluster, sni string, clientSecret *core_v1.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_config_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
@@ -229,13 +228,13 @@ func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, client
 	return c
 }
 
-func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
+func h2cCluster(c *envoy_config_cluster_v3.Cluster) *envoy_config_cluster_v3.Cluster {
 	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-					ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-						ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+			&envoy_upstream_http_v3.HttpProtocolOptions{
+				UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+					ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+						ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
 					},
 				},
 			}),
@@ -243,33 +242,33 @@ func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	return c
 }
 
-func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, httpVersion envoy_v3.HTTPVersionType) *envoy_cluster_v3.Cluster {
-	var config *envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig
+func withConnectionTimeout(c *envoy_config_cluster_v3.Cluster, timeout time.Duration, httpVersion envoy_v3.HTTPVersionType) *envoy_config_cluster_v3.Cluster {
+	var config *envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig
 
 	switch httpVersion {
 	// Default protocol version in Envoy is HTTP1.1.
 	case envoy_v3.HTTPVersion1, envoy_v3.HTTPVersionAuto:
-		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+		config = &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
 		}
 	case envoy_v3.HTTPVersion2:
-		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+		config = &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
 		}
 
 	case envoy_v3.HTTPVersion3:
-		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http3ProtocolOptions{},
+		config = &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http3ProtocolOptions{},
 		}
 	}
 
 	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
 		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-				CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+			&envoy_upstream_http_v3.HttpProtocolOptions{
+				CommonHttpProtocolOptions: &envoy_config_core_v3.HttpProtocolOptions{
 					IdleTimeout: durationpb.New(timeout),
 				},
-				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+				UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
 					ExplicitHttpConfig: config,
 				},
 			}),
@@ -277,35 +276,36 @@ func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, h
 	return c
 }
 
-func withResponseTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
+func withResponseTimeout(route *envoy_config_route_v3.Route_Route, timeout time.Duration) *envoy_config_route_v3.Route_Route {
 	route.Route.Timeout = durationpb.New(timeout)
 	return route
 }
 
-func withIdleTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
+func withIdleTimeout(route *envoy_config_route_v3.Route_Route, timeout time.Duration) *envoy_config_route_v3.Route_Route {
 	route.Route.IdleTimeout = durationpb.New(timeout)
 	return route
 }
 
-func withMirrorPolicy(route *envoy_route_v3.Route_Route, mirror string, weight int64) *envoy_route_v3.Route_Route {
-	route.Route.RequestMirrorPolicies = []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
+func withMirrorPolicy(route *envoy_config_route_v3.Route_Route, mirror string, weight int64) *envoy_config_route_v3.Route_Route {
+	route.Route.RequestMirrorPolicies = []*envoy_config_route_v3.RouteAction_RequestMirrorPolicy{{
 		Cluster: mirror,
-		RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+		RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
 			DefaultValue: &envoy_type_v3.FractionalPercent{
 				Numerator:   uint32(weight),
 				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 			},
-		}}}
+		},
+	}}
 	return route
 }
 
-func withPrefixRewrite(route *envoy_route_v3.Route_Route, replacement string) *envoy_route_v3.Route_Route {
+func withPrefixRewrite(route *envoy_config_route_v3.Route_Route, replacement string) *envoy_config_route_v3.Route_Route {
 	route.Route.PrefixRewrite = replacement
 	return route
 }
 
-func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_route_v3.Route_Route {
-	route.Route.RetryPolicy = &envoy_route_v3.RetryPolicy{
+func withRetryPolicy(route *envoy_config_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_config_route_v3.Route_Route {
+	route.Route.RetryPolicy = &envoy_config_route_v3.RetryPolicy{
 		RetryOn: retryOn,
 	}
 	if numRetries > 0 {
@@ -317,19 +317,19 @@ func withRetryPolicy(route *envoy_route_v3.Route_Route, retryOn string, numRetri
 	return route
 }
 
-func withWebsocket(route *envoy_route_v3.Route_Route) *envoy_route_v3.Route_Route {
+func withWebsocket(route *envoy_config_route_v3.Route_Route) *envoy_config_route_v3.Route_Route {
 	route.Route.UpgradeConfigs = append(route.Route.UpgradeConfigs,
-		&envoy_route_v3.RouteAction_UpgradeConfig{
+		&envoy_config_route_v3.RouteAction_UpgradeConfig{
 			UpgradeType: "websocket",
 		},
 	)
 	return route
 }
 
-func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Route_Route {
-	route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_route_v3.RouteAction_HashPolicy{
-		PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
-			Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
+func withSessionAffinity(route *envoy_config_route_v3.Route_Route) *envoy_config_route_v3.Route_Route {
+	route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_config_route_v3.RouteAction_HashPolicy{
+		PolicySpecifier: &envoy_config_route_v3.RouteAction_HashPolicy_Cookie_{
+			Cookie: &envoy_config_route_v3.RouteAction_HashPolicy_Cookie{
 				Name: "X-Contour-Session-Affinity",
 				Ttl:  durationpb.New(0),
 				Path: "/",
@@ -346,28 +346,28 @@ type hashPolicySpecifier struct {
 	parameterName string
 }
 
-func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies ...hashPolicySpecifier) *envoy_route_v3.Route_Route {
+func withRequestHashPolicySpecifiers(route *envoy_config_route_v3.Route_Route, policies ...hashPolicySpecifier) *envoy_config_route_v3.Route_Route {
 	for _, p := range policies {
-		hp := &envoy_route_v3.RouteAction_HashPolicy{
+		hp := &envoy_config_route_v3.RouteAction_HashPolicy{
 			Terminal: p.terminal,
 		}
 		if p.hashSourceIP {
-			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
-				ConnectionProperties: &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties{
+			hp.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
+				ConnectionProperties: &envoy_config_route_v3.RouteAction_HashPolicy_ConnectionProperties{
 					SourceIp: true,
 				},
 			}
 		}
 		if len(p.headerName) > 0 {
-			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
-				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+			hp.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_Header_{
+				Header: &envoy_config_route_v3.RouteAction_HashPolicy_Header{
 					HeaderName: p.headerName,
 				},
 			}
 		}
 		if len(p.parameterName) > 0 {
-			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
-				QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+			hp.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_QueryParameter_{
+				QueryParameter: &envoy_config_route_v3.RouteAction_HashPolicy_QueryParameter{
 					Name: p.parameterName,
 				},
 			}
@@ -377,10 +377,10 @@ func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies
 	return route
 }
 
-func withRedirect() *envoy_route_v3.Route_Redirect {
-	return &envoy_route_v3.Route_Redirect{
-		Redirect: &envoy_route_v3.RedirectAction{
-			SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+func withRedirect() *envoy_config_route_v3.Route_Redirect {
+	return &envoy_config_route_v3.Route_Redirect{
+		Redirect: &envoy_config_route_v3.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
 		},
@@ -398,20 +398,20 @@ type weightedCluster struct {
 	weight uint32
 }
 
-func routeWeightedCluster(clusters ...weightedCluster) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+func routeWeightedCluster(clusters ...weightedCluster) *envoy_config_route_v3.Route_Route {
+	return &envoy_config_route_v3.Route_Route{
+		Route: &envoy_config_route_v3.RouteAction{
+			ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
 				WeightedClusters: weightedClusters(clusters),
 			},
 		},
 	}
 }
 
-func weightedClusters(clusters []weightedCluster) *envoy_route_v3.WeightedCluster {
-	var wc envoy_route_v3.WeightedCluster
+func weightedClusters(clusters []weightedCluster) *envoy_config_route_v3.WeightedCluster {
+	var wc envoy_config_route_v3.WeightedCluster
 	for _, c := range clusters {
-		wc.Clusters = append(wc.Clusters, &envoy_route_v3.WeightedCluster_ClusterWeight{
+		wc.Clusters = append(wc.Clusters, &envoy_config_route_v3.WeightedCluster_ClusterWeight{
 			Name:   c.name,
 			Weight: wrapperspb.UInt32(c.weight),
 		})
@@ -420,18 +420,18 @@ func weightedClusters(clusters []weightedCluster) *envoy_route_v3.WeightedCluste
 }
 
 // appendFilterChains is a helper to turn variadic FilterChain arguments into the corresponding  slice.
-func appendFilterChains(chains ...*envoy_listener_v3.FilterChain) []*envoy_listener_v3.FilterChain {
+func appendFilterChains(chains ...*envoy_config_listener_v3.FilterChain) []*envoy_config_listener_v3.FilterChain {
 	return chains
 }
 
 // filterchaintls returns a FilterChain wrapping the given virtual host.
-func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
+func filterchaintls(domain string, secret *core_v1.Secret, filter *envoy_config_listener_v3.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_config_listener_v3.FilterChain {
 	return envoy_v3.FilterChainTLS(
 		domain,
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: secret},
-			envoy_tls_v3.TlsParameters_TLSv1_2,
-			envoy_tls_v3.TlsParameters_TLSv1_3,
+			envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+			envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 			nil,
 			peerValidationContext,
 			alpn...),
@@ -440,12 +440,12 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.
 }
 
 // filterchaintlsfallback returns a FilterChain for the given TLS fallback certificate.
-func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
+func filterchaintlsfallback(fallbackSecret *core_v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_config_listener_v3.FilterChain {
 	return envoy_v3.FilterChainTLSFallback(
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
-			envoy_tls_v3.TlsParameters_TLSv1_2,
-			envoy_tls_v3.TlsParameters_TLSv1_3,
+			envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+			envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 			nil,
 			peerValidationContext,
 			alpn...),
@@ -454,51 +454,51 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 				DefaultFilters().
 				RouteConfigName(xdscache_v3.ENVOY_FALLBACK_ROUTECONFIG).
 				MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+				AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 				Get(),
 		),
 	)
 }
 
-func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
+func httpsFilterFor(vhost string) *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		Get()
 }
 
-func httpFilterForGateway() *envoy_listener_v3.Filter {
+func httpFilterForGateway() *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		DefaultFilters().
 		RouteConfigName("http-80").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		EnableWebsockets(true).
 		Get()
 }
 
-func httpsFilterForGateway(listener, vhost string) *envoy_listener_v3.Filter {
+func httpsFilterForGateway(listener, vhost string) *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join(listener, vhost)).
 		MetricsPrefix(listener).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		EnableWebsockets(true).
 		Get()
 }
 
 // httpsFilterWithXfccFor does the same as httpsFilterFor but enable
 // client certs details forwarding
-func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envoy_listener_v3.Filter {
+func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		ForwardClientCertificate(d).
 		Get()
 }
@@ -508,52 +508,52 @@ func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envo
 // filter chain.
 func authzFilterFor(
 	vhost string,
-	authz *envoy_config_filter_http_ext_authz_v3.ExtAuthz,
-) *envoy_listener_v3.Filter {
+	authz *envoy_filter_http_ext_authz_v3.ExtAuthz,
+) *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.ext_authz",
-			ConfigType: &http.HttpFilter_TypedConfig{
+		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+			Name: envoy_v3.ExtAuthzFilterName,
+			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(authz),
 			},
 		}).
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		Get()
 }
 
 func jwtAuthnFilterFor(
 	vhost string,
-	jwt *envoy_jwt_v3.JwtAuthentication,
-) *envoy_listener_v3.Filter {
+	jwt *envoy_filter_http_jwt_authn_v3.JwtAuthentication,
+) *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
-		AddFilter(&http.HttpFilter{
-			Name: "envoy.filters.http.jwt_authn",
-			ConfigType: &http.HttpFilter_TypedConfig{
+		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+			Name: envoy_v3.JWTAuthnFilterName,
+			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(jwt),
 			},
 		}).
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		Get()
 }
 
-func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
-	return &envoy_listener_v3.Filter{
+func tcpproxy(statPrefix, cluster string) *envoy_config_listener_v3.Filter {
+	return &envoy_config_listener_v3.Filter{
 		Name: wellknown.TCPProxy,
-		ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+		ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_network_tcp_proxy_v3.TcpProxy{
 				StatPrefix: statPrefix,
-				ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_Cluster{
+				ClusterSpecifier: &envoy_filter_network_tcp_proxy_v3.TcpProxy_Cluster{
 					Cluster: cluster,
 				},
-				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo),
+				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
 				IdleTimeout: durationpb.New(9001 * time.Second),
 			}),
 		},
@@ -565,48 +565,48 @@ type clusterWeight struct {
 	weight uint32
 }
 
-func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_listener_v3.Filter {
-	weightedClusters := &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{}
+func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_config_listener_v3.Filter {
+	weightedClusters := &envoy_filter_network_tcp_proxy_v3.TcpProxy_WeightedCluster{}
 	for _, clusterWeight := range clusters {
-		weightedClusters.Clusters = append(weightedClusters.Clusters, &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
+		weightedClusters.Clusters = append(weightedClusters.Clusters, &envoy_filter_network_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
 			Name:   clusterWeight.name,
 			Weight: clusterWeight.weight,
 		})
 	}
 
-	return &envoy_listener_v3.Filter{
+	return &envoy_config_listener_v3.Filter{
 		Name: wellknown.TCPProxy,
-		ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+		ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_network_tcp_proxy_v3.TcpProxy{
 				StatPrefix: statPrefix,
-				ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
+				ClusterSpecifier: &envoy_filter_network_tcp_proxy_v3.TcpProxy_WeightedClusters{
 					WeightedClusters: weightedClusters,
 				},
-				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo),
+				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
 				IdleTimeout: durationpb.New(9001 * time.Second),
 			}),
 		},
 	}
 }
 
-func statsListener() *envoy_listener_v3.Listener {
+func statsListener() *envoy_config_listener_v3.Listener {
 	// Single listener with metrics and health endpoints.
 	listeners := envoy_v3.StatsListeners(
-		contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
-		contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
+		contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
+		contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
 	return listeners[0]
 }
 
-func envoyAdminListener(port int) *envoy_listener_v3.Listener {
+func envoyAdminListener(port int) *envoy_config_listener_v3.Listener {
 	return envoy_v3.AdminListener(port)
 }
 
-func defaultHTTPListener() *envoy_listener_v3.Listener {
-	return &envoy_listener_v3.Listener{
+func defaultHTTPListener() *envoy_config_listener_v3.Listener {
+	return &envoy_config_listener_v3.Listener{
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 		),
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 	}

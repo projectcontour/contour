@@ -16,15 +16,19 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -32,24 +36,21 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
@@ -68,24 +69,24 @@ func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c
 	hcm := envoy_v3.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
 		DefaultFilters().
-		AddFilter(&http.HttpFilter{
+		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 			Name: wellknown.HTTPRateLimit,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ratelimit_v3.RateLimit{
 					Domain:          "contour",
 					FailureModeDeny: true,
-					RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-						GrpcService: &envoy_core_v3.GrpcService{
-							TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-								EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+					RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
+						GrpcService: &envoy_config_core_v3.GrpcService{
+							TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+								EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 									ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
 									Authority:   "extension.projectcontour.ratelimit",
 								},
 							},
 						},
-						TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+						TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 					},
 				}),
 			},
@@ -94,7 +95,7 @@ func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c
 
 	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
 
-	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			httpListener,
@@ -103,23 +104,23 @@ func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c
 }
 
 func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-					Global: &contour_api_v1.GlobalRateLimitPolicy{
+				RateLimitPolicy: &contour_v1.RateLimitPolicy{
+					Global: &contour_v1.GlobalRateLimitPolicy{
 						Disabled: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
@@ -131,7 +132,7 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 	}
 
 	if tls.enabled {
-		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+		p.Spec.VirtualHost.TLS = &contour_v1.TLS{
 			SecretName:                "tls-cert",
 			EnableFallbackCertificate: tls.fallbackEnabled,
 		}
@@ -142,13 +143,13 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 
 	switch tls.enabled {
 	case true:
-		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType, "https/foo.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl: routeType,
 			Resources: resources(t,
 				envoy_v3.RouteConfiguration(
 					"https/foo.com",
 					envoy_v3.VirtualHost("foo.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeCluster("default/s1/80/da39a3ee5e"),
 						},
@@ -157,13 +158,13 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 			),
 		})
 		if tls.fallbackEnabled {
-			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 				TypeUrl: routeType,
 				Resources: resources(t,
 					envoy_v3.RouteConfiguration(
 						"ingress_fallbackcert",
 						envoy_v3.VirtualHost("foo.com",
-							&envoy_route_v3.Route{
+							&envoy_config_route_v3.Route{
 								Match:  routePrefix("/"),
 								Action: routeCluster("default/s1/80/da39a3ee5e"),
 							},
@@ -173,13 +174,13 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 			})
 		}
 	default:
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl: routeType,
 			Resources: resources(t,
 				envoy_v3.RouteConfiguration(
 					"ingress_http",
 					envoy_v3.VirtualHost("foo.com",
-						&envoy_route_v3.Route{
+						&envoy_config_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeCluster("default/s1/80/da39a3ee5e"),
 						},
@@ -191,24 +192,24 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh ResourceEventHandlerWra
 }
 
 func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-					Global: &contour_api_v1.GlobalRateLimitPolicy{
-						Descriptors: []contour_api_v1.RateLimitDescriptor{
+				RateLimitPolicy: &contour_v1.RateLimitPolicy{
+					Global: &contour_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_v1.RateLimitDescriptor{
 							{
-								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								Entries: []contour_v1.RateLimitDescriptorEntry{
 									{
-										RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+										RemoteAddress: &contour_v1.RemoteAddressDescriptor{},
 									},
 									{
-										GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+										GenericKey: &contour_v1.GenericKeyDescriptor{Value: "generic-key-value"},
 									},
 								},
 							},
@@ -216,9 +217,9 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
@@ -230,7 +231,7 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 	}
 
 	if tls.enabled {
-		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+		p.Spec.VirtualHost.TLS = &contour_v1.TLS{
 			SecretName:                "tls-cert",
 			EnableFallbackCertificate: tls.fallbackEnabled,
 		}
@@ -239,23 +240,23 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 	rh.OnAdd(p)
 	c.Status(p).IsValid()
 
-	route := &envoy_route_v3.Route{
+	route := &envoy_config_route_v3.Route{
 		Match:  routePrefix("/"),
 		Action: routeCluster("default/s1/80/da39a3ee5e"),
 	}
 
 	vhost := envoy_v3.VirtualHost("foo.com", route)
-	vhost.RateLimits = []*envoy_route_v3.RateLimit{
+	vhost.RateLimits = []*envoy_config_route_v3.RateLimit{
 		{
-			Actions: []*envoy_route_v3.RateLimit_Action{
+			Actions: []*envoy_config_route_v3.RateLimit_Action{
 				{
-					ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-						RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+					ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+						RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 					},
 				},
 				{
-					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+					ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+						GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
 					},
 				},
 			},
@@ -264,18 +265,18 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 
 	switch tls.enabled {
 	case true:
-		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType, "https/foo.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
 		})
 		if tls.fallbackEnabled {
-			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 				TypeUrl:   routeType,
 				Resources: resources(t, envoy_v3.RouteConfiguration("ingress_fallbackcert", vhost)),
 			})
 		}
 	default:
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
 		})
@@ -283,38 +284,38 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 }
 
 func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-					Global: &contour_api_v1.GlobalRateLimitPolicy{
+				RateLimitPolicy: &contour_v1.RateLimitPolicy{
+					Global: &contour_v1.GlobalRateLimitPolicy{
 						Disabled: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-						Global: &contour_api_v1.GlobalRateLimitPolicy{
-							Descriptors: []contour_api_v1.RateLimitDescriptor{
+					RateLimitPolicy: &contour_v1.RateLimitPolicy{
+						Global: &contour_v1.GlobalRateLimitPolicy{
+							Descriptors: []contour_v1.RateLimitDescriptor{
 								{
-									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									Entries: []contour_v1.RateLimitDescriptorEntry{
 										{
-											RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+											RemoteAddress: &contour_v1.RemoteAddressDescriptor{},
 										},
 										{
-											GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+											GenericKey: &contour_v1.GenericKeyDescriptor{Value: "generic-key-value"},
 										},
 									},
 								},
@@ -327,7 +328,7 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 	}
 
 	if tls.enabled {
-		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+		p.Spec.VirtualHost.TLS = &contour_v1.TLS{
 			SecretName:                "tls-cert",
 			EnableFallbackCertificate: tls.fallbackEnabled,
 		}
@@ -336,20 +337,20 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 	rh.OnAdd(p)
 	c.Status(p).IsValid()
 
-	route := &envoy_route_v3.Route{
+	route := &envoy_config_route_v3.Route{
 		Match: routePrefix("/"),
-		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_route_v3.Route_Route) {
-			r.Route.RateLimits = []*envoy_route_v3.RateLimit{
+		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_config_route_v3.Route_Route) {
+			r.Route.RateLimits = []*envoy_config_route_v3.RateLimit{
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
 							},
 						},
 					},
@@ -362,18 +363,18 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 
 	switch tls.enabled {
 	case true:
-		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType, "https/foo.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
 		})
 		if tls.fallbackEnabled {
-			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 				TypeUrl:   routeType,
 				Resources: resources(t, envoy_v3.RouteConfiguration("ingress_fallbackcert", vhost)),
 			})
 		}
 	default:
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
 		})
@@ -381,24 +382,24 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerW
 }
 
 func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-					Global: &contour_api_v1.GlobalRateLimitPolicy{
-						Descriptors: []contour_api_v1.RateLimitDescriptor{
+				RateLimitPolicy: &contour_v1.RateLimitPolicy{
+					Global: &contour_v1.GlobalRateLimitPolicy{
+						Descriptors: []contour_v1.RateLimitDescriptor{
 							{
-								Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								Entries: []contour_v1.RateLimitDescriptorEntry{
 									{
-										RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+										RemoteAddress: &contour_v1.RemoteAddressDescriptor{},
 									},
 									{
-										GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value-vhost"},
+										GenericKey: &contour_v1.GenericKeyDescriptor{Value: "generic-key-value-vhost"},
 									},
 								},
 							},
@@ -406,24 +407,24 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-						Global: &contour_api_v1.GlobalRateLimitPolicy{
-							Descriptors: []contour_api_v1.RateLimitDescriptor{
+					RateLimitPolicy: &contour_v1.RateLimitPolicy{
+						Global: &contour_v1.GlobalRateLimitPolicy{
+							Descriptors: []contour_v1.RateLimitDescriptor{
 								{
-									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									Entries: []contour_v1.RateLimitDescriptorEntry{
 										{
-											RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+											RemoteAddress: &contour_v1.RemoteAddressDescriptor{},
 										},
 										{
-											GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+											GenericKey: &contour_v1.GenericKeyDescriptor{Value: "generic-key-value"},
 										},
 									},
 								},
@@ -436,7 +437,7 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 	}
 
 	if tls.enabled {
-		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+		p.Spec.VirtualHost.TLS = &contour_v1.TLS{
 			SecretName:                "tls-cert",
 			EnableFallbackCertificate: tls.fallbackEnabled,
 		}
@@ -445,20 +446,20 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 	rh.OnAdd(p)
 	c.Status(p).IsValid()
 
-	route := &envoy_route_v3.Route{
+	route := &envoy_config_route_v3.Route{
 		Match: routePrefix("/"),
-		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_route_v3.Route_Route) {
-			r.Route.RateLimits = []*envoy_route_v3.RateLimit{
+		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_config_route_v3.Route_Route) {
+			r.Route.RateLimits = []*envoy_config_route_v3.RateLimit{
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
 							},
 						},
 					},
@@ -468,17 +469,17 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 	}
 
 	vhost := envoy_v3.VirtualHost("foo.com", route)
-	vhost.RateLimits = []*envoy_route_v3.RateLimit{
+	vhost.RateLimits = []*envoy_config_route_v3.RateLimit{
 		{
-			Actions: []*envoy_route_v3.RateLimit_Action{
+			Actions: []*envoy_config_route_v3.RateLimit_Action{
 				{
-					ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-						RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+					ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+						RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 					},
 				},
 				{
-					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value-vhost"},
+					ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+						GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value-vhost"},
 					},
 				},
 			},
@@ -487,18 +488,18 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 
 	switch tls.enabled {
 	case true:
-		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType, "https/foo.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
 		})
 		if tls.fallbackEnabled {
-			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 				TypeUrl:   routeType,
 				Resources: resources(t, envoy_v3.RouteConfiguration("ingress_fallbackcert", vhost)),
 			})
 		}
 	default:
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
 		})
@@ -506,33 +507,33 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh ResourceEvent
 }
 
 func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour, tls tlsConfig) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-						Global: &contour_api_v1.GlobalRateLimitPolicy{
-							Descriptors: []contour_api_v1.RateLimitDescriptor{
+					RateLimitPolicy: &contour_v1.RateLimitPolicy{
+						Global: &contour_v1.GlobalRateLimitPolicy{
+							Descriptors: []contour_v1.RateLimitDescriptor{
 								{
-									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									Entries: []contour_v1.RateLimitDescriptorEntry{
 										{
-											RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+											RemoteAddress: &contour_v1.RemoteAddressDescriptor{},
 										},
 										{
-											GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+											GenericKey: &contour_v1.GenericKeyDescriptor{Value: "generic-key-value"},
 										},
 									},
 								},
@@ -545,7 +546,7 @@ func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventH
 	}
 
 	if tls.enabled {
-		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+		p.Spec.VirtualHost.TLS = &contour_v1.TLS{
 			SecretName:                "tls-cert",
 			EnableFallbackCertificate: tls.fallbackEnabled,
 		}
@@ -554,20 +555,20 @@ func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventH
 	rh.OnAdd(p)
 	c.Status(p).IsValid()
 
-	route := &envoy_route_v3.Route{
+	route := &envoy_config_route_v3.Route{
 		Match: routePrefix("/"),
-		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_route_v3.Route_Route) {
-			r.Route.RateLimits = []*envoy_route_v3.RateLimit{
+		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_config_route_v3.Route_Route) {
+			r.Route.RateLimits = []*envoy_config_route_v3.RateLimit{
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
 							},
 						},
 					},
@@ -577,12 +578,12 @@ func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventH
 	}
 
 	vhost := envoy_v3.VirtualHost("foo.com", route)
-	vhost.RateLimits = []*envoy_route_v3.RateLimit{
+	vhost.RateLimits = []*envoy_config_route_v3.RateLimit{
 		{
-			Actions: []*envoy_route_v3.RateLimit_Action{
+			Actions: []*envoy_config_route_v3.RateLimit_Action{
 				{
-					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+					ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+						GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{
 							DescriptorKey:   "generic-key-vhost",
 							DescriptorValue: "generic-key-vhost",
 						},
@@ -594,18 +595,18 @@ func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventH
 
 	switch tls.enabled {
 	case true:
-		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType, "https/foo.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
 		})
 		if tls.fallbackEnabled {
-			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			c.Request(routeType, "ingress_fallbackcert").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 				TypeUrl:   routeType,
 				Resources: resources(t, envoy_v3.RouteConfiguration("ingress_fallbackcert", vhost)),
 			})
 		}
 	default:
-		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 			TypeUrl:   routeType,
 			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
 		})
@@ -613,50 +614,50 @@ func defaultGlobalRateLimitVhostRateLimitDefined(t *testing.T, rh ResourceEventH
 }
 
 func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
-	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-					Global: &contour_api_v1.GlobalRateLimitPolicy{
+				RateLimitPolicy: &contour_v1.RateLimitPolicy{
+					Global: &contour_v1.GlobalRateLimitPolicy{
 						Disabled: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Services: []contour_api_v1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "s1",
 							Port: 80,
 						},
 					},
-					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
-						Global: &contour_api_v1.GlobalRateLimitPolicy{
-							Descriptors: []contour_api_v1.RateLimitDescriptor{
+					RateLimitPolicy: &contour_v1.RateLimitPolicy{
+						Global: &contour_v1.GlobalRateLimitPolicy{
+							Descriptors: []contour_v1.RateLimitDescriptor{
 								// first descriptor
 								{
-									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									Entries: []contour_v1.RateLimitDescriptorEntry{
 										{
-											RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+											RemoteAddress: &contour_v1.RemoteAddressDescriptor{},
 										},
 										{
-											GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+											GenericKey: &contour_v1.GenericKeyDescriptor{Value: "generic-key-value"},
 										},
 									},
 								},
 								// second descriptor
 								{
-									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+									Entries: []contour_v1.RateLimitDescriptorEntry{
 										{
-											RequestHeader: &contour_api_v1.RequestHeaderDescriptor{HeaderName: "X-Contour", DescriptorKey: "header-descriptor"},
+											RequestHeader: &contour_v1.RequestHeaderDescriptor{HeaderName: "X-Contour", DescriptorKey: "header-descriptor"},
 										},
 										{
-											GenericKey: &contour_api_v1.GenericKeyDescriptor{Key: "generic-key-key", Value: "generic-key-value-2"},
+											GenericKey: &contour_v1.GenericKeyDescriptor{Key: "generic-key-key", Value: "generic-key-value-2"},
 										},
 									},
 								},
@@ -671,39 +672,40 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 	rh.OnAdd(p)
 	c.Status(p).IsValid()
 
-	route := &envoy_route_v3.Route{
+	route := &envoy_config_route_v3.Route{
 		Match: routePrefix("/"),
-		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_route_v3.Route_Route) {
-			r.Route.RateLimits = []*envoy_route_v3.RateLimit{
+		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_config_route_v3.Route_Route) {
+			r.Route.RateLimits = []*envoy_config_route_v3.RateLimit{
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
-								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_config_route_v3.RateLimit_Action_RemoteAddress{},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
 							},
 						},
 					},
 				},
 				{
-					Actions: []*envoy_route_v3.RateLimit_Action{
+					Actions: []*envoy_config_route_v3.RateLimit_Action{
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RequestHeaders_{
-								RequestHeaders: &envoy_route_v3.RateLimit_Action_RequestHeaders{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_RequestHeaders_{
+								RequestHeaders: &envoy_config_route_v3.RateLimit_Action_RequestHeaders{
 									HeaderName:    "X-Contour",
 									DescriptorKey: "header-descriptor",
 								},
 							},
 						},
 						{
-							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
-								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							ActionSpecifier: &envoy_config_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_config_route_v3.RateLimit_Action_GenericKey{
 									DescriptorKey:   "generic-key-key",
-									DescriptorValue: "generic-key-value-2"},
+									DescriptorValue: "generic-key-value-2",
+								},
 							},
 						},
 					},
@@ -712,11 +714,10 @@ func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh ResourceEvent
 		}),
 	}
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl:   routeType,
 		Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", envoy_v3.VirtualHost("foo.com", route))),
 	})
-
 }
 
 type tlsConfig struct {
@@ -808,18 +809,18 @@ func TestGlobalRateLimiting(t *testing.T) {
 								Namespace: "default",
 							}
 
-							httpProxyProcessor.GlobalRateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-								ExtensionService: contour_api_v1alpha1.NamespacedName{
+							httpProxyProcessor.GlobalRateLimitService = &contour_v1alpha1.RateLimitServiceConfig{
+								ExtensionService: contour_v1alpha1.NamespacedName{
 									Name:      "extension",
 									Namespace: "ratelimit",
 								},
 								Domain: "contour",
-								DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-									Descriptors: []contour_api_v1.RateLimitDescriptor{
+								DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+									Descriptors: []contour_v1.RateLimitDescriptor{
 										{
-											Entries: []contour_api_v1.RateLimitDescriptorEntry{
+											Entries: []contour_v1.RateLimitDescriptorEntry{
 												{
-													GenericKey: &contour_api_v1.GenericKeyDescriptor{
+													GenericKey: &contour_v1.GenericKeyDescriptor{
 														Key:   "generic-key-vhost",
 														Value: "generic-key-vhost",
 													},
@@ -837,18 +838,10 @@ func TestGlobalRateLimiting(t *testing.T) {
 			defer done()
 
 			// Add common test fixtures.
-			rh.OnAdd(fixture.NewService("s1").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(fixture.NewService("s2").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("tls-cert"),
-				Type:       "kubernetes.io/tls",
-				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-			})
-			rh.OnAdd(&corev1.Secret{
-				ObjectMeta: fixture.ObjectMeta("fallback-cert"),
-				Type:       "kubernetes.io/tls",
-				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-			})
+			rh.OnAdd(fixture.NewService("s1").WithPorts(core_v1.ServicePort{Port: 80}))
+			rh.OnAdd(fixture.NewService("s2").WithPorts(core_v1.ServicePort{Port: 80}))
+			rh.OnAdd(featuretests.TLSSecret(t, "tls-cert", &featuretests.ServerCertificate))
+			rh.OnAdd(featuretests.TLSSecret(t, "fallback-cert", &featuretests.ServerCertificate))
 
 			f(t, rh, c)
 		})

@@ -9,7 +9,7 @@ layout: page
 evolve service networking APIs within the Kubernetes ecosystem. Gateway API consists of multiple resources that provide
 user interfaces to expose Kubernetes applications- Services, Ingress, and more.
 
-This guide covers using version **v1beta1** of the Gateway API, with Contour `v1.22.0` or higher.
+This guide covers using version **v1** of the Gateway API, with Contour `v1.28.0` or higher.
 
 ### Background
 
@@ -43,9 +43,9 @@ Contour supports two modes of provisioning for use with Gateway API: **static** 
 
 In **static** provisioning, the platform operator defines a `Gateway` resource, and then manually deploys a Contour instance corresponding to that `Gateway` resource.
 It is up to the platform operator to ensure that all configuration matches between the `Gateway` and the Contour/Envoy resources.
-With static provisioning, Contour can be configured with either a [controller name][8], or a specific gateway (see the [API documentation][7].)
-If configured with a controller name, Contour will process the oldest `GatewayClass`, its oldest `Gateway`, and that `Gateway's` routes, for the given controller name.
-If configured with a specific gateway, Contour will process that `Gateway` and its routes.
+Contour will then process that `Gateway` and its routes.
+
+**Note:** configuring Contour with a controller name is deprecated and will be removed in a future release. Use a specific gateway reference or dynamic provisioning instead.
 
 In **dynamic** provisioning, the platform operator first deploys Contour's Gateway provisioner. Then, the platform operator defines a `Gateway` resource, and the provisioner automatically deploys a Contour instance that corresponds to the `Gateway's` configuration and will process that `Gateway` and its routes.
 
@@ -63,7 +63,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -80,7 +80,7 @@ metadata:
   name: projectcontour
 ---
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour
@@ -109,7 +109,7 @@ This command creates:
 - Envoy DaemonSet / Service
 - Contour ConfigMap
 
-Update the Contour configmap to enable Gateway API processing by specifying a gateway controller name, and restart Contour to pick up the config change:
+Update the Contour configmap to enable Gateway API processing by specifying a gateway, and restart Contour to pick up the config change:
 
 ```shell
 kubectl apply -f - <<EOF
@@ -121,7 +121,9 @@ metadata:
 data:
   contour.yaml: |
     gateway:
-      controllerName: projectcontour.io/gateway-controller
+      gatewayRef:
+        name: cotour
+        namespace: projectcontour
 EOF
 
 kubectl -n projectcontour rollout restart deployment/contour
@@ -149,7 +151,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -162,7 +164,7 @@ Create a Gateway:
 ```shell
 kubectl apply -f - <<EOF
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour
@@ -246,7 +248,7 @@ A simple example of a parameterized Contour GatewayClass that provisions Envoy a
 
 ```yaml
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour-with-envoy-deployment
 spec:

@@ -20,13 +20,14 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testHeaderConditionMatch(namespace string) {
@@ -47,26 +48,26 @@ func testHeaderConditionMatch(namespace string) {
 
 		// This HTTPProxy tests everything except the "notpresent" match type,
 		// which is tested separately below.
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "header-conditions",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "headerconditions.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-present",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:    "Target-Present",
 									Present: true,
 								},
@@ -74,15 +75,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-contains",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:     "Target-Contains",
 									Contains: "ContainsValue",
 								},
@@ -90,15 +91,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-contains-case-insensitive",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:       "Target-Contains",
 									Contains:   "cOnTainSvalue",
 									IgnoreCase: true,
@@ -107,15 +108,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-notcontains",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:        "Target-NotContains",
 									NotContains: "ContainsValue",
 								},
@@ -123,15 +124,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-notcontains-set-missing-as-empty",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:                "Target-NotContains",
 									NotContains:         "ContainsValue",
 									TreatMissingAsEmpty: true,
@@ -141,7 +142,7 @@ func testHeaderConditionMatch(namespace string) {
 							// contains statement would match anything and make the tests
 							// brittle.
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:  "X-Force-NotContains-Case",
 									Exact: "True",
 								},
@@ -149,15 +150,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-exact",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:  "Target-Exact",
 									Exact: "ExactValue",
 								},
@@ -165,16 +166,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
-
 								Name: "echo-header-exact-case-insensitive",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:       "Target-Exact",
 									Exact:      "exactvalue",
 									IgnoreCase: true,
@@ -183,15 +183,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-notexact",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:     "Target-NotExact",
 									NotExact: "ExactValue",
 								},
@@ -199,15 +199,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-notexact-set-missing-as-empty",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:                "Target-NotExact",
 									NotContains:         "ExactValue",
 									TreatMissingAsEmpty: true,
@@ -217,7 +217,7 @@ func testHeaderConditionMatch(namespace string) {
 							// contains statement would match anything and make the tests
 							// brittle.
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:  "X-Force-NotExact-Case",
 									Exact: "True",
 								},
@@ -225,15 +225,15 @@ func testHeaderConditionMatch(namespace string) {
 						},
 					},
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-header-regex",
 								Port: 80,
 							},
 						},
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
-								Header: &contourv1.HeaderMatchCondition{
+								Header: &contour_v1.HeaderMatchCondition{
 									Name:  "Target-Regex",
 									Regex: "Regex.*",
 								},
@@ -370,17 +370,17 @@ func testHeaderConditionMatch(namespace string) {
 				return err
 			}
 
-			p.Spec.Routes = []contourv1.Route{
+			p.Spec.Routes = []contour_v1.Route{
 				{
-					Services: []contourv1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "echo-header-present",
 							Port: 80,
 						},
 					},
-					Conditions: []contourv1.MatchCondition{
+					Conditions: []contour_v1.MatchCondition{
 						{
-							Header: &contourv1.HeaderMatchCondition{
+							Header: &contour_v1.HeaderMatchCondition{
 								Name:    "Target-Present",
 								Present: true,
 							},
@@ -388,15 +388,15 @@ func testHeaderConditionMatch(namespace string) {
 					},
 				},
 				{
-					Services: []contourv1.Service{
+					Services: []contour_v1.Service{
 						{
 							Name: "echo-header-notpresent",
 							Port: 80,
 						},
 					},
-					Conditions: []contourv1.MatchCondition{
+					Conditions: []contour_v1.MatchCondition{
 						{
-							Header: &contourv1.HeaderMatchCondition{
+							Header: &contour_v1.HeaderMatchCondition{
 								Name:       "Target-Present",
 								NotPresent: true,
 							},

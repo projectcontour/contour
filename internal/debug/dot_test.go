@@ -18,11 +18,12 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug/mocks"
-	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestWriteDotEscapesLabels(t *testing.T) {
@@ -126,7 +127,7 @@ func newTestService() *dag.Service {
 			Weight:           1,
 			ServiceName:      "testService",
 			ServiceNamespace: "projectcontour",
-			ServicePort: v1.ServicePort{
+			ServicePort: core_v1.ServicePort{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       8080,

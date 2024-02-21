@@ -14,8 +14,9 @@
 package v1alpha1
 
 import (
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 // ExtensionProtocolVersion is the version of the GRPC protocol used
@@ -74,7 +75,7 @@ type ExtensionServiceSpec struct {
 
 	// UpstreamValidation defines how to verify the backend service's certificate
 	// +optional
-	UpstreamValidation *contour_api_v1.UpstreamValidation `json:"validation,omitempty"`
+	UpstreamValidation *contour_v1.UpstreamValidation `json:"validation,omitempty"`
 
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
 	// Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.
@@ -88,12 +89,12 @@ type ExtensionServiceSpec struct {
 	// here.
 	//
 	// +optional
-	LoadBalancerPolicy *contour_api_v1.LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
+	LoadBalancerPolicy *contour_v1.LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 
 	// The timeout policy for requests to the services.
 	//
 	// +optional
-	TimeoutPolicy *contour_api_v1.TimeoutPolicy `json:"timeoutPolicy,omitempty"`
+	TimeoutPolicy *contour_v1.TimeoutPolicy `json:"timeoutPolicy,omitempty"`
 
 	// This field sets the version of the GRPC protocol that Envoy uses to
 	// send requests to the extension service. Since Contour always uses the
@@ -120,7 +121,7 @@ type ExtensionServiceStatus struct {
 	// +patchStrategy=merge
 	// +listType=map
 	// +listMapKey=type
-	Conditions []contour_api_v1.DetailedCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+	Conditions []contour_v1.DetailedCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 }
 
 // +genclient
@@ -133,8 +134,8 @@ type ExtensionServiceStatus struct {
 // API so that Contour API features can be implemented by collaborating
 // components.
 type ExtensionService struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	meta_v1.TypeMeta   `json:",inline"`
+	meta_v1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   ExtensionServiceSpec   `json:"spec,omitempty"`
 	Status ExtensionServiceStatus `json:"status,omitempty"`
@@ -145,7 +146,7 @@ type ExtensionService struct {
 
 // ExtensionServiceList contains a list of ExtensionService resources.
 type ExtensionServiceList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ExtensionService `json:"items"`
+	meta_v1.TypeMeta `json:",inline"`
+	meta_v1.ListMeta `json:"metadata,omitempty"`
+	Items            []ExtensionService `json:"items"`
 }

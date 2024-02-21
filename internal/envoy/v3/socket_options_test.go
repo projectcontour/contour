@@ -16,46 +16,49 @@ package v3
 import (
 	"testing"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/projectcontour/contour/internal/envoy"
 )
 
 func TestSocketOptions(t *testing.T) {
 	// No options shall be set when value 0 is set.
 	so := NewSocketOptions().TOS(0).TrafficClass(0)
-	assert.Equal(t, len(so.options), 0)
+	assert.Empty(t, so.options)
 
 	so.TOS(64)
-	assert.Equal(t, so.Build(),
-		[]*envoy_core_v3.SocketOption{
+	assert.Equal(t,
+		[]*envoy_config_core_v3.SocketOption{
 			{
 				Description: "Set IPv4 TOS field",
 				Level:       envoy.IPPROTO_IP,
 				Name:        envoy.IP_TOS,
-				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 64},
-				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 64},
+				State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 			},
 		},
+		so.Build(),
 	)
 
 	so.TrafficClass(64)
-	assert.Equal(t, so.Build(),
-		[]*envoy_core_v3.SocketOption{
+	assert.Equal(t,
+		[]*envoy_config_core_v3.SocketOption{
 			{
 				Description: "Set IPv4 TOS field",
 				Level:       envoy.IPPROTO_IP,
 				Name:        envoy.IP_TOS,
-				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 64},
-				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 64},
+				State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 			},
 			{
 				Description: "Set IPv6 Traffic Class field",
 				Level:       envoy.IPPROTO_IPV6,
 				Name:        envoy.IPV6_TCLASS,
-				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 64},
-				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 64},
+				State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 			},
 		},
+		so.Build(),
 	)
 }

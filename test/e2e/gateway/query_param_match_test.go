@@ -17,13 +17,14 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testGatewayMultipleQueryParamMatch(namespace string, gateway types.NamespacedName) {
@@ -35,27 +36,27 @@ func testGatewayMultipleQueryParamMatch(namespace string, gateway types.Namespac
 		f.Fixtures.Echo.Deploy(namespace, "echo-3")
 		f.Fixtures.Echo.Deploy(namespace, "echo-4")
 
-		route := &gatewayapi_v1beta1.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
+		route := &gatewayapi_v1.HTTPRoute{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "httproute-1",
 			},
-			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1beta1.Hostname{"queryparams.gateway.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			Spec: gatewayapi_v1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1.Hostname{"queryparams.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
-				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+				Rules: []gatewayapi_v1.HTTPRouteRule{
 					{
-						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{QueryParams: gatewayapi.HTTPQueryParamMatches(map[string]string{"animal": "whale"})},
 						},
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-1", 80, 1),
 					},
 					{
-						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{
 							{QueryParams: gatewayapi.HTTPQueryParamMatches(map[string]string{"animal": "dolphin"})},
 						},
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-2", 80, 1),

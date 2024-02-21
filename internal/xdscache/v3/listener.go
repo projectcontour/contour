@@ -17,12 +17,15 @@ import (
 	"sort"
 	"sync"
 
-	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"google.golang.org/protobuf/proto"
+	"k8s.io/apimachinery/pkg/types"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
@@ -31,8 +34,6 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
-	"google.golang.org/protobuf/proto"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // nolint:revive
@@ -85,12 +86,12 @@ type ListenerConfig struct {
 	// AccessLogType defines if Envoy logs should be output as Envoy's default or JSON.
 	// Valid values: 'envoy', 'json'
 	// If not set, defaults to 'envoy'
-	AccessLogType contour_api_v1alpha1.AccessLogType
+	AccessLogType contour_v1alpha1.AccessLogType
 
 	// AccessLogJSONFields sets the fields that should be shown in JSON logs.
 	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
 	// Defaults to a particular set of fields.
-	AccessLogJSONFields contour_api_v1alpha1.AccessLogJSONFields
+	AccessLogJSONFields contour_v1alpha1.AccessLogJSONFields
 
 	// AccessLogFormatString sets the format string to be used for text based access logs.
 	// Defaults to empty to defer to Envoy's default log format.
@@ -100,7 +101,7 @@ type ListenerConfig struct {
 	AccessLogFormatterExtensions []string
 
 	// AccessLogLevel defines the logging level for access log.
-	AccessLogLevel contour_api_v1alpha1.AccessLogLevel
+	AccessLogLevel contour_v1alpha1.AccessLogLevel
 
 	// Timeouts holds Listener timeout settings.
 	Timeouts contourconfig.Timeouts
@@ -113,7 +114,7 @@ type ListenerConfig struct {
 	MergeSlashes bool
 
 	// ServerHeaderTransformation defines the action to be applied to the Server header on the response path.
-	ServerHeaderTransformation contour_api_v1alpha1.ServerHeaderTransformationType
+	ServerHeaderTransformation contour_v1alpha1.ServerHeaderTransformationType
 
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.
@@ -148,7 +149,7 @@ type ListenerConfig struct {
 	TracingConfig *TracingConfig
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
-	SocketOptions *contour_api_v1alpha1.SocketOptions
+	SocketOptions *contour_v1alpha1.SocketOptions
 }
 
 type ExtensionServiceConfig struct {
@@ -229,14 +230,14 @@ func (lvc *ListenerConfig) accesslogType() string {
 
 // accesslogFields returns the access log fields that should be configured
 // for Envoy, or a default set if not configured.
-func (lvc *ListenerConfig) accesslogFields() contour_api_v1alpha1.AccessLogJSONFields {
+func (lvc *ListenerConfig) accesslogFields() contour_v1alpha1.AccessLogJSONFields {
 	if lvc.AccessLogJSONFields != nil {
 		return lvc.AccessLogJSONFields
 	}
-	return contour_api_v1alpha1.DefaultAccessLogJSONFields
+	return contour_v1alpha1.DefaultAccessLogJSONFields
 }
 
-func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_accesslog_v3.AccessLog {
+func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_config_accesslog_v3.AccessLog {
 	switch lvc.accesslogType() {
 	case string(config.JSONAccessLog):
 		return envoy_v3.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields(), lvc.AccessLogFormatterExtensions, lvc.AccessLogLevel)
@@ -245,7 +246,7 @@ func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_accesslog_v3.AccessLo
 	}
 }
 
-func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_accesslog_v3.AccessLog {
+func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_config_accesslog_v3.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
 		return envoy_v3.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields(), lvc.AccessLogFormatterExtensions, lvc.AccessLogLevel)
@@ -255,30 +256,30 @@ func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_accesslog_v3.AccessLog 
 }
 
 // minTLSVersion returns the requested minimum TLS protocol
-// version or envoy_tls_v3.TlsParameters_TLSv1_2 if not configured.
-func (lvc *ListenerConfig) minTLSVersion() envoy_tls_v3.TlsParameters_TlsProtocol {
+// version or envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2 if not configured.
+func (lvc *ListenerConfig) minTLSVersion() envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol {
 	ver := envoy_v3.ParseTLSVersion(lvc.MinimumTLSVersion)
-	if ver > envoy_tls_v3.TlsParameters_TLSv1_2 {
+	if ver > envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2 {
 		return ver
 	}
-	return envoy_tls_v3.TlsParameters_TLSv1_2
+	return envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2
 }
 
 // maxTLSVersion returns the requested maximum TLS protocol
-// version or envoy_tls_v3.TlsParameters_TLSv1_3 if not configured.
-func (lvc *ListenerConfig) maxTLSVersion() envoy_tls_v3.TlsParameters_TlsProtocol {
+// version or envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3 if not configured.
+func (lvc *ListenerConfig) maxTLSVersion() envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol {
 	ver := envoy_v3.ParseTLSVersion(lvc.MaximumTLSVersion)
-	if ver >= envoy_tls_v3.TlsParameters_TLSv1_2 {
+	if ver >= envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2 {
 		return ver
 	}
-	return envoy_tls_v3.TlsParameters_TLSv1_3
+	return envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.
 type ListenerCache struct {
 	mu           sync.Mutex
-	values       map[string]*envoy_listener_v3.Listener
-	staticValues map[string]*envoy_listener_v3.Listener
+	values       map[string]*envoy_config_listener_v3.Listener
+	staticValues map[string]*envoy_config_listener_v3.Listener
 
 	Config ListenerConfig
 	contour.Cond
@@ -287,13 +288,13 @@ type ListenerCache struct {
 // NewListenerCache returns an instance of a ListenerCache
 func NewListenerCache(
 	listenerConfig ListenerConfig,
-	metricsConfig contour_api_v1alpha1.MetricsConfig,
-	healthConfig contour_api_v1alpha1.HealthConfig,
+	metricsConfig contour_v1alpha1.MetricsConfig,
+	healthConfig contour_v1alpha1.HealthConfig,
 	adminPort int,
 ) *ListenerCache {
 	listenerCache := &ListenerCache{
 		Config:       listenerConfig,
-		staticValues: map[string]*envoy_listener_v3.Listener{},
+		staticValues: map[string]*envoy_config_listener_v3.Listener{},
 	}
 
 	for _, l := range envoy_v3.StatsListeners(metricsConfig, healthConfig) {
@@ -311,7 +312,7 @@ func NewListenerCache(
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ListenerCache) Update(v map[string]*envoy_listener_v3.Listener) {
+func (c *ListenerCache) Update(v map[string]*envoy_config_listener_v3.Listener) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -323,7 +324,7 @@ func (c *ListenerCache) Update(v map[string]*envoy_listener_v3.Listener) {
 func (c *ListenerCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_listener_v3.Listener
+	var values []*envoy_config_listener_v3.Listener
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -339,7 +340,7 @@ func (c *ListenerCache) Contents() []proto.Message {
 func (c *ListenerCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_listener_v3.Listener
+	var values []*envoy_config_listener_v3.Listener
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -363,7 +364,7 @@ func (*ListenerCache) TypeURL() string { return resource.ListenerType }
 
 func (c *ListenerCache) OnChange(root *dag.DAG) {
 	cfg := c.Config
-	listeners := map[string]*envoy_listener_v3.Listener{}
+	listeners := map[string]*envoy_config_listener_v3.Listener{}
 
 	socketOptions := envoy_v3.NewSocketOptions().TCPKeepalive()
 	if cfg.SocketOptions != nil {
@@ -442,7 +443,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 		for _, vh := range listener.SecureVirtualHosts {
 			var alpnProtos []string
-			var filters []*envoy_listener_v3.Filter
+			var filters []*envoy_config_listener_v3.Filter
 
 			var forwardClientCertificate *dag.ClientCertificateDetails
 			if vh.DownstreamValidation != nil {
@@ -450,7 +451,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			}
 
 			if vh.TCPProxy == nil {
-				var authzFilter *http.HttpFilter
+				var authzFilter *envoy_filter_network_http_connection_manager_v3.HttpFilter
 
 				if vh.ExternalAuthorization != nil {
 					authzFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
@@ -501,7 +502,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// backend in its ServerHello.
 			}
 
-			var downstreamTLS *envoy_tls_v3.DownstreamTlsContext
+			var downstreamTLS *envoy_transport_socket_tls_v3.DownstreamTlsContext
 
 			// Secret is provided when TLS is terminated and nil when TLS passthrough is used.
 			if vh.Secret != nil {
@@ -510,7 +511,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 				// Choose the lower of the configured or requested TLS version.
 				maxVer := min(cfg.maxTLSVersion(), envoy_v3.ParseTLSVersion(vh.MaxTLSVersion))
-				if maxVer == envoy_tls_v3.TlsParameters_TLS_AUTO {
+				if maxVer == envoy_transport_socket_tls_v3.TlsParameters_TLS_AUTO {
 					maxVer = cfg.maxTLSVersion()
 				}
 
@@ -587,9 +588,9 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	// 1. connection balancer
 	if cfg.ConnectionBalancer == "exact" {
 		for _, listener := range listeners {
-			listener.ConnectionBalanceConfig = &envoy_listener_v3.Listener_ConnectionBalanceConfig{
-				BalanceType: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance_{
-					ExactBalance: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance{},
+			listener.ConnectionBalanceConfig = &envoy_config_listener_v3.Listener_ConnectionBalanceConfig{
+				BalanceType: &envoy_config_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance_{
+					ExactBalance: &envoy_config_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance{},
 				},
 			}
 		}
@@ -598,7 +599,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	c.Update(listeners)
 }
 
-func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFilter {
+func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	if config == nil {
 		return nil
 	}
@@ -612,7 +613,6 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *http.HttpFi
 		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
-
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
@@ -651,7 +651,7 @@ func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
 	if tags == nil {
 		return nil
 	}
-	var customTags = make([]*envoy_v3.CustomTag, len(tags))
+	customTags := make([]*envoy_v3.CustomTag, len(tags))
 	for i, tag := range tags {
 		customTags[i] = &envoy_v3.CustomTag{
 			TagName:           tag.TagName,
@@ -663,7 +663,7 @@ func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
 	return customTags
 }
 
-func proxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
+func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	if useProxy {
 		return envoy_v3.ListenerFilters(
 			envoy_v3.ProxyProtocol(),
@@ -672,6 +672,6 @@ func proxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
+func secureProxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector())
 }

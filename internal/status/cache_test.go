@@ -16,14 +16,15 @@ package status
 import (
 	"testing"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
 type testCacheEntry struct {
@@ -44,13 +45,13 @@ func (t testCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 var _ CacheEntry = &testCacheEntry{}
 
 func TestCacheAcquisition(t *testing.T) {
-	ext := &contour_api_v1alpha1.ExtensionService{
+	ext := &contour_v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("test/ext"),
 	}
-	proxy := &contour_api_v1.HTTPProxy{
+	proxy := &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("test/proxy"),
 	}
-	httpRoute := &gatewayapi_v1beta1.HTTPRoute{
+	httpRoute := &gatewayapi_v1.HTTPRoute{
 		ObjectMeta: fixture.ObjectMeta("test/httproute"),
 	}
 	cache := NewCache(types.NamespacedName{Name: "contour", Namespace: "projectcontour"}, "")
@@ -72,11 +73,11 @@ func TestCacheAcquisition(t *testing.T) {
 	assert.Equal(t, &newEntry, cachedEntry)
 
 	updates := cache.GetStatusUpdates()
-	assert.Equal(t, 3, len(updates))
+	assert.Len(t, updates, 3)
 	assert.Equal(t, newEntry.ID, updates[0].NamespacedName.Name)
 
-	assert.Equal(t, 3, len(cache.entries))
-	assert.Equal(t, 1, len(cache.entries["HTTPProxy"]))
-	assert.Equal(t, 1, len(cache.entries["ExtensionService"]))
-	assert.Equal(t, 1, len(cache.entries["HTTPRoute"]))
+	assert.Len(t, cache.entries, 3)
+	assert.Len(t, cache.entries["HTTPProxy"], 1)
+	assert.Len(t, cache.entries["ExtensionService"], 1)
+	assert.Len(t, cache.entries["HTTPRoute"], 1)
 }

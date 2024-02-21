@@ -17,23 +17,24 @@ import (
 	"testing"
 	"time"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_trace_v3 "github.com/envoyproxy/go-control-plane/envoy/config/trace/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_trace_v3 "github.com/envoyproxy/go-control-plane/envoy/type/tracing/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 func TestTracingConfig(t *testing.T) {
 	tests := map[string]struct {
 		tracing *EnvoyTracingConfig
-		want    *http.HttpConnectionManager_Tracing
+		want    *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing
 	}{
 		"nil config": {
 			tracing: nil,
@@ -62,7 +63,7 @@ func TestTracingConfig(t *testing.T) {
 					},
 				},
 			},
-			want: &http.HttpConnectionManager_Tracing{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
@@ -97,9 +98,9 @@ func TestTracingConfig(t *testing.T) {
 					Name: "envoy.tracers.opentelemetry",
 					ConfigType: &envoy_config_trace_v3.Tracing_Http_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_config_trace_v3.OpenTelemetryConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/otel-collector",
 										Authority:   "some-server.com",
 									},
@@ -122,7 +123,7 @@ func TestTracingConfig(t *testing.T) {
 				MaxPathTagLength: 256,
 				CustomTags:       nil,
 			},
-			want: &http.HttpConnectionManager_Tracing{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
@@ -132,9 +133,9 @@ func TestTracingConfig(t *testing.T) {
 					Name: "envoy.tracers.opentelemetry",
 					ConfigType: &envoy_config_trace_v3.Tracing_Http_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_config_trace_v3.OpenTelemetryConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/otel-collector",
 										Authority:   "some-server.com",
 									},
@@ -157,7 +158,7 @@ func TestTracingConfig(t *testing.T) {
 				MaxPathTagLength: 256,
 				CustomTags:       nil,
 			},
-			want: &http.HttpConnectionManager_Tracing{
+			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
@@ -167,9 +168,9 @@ func TestTracingConfig(t *testing.T) {
 					Name: "envoy.tracers.opentelemetry",
 					ConfigType: &envoy_config_trace_v3.Tracing_Http_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(&envoy_config_trace_v3.OpenTelemetryConfig{
-							GrpcService: &envoy_core_v3.GrpcService{
-								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
 										ClusterName: "extension/projectcontour/otel-collector",
 										Authority:   "extension.projectcontour.otel-collector",
 									},

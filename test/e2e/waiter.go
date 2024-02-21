@@ -20,15 +20,16 @@ import (
 	"errors"
 	"time"
 
-	"github.com/projectcontour/contour/internal/k8s"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/projectcontour/contour/internal/k8s"
 )
 
-func WaitForContourDeploymentUpdated(deployment *appsv1.Deployment, cli client.Client, image string) error {
+func WaitForContourDeploymentUpdated(deployment *apps_v1.Deployment, cli client.Client, image string) error {
 	// List pods with app label "contour" and check that pods are updated
 	// with expected container image and in ready state.
 	// We do this instead of checking Deployment status as it is possible
@@ -47,11 +48,11 @@ func WaitForContourDeploymentUpdated(deployment *appsv1.Deployment, cli client.C
 	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
 
-func WaitForEnvoyDaemonSetUpdated(daemonset *appsv1.DaemonSet, cli client.Client, image string) error {
+func WaitForEnvoyDaemonSetUpdated(daemonset *apps_v1.DaemonSet, cli client.Client, image string) error {
 	labelSelectAppEnvoy := labels.SelectorFromSet(daemonset.Spec.Selector.MatchLabels)
 
 	updatedPods := func(ctx context.Context) (bool, error) {
-		ds := &appsv1.DaemonSet{}
+		ds := &apps_v1.DaemonSet{}
 		if err := cli.Get(ctx, k8s.NamespacedNameOf(daemonset), ds); err != nil {
 			return false, err
 		}
@@ -66,11 +67,11 @@ func WaitForEnvoyDaemonSetUpdated(daemonset *appsv1.DaemonSet, cli client.Client
 	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
 
-func WaitForEnvoyDeploymentUpdated(deployment *appsv1.Deployment, cli client.Client, image string) error {
+func WaitForEnvoyDeploymentUpdated(deployment *apps_v1.Deployment, cli client.Client, image string) error {
 	labelSelectAppEnvoy := labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels)
 
 	updatedPods := func(ctx context.Context) (bool, error) {
-		dp := new(appsv1.Deployment)
+		dp := new(apps_v1.Deployment)
 		if err := cli.Get(ctx, client.ObjectKeyFromObject(deployment), dp); err != nil {
 			return false, err
 		}
@@ -85,8 +86,8 @@ func WaitForEnvoyDeploymentUpdated(deployment *appsv1.Deployment, cli client.Cli
 	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
 }
 
-func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace string, image string, cli client.Client) int {
-	pods := new(v1.PodList)
+func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace, image string, cli client.Client) int {
+	pods := new(core_v1.PodList)
 	opts := &client.ListOptions{
 		LabelSelector: labelSelector,
 		Namespace:     namespace,
@@ -107,7 +108,7 @@ func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Se
 		}
 
 		for _, cond := range pod.Status.Conditions {
-			if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
+			if cond.Type == core_v1.PodReady && cond.Status == core_v1.ConditionTrue {
 				updatedPods++
 			}
 		}

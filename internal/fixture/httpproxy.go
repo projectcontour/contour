@@ -14,11 +14,11 @@
 package fixture
 
 import (
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 // ProxyBuilder is a builder object to make creating HTTPProxy fixtures more succinct.
-type ProxyBuilder contour_api_v1.HTTPProxy
+type ProxyBuilder contour_v1.HTTPProxy
 
 // NewProxy creates a new ProxyBuilder with the specified object name.
 func NewProxy(name string) *ProxyBuilder {
@@ -34,31 +34,31 @@ func NewProxy(name string) *ProxyBuilder {
 
 func (b *ProxyBuilder) ensureVirtualHost() {
 	if b.Spec.VirtualHost == nil {
-		b.Spec.VirtualHost = &contour_api_v1.VirtualHost{}
+		b.Spec.VirtualHost = &contour_v1.VirtualHost{}
 	}
 }
 
 func (b *ProxyBuilder) ensureTLS() {
 	b.ensureVirtualHost()
 	if b.Spec.VirtualHost.TLS == nil {
-		b.Spec.VirtualHost.TLS = &contour_api_v1.TLS{}
+		b.Spec.VirtualHost.TLS = &contour_v1.TLS{}
 	}
 }
 
 // Annotate adds the given values as metadata annotations.
-func (b *ProxyBuilder) Annotate(k string, v string) *ProxyBuilder {
+func (b *ProxyBuilder) Annotate(k, v string) *ProxyBuilder {
 	b.ObjectMeta.Annotations[k] = v
 	return b
 }
 
 // Label adds the given values as metadata labels.
-func (b *ProxyBuilder) Label(k string, v string) *ProxyBuilder {
+func (b *ProxyBuilder) Label(k, v string) *ProxyBuilder {
 	b.ObjectMeta.Labels[k] = v
 	return b
 }
 
 // WithSpec updates the builder's Spec field, returning the build proxy.
-func (b *ProxyBuilder) WithSpec(spec contour_api_v1.HTTPProxySpec) *contour_api_v1.HTTPProxy {
+func (b *ProxyBuilder) WithSpec(spec contour_v1.HTTPProxySpec) *contour_v1.HTTPProxy {
 	oldSpec := b.Spec
 
 	b.Spec = spec
@@ -69,7 +69,7 @@ func (b *ProxyBuilder) WithSpec(spec contour_api_v1.HTTPProxySpec) *contour_api_
 		b.Spec.VirtualHost = oldSpec.VirtualHost
 	}
 
-	return (*contour_api_v1.HTTPProxy)(b)
+	return (*contour_v1.HTTPProxy)(b)
 }
 
 func (b *ProxyBuilder) WithFQDN(fqdn string) *ProxyBuilder {
@@ -84,7 +84,7 @@ func (b *ProxyBuilder) WithCertificate(secretName string) *ProxyBuilder {
 	return b
 }
 
-func (b *ProxyBuilder) WithAuthServer(auth contour_api_v1.AuthorizationServer) *ProxyBuilder {
+func (b *ProxyBuilder) WithAuthServer(auth contour_v1.AuthorizationServer) *ProxyBuilder {
 	b.ensureTLS()
 	b.Spec.VirtualHost.Authorization = &auth
 	return b

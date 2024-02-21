@@ -14,7 +14,7 @@
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -28,8 +28,10 @@ const (
 // New code should use GroupVersion.
 var SchemeGroupVersion = GroupVersion
 
-var HTTPProxyGVR = GroupVersion.WithResource("httpproxies")
-var TLSCertificateDelegationGVR = GroupVersion.WithResource("tlscertificatedelegations")
+var (
+	HTTPProxyGVR                = GroupVersion.WithResource("httpproxies")
+	TLSCertificateDelegationGVR = GroupVersion.WithResource("tlscertificatedelegations")
+)
 
 // Resource gets an Contour GroupResource for a specified resource
 func Resource(resource string) schema.GroupResource {
@@ -47,7 +49,7 @@ func AddKnownTypes(scheme *runtime.Scheme) error {
 		&TLSCertificateDelegation{},
 		&TLSCertificateDelegationList{},
 	)
-	metav1.AddToGroupVersion(scheme, GroupVersion)
+	meta_v1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
 }
 

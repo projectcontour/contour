@@ -22,6 +22,7 @@ package rbac
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gatewayclasses;gateways,verbs=get;list;watch
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gatewayclasses/status;gateways/status,verbs=update
 // +kubebuilder:rbac:groups=projectcontour.io,resources=contourdeployments,verbs=get;list;watch
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
 // ---
 
 // RBAC for core Contour resources to be provisioned.

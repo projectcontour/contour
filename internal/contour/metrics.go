@@ -19,13 +19,14 @@ package contour
 import (
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/client-go/tools/cache"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/status"
-	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/client-go/tools/cache"
 )
 
 // EventRecorder records the count and kind of events forwarded
@@ -122,13 +123,13 @@ func calculateRouteMetric(updates []*status.ProxyUpdate) metrics.RouteMetric {
 	}
 }
 
-func calcMetrics(u *status.ProxyUpdate, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
+func calcMetrics(u *status.ProxyUpdate, metricValid, metricInvalid, metricOrphaned, metricTotal map[metrics.Meta]int) {
 	validCond := u.ConditionFor(status.ValidCondition)
 	switch validCond.Status {
-	case contour_api_v1.ConditionTrue:
+	case contour_v1.ConditionTrue:
 		metricValid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
-	case contour_api_v1.ConditionFalse:
-		if _, ok := validCond.GetError(contour_api_v1.ConditionTypeOrphanedError); ok {
+	case contour_v1.ConditionFalse:
+		if _, ok := validCond.GetError(contour_v1.ConditionTypeOrphanedError); ok {
 			metricOrphaned[metrics.Meta{Namespace: u.Fullname.Namespace}]++
 		} else {
 			metricInvalid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++

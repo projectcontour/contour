@@ -26,13 +26,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/ref"
+	"github.com/stretchr/testify/require"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
-	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var f = e2e.NewFramework(false)
@@ -71,7 +72,7 @@ var _ = Describe("HTTPProxy", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
-		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
+		contourConfiguration  *contour_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 	)
@@ -116,7 +117,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testInternalRedirectPolicy(namespace)
 		})
@@ -144,7 +145,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("set to true", func() {
 			BeforeEach(func() {
 				contourConfig.DisableMergeSlashes = true
-				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = ref.To(true)
+				contourConfiguration.Spec.Envoy.Listener.DisableMergeSlashes = ptr.To(true)
 			})
 
 			f.NamespacedTest("httpproxy-disable-merge-slashes", testDisableMergeSlashes(true))
@@ -182,7 +183,7 @@ var _ = Describe("HTTPProxy", func() {
 						Namespace: namespace,
 					},
 				}
-				contourConfiguration.Spec.HTTPProxy.FallbackCertificate = &contour_api_v1alpha1.NamespacedName{
+				contourConfiguration.Spec.HTTPProxy.FallbackCertificate = &contour_v1alpha1.NamespacedName{
 					Name:      "fallback-cert",
 					Namespace: namespace,
 				}
@@ -199,7 +200,7 @@ var _ = Describe("HTTPProxy", func() {
 			BeforeEach(func() {
 				// Top level issuer.
 				selfSignedIssuer := &certmanagerv1.Issuer{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "selfsigned",
 					},
@@ -213,7 +214,7 @@ var _ = Describe("HTTPProxy", func() {
 
 				// CA to sign backend certs with.
 				caCertificate := &certmanagerv1.Certificate{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "ca-cert",
 					},
@@ -234,7 +235,7 @@ var _ = Describe("HTTPProxy", func() {
 
 				// Issuer based on CA to generate new certs with.
 				basedOnCAIssuer := &certmanagerv1.Issuer{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "ca-issuer",
 					},
@@ -250,7 +251,7 @@ var _ = Describe("HTTPProxy", func() {
 
 				// Backend client cert, can use for upstream validation as well.
 				backendClientCert := &certmanagerv1.Certificate{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "backend-client-cert",
 					},
@@ -274,7 +275,7 @@ var _ = Describe("HTTPProxy", func() {
 					},
 				}
 
-				contourConfiguration.Spec.Envoy.ClientCertificate = &contour_api_v1alpha1.NamespacedName{
+				contourConfiguration.Spec.Envoy.ClientCertificate = &contour_v1alpha1.NamespacedName{
 					Name:      "backend-client-cert",
 					Namespace: namespace,
 				}
@@ -288,7 +289,7 @@ var _ = Describe("HTTPProxy", func() {
 		BeforeEach(func() {
 			// Top level issuer.
 			selfSignedIssuer := &certmanagerv1.Issuer{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "selfsigned",
 				},
@@ -302,7 +303,7 @@ var _ = Describe("HTTPProxy", func() {
 
 			// CA to sign backend certs with.
 			caCertificate := &certmanagerv1.Certificate{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "ca-cert",
 				},
@@ -323,7 +324,7 @@ var _ = Describe("HTTPProxy", func() {
 
 			// Issuer based on CA to generate new certs with.
 			basedOnCAIssuer := &certmanagerv1.Issuer{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "ca-issuer",
 				},
@@ -339,7 +340,7 @@ var _ = Describe("HTTPProxy", func() {
 
 			// Backend client cert, can use for upstream validation as well.
 			backendClientCert := &certmanagerv1.Certificate{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "backend-client-cert",
 				},
@@ -363,7 +364,7 @@ var _ = Describe("HTTPProxy", func() {
 				},
 			}
 
-			contourConfiguration.Spec.Envoy.ClientCertificate = &contour_api_v1alpha1.NamespacedName{
+			contourConfiguration.Spec.Envoy.ClientCertificate = &contour_v1alpha1.NamespacedName{
 				Name:      "backend-client-cert",
 				Namespace: namespace,
 			}
@@ -378,14 +379,13 @@ var _ = Describe("HTTPProxy", func() {
 				// need to set this because it isn't set in the default config
 				contourConfig.Cluster.DNSLookupFamily = "auto"
 
-				contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS = &contour_api_v1alpha1.EnvoyTLS{
+				contourConfiguration.Spec.Envoy.Cluster.UpstreamTLS = &contour_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: protocolVersion,
 				}
 			})
 
 			testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
 		})
-
 	})
 
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
@@ -404,7 +404,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testHostRewriteHeaderExternalNameService(namespace)
 		})
@@ -415,7 +415,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with trusted xff hops", func() {
 			BeforeEach(func() {
 				contourConfig.Network.XffNumTrustedHops = 1
-				contourConfiguration.Spec.Envoy.Network.XffNumTrustedHops = ref.To(uint32(1))
+				contourConfiguration.Spec.Envoy.Network.XffNumTrustedHops = ptr.To(uint32(1))
 			})
 
 			testIPFilterPolicy(namespace)
@@ -428,7 +428,7 @@ var _ = Describe("HTTPProxy", func() {
 				additionalContourArgs = []string{
 					"--ingress-class-name=contour,team1",
 				}
-				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+				contourConfiguration.Spec.Ingress = &contour_v1alpha1.IngressConfig{
 					ClassNames: []string{"contour", "team1"},
 				}
 			})
@@ -441,7 +441,7 @@ var _ = Describe("HTTPProxy", func() {
 				additionalContourArgs = []string{
 					"--ingress-class-name=contour,team1",
 				}
-				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+				contourConfiguration.Spec.Ingress = &contour_v1alpha1.IngressConfig{
 					ClassNames: []string{"contour", "team1"},
 				}
 			})
@@ -453,7 +453,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testExternalNameServiceInsecure(namespace)
 		})
@@ -463,7 +463,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testExternalNameServiceTLS(namespace)
 		})
@@ -473,7 +473,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = ref.To(true)
+				contourConfiguration.Spec.EnableExternalNameService = ptr.To(true)
 			})
 			testExternalNameServiceLocalhostInvalid(namespace)
 		})
@@ -492,14 +492,14 @@ var _ = Describe("HTTPProxy", func() {
 							Domain:           "contour",
 							FailOpen:         false,
 						}
-						contourConfiguration.Spec.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-							ExtensionService: contour_api_v1alpha1.NamespacedName{
+						contourConfiguration.Spec.RateLimitService = &contour_v1alpha1.RateLimitServiceConfig{
+							ExtensionService: contour_v1alpha1.NamespacedName{
 								Name:      f.Deployment.RateLimitExtensionService.Name,
 								Namespace: namespace,
 							},
 							Domain:                  "contour",
-							FailOpen:                ref.To(false),
-							EnableXRateLimitHeaders: ref.To(false),
+							FailOpen:                ptr.To(false),
+							EnableXRateLimitHeaders: ptr.To(false),
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(
@@ -559,12 +559,12 @@ descriptors:
 							ExtensionService: fmt.Sprintf("%s/%s", namespace, f.Deployment.RateLimitExtensionService.Name),
 							Domain:           "contour-default-global-rate-limit",
 							FailOpen:         false,
-							DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-								Descriptors: []contour_api_v1.RateLimitDescriptor{
+							DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_v1.RateLimitDescriptor{
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{
-												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+												RequestHeader: &contour_v1.RequestHeaderDescriptor{
 													HeaderName:    "X-Default-Header",
 													DescriptorKey: "defaultHeader",
 												},
@@ -572,9 +572,9 @@ descriptors:
 										},
 									},
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{
-												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+												RequestHeader: &contour_v1.RequestHeaderDescriptor{
 													HeaderName:    "X-Another-Header",
 													DescriptorKey: "anotherHeader",
 												},
@@ -584,20 +584,20 @@ descriptors:
 								},
 							},
 						}
-						contourConfiguration.Spec.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-							ExtensionService: contour_api_v1alpha1.NamespacedName{
+						contourConfiguration.Spec.RateLimitService = &contour_v1alpha1.RateLimitServiceConfig{
+							ExtensionService: contour_v1alpha1.NamespacedName{
 								Name:      f.Deployment.RateLimitExtensionService.Name,
 								Namespace: namespace,
 							},
 							Domain:                  "contour-default-global-rate-limit",
-							FailOpen:                ref.To(false),
-							EnableXRateLimitHeaders: ref.To(false),
-							DefaultGlobalRateLimitPolicy: &contour_api_v1.GlobalRateLimitPolicy{
-								Descriptors: []contour_api_v1.RateLimitDescriptor{
+							FailOpen:                ptr.To(false),
+							EnableXRateLimitHeaders: ptr.To(false),
+							DefaultGlobalRateLimitPolicy: &contour_v1.GlobalRateLimitPolicy{
+								Descriptors: []contour_v1.RateLimitDescriptor{
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{
-												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+												RequestHeader: &contour_v1.RequestHeaderDescriptor{
 													HeaderName:    "X-Default-Header",
 													DescriptorKey: "defaultHeader",
 												},
@@ -605,9 +605,9 @@ descriptors:
 										},
 									},
 									{
-										Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										Entries: []contour_v1.RateLimitDescriptorEntry{
 											{
-												RequestHeader: &contour_api_v1.RequestHeaderDescriptor{
+												RequestHeader: &contour_v1.RequestHeaderDescriptor{
 													HeaderName:    "X-Another-Header",
 													DescriptorKey: "anotherHeader",
 												},
@@ -635,7 +635,7 @@ descriptors:
   - key: customHeader
     rate_limit:
       unit: hour
-      requests_per_unit: 1  
+      requests_per_unit: 1
   - key: anotherHeader
     rate_limit:
       unit: hour
@@ -666,8 +666,8 @@ descriptors:
 						},
 					},
 				}
-				contourConfiguration.Spec.Policy = &contour_api_v1alpha1.PolicyConfig{
-					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				contourConfiguration.Spec.Policy = &contour_v1alpha1.PolicyConfig{
+					ResponseHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 						Set: map[string]string{
 							"Set-Cookie": "global=foo",
 						},
@@ -826,13 +826,13 @@ descriptors:
 							},
 							ResponseTimeout: "10s",
 						}
-						contourConfiguration.Spec.GlobalExternalAuthorization = &contour_api_v1.AuthorizationServer{
-							ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+						contourConfiguration.Spec.GlobalExternalAuthorization = &contour_v1.AuthorizationServer{
+							ExtensionServiceRef: contour_v1.ExtensionServiceReference{
 								Namespace: namespace,
 								Name:      "testserver",
 							},
 							FailOpen: false,
-							AuthPolicy: &contour_api_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.AuthorizationPolicy{
 								Disabled: false,
 								Context: map[string]string{
 									"location": "global_config",
@@ -857,5 +857,4 @@ descriptors:
 
 		f.NamespacedTest("httpproxy-global-ext-auth-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthTLSAuthDisabled))
 	})
-
 })

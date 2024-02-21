@@ -23,20 +23,21 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testBackendTLS(namespace string) {
 	Specify("mTLS to backends can be configured", func() {
 		// Backend server cert signed by CA.
 		backendServerCert := &certmanagerv1.Certificate{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "backend-server-cert",
 			},
@@ -53,24 +54,24 @@ func testBackendTLS(namespace string) {
 			},
 		}
 		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
-		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure")
+		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "backend-tls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "backend-tls.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo-secure",
 								Port: 443,
-								UpstreamValidation: &contourv1.UpstreamValidation{
+								UpstreamValidation: &contour_v1.UpstreamValidation{
 									CACertificate: "backend-client-cert",
 									SubjectName:   "echo-secure",
 								},
@@ -103,7 +104,7 @@ func testBackendTLS(namespace string) {
 
 		// Get value of client cert Envoy should have presented.
 		clientSecretKey := client.ObjectKey{Namespace: namespace, Name: "backend-client-cert"}
-		clientSecret := &corev1.Secret{}
+		clientSecret := &core_v1.Secret{}
 		require.NoError(f.T(), f.Client.Get(context.TODO(), clientSecretKey, clientSecret))
 
 		assert.Equal(f.T(), tlsInfo.TLS.PeerCertificates[0], string(clientSecret.Data["tls.crt"]))

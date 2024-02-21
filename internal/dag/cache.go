@@ -19,25 +19,26 @@ import (
 	"fmt"
 	"sync"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/sirupsen/logrus"
+	core_v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
-	"github.com/projectcontour/contour/internal/ref"
-
-	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
-	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
@@ -61,19 +62,21 @@ type KubernetesCache struct {
 	ConfiguredSecretRefs []*types.NamespacedName
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
-	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
+	httpproxies               map[types.NamespacedName]*contour_v1.HTTPProxy
 	secrets                   map[types.NamespacedName]*Secret
-	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
-	services                  map[types.NamespacedName]*v1.Service
-	namespaces                map[string]*v1.Namespace
-	gatewayclass              *gatewayapi_v1beta1.GatewayClass
-	gateway                   *gatewayapi_v1beta1.Gateway
-	httproutes                map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute
+	configmapsecrets          map[types.NamespacedName]*Secret
+	tlscertificatedelegations map[types.NamespacedName]*contour_v1.TLSCertificateDelegation
+	services                  map[types.NamespacedName]*core_v1.Service
+	namespaces                map[string]*core_v1.Namespace
+	gatewayclass              *gatewayapi_v1.GatewayClass
+	gateway                   *gatewayapi_v1.Gateway
+	httproutes                map[types.NamespacedName]*gatewayapi_v1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
 	grpcroutes                map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute
 	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
-	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
+	backendtlspolicies        map[types.NamespacedName]*gatewayapi_v1alpha2.BackendTLSPolicy
+	extensions                map[types.NamespacedName]*contour_v1alpha1.ExtensionService
 
 	// Metrics contains Prometheus metrics.
 	Metrics *metrics.Metrics
@@ -97,17 +100,19 @@ func NewDelegationNotPermittedError(err error) DelegationNotPermittedError {
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
-	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
+	kc.httpproxies = make(map[types.NamespacedName]*contour_v1.HTTPProxy)
 	kc.secrets = make(map[types.NamespacedName]*Secret)
-	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
-	kc.services = make(map[types.NamespacedName]*v1.Service)
-	kc.namespaces = make(map[string]*v1.Namespace)
-	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1beta1.HTTPRoute)
+	kc.configmapsecrets = make(map[types.NamespacedName]*Secret)
+	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_v1.TLSCertificateDelegation)
+	kc.services = make(map[types.NamespacedName]*core_v1.Service)
+	kc.namespaces = make(map[string]*core_v1.Namespace)
+	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1.HTTPRoute)
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.grpcroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute)
 	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute)
-	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
+	kc.backendtlspolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha2.BackendTLSPolicy)
+	kc.extensions = make(map[types.NamespacedName]*contour_v1alpha1.ExtensionService)
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -119,17 +124,26 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 
 	maybeInsert := func(obj any) (bool, int) {
 		switch obj := obj.(type) {
-		case *v1.Secret:
+		case *core_v1.Secret:
 			// Secret validation status is intentionally cleared, it needs
 			// to be re-validated after an insert.
 			kc.secrets[k8s.NamespacedNameOf(obj)] = &Secret{Object: obj}
 			return kc.secretTriggersRebuild(obj), len(kc.secrets)
 
-		case *v1.Service:
+		case *core_v1.ConfigMap:
+			// Only insert configmaps that are CA certs, i.e has 'ca.crt' key,
+			// into cache.
+			if secret, isCA := kc.convertCACertConfigMapToSecret(obj); isCA {
+				kc.configmapsecrets[k8s.NamespacedNameOf(obj)] = &Secret{Object: secret}
+				return kc.configMapTriggersRebuild(obj), len(kc.configmapsecrets)
+			}
+			return false, len(kc.configmapsecrets)
+
+		case *core_v1.Service:
 			kc.services[k8s.NamespacedNameOf(obj)] = obj
 			return kc.serviceTriggersRebuild(obj), len(kc.services)
 
-		case *v1.Namespace:
+		case *core_v1.Namespace:
 			kc.namespaces[obj.Name] = obj
 			return true, len(kc.namespaces)
 
@@ -140,7 +154,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-					WithField("ingress-class-name", ref.Val(obj.Spec.IngressClassName, "")).
+					WithField("ingress-class-name", ptr.Deref(obj.Spec.IngressClassName, "")).
 					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring Ingress with unmatched ingress class")
 				return false, len(kc.ingresses)
@@ -148,7 +162,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.ingresses)
 
-		case *contour_api_v1.HTTPProxy:
+		case *contour_v1.HTTPProxy:
 			if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassNames) {
 				// We didn't get a match so report this object is being ignored.
 				kc.WithField("name", obj.GetName()).
@@ -164,11 +178,11 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.httpproxies)
 
-		case *contour_api_v1.TLSCertificateDelegation:
+		case *contour_v1.TLSCertificateDelegation:
 			kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.tlscertificatedelegations)
 
-		case *gatewayapi_v1beta1.GatewayClass:
+		case *gatewayapi_v1.GatewayClass:
 			switch {
 			// Specific gateway configured: make sure the incoming gateway class
 			// matches that gateway's.
@@ -188,7 +202,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 				return true, 1
 			}
 
-		case *gatewayapi_v1beta1.Gateway:
+		case *gatewayapi_v1.Gateway:
 			switch {
 			// Specific gateway configured: make sure the incoming gateway
 			// matches, and get its gateway class.
@@ -202,7 +216,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 
 				kc.gateway = obj
 
-				gatewayClass := &gatewayapi_v1beta1.GatewayClass{}
+				gatewayClass := &gatewayapi_v1.GatewayClass{}
 				if err := kc.Client.Get(context.Background(), client.ObjectKey{Name: string(kc.gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
 					kc.WithError(err).Errorf("error getting gatewayclass for gateway %s/%s", kc.gateway.Namespace, kc.gateway.Name)
 				} else {
@@ -216,7 +230,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 				return true, 1
 			}
 
-		case *gatewayapi_v1beta1.HTTPRoute:
+		case *gatewayapi_v1.HTTPRoute:
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.httproutes)
 
@@ -236,7 +250,11 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.referencegrants)
 
-		case *contour_api_v1alpha1.ExtensionService:
+		case *gatewayapi_v1alpha2.BackendTLSPolicy:
+			kc.backendtlspolicies[k8s.NamespacedNameOf(obj)] = obj
+			return true, len(kc.backendtlspolicies)
+
+		case *contour_v1alpha1.ExtensionService:
 			kc.extensions[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.extensions)
 
@@ -254,7 +272,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 		// Only check annotations if we actually inserted
 		// the object in our cache; uninteresting objects
 		// should not be checked.
-		if obj, ok := obj.(metav1.Object); ok {
+		if obj, ok := obj.(meta_v1.Object); ok {
 			for key := range obj.GetAnnotations() {
 				// Emit a warning if this is a known annotation that has
 				// been applied to an invalid object kind. Note that we
@@ -298,17 +316,22 @@ func (kc *KubernetesCache) Remove(obj any) bool {
 
 func (kc *KubernetesCache) remove(obj any) (bool, int) {
 	switch obj := obj.(type) {
-	case *v1.Secret:
+	case *core_v1.Secret:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.secrets, m)
 		return kc.secretTriggersRebuild(obj), len(kc.secrets)
 
-	case *v1.Service:
+	case *core_v1.ConfigMap:
+		m := k8s.NamespacedNameOf(obj)
+		delete(kc.configmapsecrets, m)
+		return kc.configMapTriggersRebuild(obj), len(kc.configmapsecrets)
+
+	case *core_v1.Service:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.services, m)
 		return kc.serviceTriggersRebuild(obj), len(kc.services)
 
-	case *v1.Namespace:
+	case *core_v1.Namespace:
 		_, ok := kc.namespaces[obj.Name]
 		delete(kc.namespaces, obj.Name)
 		return ok, len(kc.namespaces)
@@ -319,19 +342,19 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.ingresses, m)
 		return ok, len(kc.ingresses)
 
-	case *contour_api_v1.HTTPProxy:
+	case *contour_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]
 		delete(kc.httpproxies, m)
 		return ok, len(kc.httpproxies)
 
-	case *contour_api_v1.TLSCertificateDelegation:
+	case *contour_v1.TLSCertificateDelegation:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tlscertificatedelegations[m]
 		delete(kc.tlscertificatedelegations, m)
 		return ok, len(kc.tlscertificatedelegations)
 
-	case *gatewayapi_v1beta1.GatewayClass:
+	case *gatewayapi_v1.GatewayClass:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gatewayclass == nil {
@@ -348,7 +371,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 			return true, 0
 		}
 
-	case *gatewayapi_v1beta1.Gateway:
+	case *gatewayapi_v1.Gateway:
 		switch {
 		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gateway == nil {
@@ -363,7 +386,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 			kc.gateway = nil
 			return true, 0
 		}
-	case *gatewayapi_v1beta1.HTTPRoute:
+	case *gatewayapi_v1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.httproutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.httproutes)
@@ -389,7 +412,13 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.referencegrants, m)
 		return ok, len(kc.referencegrants)
 
-	case *contour_api_v1alpha1.ExtensionService:
+	case *gatewayapi_v1alpha2.BackendTLSPolicy:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.backendtlspolicies[m]
+		delete(kc.backendtlspolicies, m)
+		return ok, len(kc.backendtlspolicies)
+
+	case *contour_v1alpha1.ExtensionService:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.extensions[m]
 		delete(kc.extensions, m)
@@ -404,7 +433,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 
 // serviceTriggersRebuild returns true if this service is referenced
 // by an Ingress or HTTPProxy in this cache.
-func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
+func (kc *KubernetesCache) serviceTriggersRebuild(service *core_v1.Service) bool {
 	for _, ingress := range kc.ingresses {
 		if ingress.Namespace != service.Namespace {
 			continue
@@ -491,7 +520,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	return false
 }
 
-func isRefToService(ref gatewayapi_v1beta1.BackendObjectReference, service *v1.Service, routeNamespace string) bool {
+func isRefToService(ref gatewayapi_v1.BackendObjectReference, service *core_v1.Service, routeNamespace string) bool {
 	return ref.Group != nil && *ref.Group == "" &&
 		ref.Kind != nil && *ref.Kind == "Service" &&
 		((ref.Namespace != nil && string(*ref.Namespace) == service.Namespace) || (ref.Namespace == nil && routeNamespace == service.Namespace)) &&
@@ -503,7 +532,7 @@ func isRefToService(ref gatewayapi_v1beta1.BackendObjectReference, service *v1.S
 // If the secret is not in the same namespace the function ignores TLSCertificateDelegation.
 // As a result, it may trigger rebuild even if the reference is invalid, which should be rare and not worth the added complexity.
 // Permission is checked when the secret is actually accessed.
-func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
+func (kc *KubernetesCache) secretTriggersRebuild(secretObj *core_v1.Secret) bool {
 	if _, isCA := secretObj.Data[CACertificateKey]; isCA {
 		// locating a secret validation usage involves traversing each
 		// proxy object, determining if there is a valid delegation,
@@ -572,15 +601,41 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *v1.Secret) bool {
 	return false
 }
 
-func isRefToSecret(ref gatewayapi_v1beta1.SecretObjectReference, secret *v1.Secret, gatewayNamespace string) bool {
+func isRefToSecret(ref gatewayapi_v1.SecretObjectReference, secret *core_v1.Secret, gatewayNamespace string) bool {
 	return ref.Group != nil && *ref.Group == "" &&
 		ref.Kind != nil && *ref.Kind == "Secret" &&
-		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1beta1.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
+		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
 		string(ref.Name) == secret.Name
 }
 
+// configMapTriggersRebuild returns true if this configmap is referenced by a
+// BackendTLSPolicy object.
+func (kc *KubernetesCache) configMapTriggersRebuild(configMapObj *core_v1.ConfigMap) bool {
+	configMap := types.NamespacedName{
+		Namespace: configMapObj.Namespace,
+		Name:      configMapObj.Name,
+	}
+
+	for _, backendtlspolicy := range kc.backendtlspolicies {
+		for _, caCertRef := range backendtlspolicy.Spec.TLS.CACertRefs {
+			if caCertRef.Group != "" || caCertRef.Kind != "ConfigMap" {
+				continue
+			}
+
+			caCertRefNamespacedName := types.NamespacedName{
+				Namespace: backendtlspolicy.Namespace,
+				Name:      string(caCertRef.Name),
+			}
+			if configMap == caCertRefNamespacedName {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // routeTriggersRebuild returns true if this route references gateway in this cache.
-func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1beta1.ParentReference) bool {
+func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1.ParentReference) bool {
 	if kc.gateway == nil {
 		return false
 	}
@@ -631,6 +686,27 @@ func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName, targetNames
 	return sec, nil
 }
 
+// LookupCAConfigMap returns ConfigMap converted into dag.Secret with CA certificate from cache.
+func (kc *KubernetesCache) LookupCAConfigMap(name types.NamespacedName) (*Secret, error) {
+	sec, ok := kc.configmapsecrets[name]
+	if !ok {
+		return nil, fmt.Errorf("ConfigMap not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidCASecret == nil {
+		sec.ValidCASecret = &SecretValidationStatus{
+			Error: validCASecret(sec.Object),
+		}
+	}
+
+	if err := sec.ValidCASecret.Error; err != nil {
+		return nil, err
+	}
+	return sec, nil
+}
+
 // LookupCRLSecret returns Secret with CRL from the cache.
 // If name (referred Secret) is in different namespace than targetNamespace (the referring object),
 // then delegation check is performed.
@@ -661,7 +737,7 @@ func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName, targetName
 // LookupUpstreamValidation constructs PeerValidationContext with CA certificate from the cache.
 // If name (referred Secret) is in different namespace than targetNamespace (the referring object),
 // then delegation check is performed.
-func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName, targetNamespace string) (*PeerValidationContext, error) {
+func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_v1.UpstreamValidation, caCertificate types.NamespacedName, targetNamespace string) (*PeerValidationContext, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
@@ -676,7 +752,9 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		}
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
-	pvc.CACertificate = cacert
+	pvc.CACertificates = []*Secret{
+		cacert,
+	}
 
 	// CEL validation should enforce that SubjectName must be set if SubjectNames is used. So, SubjectName will always be present.
 	if uv.SubjectName == "" {
@@ -757,23 +835,87 @@ func (kc *KubernetesCache) delegationPermitted(secret types.NamespacedName, targ
 
 // LookupService returns the Kubernetes service and port matching the provided parameters,
 // or an error if a match can't be found.
-func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.IntOrString) (*v1.Service, v1.ServicePort, error) {
+func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.IntOrString) (*core_v1.Service, core_v1.ServicePort, error) {
 	svc, ok := kc.services[meta]
 	if !ok {
-		return nil, v1.ServicePort{}, fmt.Errorf("service %q not found", meta)
+		return nil, core_v1.ServicePort{}, fmt.Errorf("service %q not found", meta)
 	}
 
 	for i := range svc.Spec.Ports {
 		p := svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() || port.String() == p.Name {
 			switch p.Protocol {
-			case "", v1.ProtocolTCP:
+			case "", core_v1.ProtocolTCP:
 				return svc, p, nil
 			default:
-				return nil, v1.ServicePort{}, fmt.Errorf("unsupported service protocol %q", p.Protocol)
+				return nil, core_v1.ServicePort{}, fmt.Errorf("unsupported service protocol %q", p.Protocol)
 			}
 		}
 	}
 
-	return nil, v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
+	return nil, core_v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
+}
+
+// LookupBackendTLSPolicyByTargetRef returns the Kubernetes BackendTLSPolicies that matches the provided targetRef with
+// a SectionName, if possible. A BackendTLSPolicy may be returned if there is a BackendTLSPolicy matching the targetRef
+// but has no SectionName.
+//
+// For example, there could be two BackendTLSPolicies matching Service "foo". One of them matches SectionName "https",
+// but the other has no SectionName and functions as a catch-all policy for service "foo".
+//
+// The namespace on the provided targetRef will be used to match the namespace on the backendTLSPolicy. If not set it is
+// assumed to be the default namespace.
+//
+// If a policy is found, true is returned.
+func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName) (*gatewayapi_v1alpha2.BackendTLSPolicy, bool) {
+	var fallbackBackendTLSPolicy *gatewayapi_v1alpha2.BackendTLSPolicy
+	for _, v := range kc.backendtlspolicies {
+		// Match the namespace in the targetRef to the BackendTLSPolicy namespace instead of it's
+		// spec.targetRef.namespace. Cross namespace references aren't allowed and validating the targetRef's
+		// namespace is either the same or empty is checked further down.
+		namespaceMatches := targetRef.PolicyTargetReference.Namespace == nil && (v.Namespace == "" || v.Namespace == "default") ||
+			targetRef.PolicyTargetReference.Namespace != nil && v.Namespace == string(*targetRef.PolicyTargetReference.Namespace)
+
+		// Match the targetRef namespace to the backendtlspolicy namespace or ensure it is empty
+		targetRefNamespaceMatchesPolicyNamspace := v.Spec.TargetRef.PolicyTargetReference.Namespace == nil ||
+			v.Namespace == string(*v.Spec.TargetRef.PolicyTargetReference.Namespace)
+
+		sectionNameMatches := v.Spec.TargetRef.SectionName == nil && targetRef.SectionName == nil ||
+			v.Spec.TargetRef.SectionName != nil && targetRef.SectionName != nil &&
+				*v.Spec.TargetRef.SectionName == *targetRef.SectionName
+
+		if v.Spec.TargetRef.PolicyTargetReference.Group == targetRef.Group &&
+			v.Spec.TargetRef.PolicyTargetReference.Kind == targetRef.Kind &&
+			v.Spec.TargetRef.PolicyTargetReference.Name == targetRef.Name &&
+			namespaceMatches &&
+			targetRefNamespaceMatchesPolicyNamspace {
+			if sectionNameMatches {
+				return v, true
+			}
+
+			if v.Spec.TargetRef.SectionName == nil {
+				fallbackBackendTLSPolicy = v
+			}
+		}
+	}
+
+	if fallbackBackendTLSPolicy != nil {
+		return fallbackBackendTLSPolicy, true
+	}
+
+	return nil, false
+}
+
+func (kc *KubernetesCache) convertCACertConfigMapToSecret(configMap *core_v1.ConfigMap) (*core_v1.Secret, bool) {
+	if _, ok := configMap.Data[CACertificateKey]; !ok {
+		return nil, false
+	}
+
+	return &core_v1.Secret{
+		ObjectMeta: configMap.ObjectMeta,
+		Data: map[string][]byte{
+			CACertificateKey: []byte(configMap.Data[CACertificateKey]),
+		},
+		Type: core_v1.SecretTypeOpaque,
+	}, true
 }
