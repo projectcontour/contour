@@ -985,7 +985,7 @@ func (d *Deployment) EnvoyResourceAndName() string {
 func randomString(n int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 	ret := make([]byte, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
 		if err != nil {
 			return ""

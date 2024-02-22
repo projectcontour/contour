@@ -117,7 +117,7 @@ func ValidateListeners(listeners []gatewayapi_v1.Listener) ValidateListenersResu
 			// This allows Listeners that appear first in list
 			// order to take precedence, i.e. to be accepted and
 			// programmed, when there is a conflict.
-			for j := 0; j < i; j++ {
+			for j := range i {
 				otherListener := listeners[j]
 
 				if listener.Port != otherListener.Port {
