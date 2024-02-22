@@ -14,7 +14,7 @@ permissions:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.21.6
+  GO_VERSION: 1.22.0
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -284,6 +284,9 @@ jobs:
         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
     - name: test
+      env:
+        # TODO: remove once https://github.com/golang/go/issues/65653 is fixed
+        GOEXPERIMENT: nocoverageredesign
       run: |
         make install
         make check-coverage
@@ -328,6 +331,9 @@ jobs:
         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
     - name: test
+      env:
+        # TODO: remove once https://github.com/golang/go/issues/65653 is fixed
+        GOEXPERIMENT: nocoverageredesign
       run: |
         make install
         make check-coverage
