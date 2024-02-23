@@ -49,7 +49,7 @@ export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 1. Generate a new set of versioned docs, plus a changelog:
 
     ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    go run ./hack/cmd/prepare-release/main.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
 1. Proofread the release notes and do any reordering, rewording, reformatting necessary, including editing or deleting the "Deprecation and Removal Notices" section.
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
@@ -248,10 +248,10 @@ This process is easier than managing a `release-*` branch and having to cherry-p
 ### Generate the RC changelog
 
 1. Ensure the RC branch you created above is clean and up to date.
-1. Generate a changelog (the `prepare-release.go` script should detect the version is an RC and only generate a changelog):
+1. Generate a changelog (the `prepare-release/main.go` script should detect the version is an RC and only generate a changelog):
 
     ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    go run ./hack/cmd/prepare-release/main.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
 1. Proofread the release notes and do any reordering, rewording, reformatting necessary.
 1. Commit all changes, push the branch to `github.com/projectcontour/contour`.

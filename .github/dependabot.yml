@@ -164,3 +164,17 @@ updates:
       patterns:
       - "actions/upload-artifact"
       - "actions/download-artifact"
+
+# tools module
+- target-branch: main
+  package-ecosystem: "gomod"
+  directory: "/hack"
+  schedule:
+    interval: "weekly"
+    day: "sunday"
+  labels:
+  - area/dependency
+  - area/tooling
+  - release-note/none-required
+  reviewers:
+  - projectcontour/maintainers
