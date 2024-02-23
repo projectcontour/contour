@@ -55,6 +55,9 @@ func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
 				ClientCertificate: &secret,
 				FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
 			},
+			&dag.GatewayAPIProcessor{
+				FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+			},
 		}
 
 		b.Source.ConfiguredSecretRefs = []*types.NamespacedName{
