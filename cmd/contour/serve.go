@@ -918,7 +918,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 	log := x.log.WithField("context", "xds")
 
 	log.Info("waiting for the initial dag to be built")
-	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(ctx context.Context) (done bool, err error) {
+	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(context.Context) (done bool, err error) {
 		return x.initialDagBuilt(), nil
 	}); err != nil {
 		return fmt.Errorf("failed to wait for initial dag build, %w", err)

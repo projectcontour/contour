@@ -24,14 +24,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 )
 
 func TestTimeoutPolicyRequestTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc := fixture.NewService("kuard").
@@ -183,7 +182,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 }
 
 func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc := fixture.NewService("kuard").
@@ -238,7 +237,7 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 }
 
 func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc := fixture.NewService("kuard").WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})

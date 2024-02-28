@@ -1116,7 +1116,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, _ *gatewayapi_v1.Gateway, _ error) {
 				ds := &apps_v1.DaemonSet{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "gateway-1",
@@ -1142,7 +1142,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, _ *gatewayapi_v1.Gateway, _ error) {
 				ds := &apps_v1.DaemonSet{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "gateway-1",
@@ -1166,7 +1166,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 			},
 			gateway: makeGateway(),
-			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
+			assertions: func(t *testing.T, r *gatewayReconciler, _ *gatewayapi_v1.Gateway, _ error) {
 				ds := &apps_v1.DaemonSet{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "gateway-1",
