@@ -130,7 +130,7 @@ func HTTPRouteNotAcceptedDueToConflict(route *gatewayapi_v1.HTTPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteConflict), "HTTPRoute's Match has conflict with other HTTPRoute's Match") {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteRuleMatchConflict), "HTTPRoute's Match has conflict with other HTTPRoute's Match") {
 			return false
 		}
 	}
