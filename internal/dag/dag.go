@@ -749,9 +749,6 @@ type VirtualHost struct {
 	IPFilterRules []IPFilterRule
 
 	Routes map[string]*Route
-
-	// key is path + headerKey + queryParam
-	RouteHeaderAndQueryParamMatchMap map[string]*Route
 }
 
 // Add route to VirtualHosts.Routes map.

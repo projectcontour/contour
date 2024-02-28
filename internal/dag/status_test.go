@@ -5558,7 +5558,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:              "basic-1",
 					Namespace:         "default",
-					CreationTimestamp: meta_v1.NewTime(time.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC)),
+					CreationTimestamp: meta_v1.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
 				},
 				Spec: gatewayapi_v1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
@@ -5616,7 +5616,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:              "basic-2",
 					Namespace:         "default",
-					CreationTimestamp: meta_v1.NewTime(time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)),
+					CreationTimestamp: meta_v1.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
 				},
 				Spec: gatewayapi_v1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
@@ -5654,7 +5654,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:              "basic-3",
 					Namespace:         "default",
-					CreationTimestamp: meta_v1.NewTime(time.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC)),
+					CreationTimestamp: meta_v1.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
 				},
 				Spec: gatewayapi_v1.HTTPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
@@ -5711,7 +5711,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
 							routeResolvedRefsCondition(),
 						},
 					},
@@ -5723,7 +5723,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
 							routeResolvedRefsCondition(),
 						},
 					},

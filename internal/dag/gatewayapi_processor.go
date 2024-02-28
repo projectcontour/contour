@@ -1452,7 +1452,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 		routeAccessor.AddCondition(
 			gatewayapi_v1.RouteConditionAccepted,
 			meta_v1.ConditionFalse,
-			status.ReasonRouteConflict,
+			status.ReasonRouteRuleMatchConflict,
 			"HTTPRoute's Match has conflict with other HTTPRoute's Match",
 		)
 	} else {
@@ -2460,8 +2460,8 @@ func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewaya
 	sort.SliceStable(routes, func(i, j int) bool {
 		// if the creation time is the same, compare the route name
 		if routes[i].CreationTimestamp.Equal(&routes[j].CreationTimestamp) {
-			return fmt.Sprintf("%s/%s", routes[i].Namespace, routes[i].Name) <
-				fmt.Sprintf("%s/%s", routes[j].Namespace, routes[j].Name)
+			return k8s.NamespacedNameOf(routes[i]).String() <
+				k8s.NamespacedNameOf(routes[j]).String()
 		}
 		return routes[i].CreationTimestamp.Before(&routes[j].CreationTimestamp)
 	})
