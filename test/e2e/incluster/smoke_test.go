@@ -33,7 +33,7 @@ func testSimpleSmoke(namespace string) {
 		// This test may become flaky and should be investigated if there
 		// are changes that cause differences between the leader and
 		// non-leader contour instances.
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			f.Fixtures.Echo.Deploy(namespace, fmt.Sprintf("echo-%d", i))
 
 			p := &contour_v1.HTTPProxy{

@@ -94,7 +94,7 @@ func testResponseHeaderModifierBackendRef(namespace string, gateway types.Namesp
 
 		seenBackends := map[string]struct{}{}
 		// Retry a bunch of times to make sure we get to both backends.
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 				Host: string(route.Spec.Hostnames[0]),
 				Path: "/filter",
