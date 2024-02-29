@@ -72,6 +72,29 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
+	s3 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: core_v1.ServiceSpec{
+			ExternalName: "foo.io",
+			Ports: []core_v1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8080),
+				}, {
+					Name:       "health-check",
+					Protocol:   "TCP",
+					Port:       8998,
+					TargetPort: intstr.FromInt(8998),
+				},
+			},
+		},
+	}
+
 	svcExternal := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
@@ -194,6 +217,17 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+			},
+		},
+		"externalName service healthcheckport": {
+			cluster: &dag.Cluster{
+				Upstream: healthcheckService(s3),
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment:       ExternalNameClusterLoadAssignment(healthcheckService(s3)),
 			},
 		},
 		"externalName service - dns-lookup-family v4": {
@@ -1190,5 +1224,18 @@ func service(s *core_v1.Service, protocols ...string) *dag.Service {
 		},
 		ExternalName: s.Spec.ExternalName,
 		Protocol:     protocol,
+	}
+}
+
+func healthcheckService(s *core_v1.Service) *dag.Service {
+	return &dag.Service{
+		Weighted: dag.WeightedService{
+			Weight:           1,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+			HealthPort:       s.Spec.Ports[1],
+		},
+		ExternalName: s.Spec.ExternalName,
 	}
 }
