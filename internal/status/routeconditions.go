@@ -32,12 +32,13 @@ const (
 )
 
 const (
-	ReasonDegraded                      gatewayapi_v1.RouteConditionReason = "Degraded"
-	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
-	ReasonInvalidPathMatch              gatewayapi_v1.RouteConditionReason = "InvalidPathMatch"
-	ReasonInvalidMethodMatch            gatewayapi_v1.RouteConditionReason = "InvalidMethodMatch"
-	ReasonInvalidGateway                gatewayapi_v1.RouteConditionReason = "InvalidGateway"
-	ReasonRouteRuleMatchConflict        gatewayapi_v1.RouteConditionReason = "RuleMatchConflict"
+	ReasonDegraded                        gatewayapi_v1.RouteConditionReason = "Degraded"
+	ReasonAllBackendRefsHaveZeroWeights   gatewayapi_v1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
+	ReasonInvalidPathMatch                gatewayapi_v1.RouteConditionReason = "InvalidPathMatch"
+	ReasonInvalidMethodMatch              gatewayapi_v1.RouteConditionReason = "InvalidMethodMatch"
+	ReasonInvalidGateway                  gatewayapi_v1.RouteConditionReason = "InvalidGateway"
+	ReasonRouteRuleMatchConflict          gatewayapi_v1.RouteConditionReason = "RuleMatchConflict"
+	ReasonRouteRuleMatchPartiallyConflict gatewayapi_v1.RouteConditionReason = "RuleMatchPartiallyConflict"
 )
 
 // RouteStatusUpdate represents an atomic update to a
