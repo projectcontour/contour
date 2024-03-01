@@ -80,7 +80,7 @@ func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 					},
 					{
 						Matches: []gatewayapi_v1.HTTPRouteMatch{
-							{QueryParams: gatewayapi.HTTPQueryParamMatches(map[string]string{"no conflict": "no joke", "no conflict again": "no joke"})},
+							{QueryParams: gatewayapi.HTTPQueryParamMatches(map[string]string{"no-conflict": "no-joke", "no-conflict-again": "no-joke"})},
 						},
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-2", 80, 1),
 					},
