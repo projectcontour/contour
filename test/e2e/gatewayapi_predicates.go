@@ -130,7 +130,7 @@ func HTTPRouteNotAcceptedDueToConflict(route *gatewayapi_v1.HTTPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteRuleMatchConflict), "HTTPRoute's Match has conflict with other HTTPRoute's Match") {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteRuleMatchConflict), status.MessageRouteRuleMatchConflict) {
 			return false
 		}
 	}
@@ -147,7 +147,7 @@ func HTTPRoutePartiallyAccepted(route *gatewayapi_v1.HTTPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionPartiallyInvalid), meta_v1.ConditionTrue, string(status.ReasonRouteRuleMatchPartiallyConflict), "Dropped Rule: HTTPRoute's rule(s) has(ve) been droped because of conflict against other HTTPRoute's rule(s)") {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionPartiallyInvalid), meta_v1.ConditionTrue, string(status.ReasonRouteRuleMatchPartiallyConflict), status.MessageRouteRuleMatchPartiallyConflict) {
 			return false
 		}
 	}

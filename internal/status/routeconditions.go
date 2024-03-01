@@ -39,6 +39,9 @@ const (
 	ReasonInvalidGateway                  gatewayapi_v1.RouteConditionReason = "InvalidGateway"
 	ReasonRouteRuleMatchConflict          gatewayapi_v1.RouteConditionReason = "RuleMatchConflict"
 	ReasonRouteRuleMatchPartiallyConflict gatewayapi_v1.RouteConditionReason = "RuleMatchPartiallyConflict"
+
+	MessageRouteRuleMatchConflict          string = "HTTPRoute's Match has conflict with other HTTPRoute's Match"
+	MessageRouteRuleMatchPartiallyConflict string = "Dropped Rule: HTTPRoute's rule(s) has(ve) been dropped because of conflict against other HTTPRoute's rule(s)"
 )
 
 // RouteStatusUpdate represents an atomic update to a
