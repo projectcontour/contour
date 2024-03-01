@@ -26,7 +26,7 @@ import (
 )
 
 func testHTTPRouteConflictMatch(namespace string, gateway types.NamespacedName) {
-	Specify("Creates two http routes, second one has conflict match condition as the first one", func() {
+	Specify("Creates two http routes, second one has conflict match against the first one, report Accepted: false", func() {
 		By("create httproute-1 first")
 		route1 := &gatewayapi_v1.HTTPRoute{
 			ObjectMeta: meta_v1.ObjectMeta{
