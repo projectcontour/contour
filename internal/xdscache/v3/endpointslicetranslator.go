@@ -351,6 +351,9 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 	if changed {
 		e.Debug("cluster load assignments changed, notifying waiters")
 		e.Notify()
+		if e.Observer != nil {
+			e.Observer.Refresh()
+		}
 	} else {
 		e.Debug("cluster load assignments did not change")
 	}
@@ -443,6 +446,13 @@ func (e *EndpointSliceTranslator) Contents() []proto.Message {
 
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
+}
+
+func (e *EndpointSliceTranslator) ContentsByName() map[string]proto.Message {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	return protobuf.AsMessagesByName(e.entries)
 }
 
 func (e *EndpointSliceTranslator) Query(names []string) []proto.Message {

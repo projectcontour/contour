@@ -57,6 +57,13 @@ func (c *ClusterCache) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
+func (c *ClusterCache) ContentsByName() map[string]proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return protobuf.AsMessagesByName(c.values)
+}
+
 func (c *ClusterCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()

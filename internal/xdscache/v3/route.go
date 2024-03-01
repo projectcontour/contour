@@ -59,6 +59,13 @@ func (c *RouteCache) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
+func (c *RouteCache) ContentsByName() map[string]proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return protobuf.AsMessagesByName(c.values)
+}
+
 // Query searches the RouteCache for the named RouteConfiguration entries.
 func (c *RouteCache) Query(names []string) []proto.Message {
 	c.mu.Lock()

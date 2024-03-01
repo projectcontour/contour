@@ -335,6 +335,13 @@ func (c *ListenerCache) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
+func (c *ListenerCache) ContentsByName() map[string]proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return protobuf.AsMessagesByName(c.values)
+}
+
 // Query returns the proto.Messages in the ListenerCache that match
 // a slice of strings
 func (c *ListenerCache) Query(names []string) []proto.Message {

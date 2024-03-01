@@ -228,6 +228,7 @@ type mockResource struct {
 }
 
 func (m *mockResource) Contents() []proto.Message                   { return m.contents() }
+func (m *mockResource) ContentsByName() map[string]proto.Message    { panic("not implemented") }
 func (m *mockResource) Query(names []string) []proto.Message        { return m.query(names) }
 func (m *mockResource) Register(ch chan int, last int, _ ...string) { m.register(ch, last) }
 func (m *mockResource) TypeURL() string                             { return m.typeurl() }

@@ -72,6 +72,13 @@ func (c *SecretCache) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
+func (c *SecretCache) ContentsByName() map[string]proto.Message {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return protobuf.AsMessagesByName(c.values)
+}
+
 func (c *SecretCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()

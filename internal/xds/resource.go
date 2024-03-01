@@ -25,6 +25,10 @@ type Resource interface {
 	// Contents returns the contents of this resource.
 	Contents() []proto.Message
 
+	// ContentsByName returns the contents of this resource,
+	// indexed by name.
+	ContentsByName() map[string]proto.Message
+
 	// Query returns an entry for each resource name supplied.
 	Query(names []string) []proto.Message
 

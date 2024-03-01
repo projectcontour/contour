@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"sync"
 
+	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -58,7 +59,7 @@ func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings) *RuntimeCache 
 	}
 }
 
-func (c *RuntimeCache) buildDynamicLayer() []proto.Message {
+func (c *RuntimeCache) buildDynamicLayer() []*envoy_service_runtime_v3.Runtime {
 	values := make(map[string]*structpb.Value)
 	for k, v := range c.runtimeKV {
 		values[k] = v
@@ -68,19 +69,29 @@ func (c *RuntimeCache) buildDynamicLayer() []proto.Message {
 	for k, v := range c.dynamicRuntimeKV {
 		values[k] = v
 	}
-	return protobuf.AsMessages(envoy_v3.RuntimeLayers(values))
+	return envoy_v3.RuntimeLayers(values)
 }
 
 // Contents returns all Runtime layers (currently only the dynamic layer).
 func (c *RuntimeCache) Contents() []proto.Message {
-	return c.buildDynamicLayer()
+	return protobuf.AsMessages(c.buildDynamicLayer())
+}
+
+func (c *RuntimeCache) ContentsByName() map[string]proto.Message {
+	res := map[string]proto.Message{}
+
+	for _, c := range c.buildDynamicLayer() {
+		res[c.Name] = c
+	}
+
+	return res
 }
 
 // Query returns only the "dynamic" layer if requested, otherwise empty.
 func (c *RuntimeCache) Query(names []string) []proto.Message {
 	for _, name := range names {
 		if name == envoy_v3.DynamicRuntimeLayerName {
-			return c.buildDynamicLayer()
+			return c.Contents()
 		}
 	}
 	return []proto.Message{}
