@@ -761,9 +761,10 @@ func (v *VirtualHost) AddRoute(route *Route) {
 }
 
 // HasConflictRoute returns true if there is existing Path + Headers
-// + QueryParams combination match this route candidate.
+// + QueryParams combination match this route candidate and also they are same kind of Route.
 func (v *VirtualHost) HasConflictRoute(route *Route) bool {
-	if _, ok := v.Routes[conditionsToString(route)]; ok {
+	// If match exist and kind is the same kind, return true.
+	if r, ok := v.Routes[conditionsToString(route)]; ok && r.Kind == route.Kind {
 		return true
 	}
 	return false
