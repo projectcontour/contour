@@ -206,7 +206,7 @@ The server configuration block can be used to configure various settings for the
 
 | Field Name      | Type   | Default | Description                                                                   |
 | --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
-| xds-server-type | string | contour | This field specifies the xDS Server to use. Options are `contour` or `envoy`. |
+| xds-server-type | string | envoy   | This field specifies the xDS Server to use. Options are `contour` or `envoy`. |
 
 ### Gateway Configuration
 
@@ -316,7 +316,7 @@ data:
     #
     # server:
     #   determine which XDS Server implementation to utilize in Contour.
-    #   xds-server-type: contour
+    #   xds-server-type: envoy
     #
     # specify the gateway-api Gateway Contour should configure
     # gateway:

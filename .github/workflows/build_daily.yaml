@@ -16,7 +16,7 @@ env:
   GO_VERSION: 1.22.0
 
 jobs:
-  e2e-envoy-xds:
+  e2e-contour-xds:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -43,7 +43,7 @@ jobs:
     - name: e2e tests
       env:
         CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
-        CONTOUR_E2E_XDS_SERVER_TYPE: envoy
+        CONTOUR_E2E_XDS_SERVER_TYPE: contour
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
     - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
