@@ -16,9 +16,14 @@
 package gateway
 
 import (
+	"context"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -26,7 +31,7 @@ import (
 )
 
 func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.NamespacedName) {
-	Specify("Creates two http routes, second one has conflict match condition as the first one", func() {
+	Specify("Creates two http routes, second one has partial conflict match against the first one, has partially match condition", func() {
 		By("create httproute-1 first")
 		route1 := &gatewayapi_v1.HTTPRoute{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -87,13 +92,14 @@ func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 				},
 			},
 		}
+		// Partially accepted
 		f.CreateHTTPRouteAndWaitFor(route2, e2e.HTTPRoutePartiallyAccepted)
-		// 1) Drop Rule(s): With this approach, implementations will drop the
-		//    invalid Route Rule(s) until they are fully valid again. The message
-		//    for this condition MUST start with the prefix "Dropped Rule" and
-		//    include information about which Rules have been dropped. In this
-		//    state, the "Accepted" condition MUST be set to "True" with the latest
-		//    generation of the resource.
-		f.CreateHTTPRouteAndWaitFor(route2, e2e.HTTPRouteAccepted)
+		// Still has Accepted: true
+		require.Eventually(f.T(), func() bool {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route2), route2); err != nil {
+				return false
+			}
+			return e2e.HTTPRouteAccepted(route2)
+		}, time.Minute*2, f.RetryInterval)
 	})
 }
