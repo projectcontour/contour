@@ -1472,14 +1472,14 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 			gatewayapi_v1.RouteConditionAccepted,
 			meta_v1.ConditionFalse,
 			status.ReasonRouteRuleMatchConflict,
-			"HTTPRoute's Match has conflict with other HTTPRoute's Match",
+			status.MessageRouteRuleMatchConflict,
 		)
 	} else if invalidRuleCnt > 0 {
 		routeAccessor.AddCondition(
 			gatewayapi_v1.RouteConditionPartiallyInvalid,
 			meta_v1.ConditionTrue,
 			status.ReasonRouteRuleMatchPartiallyConflict,
-			"Dropped Rule: HTTPRoute's rule(s) has(ve) been droped because of conflict against other HTTPRoute's rule(s)",
+			status.MessageRouteRuleMatchPartiallyConflict,
 		)
 	}
 }
