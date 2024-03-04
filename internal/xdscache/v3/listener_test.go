@@ -26,6 +26,8 @@ import (
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -79,6 +81,30 @@ func TestListenerCacheContents(t *testing.T) {
 			got := lc.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestListenerCacheContentsByName(t *testing.T) {
+	var lc ListenerCache
+
+	assert.Nil(t, lc.ContentsByName())
+
+	contents := map[string]*envoy_config_listener_v3.Listener{
+		ENVOY_HTTP_LISTENER: {
+			Name:          ENVOY_HTTP_LISTENER,
+			Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
+			FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo), 0)),
+			SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+		},
+	}
+
+	lc.Update(contents)
+
+	got := lc.ContentsByName()
+
+	require.Equal(t, len(contents), len(got))
+	for name, val := range contents {
+		protobuf.ExpectEqual(t, val, got[name])
 	}
 }
 

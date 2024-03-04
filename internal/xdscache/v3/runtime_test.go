@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	core_v1 "k8s.io/api/core/v1"
@@ -74,6 +75,29 @@ func TestRuntimeCacheContents(t *testing.T) {
 				},
 			}, rc.Contents())
 		})
+	}
+}
+
+func TestRuntimeCacheContentsByName(t *testing.T) {
+	var rc RuntimeCache
+
+	want := map[string]*envoy_service_runtime_v3.Runtime{
+		"dynamic": {
+			Name: "dynamic",
+			Layer: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
+					"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
+				},
+			},
+		},
+	}
+
+	got := rc.ContentsByName()
+
+	require.Equal(t, len(want), len(got))
+	for name, val := range want {
+		protobuf.ExpectEqual(t, val, got[name])
 	}
 }
 

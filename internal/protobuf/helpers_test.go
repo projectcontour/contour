@@ -16,7 +16,9 @@ package protobuf
 import (
 	"testing"
 
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -28,4 +30,38 @@ func TestU32Nil(t *testing.T) {
 func TestU32Default(t *testing.T) {
 	assert.Equal(t, wrapperspb.UInt32(99), UInt32OrDefault(0, 99))
 	assert.Equal(t, wrapperspb.UInt32(1), UInt32OrDefault(1, 99))
+}
+
+func TestAsMessages(t *testing.T) {
+	assert.Nil(t, AsMessages([]*envoy_config_cluster_v3.Cluster{}))
+
+	in := []*envoy_config_cluster_v3.Cluster{
+		{Name: "cluster-1"},
+		{Name: "cluster-2"},
+		{Name: "cluster-3"},
+		{Name: "cluster-4"},
+	}
+	out := AsMessages(in)
+
+	require.Len(t, out, len(in))
+	for i := range in {
+		assert.EqualValues(t, in[i], out[i])
+	}
+}
+
+func TestAsMessagesByName(t *testing.T) {
+	assert.Nil(t, AsMessagesByName(map[string]*envoy_config_cluster_v3.Cluster{}))
+
+	in := map[string]*envoy_config_cluster_v3.Cluster{
+		"cluster-1": {Name: "cluster-1"},
+		"cluster-2": {Name: "cluster-2"},
+		"cluster-3": {Name: "cluster-3"},
+		"cluster-4": {Name: "cluster-4"},
+	}
+	out := AsMessagesByName(in)
+
+	require.Len(t, out, len(in))
+	for name := range in {
+		assert.EqualValues(t, in[name], out[name])
+	}
 }

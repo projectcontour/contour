@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	core_v1 "k8s.io/api/core/v1"
@@ -59,6 +60,27 @@ func TestEndpointSliceTranslatorContents(t *testing.T) {
 			got := endpointSliceTranslator.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestEndpointSliceTranslatorContentsByName(t *testing.T) {
+	var est EndpointSliceTranslator
+
+	assert.Nil(t, est.ContentsByName())
+
+	contents := map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+		"default/httpbin-org": envoy_v3.ClusterLoadAssignment("default/httpbin-org",
+			envoy_v3.SocketAddress("10.10.10.10", 80),
+		),
+	}
+
+	est.entries = contents
+
+	got := est.ContentsByName()
+
+	require.Equal(t, len(contents), len(got))
+	for name, val := range contents {
+		protobuf.ExpectEqual(t, val, got[name])
 	}
 }
 

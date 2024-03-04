@@ -18,6 +18,8 @@ import (
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -57,6 +59,25 @@ func TestSecretCacheContents(t *testing.T) {
 			got := sc.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestSecretCacheContentsByName(t *testing.T) {
+	var sc SecretCache
+
+	assert.Nil(t, sc.ContentsByName())
+
+	contents := map[string]*envoy_transport_socket_tls_v3.Secret{
+		"default/secret/0567f551af": secret("default/secret/0567f551af", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
+	}
+
+	sc.Update(contents)
+
+	got := sc.ContentsByName()
+
+	require.Equal(t, len(contents), len(got))
+	for name, val := range contents {
+		protobuf.ExpectEqual(t, val, got[name])
 	}
 }
 

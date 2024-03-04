@@ -63,6 +63,27 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 	}
 }
 
+func TestEndpointsTranslatorContentsByName(t *testing.T) {
+	var et EndpointsTranslator
+
+	assert.Nil(t, et.ContentsByName())
+
+	contents := map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+		"default/httpbin-org": envoy_v3.ClusterLoadAssignment("default/httpbin-org",
+			envoy_v3.SocketAddress("10.10.10.10", 80),
+		),
+	}
+
+	et.entries = contents
+
+	got := et.ContentsByName()
+
+	require.Equal(t, len(contents), len(got))
+	for name, val := range contents {
+		protobuf.ExpectEqual(t, val, got[name])
+	}
+}
+
 func TestEndpointCacheQuery(t *testing.T) {
 	tests := map[string]struct {
 		contents map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment

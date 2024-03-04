@@ -25,6 +25,7 @@ import (
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -80,6 +81,27 @@ func TestRouteCacheContents(t *testing.T) {
 			got := rc.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestRouteCacheContentsByName(t *testing.T) {
+	var rc RouteCache
+
+	assert.Nil(t, rc.ContentsByName())
+
+	contents := map[string]*envoy_config_route_v3.RouteConfiguration{
+		"ingress_http": {
+			Name: "ingress_http",
+		},
+	}
+
+	rc.Update(contents)
+
+	got := rc.ContentsByName()
+
+	require.Equal(t, len(contents), len(got))
+	for name, val := range contents {
+		protobuf.ExpectEqual(t, val, got[name])
 	}
 }
 

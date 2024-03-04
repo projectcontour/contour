@@ -20,6 +20,8 @@ import (
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -75,6 +77,33 @@ func TestClusterCacheContents(t *testing.T) {
 			got := cc.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestClusterCacheContentsByName(t *testing.T) {
+	var cc ClusterCache
+
+	assert.Nil(t, cc.ContentsByName())
+
+	contents := map[string]*envoy_config_cluster_v3.Cluster{
+		"default/kuard/443/da39a3ee5e": {
+			Name:                 "default/kuard/443/da39a3ee5e",
+			AltStatName:          "default_kuard_443",
+			ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+			EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+				EdsConfig:   envoy_v3.ConfigSource("contour"),
+				ServiceName: "default/kuard",
+			},
+		},
+	}
+
+	cc.Update(contents)
+
+	got := cc.ContentsByName()
+
+	require.Equal(t, len(contents), len(got))
+	for name, val := range contents {
+		protobuf.ExpectEqual(t, val, got[name])
 	}
 }
 
