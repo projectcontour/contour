@@ -1036,7 +1036,7 @@ func Defaults() Parameters {
 		InCluster:  false,
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
-			XDSServerType: ContourServerType,
+			XDSServerType: EnvoyServerType,
 		},
 		IngressStatusAddress:       "",
 		AccessLogFormat:            DEFAULT_ACCESS_LOG_TYPE,
