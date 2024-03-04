@@ -12,7 +12,7 @@ GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{pri
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
-LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | head -n1 | awk '{print $$2}')
+LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v '127.' | head -n1 | awk '{print $$2}')
 
 # Variables needed for running e2e tests.
 CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
