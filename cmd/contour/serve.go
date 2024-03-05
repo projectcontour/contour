@@ -925,6 +925,9 @@ func (x *xdsServer) Start(ctx context.Context) error {
 	switch x.config.Type {
 	case contour_v1alpha1.EnvoyServerType:
 		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.GetCache(), contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+
+		// Generate a snapshot based on the initial DAG build.
+		x.snapshotHandler.OnChange(nil)
 	case contour_v1alpha1.ContourServerType:
 		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
 	default:
