@@ -121,6 +121,11 @@ var _ = Describe("Infra", func() {
 	AfterEach(func() {
 		f.Kubectl.StopKubectlPortForward(kubectlCmd)
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
+		// Not restarting Envoy here because it causes the subsequent port-forward
+		// to be flaky, and it does not appear to be needed here. Could be added
+		// later if the port-forward is de-flaked (possibly need to do a better
+		// job of waiting for new pod(s) to be running before starting the port
+		// forward).
 	})
 
 	f.Test(testMetrics)
