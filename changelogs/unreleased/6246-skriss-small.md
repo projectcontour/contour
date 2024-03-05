@@ -1,0 +1,1 @@
+Updates the example `envoyproxy/ratelimit` image tag to `19f2079f`, for multi-arch support and other improvements.
