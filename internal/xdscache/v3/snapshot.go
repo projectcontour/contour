@@ -64,13 +64,19 @@ func NewSnapshotHandler(resources []xdscache.ResourceCache, log logrus.FieldLogg
 		}
 	)
 
-	return &SnapshotHandler{
+	sh := &SnapshotHandler{
 		resources:     parseResources(resources),
 		snapshotCache: snapshotCache,
 		edsCache:      edsCache,
 		muxCache:      muxCache,
 		log:           log,
 	}
+
+	// Trigger an initial snapshot, based on any static values
+	// present in the resource caches.
+	sh.OnChange(nil)
+
+	return sh
 }
 
 func (s *SnapshotHandler) GetCache() envoy_cache_v3.Cache {
