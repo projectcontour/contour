@@ -44,7 +44,7 @@ data:
   ratelimit-config.yaml: |
     domain: contour
     descriptors:
-      
+
       # requests with a descriptor of ["generic_key": "foo"]
       # are limited to one per minute.
       - key: generic_key
@@ -52,7 +52,7 @@ data:
         rate_limit:
           unit: minute
           requests_per_unit: 1
-      
+
       # each unique remote address (i.e. client IP)
       # is limited to three requests per minute.
       - key: remote_address
@@ -90,7 +90,7 @@ spec:
             - name: REDIS_URL
               value: redis:6379
         - name: ratelimit
-          image: docker.io/envoyproxy/ratelimit:6f5de117
+          image: docker.io/envoyproxy/ratelimit:19f2079f
           ports:
             - containerPort: 8080
               name: http
@@ -129,7 +129,7 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
-        - name: ratelimit-config  
+        - name: ratelimit-config
           configMap:
             name: ratelimit-config
 ```
@@ -155,7 +155,7 @@ spec:
 Check the progress of the deployment:
 
 ```bash
-$ kubectl -n projectcontour get pods -l app=ratelimit 
+$ kubectl -n projectcontour get pods -l app=ratelimit
 NAME                         READY   STATUS    RESTARTS   AGE
 ratelimit-658f4b8f6b-2hnrf   2/2     Running   0          12s
 ```
@@ -181,7 +181,7 @@ spec:
     - name: ratelimit
       port: 8081
   timeoutPolicy:
-    response: 100ms  
+    response: 100ms
 ```
 
 Update the Contour configmap to have the following RLS configuration:
@@ -332,7 +332,7 @@ spec:
 ## Default Global rate limit policy
 
 Contour supports defining a default global rate limit policy in the `rateLimitService` configuration
-which is applied to all virtual hosts unless the host is opted-out by 
+which is applied to all virtual hosts unless the host is opted-out by
 explicitly setting `disabled` to `true`. This is useful for a single-tenant
 setup use-case. This means you don't have to edit all HTTPProxy objects with the same rate limit policies, instead you can
 define the policies in the `rateLimitService` configuration like this:
@@ -413,7 +413,7 @@ descriptors:
     rate_limit:
       unit: minute
       requests_per_unit: 1
-  
+
   # each unique remote address (i.e. client IP)
   # is limited to three total requests per minute.
   - key: remote_address
