@@ -369,6 +369,10 @@ func (d *Deployment) EnsureEnvoyDeployment() error {
 	return d.ensureResource(d.EnvoyDeployment, new(apps_v1.Deployment))
 }
 
+func (d *Deployment) RestartEnvoy() error {
+	return d.client.DeleteAllOf(context.Background(), &core_v1.Pod{}, client.InNamespace(d.Namespace.Name), client.MatchingLabels{"app": "envoy"})
+}
+
 func (d *Deployment) WaitForEnvoyUpdated() error {
 	if d.EnvoyDeploymentMode == DaemonsetMode {
 		return WaitForEnvoyDaemonSetUpdated(d.EnvoyDaemonSet, d.client, d.contourImage)

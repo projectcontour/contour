@@ -141,6 +141,7 @@ var _ = Describe("Gateway API", func() {
 	AfterEach(func() {
 		require.NoError(f.T(), f.DeleteGatewayClass(contourGatewayClass, false))
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
+		require.NoError(f.T(), f.Deployment.RestartEnvoy())
 	})
 
 	Describe("Gateway with one HTTP listener", func() {
