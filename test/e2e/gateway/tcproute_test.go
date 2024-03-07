@@ -16,6 +16,9 @@
 package gateway
 
 import (
+	"context"
+	"net/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -71,5 +74,14 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 		// proxying HTTP; this ensures we are proxying TCP only.
 		assert.Equal(t, "", res.Headers.Get("server"))
 		assert.Equal(t, "", res.Headers.Get("x-envoy-upstream-service-time"))
+
+		// Delete route and wait for config to no longer be present so this
+		// test doesn't pollute others. This route is effectively matches all
+		// hostnames so it can affect other tests.
+		require.NoError(t, f.Client.Delete(context.Background(), route))
+		_, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Condition: e2e.HasStatusCode(http.StatusNotFound),
+		})
+		assert.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
 	})
 }
