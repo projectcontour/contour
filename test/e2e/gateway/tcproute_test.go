@@ -76,7 +76,7 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 		assert.Equal(t, "", res.Headers.Get("x-envoy-upstream-service-time"))
 
 		// Delete route and wait for config to no longer be present so this
-		// test doesn't pollute others. This route is effectively matches all
+		// test doesn't pollute others. This route effectively matches all
 		// hostnames so it can affect other tests.
 		require.NoError(t, f.Client.Delete(context.Background(), route))
 		_, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
