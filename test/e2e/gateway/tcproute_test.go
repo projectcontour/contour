@@ -17,8 +17,6 @@ package gateway
 
 import (
 	"context"
-	"io"
-	"net/url"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
@@ -81,17 +79,12 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 		// hostnames so it can affect other tests.
 		require.NoError(t, f.Client.Delete(context.Background(), route))
 		require.Eventually(t, func() bool {
-			if _, err := f.HTTP.Request(&e2e.HTTPRequestOpts{}); err != nil {
-				urlErr, ok := err.(*url.Error)
-				if !ok {
-					return false
-				}
-				// The listener this route is under should eventually get
-				// removed so the connection should fail in this specific
-				// manner.
-				return urlErr.Unwrap() == io.EOF
-			}
-			return false
-		}, f.RetryTimeout, f.RetryInterval)
+			_, err := f.HTTP.Request(&e2e.HTTPRequestOpts{})
+			return err != nil
+		}, f.RetryTimeout, f.RetryInterval, "expected request to eventually fail")
+		require.Never(t, func() bool {
+			_, err := f.HTTP.Request(&e2e.HTTPRequestOpts{})
+			return err == nil
+		}, f.RetryTimeout, f.RetryInterval, "expected request to never succeed after failing")
 	})
 }
