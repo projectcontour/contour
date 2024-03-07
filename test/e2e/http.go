@@ -134,6 +134,40 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 	return h.requestUntil(makeRequest, opts.Condition)
 }
 
+// Request makes a single HTTP request with the provided parameters
+// and returns the HTTP response or an error. Note that opts.Condition is
+// ignored by this method.
+//
+// In general, E2E's should use RequestUntil instead of this method since
+// RequestUntil will retry requests to account for eventual consistency and
+// other ephemeral issues.
+func (h *HTTP) Request(opts *HTTPRequestOpts) (*HTTPResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, nil)
+	require.NoError(h.t, err, "error creating HTTP request")
+
+	req.Host = opts.Host
+	for _, opt := range opts.RequestOpts {
+		opt(req)
+	}
+
+	client := httpClient(opts.ClientOpts...)
+
+	r, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	require.NoError(h.t, err)
+
+	return &HTTPResponse{
+		StatusCode: r.StatusCode,
+		Headers:    r.Header,
+		Body:       bodyBytes,
+	}, nil
+}
+
 func OptDontFollowRedirects(c *http.Client) {
 	// Per CheckRedirect godoc: "As a special case, if
 	// CheckRedirect returns ErrUseLastResponse, then
