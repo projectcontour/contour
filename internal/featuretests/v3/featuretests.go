@@ -32,6 +32,7 @@ import (
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -109,6 +110,9 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		}
 	}
 
+	snapshotHandler := xdscache_v3.NewSnapshotHandler(resources, log)
+	et.SetObserver(snapshotHandler)
+
 	registry := prometheus.NewRegistry()
 
 	builder := &dag.Builder{
@@ -150,7 +154,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
 		Observer: contour.NewRebuildMetricsObserver(
 			metrics.NewMetrics(registry),
-			dag.ComposeObservers(xdscache.ObserversOf(resources)...),
+			dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		),
 		Builder: builder,
 	}, func() bool { return true })
@@ -159,7 +163,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 	require.NoError(t, err)
 
 	srv := xds.NewServer(registry)
-	contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
+	contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), snapshotHandler.GetCache(), contour_xds_v3.NewRequestLoggingCallbacks(log)), srv)
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
@@ -478,15 +482,10 @@ type Response struct {
 func (r *Response) Equals(want *envoy_service_discovery_v3.DiscoveryResponse) *Contour {
 	r.Helper()
 
+	sort.Slice(want.Resources, func(i, j int) bool { return string(want.Resources[i].Value) < string(want.Resources[j].Value) })
+	sort.Slice(r.Resources, func(i, j int) bool { return string(r.Resources[i].Value) < string(r.Resources[j].Value) })
+
 	protobuf.RequireEqual(r.T, want.Resources, r.DiscoveryResponse.Resources)
 
 	return r.Contour
-}
-
-// Equals(...) only checks resources, so explicitly
-// check version & nonce here and subsequently.
-func (r *Response) assertEqualVersion(t *testing.T, expected string) {
-	t.Helper()
-	assert.Equal(t, expected, r.VersionInfo, "got unexpected VersionInfo")
-	assert.Equal(t, expected, r.Nonce, "got unexpected Nonce")
 }

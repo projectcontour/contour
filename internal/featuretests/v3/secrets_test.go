@@ -88,12 +88,6 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	assertEqualVersion := func(t *testing.T, expected string, r *Response) {
-		t.Helper()
-		assert.Equal(t, expected, r.VersionInfo, "got unexpected VersionInfo")
-		assert.Equal(t, expected, r.Nonce, "got unexpected Nonce")
-	}
-
 	svc1 := fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
@@ -131,9 +125,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
-	// Equals(...) only checks resources, so explicitly
-	// check version & nonce here and subsequently.
-	assertEqualVersion(t, "2", res)
+	vers := res.VersionInfo
 
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
@@ -141,7 +133,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
-	assertEqualVersion(t, "2", res)
+	assert.Equal(t, vers, res.VersionInfo)
 
 	// s2 is not referenced by any active ingress object.
 	s2 := &core_v1.Secret{
@@ -158,7 +150,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
-	assertEqualVersion(t, "2", res)
+	assert.Equal(t, vers, res.VersionInfo)
 
 	// Verify that deleting an unreferenced secret does not
 	// bump the current version_info.
@@ -167,14 +159,14 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t, secret(s1)),
 	})
-	assertEqualVersion(t, "2", res)
+	assert.Equal(t, vers, res.VersionInfo)
 
 	// Verify that deleting a referenced secret does
 	// bump the current version_info.
 	rh.OnDelete(s1)
 	res = c.Request(secretType)
 	res.Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
-	assertEqualVersion(t, "3", res)
+	assert.NotEqual(t, vers, res.VersionInfo)
 }
 
 // issue 1169, an invalid certificate should not be

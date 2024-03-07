@@ -20,6 +20,7 @@ import (
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -1097,9 +1098,6 @@ func TestUnreferencedService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// Equals(...) only checks resources, so explicitly
-	// check version & nonce here and subsequently.
-
 	// This service which is added should cause a DAG rebuild
 	s1 := fixture.NewService("kuard").
 		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")})
@@ -1141,7 +1139,8 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-	res.assertEqualVersion(t, "1")
+	vers := res.VersionInfo
+
 	// This service which is added should not cause a DAG rebuild
 	s2 := fixture.NewService("kuard-notreferenced").
 		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
@@ -1154,7 +1153,8 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-	res.assertEqualVersion(t, "1")
+	assert.Equal(t, vers, res.VersionInfo)
+
 	// verifying that deleting a Service that is not referenced by an HTTPProxy,
 	// does not trigger a rebuild
 	rh.OnDelete(s2)
@@ -1165,11 +1165,11 @@ func TestUnreferencedService(t *testing.T) {
 		),
 		TypeUrl: clusterType,
 	})
-	res.assertEqualVersion(t, "1")
+	assert.Equal(t, vers, res.VersionInfo)
 
 	// verifying that deleting a Service that is referenced by an HTTPProxy,
 	// triggers a rebuild
 	rh.OnDelete(s1)
 	res = c.Request(clusterType)
-	res.assertEqualVersion(t, "2")
+	assert.NotEqual(t, vers, res.VersionInfo)
 }
