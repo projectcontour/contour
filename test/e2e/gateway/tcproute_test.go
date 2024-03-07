@@ -17,7 +17,8 @@ package gateway
 
 import (
 	"context"
-	"net/http"
+	"io"
+	"net/url"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
@@ -79,9 +80,18 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 		// test doesn't pollute others. This route effectively matches all
 		// hostnames so it can affect other tests.
 		require.NoError(t, f.Client.Delete(context.Background(), route))
-		_, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Condition: e2e.HasStatusCode(http.StatusNotFound),
-		})
-		assert.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
+		require.Eventually(t, func() bool {
+			if _, err := f.HTTP.Request(&e2e.HTTPRequestOpts{}); err != nil {
+				urlErr, ok := err.(*url.Error)
+				if !ok {
+					return false
+				}
+				// The listener this route is under should eventually get
+				// removed so the connection should fail in this specific
+				// manner.
+				return urlErr.Unwrap() == io.EOF
+			}
+			return false
+		}, f.RetryTimeout, f.RetryInterval)
 	})
 }
