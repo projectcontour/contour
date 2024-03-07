@@ -92,13 +92,18 @@ func testRequestHeaderModifierBackendRef(namespace string, gateway types.Namespa
 					"Replace-Header": "Tobe-Replaced",
 				}),
 			},
-			Condition: e2e.HasStatusCode(200),
+			Condition: func(h *e2e.HTTPResponse) bool {
+				if !e2e.HasStatusCode(200)(h) {
+					return false
+				}
+				body := f.GetEchoResponseBody(h.Body)
+				return body.Namespace == namespace && body.Service == "echo-header-filter"
+			},
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-		body := f.GetEchoResponseBody(res.Body)
-		assert.Equal(t, "echo-header-filter", body.Service)
 
+		body := f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "Foo", body.RequestHeaders.Get("My-Header"))
 		assert.Equal(t, "Bar", body.RequestHeaders.Get("Replace-Header"))
 
@@ -114,13 +119,17 @@ func testRequestHeaderModifierBackendRef(namespace string, gateway types.Namespa
 					"Other-Header": "Exist",
 				}),
 			},
-			Condition: e2e.HasStatusCode(200),
+			Condition: func(h *e2e.HTTPResponse) bool {
+				if !e2e.HasStatusCode(200)(h) {
+					return false
+				}
+				body := f.GetEchoResponseBody(h.Body)
+				return body.Namespace == namespace && body.Service == "echo-header-nofilter"
+			},
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body = f.GetEchoResponseBody(res.Body)
-		assert.Equal(t, "echo-header-nofilter", body.Service)
-
 		assert.Equal(t, "Exist", body.RequestHeaders.Get("Other-Header"))
 
 		_, found = body.RequestHeaders["My-Header"]
