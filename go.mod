@@ -8,7 +8,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/alecthomas/kingpin/v2 v2.3.2
 	github.com/bombsimon/logrusr/v2 v2.0.1
-	github.com/cert-manager/cert-manager v1.12.8
+	github.com/cert-manager/cert-manager v1.12.9
 	github.com/davecgh/go-spew v1.1.1
 	github.com/envoyproxy/go-control-plane v0.11.1
 	github.com/go-logr/logr v1.3.0
@@ -32,7 +32,7 @@ require (
 	gonum.org/v1/plot v0.13.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d
 	google.golang.org/grpc v1.59.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.28.7
 	k8s.io/apiextensions-apiserver v0.28.7
