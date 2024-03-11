@@ -2,7 +2,7 @@
 
 As of this release, Contour now uses the `envoy` xDS server implementation by default.
 This xDS server implementation is based on Envoy's [go-control-plane project](https://github.com/envoyproxy/go-control-plane) and will eventually be the only supported xDS server implementation in Contour.
-This change is expected to be transparent to users, and has been tested extensively.
+This change is expected to be transparent to users.
 
 ### I'm seeing issues after upgrading, how to I revert to the contour xDS server?
 
