@@ -47,14 +47,7 @@ func NewSnapshotHandler(resources []xdscache.ResourceCache, log logrus.FieldLogg
 		edsCache     = envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, log.WithField("context", "edsCache"))
 
 		mux = &envoy_cache_v3.MuxCache{
-			Caches: map[string]envoy_cache_v3.Cache{
-				envoy_resource_v3.ListenerType: defaultCache,
-				envoy_resource_v3.ClusterType:  defaultCache,
-				envoy_resource_v3.RouteType:    defaultCache,
-				envoy_resource_v3.SecretType:   defaultCache,
-				envoy_resource_v3.RuntimeType:  defaultCache,
-				envoy_resource_v3.EndpointType: edsCache,
-			},
+			Caches: map[string]envoy_cache_v3.Cache{},
 			Classify: func(req *envoy_service_discovery_v3.DiscoveryRequest) string {
 				return req.GetTypeUrl()
 			},
@@ -63,6 +56,14 @@ func NewSnapshotHandler(resources []xdscache.ResourceCache, log logrus.FieldLogg
 			},
 		}
 	)
+
+	for _, resourceCache := range resources {
+		if typeURL := resourceCache.TypeURL(); typeURL == envoy_resource_v3.EndpointType {
+			mux.Caches[typeURL] = edsCache
+		} else {
+			mux.Caches[typeURL] = defaultCache
+		}
+	}
 
 	sh := &SnapshotHandler{
 		resources:    parseResources(resources),
@@ -114,12 +115,15 @@ func (s *SnapshotHandler) OnChange(*dag.DAG) {
 	version := uuid.NewString()
 
 	// Convert caches to envoy xDS Resources.
-	resources := map[envoy_resource_v3.Type][]envoy_types.Resource{
-		envoy_resource_v3.ClusterType:  asResources(s.resources[envoy_resource_v3.ClusterType].Contents()),
-		envoy_resource_v3.RouteType:    asResources(s.resources[envoy_resource_v3.RouteType].Contents()),
-		envoy_resource_v3.ListenerType: asResources(s.resources[envoy_resource_v3.ListenerType].Contents()),
-		envoy_resource_v3.SecretType:   asResources(s.resources[envoy_resource_v3.SecretType].Contents()),
-		envoy_resource_v3.RuntimeType:  asResources(s.resources[envoy_resource_v3.RuntimeType].Contents()),
+	resources := map[envoy_resource_v3.Type][]envoy_types.Resource{}
+
+	for resourceType, resourceCache := range s.resources {
+		// Endpoints use their own cache.
+		if resourceType == envoy_resource_v3.EndpointType {
+			continue
+		}
+
+		resources[resourceType] = asResources(resourceCache.Contents())
 	}
 
 	snapshot, err := envoy_cache_v3.NewSnapshot(version, resources)
