@@ -326,6 +326,9 @@ func (e *EndpointsTranslator) OnChange(root *dag.DAG) {
 	if changed {
 		e.Debug("cluster load assignments changed, notifying waiters")
 		e.Notify()
+		if e.Observer != nil {
+			e.Observer.Refresh()
+		}
 	} else {
 		e.Debug("cluster load assignments did not change")
 	}

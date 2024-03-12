@@ -53,7 +53,7 @@ func testHeaderMatchIncludesMemoryUsage(namespace string) {
 			numHeaderMatches = 5
 		)
 
-		for i := 0; i < numChildren; i++ {
+		for i := range numChildren {
 			include := contour_v1.Include{
 				Name: fmt.Sprintf("child-%d", i),
 			}

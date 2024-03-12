@@ -24,7 +24,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -254,7 +253,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 // no configured ingress.class, anything else on object - fail
 
 func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc := fixture.NewService("kuard").
@@ -766,7 +765,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 }
 
 func TestIngressClassResource_NotConfigured(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc := fixture.NewService("kuard").

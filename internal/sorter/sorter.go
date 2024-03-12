@@ -261,7 +261,7 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 
 	// HeaderMatchConditions are equal length: compare item by item.
 	pair := make([]dag.HeaderMatchCondition, 2)
-	for i := 0; i < len(lhsHeaderMatchConditions); i++ {
+	for i := range len(lhsHeaderMatchConditions) {
 		pair[0] = lhsHeaderMatchConditions[i]
 		pair[1] = rhsHeaderMatchConditions[i]
 
@@ -271,7 +271,7 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 	}
 
 	// QueryParamMatchConditions are equal length: compare item by item.
-	for i := 0; i < len(lhs.QueryParamMatchConditions); i++ {
+	for i := range len(lhs.QueryParamMatchConditions) {
 		qPair := make([]dag.QueryParamMatchCondition, 2)
 		qPair[0] = lhs.QueryParamMatchConditions[i]
 		qPair[1] = rhs.QueryParamMatchConditions[i]

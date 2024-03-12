@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -510,11 +509,7 @@ func (s *Server) doServe() error {
 	var snapshotHandler *xdscache_v3.SnapshotHandler
 
 	if contourConfiguration.XDSServer.Type == contour_v1alpha1.EnvoyServerType {
-		snapshotHandler = xdscache_v3.NewSnapshotHandler(
-			resources,
-			envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, s.log.WithField("context", "snapshotCache")),
-			s.log.WithField("context", "snapshotHandler"),
-		)
+		snapshotHandler = xdscache_v3.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
 
 		// register observer for endpoints updates.
 		endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
@@ -918,7 +913,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 	log := x.log.WithField("context", "xds")
 
 	log.Info("waiting for the initial dag to be built")
-	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(ctx context.Context) (done bool, err error) {
+	if err := wait.PollUntilContextCancel(ctx, initialDagBuildPollPeriod, true, func(context.Context) (done bool, err error) {
 		return x.initialDagBuilt(), nil
 	}); err != nil {
 		return fmt.Errorf("failed to wait for initial dag build, %w", err)
@@ -929,7 +924,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 
 	switch x.config.Type {
 	case contour_v1alpha1.EnvoyServerType:
-		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.SnapshotCache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.GetCache(), contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 	case contour_v1alpha1.ContourServerType:
 		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
 	default:

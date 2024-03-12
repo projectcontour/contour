@@ -737,7 +737,7 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 				},
 			},
 			want: nil,
-			getExtensionCluster: func(name string) *ExtensionCluster {
+			getExtensionCluster: func(string) *ExtensionCluster {
 				return &ExtensionCluster{
 					Name: "test",
 				}
@@ -770,7 +770,7 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 					Namespace: "ns",
 				},
 			},
-			getExtensionCluster: func(name string) *ExtensionCluster {
+			getExtensionCluster: func(string) *ExtensionCluster {
 				return nil
 			},
 			want:     nil,
@@ -788,7 +788,7 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 					Namespace: "ns",
 				},
 			},
-			getExtensionCluster: func(name string) *ExtensionCluster {
+			getExtensionCluster: func(string) *ExtensionCluster {
 				return &ExtensionCluster{
 					Name: "test",
 				}

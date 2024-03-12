@@ -77,11 +77,15 @@ func ClusterLoadAssignment(name string, addrs ...*envoy_config_core_v3.Address) 
 
 // ExternalNameClusterLoadAssignment creates a *envoy_config_endpoint_v3.ClusterLoadAssignment pointing to service's ExternalName DNS address.
 func ExternalNameClusterLoadAssignment(service *dag.Service) *envoy_config_endpoint_v3.ClusterLoadAssignment {
-	return ClusterLoadAssignment(
+	cla := ClusterLoadAssignment(
 		xds.ClusterLoadAssignmentName(
 			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
 			service.Weighted.ServicePort.Name,
 		),
 		SocketAddress(service.ExternalName, int(service.Weighted.ServicePort.Port)),
 	)
+	if service.Weighted.ServicePort.Port != service.Weighted.HealthPort.Port {
+		cla.Endpoints[0].LbEndpoints[0].GetEndpoint().HealthCheckConfig = HealthCheckConfig(service.Weighted.HealthPort.Port)
+	}
+	return cla
 }
