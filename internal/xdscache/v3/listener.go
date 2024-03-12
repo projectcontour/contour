@@ -145,10 +145,6 @@ type ListenerConfig struct {
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
 
-	// GlobalExternalProcessors optionally configures the global external processing services to be
-	// used.
-	GlobalExternalProcessors []GlobalExtProcConfig
-
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
 	TracingConfig *TracingConfig
@@ -429,7 +425,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				EnableWebsockets(listener.EnableWebsockets).
-				AddExtProcFilters(toExternalProcessors(cfg.GlobalExternalProcessors)).
+				AddExtProcFilters(listener.VirtualHosts[0].ExtProcs).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
@@ -581,7 +577,6 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
-					AddExtProcFilters(toExternalProcessors(cfg.GlobalExternalProcessors)).
 					Get()
 
 				// Default filter chain
@@ -631,30 +626,6 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
-}
-
-func toExternalProcessors(processors []GlobalExtProcConfig) []*dag.ExternalProcessor {
-	if processors == nil {
-		return nil
-	}
-
-	var extProcs []*dag.ExternalProcessor
-	for _, p := range processors {
-		ep := &dag.ExternalProcessor{
-			ExtProcService: &dag.ExtensionCluster{
-				Name: dag.ExtensionClusterName(p.ExtensionServiceConfig.ExtensionService),
-				SNI:  p.ExtensionServiceConfig.SNI,
-			},
-			FailOpen:        p.FailOpen,
-			ResponseTimeout: p.ExtensionServiceConfig.Timeout,
-			ProcessingMode:  p.ProcessingMode,
-			MutationRules:   p.MutationRules,
-			Phase:           p.Phase,
-			Priority:        p.Priority,
-		}
-		extProcs = append(extProcs, ep)
-	}
-	return extProcs
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {

@@ -15496,7 +15496,8 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 	}{
 		{
 			name: "empty is fine",
-		}, {
+		},
+		{
 			name: "ingressv1: insert ingress w/ single unnamed backend",
 			objs: []any{
 				i2V1,
@@ -15535,7 +15536,8 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				},
 				Remove: []string{"K-Nada"},
 			},
-		}, {
+		},
+		{
 			name: "insert httpproxy referencing two backends",
 			objs: []any{
 				proxyMultipleBackends, s1, s2,

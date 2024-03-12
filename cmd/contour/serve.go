@@ -483,10 +483,6 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	if listenerConfig.GlobalExternalProcessors, err = s.setupGlobalExternalProcessor(contourConfiguration); err != nil {
-		return err
-	}
-
 	contourMetrics := metrics.NewMetrics(s.registry)
 
 	// Endpoints updates are handled directly by the EndpointsTranslator/EndpointSliceTranslator due to the high update volume.
@@ -581,7 +577,6 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
-		globalExternalProcessor:            contourConfiguration.GlobalExternalProcessor,
 		globalCircuitBreakerDefaults:       contourConfiguration.Envoy.Cluster.GlobalCircuitBreakerDefaults,
 		upstreamTLS: &dag.UpstreamTLS{
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
@@ -894,44 +889,6 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	return globalExternalAuthConfig, nil
 }
 
-func (s *Server) setupGlobalExternalProcessor(contourCfg contour_v1alpha1.ContourConfigurationSpec) ([]xdscache_v3.GlobalExtProcConfig, error) {
-	if contourCfg.GlobalExternalProcessor == nil {
-		return nil, nil
-	}
-
-	if contourCfg.GlobalExternalProcessor.ExtProcPolicy != nil {
-		return nil, fmt.Errorf("GlobalExternalProcessor.ExtProcPolicy cannot be defined")
-	}
-
-	m := map[client.ObjectKey]struct{}{}
-
-	var globalExtProcs []xdscache_v3.GlobalExtProcConfig
-	for _, ep := range contourCfg.GlobalExternalProcessor.Processors {
-
-		// ensure the specified ExtensionService exists
-		extSvcCfg, err := s.getExtensionSvcConfig(ep.GRPCService.ExtensionServiceRef.Name, ep.GRPCService.ExtensionServiceRef.Namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		// ensure unique external processing
-		if _, ok := m[extSvcCfg.ExtensionService]; ok {
-			return nil, fmt.Errorf("external processing %s/%s is duplicated", extSvcCfg.ExtensionService.Namespace, extSvcCfg.ExtensionService.Namespace)
-		}
-		m[extSvcCfg.ExtensionService] = struct{}{}
-
-		globalExtProcs = append(globalExtProcs, xdscache_v3.GlobalExtProcConfig{
-			ExtensionServiceConfig: extSvcCfg,
-			FailOpen:               ep.GRPCService.FailOpen,
-			Phase:                  ep.Phase,
-			Priority:               ep.Priority,
-			ProcessingMode:         ep.ProcessingMode,
-			MutationRules:          ep.MutationRules,
-		})
-	}
-	return globalExtProcs, nil
-}
-
 func (s *Server) setupDebugService(debugConfig contour_v1alpha1.DebugConfig, builder *dag.Builder) error {
 	debugsvc := &debug.Service{
 		Service: httpsvc.Service{
@@ -1111,7 +1068,6 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
-	globalExternalProcessor            *contour_v1.ExternalProcessor
 	globalCircuitBreakerDefaults       *contour_v1alpha1.GlobalCircuitBreakerDefaults
 	upstreamTLS                        *dag.UpstreamTLS
 }
@@ -1208,7 +1164,6 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
-			GlobalExternalProcessor:       dbc.globalExternalProcessor,
 			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			UpstreamTLS:                   dbc.upstreamTLS,
 		},

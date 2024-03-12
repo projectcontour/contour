@@ -706,8 +706,6 @@ type Parameters struct {
 	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
-	// GlobalExternalProcessor optionally holds properties of the global external processing configurations.
-	GlobalExternalProcessor *contour_v1.ExternalProcessor `yaml:"globalExtProc,omitempty"`
 	// FeatureFlags defines toggle to enable new contour features.
 	// available toggles are
 	// useEndpointSlices - configures contour to fetch endpoint data

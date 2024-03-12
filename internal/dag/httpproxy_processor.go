@@ -113,8 +113,6 @@ type HTTPProxyProcessor struct {
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
 
-	// GlobalExternalProcessor defines how requests/responses will be operatred
-	GlobalExternalProcessor *contour_v1.ExternalProcessor
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
 	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults
 
@@ -206,32 +204,32 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 
 	extProc := proxy.Spec.VirtualHost.ExternalProcessor
 	if extProc != nil {
-		m := map[contour_v1.ExtensionServiceReference]struct{}{}
+		extSvcRefs := map[contour_v1.ExtensionServiceReference]struct{}{}
+		names := map[string]struct{}{}
+
 		for _, ep := range extProc.Processors {
-			objKey := ep.GRPCService.ExtensionServiceRef
-			if _, ok := m[objKey]; ok {
+			extSvcName := ep.GRPCService.ExtensionServiceRef
+			if _, ok := extSvcRefs[extSvcName]; ok {
 				validCond.AddError(contour_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
-					fmt.Sprintf("Spec.VirtualHost.ExternalProcessor.Processors is invalid: duplicate name %s/%s", objKey.Namespace, objKey.Name))
+					fmt.Sprintf("Spec.VirtualHost.ExternalProcessor.Processors is invalid: duplicate extension service name %s/%s", extSvcName.Namespace, extSvcName.Name))
 				return
 			}
-			m[ep.GRPCService.ExtensionServiceRef] = struct{}{}
-		}
+			extSvcRefs[ep.GRPCService.ExtensionServiceRef] = struct{}{}
 
-		if proxy.Spec.VirtualHost.TLS == nil {
-			for _, ep := range extProc.Processors {
-				if len(ep.GRPCService.ExtensionServiceRef.Name) > 0 {
-					validCond.AddError(contour_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
-						"Spec.VirtualHost.ExternalProcessor.Processors[*].ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
-					return
-				}
+			// TODO: autogen ext_proc's name?
+			if _, ok := names[ep.Name]; ok {
+				validCond.AddError(contour_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
+					fmt.Sprintf("Spec.VirtualHost.ExternalProcessor.Processors is invalid: duplicate name %s", ep.Name))
+				return
 			}
-		}
-		if extProc.ExtProcPolicy != nil && extProc.ExtProcPolicy.Overrides != nil {
-			validCond.AddError(contour_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
-				"Spec.VirtualHost.ExternalProcessor.ExtProcPolicy.Overrides cannot be defined.")
-			return
+			names[ep.Name] = struct{}{}
 		}
 
+	}
+
+	extProcs, ok := p.computeVirtualHostExtProcs(proxy, validCond)
+	if !ok {
+		return
 	}
 
 	if len(proxy.Spec.VirtualHost.IPAllowFilterPolicy) > 0 && len(proxy.Spec.VirtualHost.IPDenyFilterPolicy) > 0 {
@@ -321,13 +319,6 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				return
 			}
 
-			// same as above
-			if tls.EnableFallbackCertificate && proxy.Spec.VirtualHost.ExtProcConfigured() {
-				validCond.AddError(contour_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
-					"Spec.Virtualhost.TLS fallback & external processing are incompatible")
-				return
-			}
-
 			// If FallbackCertificate is enabled, but no cert passed, set error
 			if tls.EnableFallbackCertificate {
 				if p.FallbackCertificate == nil {
@@ -411,9 +402,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				return
 			}
 
-			if !p.computeSecureVirtualHostExtProc(validCond, proxy, svhost) {
-				return
-			}
+			svhost.ExtProcs = extProcs
 
 			providerNames := sets.NewString()
 			for _, jwtProvider := range proxy.Spec.VirtualHost.JWTProviders {
@@ -590,9 +579,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		_ = p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, proxy)
 	}
 
-	if p.GlobalExternalProcessor != nil && !proxy.Spec.VirtualHost.DisableExtProc() {
-		_ = p.computeVirtualHostExtProcs(p.GlobalExternalProcessor, validCond, proxy)
-	}
+	insecure.ExtProcs = extProcs
 
 	insecure.IPFilterAllow, insecure.IPFilterRules, err = toIPFilterRules(proxy.Spec.VirtualHost.IPAllowFilterPolicy, proxy.Spec.VirtualHost.IPDenyFilterPolicy, validCond)
 	if err != nil {
@@ -797,11 +784,6 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		if err := routeExtProcValid(route.ExtProcPolicy); err != nil {
-			validCond.AddError(contour_v1.ConditionTypeRouteError, "RouteExtProcNotValid", err.Error())
-			return nil
-		}
-
 		if err := pathMatchConditionsValid(route.Conditions); err != nil {
 			validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid",
 				"route: %s", err)
@@ -930,28 +912,28 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		// If the enclosing root proxy enabled external processing,
 		// enable it on the route and propagate defaults
 		// downwards.
-		if rootProxy.Spec.VirtualHost.ExtProcConfigured() || p.GlobalExternalProcessor != nil {
-			// When the ext_proc filter(s) is added to a
-			// vhost, it is in enabled state, but we can
-			// disable it per route. We emulate disabling
-			// it at the vhost layer by defaulting the state
-			// from the root proxy.
-			disabled := rootProxy.Spec.VirtualHost.DisableExtProc()
-
-			// Take the default for enabling authorization
+		if rootProxy.Spec.VirtualHost.ExtProcConfigured() {
+			// Take the default for enabling external processing
 			// from the virtual host. If this route has a
 			// policy, let that override.
-			if route.ExtProcPolicy != nil {
-				disabled = route.ExtProcPolicy.Disabled
-				if route.ExtProcPolicy.Overrides != nil {
-					overrides := toExtProcOverrides(route.ExtProcPolicy.Overrides, validCond, proxy.Namespace, p.dag.GetExtensionCluster)
-					if overrides == nil {
-						return nil
+			if route.ExtProcPolicies != nil {
+				if r.ExtProcPolicies == nil {
+					r.ExtProcPolicies = map[string]*ExtProcPolicy{}
+				}
+				for _, policy := range route.ExtProcPolicies {
+					var overrides *ExtProcOverrides
+					if policy.Overrides != nil {
+						overrides = toExtProcOverrides(policy.Overrides, validCond, proxy.Namespace, p.dag.GetExtensionCluster)
+						if overrides == nil {
+							return nil
+						}
 					}
-					r.ExtProcOverrides = overrides
+					r.ExtProcPolicies[policy.Name] = &ExtProcPolicy{
+						Overrides: overrides,
+						Disabled:  policy.Disabled,
+					}
 				}
 			}
-			r.ExtProcDisabled = disabled
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
@@ -1516,13 +1498,22 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(
 	return extAuth
 }
 
+// computeVirtualHostExtProcs compute the ext_proc for listener, if it's disabled
+// skip it
 func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
-	extProcessor *contour_v1.ExternalProcessor,
-	validCond *contour_v1.DetailedCondition,
 	httpproxy *contour_v1.HTTPProxy,
-) []*ExternalProcessor {
+	validCond *contour_v1.DetailedCondition,
+) ([]*ExternalProcessor, bool) {
+	if !httpproxy.Spec.VirtualHost.ExtProcConfigured() {
+		return nil, true
+	}
+	extProcessor := httpproxy.Spec.VirtualHost.ExternalProcessor
+
 	var extProcs []*ExternalProcessor
 	for _, ep := range extProcessor.Processors {
+		if ep.Disabled {
+			continue
+		}
 		ok, extSvc := validateExtensionService(
 			defaultExtensionRef(ep.GRPCService.ExtensionServiceRef),
 			validCond,
@@ -1530,11 +1521,11 @@ func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 			contour_v1.ConditionTypeExtProcError,
 			p.dag.GetExtensionCluster)
 		if !ok {
-			return nil
+			return nil, false
 		}
 		ok, respTimeout := determineExtensionServiceTimeout(contour_v1.ConditionTypeExtProcError, ep.GRPCService.ResponseTimeout, validCond, extSvc)
 		if !ok {
-			return nil
+			return nil, false
 		}
 
 		extProcs = append(extProcs, &ExternalProcessor{
@@ -1545,11 +1536,12 @@ func (p *HTTPProxyProcessor) computeVirtualHostExtProcs(
 			MutationRules:   ep.MutationRules,
 			Phase:           ep.Phase,
 			Priority:        ep.Priority,
+			Name:            ep.Name,
 		})
 
 	}
 
-	return extProcs
+	return extProcs, true
 }
 
 const (
@@ -1620,29 +1612,6 @@ func determineExtensionServiceTimeout(
 	}
 
 	return true, &tout
-}
-
-func (p *HTTPProxyProcessor) computeSecureVirtualHostExtProc(
-	validCond *contour_v1.DetailedCondition,
-	httpproxy *contour_v1.HTTPProxy,
-	svhost *SecureVirtualHost,
-) bool {
-	if httpproxy.Spec.VirtualHost.ExtProcConfigured() && !httpproxy.Spec.VirtualHost.DisableExtProc() {
-		eps := p.computeVirtualHostExtProcs(httpproxy.Spec.VirtualHost.ExternalProcessor, validCond, httpproxy)
-		if eps == nil {
-			return false
-		}
-		svhost.ExtProcs = eps
-
-	} else if p.GlobalExternalProcessor != nil && !httpproxy.Spec.VirtualHost.DisableExtProc() {
-		eps := p.computeVirtualHostExtProcs(p.GlobalExternalProcessor, validCond, httpproxy)
-		if eps == nil {
-			return false
-		}
-		svhost.ExtProcs = eps
-	}
-
-	return true
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
@@ -2114,18 +2083,6 @@ func routeActionCountValid(route contour_v1.Route) error {
 	if routeActionCount != 1 {
 		return errors.New("must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy")
 	}
-	return nil
-}
-
-func routeExtProcValid(policy *contour_v1.ExtProcPolicy) error {
-	if policy == nil {
-		return nil
-	}
-
-	if policy.Overrides != nil && policy.Disabled {
-		return fmt.Errorf("cannot specify both ExtProcPolicy.Overrides and ExtProcPolicy.Disabled ")
-	}
-
 	return nil
 }
 

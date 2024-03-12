@@ -498,6 +498,16 @@ const (
 // The external server must implement the v3 Envoy external processing GRPC protocol
 // (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
 type ExtProc struct {
+	// Unique name for the external processor.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// When true, this external processor will not be added to the listener's filter chain
+	//
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+
 	// Phase determines where in the filter chain this extProc is to be injected.
 	//
 	// +optional
@@ -552,28 +562,23 @@ type ExternalProcessor struct {
 	//
 	// +optional
 	Processors []ExtProc `json:"processors,omitempty"`
-
-	// ExtProcPolicy sets a external processing policy.
-	// This policy will be used unless overridden by individual routes.
-	//
-	// **Note: for the Global External Processor, it's must be nil.
-	//
-	// +optional
-	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
 }
 
 // ExtProcPolicy modifies how requests/responses are operated.
 type ExtProcPolicy struct {
-	// When true, this field disables client request external processing
+	// The name of the external processor being overrided.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// When true, this field disables the specific client request external processor
 	// for the scope of the policy.
-	// Precisely one of disabled, overrides must be set.
+	// if both disabled and overrides are set. use disabled.
 	//
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 
 	// Overrides aspects of the configuration for this route.
-	//
-	// **Note: For VirtualHost, it's must be nil.
 	//
 	// +optional
 	Overrides *ExtProcOverride `json:"overrides,omitempty"`
@@ -900,12 +905,11 @@ type Route struct {
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// ExtProcPolicy updates the external processing policy that was set
-	// on the root HTTPProxy object for client requests/responses that
-	// match this route.
+	// ExtProcPolicies updates the external processing policy/policies that were set
+	// on the root HTTPProxy object for client requests/responses
 	//
 	// +optional
-	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
+	ExtProcPolicies []ExtProcPolicy `json:"extProcPolicies,omitempty"`
 }
 
 type JWTVerificationPolicy struct {

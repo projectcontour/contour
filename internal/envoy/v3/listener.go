@@ -169,6 +169,7 @@ const (
 	CompressorFilterName      string = "envoy.filters.http.compressor"
 	GRPCWebFilterName         string = "envoy.filters.http.grpc_web"
 	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
+	RouterFilterName          string = "router"
 )
 
 type httpConnectionManagerBuilder struct {
@@ -438,9 +439,9 @@ func (b *httpConnectionManagerBuilder) AddExtProcFilters(processors []*dag.Exter
 	phases := map[contour_v1.ProcessingPhase]string{
 		contour_v1.AuthN:        JWTAuthnFilterName,
 		contour_v1.AuthZ:        ExtAuthzFilterName,
-		contour_v1.CORS:         CORSFilterName, // "cors",
+		contour_v1.CORS:         CORSFilterName,
 		contour_v1.RateLimit:    GlobalRateLimitFilterName,
-		contour_v1.DefaultPhase: "router",
+		contour_v1.DefaultPhase: RouterFilterName,
 	}
 	for phase, name := range phases {
 		// only insert when we find the 'anchor'
@@ -889,8 +890,8 @@ func filterExtProc(extProc *dag.ExternalProcessor) *envoy_filter_network_http_co
 		GrpcService:            GrpcService(extProc.ExtProcService.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout),
 		FailureModeAllow:       extProc.FailOpen,
 		ProcessingMode:         makeProcessMode(extProc.ProcessingMode),
-		MessageTimeout:         envoy.Timeout(timeout.DefaultSetting()),
-		MaxMessageTimeout:      envoy.Timeout(timeout.DefaultSetting()),
+		MessageTimeout:         envoy.Timeout(extProc.ResponseTimeout),
+		MaxMessageTimeout:      envoy.Timeout(extProc.ResponseTimeout),
 		DisableClearRouteCache: false,
 		AllowModeOverride:      true,
 		MutationRules: &envoy_mutation_rules_v3.HeaderMutationRules{
@@ -903,7 +904,7 @@ func filterExtProc(extProc *dag.ExternalProcessor) *envoy_filter_network_http_co
 	}
 
 	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
-		Name: ExtProcFilterName,
+		Name: extProc.Name,
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&extProcConfig),
 		},

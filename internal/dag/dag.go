@@ -285,6 +285,14 @@ type ExtProcOverrides struct {
 	ResponseTimeout *timeout.Setting
 }
 
+type ExtProcPolicy struct {
+	Overrides *ExtProcOverrides
+
+	// Disabled disable the filter for this particular vhost or route.
+	// If disabled is specified in multiple per-filter-configs, the most specific one will be used.
+	Disabled bool
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 	// PathMatchCondition specifies a MatchCondition to match on the request path.
@@ -381,10 +389,7 @@ type Route struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
-	// ExtProcDisabled disable the filter for this particular vhost or route.
-	// If disabled is specified in multiple per-filter-configs, the most specific one will be used.
-	ExtProcDisabled  bool
-	ExtProcOverrides *ExtProcOverrides
+	ExtProcPolicies map[string]*ExtProcPolicy
 
 	// Metadata fields that can be used for access logging.
 	Kind      string
@@ -765,6 +770,10 @@ type VirtualHost struct {
 	IPFilterRules []IPFilterRule
 
 	Routes map[string]*Route
+
+	// ExtProcs contains the configurations for enabling
+	// the ExtProc filters.
+	ExtProcs []*ExternalProcessor
 }
 
 func (v *VirtualHost) AddRoute(route *Route) {
@@ -890,6 +899,8 @@ type ExternalAuthorization struct {
 }
 
 type ExternalProcessor struct {
+	Name string
+
 	// ExtProcService points to the extension that client
 	// requests are forwarded to for external processing. If nil, no
 	// external processing is enabled for this host.

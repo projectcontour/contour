@@ -158,10 +158,13 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		}
 
 		// Apply per-route external processing policy modifications.
-		if dagRoute.ExtProcDisabled {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = routeExtProcDisabled()
-		} else if dagRoute.ExtProcOverrides != nil {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_proc"] = routeExtProcOverrides(dagRoute.ExtProcOverrides)
+		for name, policy := range dagRoute.ExtProcPolicies {
+			// if disabled, do nothing
+			if policy.Disabled {
+				route.TypedPerFilterConfig[name] = routeExtProcDisabled()
+			} else if policy.Overrides != nil {
+				route.TypedPerFilterConfig[name] = routeExtProcOverrides(policy.Overrides)
+			}
 		}
 
 		// If JWT verification is enabled, add per-route filter
@@ -199,28 +202,6 @@ func routeExtProcDisabled() *anypb.Any {
 		},
 	)
 }
-
-/*
-
-	reqHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
-	respHeaderMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
-
-	reqBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.RequestBodyMode)]
-	respBodyMode := envoy_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.ResponseBodyMode)]
-
-	reqTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
-	respTrailerMode := envoy_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
-
-	return &envoy_ext_proc_v3.ProcessingMode{
-		RequestHeaderMode:   envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
-		ResponseHeaderMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
-		RequestBodyMode:     envoy_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
-		ResponseBodyMode:    envoy_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
-		RequestTrailerMode:  envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
-		ResponseTrailerMode: envoy_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
-	}
-
-*/
 
 func routeExtProcOverrides(overrides *dag.ExtProcOverrides) *anypb.Any {
 	reqHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.RequestHeaderMode)]
