@@ -48,7 +48,7 @@ func TestParseDefaults(t *testing.T) {
 debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
-    xds-server-type: contour
+    xds-server-type: envoy
 accesslog-format: envoy
 json-fields:
     - '@timestamp'
