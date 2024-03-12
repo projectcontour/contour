@@ -290,7 +290,7 @@ var _ = Describe("Benchmark", func() {
 				client := &http.Client{
 					Timeout: time.Millisecond * 500,
 				}
-				for i := 0; i < numServices; i++ {
+				for i := range numServices {
 					appName := fmt.Sprintf("echo-%d", i)
 					deployApp(appName)
 					req, err := http.NewRequest(http.MethodGet, "http://"+lbExternalIP, nil)

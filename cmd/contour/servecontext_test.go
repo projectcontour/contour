@@ -232,7 +232,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 			}
 			if err == nil {
 				expectedCert, _ := tc.serverCredentials.X509Certificate()
-				assert.Equal(t, receivedCert, &expectedCert)
+				assert.Equal(t, &expectedCert, receivedCert)
 			}
 		})
 	}

@@ -111,7 +111,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 		}
 
 		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
-		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", func(deployment *apps_v1.Deployment, service *core_v1.Service) {
+		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", func(_ *apps_v1.Deployment, service *core_v1.Service) {
 			delete(service.Annotations, "projectcontour.io/upstream-protocol.tls")
 		})
 

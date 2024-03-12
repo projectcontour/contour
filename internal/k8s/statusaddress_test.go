@@ -14,6 +14,7 @@
 package k8s
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -325,7 +326,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 
 			isu.OnAdd(tc.preop, false)
 
-			newObj := suc.Get(objName, objName)
+			newObj := suc.Get(fmt.Sprintf("%T", tc.preop), objName, objName)
 			assert.Equal(t, tc.postop, newObj)
 		})
 
@@ -344,7 +345,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 
 			isu.OnUpdate(tc.preop, tc.preop)
 
-			newObj := suc.Get(objName, objName)
+			newObj := suc.Get(fmt.Sprintf("%T", tc.preop), objName, objName)
 			assert.Equal(t, tc.postop, newObj)
 		})
 	}
@@ -531,7 +532,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 
 			isu.OnAdd(tc.preop, false)
 
-			newObj := suc.Get(tc.preop.Name, tc.preop.Namespace)
+			newObj := suc.Get(fmt.Sprintf("%T", tc.preop), tc.preop.Name, tc.preop.Namespace)
 			assert.Equal(t, tc.postop, newObj)
 		})
 
@@ -554,7 +555,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 
 			isu.OnUpdate(tc.preop, tc.preop)
 
-			newObj := suc.Get(tc.preop.Name, tc.preop.Namespace)
+			newObj := suc.Get(fmt.Sprintf("%T", tc.preop), tc.preop.Name, tc.preop.Namespace)
 			assert.Equal(t, tc.postop, newObj)
 		})
 	}

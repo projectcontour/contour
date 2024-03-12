@@ -154,7 +154,7 @@ func (s *shutdownContext) shutdownHandler() {
 		Duration: 200 * time.Millisecond,
 		Factor:   5.0,
 		Jitter:   0.1,
-	}, func(err error) bool {
+	}, func(error) bool {
 		// Always retry any error.
 		return true
 	}, func() error {

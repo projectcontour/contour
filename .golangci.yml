@@ -113,3 +113,6 @@ issues:
   - path: test/e2e
     linters: ["revive"]
     text: "should not use dot imports"
+  - path: test/e2e
+    linters: ["testifylint"]
+    text: "require must only be used in the goroutine running the test function"

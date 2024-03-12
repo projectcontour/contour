@@ -41,7 +41,7 @@ func shuffleSlice[T any](original []T) []T {
 }
 
 func TestInvalidSorter(t *testing.T) {
-	assert.Equal(t, nil, For([]string{"invalid"}))
+	assert.Nil(t, For([]string{"invalid"}))
 }
 
 func TestSortRouteConfiguration(t *testing.T) {
@@ -720,7 +720,7 @@ func shuffleAndCheckSort[T any](t *testing.T, want []T) {
 	t.Helper()
 
 	// Run multiple trials so we catch any ordering/stability errors.
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		have := shuffleSlice(want)
 
 		sort.Stable(For(have))
