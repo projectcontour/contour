@@ -100,7 +100,7 @@ spec:
           port: 5678
     - conditions:
         - prefix: /override
-      extProcPolicies:  # override extsvc3's grpc sevice to extproc-extsvc4
+      extProcPolicies:  # override extsvc3's grpc service to extproc-extsvc4
         - disabled: false
           name: extsvc3
           overrides:
@@ -390,7 +390,7 @@ type ExternalProcessor struct {
 
 // ExtProcPolicy modifies how requests/responses are operated.
 type ExtProcPolicy struct {
-	// The name of the external processor being overrided.
+	// The name of the external processor being overridden.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
@@ -561,7 +561,7 @@ A: It may involve override/disabled at `Route` level, it may be more appropriate
 
 Q: Only set external processor at the `VirtualHost` level, and then toggle it at the `Route` level?
 
-A: Okay, but not flexible enough,　becuase you must set the all processors at `VirtualHost` level, then toggle it at every routes.
+A: Okay, but not flexible enough,　because you must set the all processors at `VirtualHost` level, then toggle it at every routes.
 
 # Metrics
 _TBD_
