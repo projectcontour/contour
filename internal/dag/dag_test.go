@@ -336,7 +336,7 @@ func TestHasConflictRouteForVirtualHost(t *testing.T) {
 			},
 			rs: []Route{
 				{
-					Kind:               KindTCPRoute,
+					Kind:               KindGRPCRoute,
 					Name:               "a",
 					Namespace:          "b",
 					PathMatchCondition: prefixSegment("/path1"),
@@ -374,7 +374,7 @@ func TestHasConflictRouteForVirtualHost(t *testing.T) {
 					},
 				},
 				{
-					Kind:               KindTCPRoute,
+					Kind:               KindGRPCRoute,
 					Name:               "c",
 					Namespace:          "d",
 					PathMatchCondition: prefixSegment("/path1"),
