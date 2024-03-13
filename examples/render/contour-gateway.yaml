@@ -1177,7 +1177,7 @@ spec:
                   type:
                     description: |-
                       Defines the XDSServer to use for `contour serve`.
-                      Values: `contour` (default), `envoy`.
+                      Values: `envoy` (default), `contour (deprecated)`.
                       Other values will produce an error.
                     type: string
                 type: object
@@ -4864,7 +4864,7 @@ spec:
                       type:
                         description: |-
                           Defines the XDSServer to use for `contour serve`.
-                          Values: `contour` (default), `envoy`.
+                          Values: `envoy` (default), `contour (deprecated)`.
                           Other values will produce an error.
                         type: string
                     type: object

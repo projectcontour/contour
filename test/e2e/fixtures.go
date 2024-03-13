@@ -640,8 +640,8 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 }
 
 func XDSServerTypeFromEnv() contour_v1alpha1.XDSServerType {
-	// Default to contour if not provided.
-	serverType := contour_v1alpha1.ContourServerType
+	// Default to envoy if not provided.
+	serverType := contour_v1alpha1.EnvoyServerType
 	typeFromEnv, found := os.LookupEnv("CONTOUR_E2E_XDS_SERVER_TYPE")
 	if found {
 		serverType = contour_v1alpha1.XDSServerType(typeFromEnv)
