@@ -19,9 +19,6 @@ spec:
       app: contour
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
       labels:
         app: contour
     spec:

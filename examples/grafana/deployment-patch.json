@@ -1,0 +1,59 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "configMap": {
+        "defaultMode": 420,
+        "name": "grafana-dashboard-contour-httpproxies"
+      },
+      "name": "grafana-dashboard-contour-httpproxies"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "configMap": {
+        "defaultMode": 420,
+        "name": "grafana-dashboard-contour-envoy"
+      },
+      "name": "grafana-dashboard-contour-envoy"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "configMap": {
+        "defaultMode": 420,
+        "name": "grafana-dashboard-contour-api"
+      },
+      "name": "grafana-dashboard-contour-api"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value": {
+      "mountPath": "/grafana-dashboard-definitions/0/contour-httpproxies",
+      "name": "grafana-dashboard-contour-httpproxies"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value": {
+      "mountPath": "/grafana-dashboard-definitions/0/contour-envoy",
+      "name": "grafana-dashboard-contour-envoy"
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value": {
+      "mountPath": "/grafana-dashboard-definitions/0/contour-api",
+      "name": "grafana-dashboard-contour-api"
+    }
+  }
+]
