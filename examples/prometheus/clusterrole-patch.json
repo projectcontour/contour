@@ -1,0 +1,38 @@
+[
+  {
+    "op": "add",
+    "path": "/rules/-",
+    "value": {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "services",
+        "endpoints",
+        "pods"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    }
+  },
+  {
+    "op": "add",
+    "path": "/rules/-",
+    "value": {
+      "apiGroups": [
+        "networking.k8s.io"
+      ],
+      "resources": [
+        "ingresses"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    }
+  }
+]

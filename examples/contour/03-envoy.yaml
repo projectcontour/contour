@@ -16,10 +16,6 @@ spec:
       app: envoy
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8002"
-        prometheus.io/path: "/stats/prometheus"
       labels:
         app: envoy
     spec:
@@ -72,6 +68,9 @@ spec:
         - containerPort: 8443
           hostPort: 443
           name: https
+          protocol: TCP
+        - containerPort: 8002
+          name: metrics
           protocol: TCP
         readinessProbe:
           httpGet:
