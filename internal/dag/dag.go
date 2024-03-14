@@ -771,10 +771,6 @@ type VirtualHost struct {
 	IPFilterRules []IPFilterRule
 
 	Routes map[string]*Route
-
-	// ExtProcs contains the configurations for enabling
-	// the ExtProc filters.
-	ExtProcs []*ExtProc
 }
 
 func (v *VirtualHost) AddRoute(route *Route) {
