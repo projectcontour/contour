@@ -145,6 +145,10 @@ type ListenerConfig struct {
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
 
+	// GlobalExtProcConfig optionally configures the global external processing service to be
+	// used.
+	GlobalExtProcConfig *GlobalExtProcConfig
+
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
 	TracingConfig *TracingConfig
@@ -206,8 +210,6 @@ type GlobalExtProcConfig struct {
 	ExtensionServiceConfig
 	FailOpen bool
 
-	Phase          contour_v1.ProcessingPhase
-	Priority       int32
 	ProcessingMode *contour_v1.ProcessingMode
 	MutationRules  *contour_v1.HeaderMutationRules
 }
@@ -425,7 +427,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				EnableWebsockets(listener.EnableWebsockets).
-				AddExtProcFilters(listener.VirtualHosts[0].ExtProcs).
+				AddFilter(envoy_v3.FilterExtProc(toExtProc(cfg.GlobalExtProcConfig))).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
@@ -501,7 +503,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
-					AddExtProcFilters(vh.ExtProcs).
+					AddFilter(envoy_v3.FilterExtProc(vh.ExtProc)).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -577,6 +579,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
+					AddFilter(envoy_v3.FilterExtProc(toExtProc(cfg.GlobalExtProcConfig))).
 					Get()
 
 				// Default filter chain
@@ -626,6 +629,23 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
+}
+
+func toExtProc(p *GlobalExtProcConfig) *dag.ExtProc {
+	if p == nil {
+		return nil
+	}
+
+	return &dag.ExtProc{
+		ExtProcService: &dag.ExtensionCluster{
+			Name: dag.ExtensionClusterName(p.ExtensionServiceConfig.ExtensionService),
+			SNI:  p.ExtensionServiceConfig.SNI,
+		},
+		FailOpen:        p.FailOpen,
+		ResponseTimeout: p.ExtensionServiceConfig.Timeout,
+		ProcessingMode:  p.ProcessingMode,
+		MutationRules:   p.MutationRules,
+	}
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {

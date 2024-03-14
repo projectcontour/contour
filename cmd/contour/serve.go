@@ -482,6 +482,10 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	if listenerConfig.GlobalExtProcConfig, err = s.setupGlobalExtProc(contourConfiguration); err != nil {
+		return err
+	}
+
 	contourMetrics := metrics.NewMetrics(s.registry)
 
 	// Endpoints updates are handled directly by the EndpointsTranslator/EndpointSliceTranslator due to the high update volume.
@@ -572,6 +576,7 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+		globalExtProc:                      contourConfiguration.GlobalExtProc,
 		globalCircuitBreakerDefaults:       contourConfiguration.Envoy.Cluster.GlobalCircuitBreakerDefaults,
 		upstreamTLS: &dag.UpstreamTLS{
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
@@ -884,6 +889,26 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 	return globalExternalAuthConfig, nil
 }
 
+func (s *Server) setupGlobalExtProc(contourCfg contour_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.GlobalExtProcConfig, error) {
+	if contourCfg.GlobalExtProc == nil || contourCfg.GlobalExtProc.Processor == nil || contourCfg.GlobalExtProc.Processor.GRPCService == nil {
+		return nil, nil
+	}
+
+	grpcSvc := contourCfg.GlobalExtProc.Processor.GRPCService
+
+	// ensure the specified ExtensionService exists
+	extSvcCfg, err := s.getExtensionSvcConfig(grpcSvc.ExtensionServiceRef.Name, grpcSvc.ExtensionServiceRef.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	return &xdscache_v3.GlobalExtProcConfig{
+		ExtensionServiceConfig: extSvcCfg,
+		FailOpen:               grpcSvc.FailOpen,
+		ProcessingMode:         contourCfg.GlobalExtProc.Processor.ProcessingMode,
+		MutationRules:          contourCfg.GlobalExtProc.Processor.MutationRules,
+	}, nil
+}
+
 func (s *Server) setupDebugService(debugConfig contour_v1alpha1.DebugConfig, builder *dag.Builder) error {
 	debugsvc := &debug.Service{
 		Service: httpsvc.Service{
@@ -1063,6 +1088,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
+	globalExtProc                      *contour_v1.ExternalProcessor
 	globalCircuitBreakerDefaults       *contour_v1alpha1.GlobalCircuitBreakerDefaults
 	upstreamTLS                        *dag.UpstreamTLS
 }
@@ -1159,6 +1185,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
+			GlobalExtProc:                 dbc.globalExtProc,
 			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			UpstreamTLS:                   dbc.upstreamTLS,
 		},

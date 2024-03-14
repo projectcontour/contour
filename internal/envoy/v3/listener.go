@@ -414,53 +414,6 @@ func findFilterIndex(filters []*envoy_filter_network_http_connection_manager_v3.
 	return -1
 }
 
-func makePhaseFilters(processors []*dag.ExternalProcessor, phase contour_v1.ProcessingPhase) []*envoy_filter_network_http_connection_manager_v3.HttpFilter {
-	var filters []*envoy_filter_network_http_connection_manager_v3.HttpFilter
-	var extProcs []*dag.ExternalProcessor
-
-	for _, ep := range processors {
-		if len(ep.Phase) == 0 {
-			ep.Phase = contour_v1.DefaultPhase
-		}
-		if ep.Phase != phase {
-			continue
-		}
-		extProcs = append(extProcs, ep)
-	}
-
-	sort.Stable(sorter.For(extProcs))
-	for _, ep := range extProcs {
-		filters = append(filters, filterExtProc(ep))
-	}
-	return filters
-}
-
-func (b *httpConnectionManagerBuilder) AddExtProcFilters(processors []*dag.ExternalProcessor) *httpConnectionManagerBuilder {
-	phases := map[contour_v1.ProcessingPhase]string{
-		contour_v1.AuthN:        JWTAuthnFilterName,
-		contour_v1.AuthZ:        ExtAuthzFilterName,
-		contour_v1.CORS:         CORSFilterName,
-		contour_v1.RateLimit:    GlobalRateLimitFilterName,
-		contour_v1.DefaultPhase: RouterFilterName,
-	}
-	for phase, name := range phases {
-		// only insert when we find the 'anchor'
-		if i := findFilterIndex(b.filters, name); i != -1 {
-			second := make([]*envoy_filter_network_http_connection_manager_v3.HttpFilter, len(b.filters[i:]))
-			copy(second, b.filters[i:])
-			b.filters = b.filters[:i]
-
-			for _, f := range makePhaseFilters(processors, phase) {
-				b.AddFilter(f)
-			}
-			for _, f := range second {
-				b.AddFilter(f)
-			}
-		}
-	}
-	return b
-}
-
 // AddFilter appends f to the list of filters for this HTTPConnectionManager. f
 // may be nil, in which case it is ignored. Note that Router filters
 // (filters with TypeUrl `type.googleapis.com/envoy.extensions.filters.envoy_filter_network_http_connection_manager_v3.router.v3.Router`)
@@ -869,9 +822,12 @@ func makeProcessMode(mode *contour_v1.ProcessingMode) *envoy_filter_http_ext_pro
 	}
 }
 
-// filterExtProc returns an `ext_proc` filter configured with the
+// FilterExtProc returns an `ext_proc` filter configured with the
 // requested parameters.
-func filterExtProc(extProc *dag.ExternalProcessor) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+func FilterExtProc(extProc *dag.ExtProc) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+	if extProc == nil {
+		return nil
+	}
 	if extProc.ProcessingMode == nil {
 		extProc.ProcessingMode = &contour_v1.ProcessingMode{
 			RequestHeaderMode:   contour_v1.ProcessingModeSend,
@@ -904,7 +860,7 @@ func filterExtProc(extProc *dag.ExternalProcessor) *envoy_filter_network_http_co
 	}
 
 	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
-		Name: extProc.Name,
+		Name: ExtProcFilterName,
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&extProcConfig),
 		},

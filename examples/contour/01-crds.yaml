@@ -713,6 +713,181 @@ spec:
                         type: boolean
                     type: object
                 type: object
+              globalExtProc:
+                description: |-
+                  GlobalExtProc allows envoys external processing filter
+                  to be enabled for all virtual hosts.
+                properties:
+                  disabled:
+                    description: |-
+                      When true, this field disables the external processor: (neither global nor virtualHost)
+                      for the scope of the policy.
+                      if both Disabled and Processor are set. use disabled.
+                      it just work for virtualhost
+                    type: boolean
+                  processor:
+                    description: |-
+                      Processor defines a processing filter list,and each filter in the list
+                      will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
+                      If no phase is specified, it will be added before the Router.
+                      If no Priority is specified, the filters will be added in the order they appear in the list.
+                    properties:
+                      grpcService:
+                        description: GRPCService configure the gRPC service that the
+                          filter will communicate with.
+                        properties:
+                          extensionRef:
+                            description: ExtensionServiceRef specifies the extension
+                              resource that will handle the client requests.
+                            properties:
+                              apiVersion:
+                                description: |-
+                                  API version of the referent.
+                                  If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
+                                minLength: 1
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                minLength: 1
+                                type: string
+                              namespace:
+                                description: |-
+                                  Namespace of the referent.
+                                  If this field is not specifies, the namespace of the resource that targets the referent will be used.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                                minLength: 1
+                                type: string
+                            type: object
+                          failOpen:
+                            description: |-
+                              If FailOpen is true, the client request is forwarded to the upstream service
+                              even if the server fails to respond. This field should not be
+                              set in most cases.
+                            type: boolean
+                          responseTimeout:
+                            description: |-
+                              ResponseTimeout sets how long the proxy should wait for responses.
+                              Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                              Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                              The string "infinity" is also a valid input and specifies no timeout.
+                            pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                            type: string
+                        type: object
+                      mutationRules:
+                        description: |-
+                          MutationRules specifies what headers may be manipulated by a processing filter.
+                          This set of rules makes it possible to control which modifications a filter may make.
+                        properties:
+                          allowAllRouting:
+                            description: |-
+                              By default, certain headers that could affect processing of subsequent
+                              filters or request routing cannot be modified. These headers are
+                              ``host``, ``:authority``, ``:scheme``, and ``:method``.
+                              Setting this parameter to true allows these headers to be modified as well.
+                            type: boolean
+                          allowEnvoy:
+                            description: |-
+                              If true, allow modification of envoy internal headers. By default, these
+                              start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
+                              Default is false.
+                            type: boolean
+                          disallowAll:
+                            description: |-
+                              If true, prevent modifications of all header values, regardless of any
+                              other settings. A processing server may still override the ``:status``
+                              of an HTTP response using an ``ImmediateResponse`` message.
+                              Default is false.
+                            type: boolean
+                          disallowIsError:
+                            description: |-
+                              If true, and if the rules in this list cause a header mutation to be
+                              disallowed, then the filter using this configuration will terminate the
+                              request with a 500 error. In addition, regardless of the setting of this
+                              parameter, any attempt to set, add, or modify a disallowed header will
+                              cause the ``rejected_header_mutations`` counter to be incremented.
+                              Default is false.
+                            type: boolean
+                          disallowSystem:
+                            description: |-
+                              If true, prevent modification of any system header, defined as a header
+                              that starts with a ``:`` character, regardless of any other settings.
+                              A processing server may still override the ``:status`` of an HTTP response
+                              using an ``ImmediateResponse`` message.
+                              Default is false.
+                            type: boolean
+                        type: object
+                      processingMode:
+                        description: |-
+                          ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+                          and how they are delivered.
+                        properties:
+                          requestBodyMode:
+                            default: NONE
+                            description: |-
+                              How to handle the request body.
+                              Default is "NONE".
+                            enum:
+                            - NONE
+                            - STREAMED
+                            - BUFFERED
+                            - BUFFERED_PARTIAL
+                            type: string
+                          requestHeaderMode:
+                            default: SEND
+                            description: |-
+                              How to handle the request header.
+                              Default is "SEND".
+                            enum:
+                            - DEFAULT
+                            - SEND
+                            - SKIP
+                            type: string
+                          requestTrailerMode:
+                            default: SKIP
+                            description: |-
+                              How to handle the request trailers.
+                              Default is "SKIP".
+                            enum:
+                            - DEFAULT
+                            - SEND
+                            - SKIP
+                            type: string
+                          responseBodyMode:
+                            default: NONE
+                            description: |-
+                              How do handle the response body.
+                              Default is "NONE".
+                            enum:
+                            - NONE
+                            - STREAMED
+                            - BUFFERED
+                            - BUFFERED_PARTIAL
+                            type: string
+                          responseHeaderMode:
+                            default: SEND
+                            description: |-
+                              How to handle the response header.
+                              Default is "SEND".
+                            enum:
+                            - DEFAULT
+                            - SEND
+                            - SKIP
+                            type: string
+                          responseTrailerMode:
+                            default: SKIP
+                            description: |-
+                              How to handle the response trailers.
+                              Default is "SKIP".
+                            enum:
+                            - DEFAULT
+                            - SEND
+                            - SKIP
+                            type: string
+                        type: object
+                    type: object
+                type: object
               health:
                 description: |-
                   Health defines the endpoints Contour uses to serve health checks.
@@ -4398,6 +4573,181 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                  globalExtProc:
+                    description: |-
+                      GlobalExtProc allows envoys external processing filter
+                      to be enabled for all virtual hosts.
+                    properties:
+                      disabled:
+                        description: |-
+                          When true, this field disables the external processor: (neither global nor virtualHost)
+                          for the scope of the policy.
+                          if both Disabled and Processor are set. use disabled.
+                          it just work for virtualhost
+                        type: boolean
+                      processor:
+                        description: |-
+                          Processor defines a processing filter list,and each filter in the list
+                          will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
+                          If no phase is specified, it will be added before the Router.
+                          If no Priority is specified, the filters will be added in the order they appear in the list.
+                        properties:
+                          grpcService:
+                            description: GRPCService configure the gRPC service that
+                              the filter will communicate with.
+                            properties:
+                              extensionRef:
+                                description: ExtensionServiceRef specifies the extension
+                                  resource that will handle the client requests.
+                                properties:
+                                  apiVersion:
+                                    description: |-
+                                      API version of the referent.
+                                      If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
+                                    minLength: 1
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    minLength: 1
+                                    type: string
+                                  namespace:
+                                    description: |-
+                                      Namespace of the referent.
+                                      If this field is not specifies, the namespace of the resource that targets the referent will be used.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                                    minLength: 1
+                                    type: string
+                                type: object
+                              failOpen:
+                                description: |-
+                                  If FailOpen is true, the client request is forwarded to the upstream service
+                                  even if the server fails to respond. This field should not be
+                                  set in most cases.
+                                type: boolean
+                              responseTimeout:
+                                description: |-
+                                  ResponseTimeout sets how long the proxy should wait for responses.
+                                  Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                                  Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                                  The string "infinity" is also a valid input and specifies no timeout.
+                                pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                                type: string
+                            type: object
+                          mutationRules:
+                            description: |-
+                              MutationRules specifies what headers may be manipulated by a processing filter.
+                              This set of rules makes it possible to control which modifications a filter may make.
+                            properties:
+                              allowAllRouting:
+                                description: |-
+                                  By default, certain headers that could affect processing of subsequent
+                                  filters or request routing cannot be modified. These headers are
+                                  ``host``, ``:authority``, ``:scheme``, and ``:method``.
+                                  Setting this parameter to true allows these headers to be modified as well.
+                                type: boolean
+                              allowEnvoy:
+                                description: |-
+                                  If true, allow modification of envoy internal headers. By default, these
+                                  start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
+                                  Default is false.
+                                type: boolean
+                              disallowAll:
+                                description: |-
+                                  If true, prevent modifications of all header values, regardless of any
+                                  other settings. A processing server may still override the ``:status``
+                                  of an HTTP response using an ``ImmediateResponse`` message.
+                                  Default is false.
+                                type: boolean
+                              disallowIsError:
+                                description: |-
+                                  If true, and if the rules in this list cause a header mutation to be
+                                  disallowed, then the filter using this configuration will terminate the
+                                  request with a 500 error. In addition, regardless of the setting of this
+                                  parameter, any attempt to set, add, or modify a disallowed header will
+                                  cause the ``rejected_header_mutations`` counter to be incremented.
+                                  Default is false.
+                                type: boolean
+                              disallowSystem:
+                                description: |-
+                                  If true, prevent modification of any system header, defined as a header
+                                  that starts with a ``:`` character, regardless of any other settings.
+                                  A processing server may still override the ``:status`` of an HTTP response
+                                  using an ``ImmediateResponse`` message.
+                                  Default is false.
+                                type: boolean
+                            type: object
+                          processingMode:
+                            description: |-
+                              ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+                              and how they are delivered.
+                            properties:
+                              requestBodyMode:
+                                default: NONE
+                                description: |-
+                                  How to handle the request body.
+                                  Default is "NONE".
+                                enum:
+                                - NONE
+                                - STREAMED
+                                - BUFFERED
+                                - BUFFERED_PARTIAL
+                                type: string
+                              requestHeaderMode:
+                                default: SEND
+                                description: |-
+                                  How to handle the request header.
+                                  Default is "SEND".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                              requestTrailerMode:
+                                default: SKIP
+                                description: |-
+                                  How to handle the request trailers.
+                                  Default is "SKIP".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                              responseBodyMode:
+                                default: NONE
+                                description: |-
+                                  How do handle the response body.
+                                  Default is "NONE".
+                                enum:
+                                - NONE
+                                - STREAMED
+                                - BUFFERED
+                                - BUFFERED_PARTIAL
+                                type: string
+                              responseHeaderMode:
+                                default: SEND
+                                description: |-
+                                  How to handle the response header.
+                                  Default is "SEND".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                              responseTrailerMode:
+                                default: SKIP
+                                description: |-
+                                  How to handle the response trailers.
+                                  Default is "SKIP".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                            type: object
+                        type: object
+                    type: object
                   health:
                     description: |-
                       Health defines the endpoints Contour uses to serve health checks.
@@ -5840,146 +6190,134 @@ spec:
                     enableWebsockets:
                       description: Enables websocket support for the route.
                       type: boolean
-                    extProcPolicies:
+                    extProcPolicy:
                       description: |-
-                        ExtProcPolicies updates the external processing policy/policies that were set
+                        ExtProcPolicy updates the external processing policy that were set
                         on the root HTTPProxy object for client requests/responses
-                      items:
-                        description: ExtProcPolicy modifies how requests/responses
-                          are operated.
-                        properties:
-                          disabled:
-                            description: |-
-                              When true, this field disables the specific client request external processor
-                              for the scope of the policy.
-                              if both disabled and overrides are set. use disabled.
-                            type: boolean
-                          name:
-                            description: The name of the external processor being
-                              overrided.
-                            minLength: 1
-                            type: string
-                          overrides:
-                            description: Overrides aspects of the configuration for
-                              this route.
-                            properties:
-                              grpcService:
-                                description: GRPCService configure the gRPC service
-                                  that the filter will communicate with.
-                                properties:
-                                  extensionRef:
-                                    description: ExtensionServiceRef specifies the
-                                      extension resource that will handle the client
-                                      requests.
-                                    properties:
-                                      apiVersion:
-                                        description: |-
-                                          API version of the referent.
-                                          If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
-                                        minLength: 1
-                                        type: string
-                                      name:
-                                        description: |-
-                                          Name of the referent.
-                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        minLength: 1
-                                        type: string
-                                      namespace:
-                                        description: |-
-                                          Namespace of the referent.
-                                          If this field is not specifies, the namespace of the resource that targets the referent will be used.
-                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                                        minLength: 1
-                                        type: string
-                                    type: object
-                                  failOpen:
-                                    description: |-
-                                      If FailOpen is true, the client request is forwarded to the upstream service
-                                      even if the server fails to respond. This field should not be
-                                      set in most cases.
-                                    type: boolean
-                                  responseTimeout:
-                                    description: |-
-                                      ResponseTimeout sets how long the proxy should wait for responses.
-                                      Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
-                                      Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-                                      The string "infinity" is also a valid input and specifies no timeout.
-                                    pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
-                                    type: string
-                                type: object
-                              processingMode:
-                                description: |-
-                                  ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
-                                  and how they are delivered.
-                                properties:
-                                  requestBodyMode:
-                                    default: NONE
-                                    description: |-
-                                      How to handle the request body.
-                                      Default is "NONE".
-                                    enum:
-                                    - NONE
-                                    - STREAMED
-                                    - BUFFERED
-                                    - BUFFERED_PARTIAL
-                                    type: string
-                                  requestHeaderMode:
-                                    default: SEND
-                                    description: |-
-                                      How to handle the request header.
-                                      Default is "SEND".
-                                    enum:
-                                    - DEFAULT
-                                    - SEND
-                                    - SKIP
-                                    type: string
-                                  requestTrailerMode:
-                                    default: SKIP
-                                    description: |-
-                                      How to handle the request trailers.
-                                      Default is "SKIP".
-                                    enum:
-                                    - DEFAULT
-                                    - SEND
-                                    - SKIP
-                                    type: string
-                                  responseBodyMode:
-                                    default: NONE
-                                    description: |-
-                                      How do handle the response body.
-                                      Default is "NONE".
-                                    enum:
-                                    - NONE
-                                    - STREAMED
-                                    - BUFFERED
-                                    - BUFFERED_PARTIAL
-                                    type: string
-                                  responseHeaderMode:
-                                    default: SEND
-                                    description: |-
-                                      How to handle the response header.
-                                      Default is "SEND".
-                                    enum:
-                                    - DEFAULT
-                                    - SEND
-                                    - SKIP
-                                    type: string
-                                  responseTrailerMode:
-                                    default: SKIP
-                                    description: |-
-                                      How to handle the response trailers.
-                                      Default is "SKIP".
-                                    enum:
-                                    - DEFAULT
-                                    - SEND
-                                    - SKIP
-                                    type: string
-                                type: object
-                            type: object
-                        required:
-                        - name
-                        type: object
-                      type: array
+                      properties:
+                        disabled:
+                          description: |-
+                            When true, this field disables the specific client request external processor
+                            for the scope of the policy.
+                            if both disabled and overrides are set. use disabled.
+                          type: boolean
+                        overrides:
+                          description: Overrides aspects of the configuration for
+                            this route.
+                          properties:
+                            grpcService:
+                              description: GRPCService configure the gRPC service
+                                that the filter will communicate with.
+                              properties:
+                                extensionRef:
+                                  description: ExtensionServiceRef specifies the extension
+                                    resource that will handle the client requests.
+                                  properties:
+                                    apiVersion:
+                                      description: |-
+                                        API version of the referent.
+                                        If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
+                                      minLength: 1
+                                      type: string
+                                    name:
+                                      description: |-
+                                        Name of the referent.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      minLength: 1
+                                      type: string
+                                    namespace:
+                                      description: |-
+                                        Namespace of the referent.
+                                        If this field is not specifies, the namespace of the resource that targets the referent will be used.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                                      minLength: 1
+                                      type: string
+                                  type: object
+                                failOpen:
+                                  description: |-
+                                    If FailOpen is true, the client request is forwarded to the upstream service
+                                    even if the server fails to respond. This field should not be
+                                    set in most cases.
+                                  type: boolean
+                                responseTimeout:
+                                  description: |-
+                                    ResponseTimeout sets how long the proxy should wait for responses.
+                                    Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                                    Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                                    The string "infinity" is also a valid input and specifies no timeout.
+                                  pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                                  type: string
+                              type: object
+                            processingMode:
+                              description: |-
+                                ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+                                and how they are delivered.
+                              properties:
+                                requestBodyMode:
+                                  default: NONE
+                                  description: |-
+                                    How to handle the request body.
+                                    Default is "NONE".
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
+                                requestHeaderMode:
+                                  default: SEND
+                                  description: |-
+                                    How to handle the request header.
+                                    Default is "SEND".
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
+                                requestTrailerMode:
+                                  default: SKIP
+                                  description: |-
+                                    How to handle the request trailers.
+                                    Default is "SKIP".
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
+                                responseBodyMode:
+                                  default: NONE
+                                  description: |-
+                                    How do handle the response body.
+                                    Default is "NONE".
+                                  enum:
+                                  - NONE
+                                  - STREAMED
+                                  - BUFFERED
+                                  - BUFFERED_PARTIAL
+                                  type: string
+                                responseHeaderMode:
+                                  default: SEND
+                                  description: |-
+                                    How to handle the response header.
+                                    Default is "SEND".
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
+                                responseTrailerMode:
+                                  default: SKIP
+                                  description: |-
+                                    How to handle the response trailers.
+                                    Default is "SKIP".
+                                  enum:
+                                  - DEFAULT
+                                  - SEND
+                                  - SKIP
+                                  type: string
+                              type: object
+                          type: object
+                      type: object
                     healthCheckPolicy:
                       description: The health check policy for this route.
                       properties:
@@ -7535,198 +7873,178 @@ spec:
                     type: object
                   extProc:
                     description: |-
-                      ExternalProcessor contains a list of external processors which allow to act on HTTP traffic in a flexible way
+                      ExtProc which allow to act on HTTP traffic in a flexible way
                       and the policy for fine-grained at VirtualHost level.
                     properties:
-                      processors:
+                      disabled:
                         description: |-
-                          Processors defines a processing filter list,and each filter in the list
+                          When true, this field disables the external processor: (neither global nor virtualHost)
+                          for the scope of the policy.
+                          if both Disabled and Processor are set. use disabled.
+                          it just work for virtualhost
+                        type: boolean
+                      processor:
+                        description: |-
+                          Processor defines a processing filter list,and each filter in the list
                           will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
                           If no phase is specified, it will be added before the Router.
                           If no Priority is specified, the filters will be added in the order they appear in the list.
-                        items:
-                          description: |-
-                            ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
-                            The external server must implement the v3 Envoy external processing GRPC protocol
-                            (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
-                          properties:
-                            disabled:
-                              description: When true, this external processor will
-                                not be added to the listener's filter chain
-                              type: boolean
-                            grpcService:
-                              description: GRPCService configure the gRPC service
-                                that the filter will communicate with.
-                              properties:
-                                extensionRef:
-                                  description: ExtensionServiceRef specifies the extension
-                                    resource that will handle the client requests.
-                                  properties:
-                                    apiVersion:
-                                      description: |-
-                                        API version of the referent.
-                                        If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
-                                      minLength: 1
-                                      type: string
-                                    name:
-                                      description: |-
-                                        Name of the referent.
-                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      minLength: 1
-                                      type: string
-                                    namespace:
-                                      description: |-
-                                        Namespace of the referent.
-                                        If this field is not specifies, the namespace of the resource that targets the referent will be used.
-                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-                                      minLength: 1
-                                      type: string
-                                  type: object
-                                failOpen:
-                                  description: |-
-                                    If FailOpen is true, the client request is forwarded to the upstream service
-                                    even if the server fails to respond. This field should not be
-                                    set in most cases.
-                                  type: boolean
-                                responseTimeout:
-                                  description: |-
-                                    ResponseTimeout sets how long the proxy should wait for responses.
-                                    Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
-                                    Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-                                    The string "infinity" is also a valid input and specifies no timeout.
-                                  pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
-                                  type: string
-                              type: object
-                            mutationRules:
-                              description: |-
-                                MutationRules specifies what headers may be manipulated by a processing filter.
-                                This set of rules makes it possible to control which modifications a filter may make.
-                              properties:
-                                allowAllRouting:
-                                  description: |-
-                                    By default, certain headers that could affect processing of subsequent
-                                    filters or request routing cannot be modified. These headers are
-                                    ``host``, ``:authority``, ``:scheme``, and ``:method``.
-                                    Setting this parameter to true allows these headers to be modified as well.
-                                  type: boolean
-                                allowEnvoy:
-                                  description: |-
-                                    If true, allow modification of envoy internal headers. By default, these
-                                    start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
-                                    Default is false.
-                                  type: boolean
-                                disallowAll:
-                                  description: |-
-                                    If true, prevent modifications of all header values, regardless of any
-                                    other settings. A processing server may still override the ``:status``
-                                    of an HTTP response using an ``ImmediateResponse`` message.
-                                    Default is false.
-                                  type: boolean
-                                disallowIsError:
-                                  description: |-
-                                    If true, and if the rules in this list cause a header mutation to be
-                                    disallowed, then the filter using this configuration will terminate the
-                                    request with a 500 error. In addition, regardless of the setting of this
-                                    parameter, any attempt to set, add, or modify a disallowed header will
-                                    cause the ``rejected_header_mutations`` counter to be incremented.
-                                    Default is false.
-                                  type: boolean
-                                disallowSystem:
-                                  description: |-
-                                    If true, prevent modification of any system header, defined as a header
-                                    that starts with a ``:`` character, regardless of any other settings.
-                                    A processing server may still override the ``:status`` of an HTTP response
-                                    using an ``ImmediateResponse`` message.
-                                    Default is false.
-                                  type: boolean
-                              type: object
-                            name:
-                              description: Unique name for the external processor.
-                              minLength: 1
-                              type: string
-                            phase:
-                              description: Phase determines where in the filter chain
-                                this extProc is to be injected.
-                              type: string
-                            priority:
-                              description: |-
-                                Priority determines ordering of processing filters in the same phase. When multiple extProc are applied to the same workload in the same phase,
-                                they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
-                                they will follow the order in which extProc(s) are added, Defaults to 0.
-                              format: int32
-                              type: integer
-                            processingMode:
-                              description: |-
-                                ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
-                                and how they are delivered.
-                              properties:
-                                requestBodyMode:
-                                  default: NONE
-                                  description: |-
-                                    How to handle the request body.
-                                    Default is "NONE".
-                                  enum:
-                                  - NONE
-                                  - STREAMED
-                                  - BUFFERED
-                                  - BUFFERED_PARTIAL
-                                  type: string
-                                requestHeaderMode:
-                                  default: SEND
-                                  description: |-
-                                    How to handle the request header.
-                                    Default is "SEND".
-                                  enum:
-                                  - DEFAULT
-                                  - SEND
-                                  - SKIP
-                                  type: string
-                                requestTrailerMode:
-                                  default: SKIP
-                                  description: |-
-                                    How to handle the request trailers.
-                                    Default is "SKIP".
-                                  enum:
-                                  - DEFAULT
-                                  - SEND
-                                  - SKIP
-                                  type: string
-                                responseBodyMode:
-                                  default: NONE
-                                  description: |-
-                                    How do handle the response body.
-                                    Default is "NONE".
-                                  enum:
-                                  - NONE
-                                  - STREAMED
-                                  - BUFFERED
-                                  - BUFFERED_PARTIAL
-                                  type: string
-                                responseHeaderMode:
-                                  default: SEND
-                                  description: |-
-                                    How to handle the response header.
-                                    Default is "SEND".
-                                  enum:
-                                  - DEFAULT
-                                  - SEND
-                                  - SKIP
-                                  type: string
-                                responseTrailerMode:
-                                  default: SKIP
-                                  description: |-
-                                    How to handle the response trailers.
-                                    Default is "SKIP".
-                                  enum:
-                                  - DEFAULT
-                                  - SEND
-                                  - SKIP
-                                  type: string
-                              type: object
-                          required:
-                          - name
-                          type: object
-                        type: array
+                        properties:
+                          grpcService:
+                            description: GRPCService configure the gRPC service that
+                              the filter will communicate with.
+                            properties:
+                              extensionRef:
+                                description: ExtensionServiceRef specifies the extension
+                                  resource that will handle the client requests.
+                                properties:
+                                  apiVersion:
+                                    description: |-
+                                      API version of the referent.
+                                      If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
+                                    minLength: 1
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    minLength: 1
+                                    type: string
+                                  namespace:
+                                    description: |-
+                                      Namespace of the referent.
+                                      If this field is not specifies, the namespace of the resource that targets the referent will be used.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                                    minLength: 1
+                                    type: string
+                                type: object
+                              failOpen:
+                                description: |-
+                                  If FailOpen is true, the client request is forwarded to the upstream service
+                                  even if the server fails to respond. This field should not be
+                                  set in most cases.
+                                type: boolean
+                              responseTimeout:
+                                description: |-
+                                  ResponseTimeout sets how long the proxy should wait for responses.
+                                  Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+                                  Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+                                  The string "infinity" is also a valid input and specifies no timeout.
+                                pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                                type: string
+                            type: object
+                          mutationRules:
+                            description: |-
+                              MutationRules specifies what headers may be manipulated by a processing filter.
+                              This set of rules makes it possible to control which modifications a filter may make.
+                            properties:
+                              allowAllRouting:
+                                description: |-
+                                  By default, certain headers that could affect processing of subsequent
+                                  filters or request routing cannot be modified. These headers are
+                                  ``host``, ``:authority``, ``:scheme``, and ``:method``.
+                                  Setting this parameter to true allows these headers to be modified as well.
+                                type: boolean
+                              allowEnvoy:
+                                description: |-
+                                  If true, allow modification of envoy internal headers. By default, these
+                                  start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
+                                  Default is false.
+                                type: boolean
+                              disallowAll:
+                                description: |-
+                                  If true, prevent modifications of all header values, regardless of any
+                                  other settings. A processing server may still override the ``:status``
+                                  of an HTTP response using an ``ImmediateResponse`` message.
+                                  Default is false.
+                                type: boolean
+                              disallowIsError:
+                                description: |-
+                                  If true, and if the rules in this list cause a header mutation to be
+                                  disallowed, then the filter using this configuration will terminate the
+                                  request with a 500 error. In addition, regardless of the setting of this
+                                  parameter, any attempt to set, add, or modify a disallowed header will
+                                  cause the ``rejected_header_mutations`` counter to be incremented.
+                                  Default is false.
+                                type: boolean
+                              disallowSystem:
+                                description: |-
+                                  If true, prevent modification of any system header, defined as a header
+                                  that starts with a ``:`` character, regardless of any other settings.
+                                  A processing server may still override the ``:status`` of an HTTP response
+                                  using an ``ImmediateResponse`` message.
+                                  Default is false.
+                                type: boolean
+                            type: object
+                          processingMode:
+                            description: |-
+                              ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+                              and how they are delivered.
+                            properties:
+                              requestBodyMode:
+                                default: NONE
+                                description: |-
+                                  How to handle the request body.
+                                  Default is "NONE".
+                                enum:
+                                - NONE
+                                - STREAMED
+                                - BUFFERED
+                                - BUFFERED_PARTIAL
+                                type: string
+                              requestHeaderMode:
+                                default: SEND
+                                description: |-
+                                  How to handle the request header.
+                                  Default is "SEND".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                              requestTrailerMode:
+                                default: SKIP
+                                description: |-
+                                  How to handle the request trailers.
+                                  Default is "SKIP".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                              responseBodyMode:
+                                default: NONE
+                                description: |-
+                                  How do handle the response body.
+                                  Default is "NONE".
+                                enum:
+                                - NONE
+                                - STREAMED
+                                - BUFFERED
+                                - BUFFERED_PARTIAL
+                                type: string
+                              responseHeaderMode:
+                                default: SEND
+                                description: |-
+                                  How to handle the response header.
+                                  Default is "SEND".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                              responseTrailerMode:
+                                default: SKIP
+                                description: |-
+                                  How to handle the response trailers.
+                                  Default is "SKIP".
+                                enum:
+                                - DEFAULT
+                                - SEND
+                                - SKIP
+                                type: string
+                            type: object
+                        type: object
                     type: object
                   fqdn:
                     description: |-

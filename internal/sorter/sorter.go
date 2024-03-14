@@ -443,12 +443,6 @@ func (s secretSorter) Len() int           { return len(s) }
 func (s secretSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s secretSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
-type extProcSorter []*dag.ExternalProcessor
-
-func (s extProcSorter) Len() int           { return len(s) }
-func (s extProcSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s extProcSorter) Less(i, j int) bool { return s[i].Priority > s[j].Priority }
-
 // For returns a sort.Interface object that can be used to sort the
 // given value. It returns nil if there is no sorter for the type of
 // value.
@@ -478,9 +472,6 @@ func For(v any) sort.Interface {
 		return listenerSorter(v)
 	case []*envoy_config_listener_v3.FilterChain:
 		return filterChainSorter(v)
-
-	case []*dag.ExternalProcessor:
-		return extProcSorter(v)
 
 	default:
 		return nil

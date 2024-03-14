@@ -158,12 +158,12 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		}
 
 		// Apply per-route external processing policy modifications.
-		for name, policy := range dagRoute.ExtProcPolicies {
-			// if disabled, do nothing
-			if policy.Disabled {
-				route.TypedPerFilterConfig[name] = routeExtProcDisabled()
-			} else if policy.Overrides != nil {
-				route.TypedPerFilterConfig[name] = routeExtProcOverrides(policy.Overrides)
+		// if both disabled & overrides has been set, use disabled do
+		if dagRoute.ExtProcPolicy != nil {
+			if dagRoute.ExtProcPolicy.Disabled {
+				route.TypedPerFilterConfig[ExtProcFilterName] = routeExtProcDisabled()
+			} else if dagRoute.ExtProcPolicy.Overrides != nil {
+				route.TypedPerFilterConfig[ExtProcFilterName] = routeExtProcOverrides(dagRoute.ExtProcPolicy.Overrides)
 			}
 		}
 

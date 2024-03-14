@@ -92,6 +92,6 @@ func (b *ProxyBuilder) WithAuthServer(auth contour_v1.AuthorizationServer) *Prox
 
 func (b *ProxyBuilder) WithExternalProcessor(extProc *contour_v1.ExternalProcessor) *ProxyBuilder {
 	b.ensureTLS()
-	b.Spec.VirtualHost.ExternalProcessor = extProc
+	b.Spec.VirtualHost.ExtProc = extProc
 	return b
 }

@@ -286,11 +286,11 @@ type ExtProcOverrides struct {
 }
 
 type ExtProcPolicy struct {
-	Overrides *ExtProcOverrides
-
 	// Disabled disable the filter for this particular vhost or route.
 	// If disabled is specified in multiple per-filter-configs, the most specific one will be used.
 	Disabled bool
+
+	Overrides *ExtProcOverrides
 }
 
 // Route defines the properties of a route to a Cluster.
@@ -389,7 +389,8 @@ type Route struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
-	ExtProcPolicies map[string]*ExtProcPolicy
+	//
+	ExtProcPolicy *ExtProcPolicy
 
 	// Metadata fields that can be used for access logging.
 	Kind      string
@@ -773,7 +774,7 @@ type VirtualHost struct {
 
 	// ExtProcs contains the configurations for enabling
 	// the ExtProc filters.
-	ExtProcs []*ExternalProcessor
+	ExtProcs []*ExtProc
 }
 
 func (v *VirtualHost) AddRoute(route *Route) {
@@ -825,9 +826,9 @@ type SecureVirtualHost struct {
 	// the ExtAuthz filter.
 	ExternalAuthorization *ExternalAuthorization
 
-	// ExtProcs contains the configurations for enabling
+	// ExtProc contains the configurations for enabling
 	// the ExtProc filters.
-	ExtProcs []*ExternalProcessor
+	ExtProc *ExtProc
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
@@ -898,9 +899,7 @@ type ExternalAuthorization struct {
 	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
 }
 
-type ExternalProcessor struct {
-	Name string
-
+type ExtProc struct {
 	// ExtProcService points to the extension that client
 	// requests are forwarded to for external processing. If nil, no
 	// external processing is enabled for this host.
@@ -911,19 +910,11 @@ type ExternalProcessor struct {
 	// This is the timeout for a specific request.
 	ResponseTimeout timeout.Setting
 
-	// FailOpen sets whether authorization server
+	// FailOpen sets whether external processing server
 	// failures should cause the client request to also fail. The
 	// only reason to set this to `true` is when you are migrating
 	// from internal to external authorization.
 	FailOpen bool
-
-	// Phase determines where in the filter chain this extProc is to be injected.
-	Phase contour_v1.ProcessingPhase
-
-	// Priority determines ordering of processing filters in the same phase. When multiple extProc are applied to the same workload in the same phase,
-	// they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
-	// they will follow the order in which extProc(s) are added, Defaults to 0.
-	Priority int32
 
 	// Specifies default options for how HTTP headers, trailers, and bodies are sent.
 	ProcessingMode *contour_v1.ProcessingMode

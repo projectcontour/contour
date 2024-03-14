@@ -472,54 +472,10 @@ type GRPCService struct {
 	FailOpen bool `json:"failOpen,omitempty"`
 }
 
-// ProcessingPhase define the phase in the filter chain where the external processing filter will be injected
-type ProcessingPhase string
-
-const (
-	// DefaultPhase decides insert the external processing service at the end of the filter chain, right before the Router.
-	//
-	// **NOTE: if not specify, default to DefaultPhase
-	DefaultPhase ProcessingPhase = "DefaultPhase"
-
-	// Insert before contour authentication filter(s).
-	AuthN ProcessingPhase = "AuthN"
-
-	// Insert  before contour authorization filter(s) and after the authentication filter(s).
-	AuthZ ProcessingPhase = "AuthZ"
-
-	// Insert  before contour CORS filter(s).
-	CORS ProcessingPhase = "CORS"
-
-	// Insert  before contour RateLimit.
-	RateLimit ProcessingPhase = "RateLimit"
-)
-
 // ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
 // The external server must implement the v3 Envoy external processing GRPC protocol
 // (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
 type ExtProc struct {
-	// Unique name for the external processor.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	Name string `json:"name"`
-
-	// When true, this external processor will not be added to the listener's filter chain
-	//
-	// +optional
-	Disabled bool `json:"disabled,omitempty"`
-
-	// Phase determines where in the filter chain this extProc is to be injected.
-	//
-	// +optional
-	Phase ProcessingPhase `json:"phase,omitempty"`
-
-	// Priority determines ordering of processing filters in the same phase. When multiple extProc are applied to the same workload in the same phase,
-	// they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
-	// they will follow the order in which extProc(s) are added, Defaults to 0.
-	//
-	// +optional
-	Priority int32 `json:"priority,omitempty"`
-
 	// GRPCService configure the gRPC service that the filter will communicate with.
 	//
 	// +optional
@@ -555,24 +511,29 @@ type ExtProcOverride struct {
 
 // ExternalProcessor defines a processing filter list and the policy for fine-grained at VirutalHost and/or Route level.
 type ExternalProcessor struct {
-	// Processors defines a processing filter list,and each filter in the list
+	// Processor defines a processing filter list,and each filter in the list
 	// will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
 	// If no phase is specified, it will be added before the Router.
 	// If no Priority is specified, the filters will be added in the order they appear in the list.
 	//
 	// +optional
-	Processors []ExtProc `json:"processors,omitempty"`
+	Processor *ExtProc `json:"processor,omitempty"`
+
+	// When true, this field disables the external processor: (neither global nor virtualHost)
+	// for the scope of the policy.
+	//
+	// if both Disabled and Processor are set. use disabled.
+	//
+	// it just work for virtualhost
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 // ExtProcPolicy modifies how requests/responses are operated.
 type ExtProcPolicy struct {
-	// The name of the external processor being overrided.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
-	Name string `json:"name"`
-
 	// When true, this field disables the specific client request external processor
 	// for the scope of the policy.
+	//
 	// if both disabled and overrides are set. use disabled.
 	//
 	// +optional
@@ -632,11 +593,11 @@ type VirtualHost struct {
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// ExternalProcessor contains a list of external processors which allow to act on HTTP traffic in a flexible way
+	// ExtProc which allow to act on HTTP traffic in a flexible way
 	// and the policy for fine-grained at VirtualHost level.
 	//
 	// +optional
-	ExternalProcessor *ExternalProcessor `json:"extProc,omitempty"`
+	ExtProc *ExternalProcessor `json:"extProc,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -905,11 +866,11 @@ type Route struct {
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// ExtProcPolicies updates the external processing policy/policies that were set
+	// ExtProcPolicy updates the external processing policy that were set
 	// on the root HTTPProxy object for client requests/responses
 	//
 	// +optional
-	ExtProcPolicies []ExtProcPolicy `json:"extProcPolicies,omitempty"`
+	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
 }
 
 type JWTVerificationPolicy struct {
