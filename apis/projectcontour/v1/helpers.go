@@ -53,7 +53,7 @@ func (v *VirtualHost) AuthorizationContext() map[string]string {
 // ExtProcConfigured returns whether external processing are
 // configured on this virtual host.
 func (v *VirtualHost) ExtProcConfigured() bool {
-	return v.ExtProc.Processor != nil
+	return v.ExtProc != nil && v.ExtProc.Processor != nil
 }
 
 // ExtProcDisabled returns true if this virtual host disables
