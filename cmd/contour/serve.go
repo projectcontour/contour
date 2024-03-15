@@ -890,11 +890,12 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 }
 
 func (s *Server) setupGlobalExtProc(contourCfg contour_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.GlobalExtProcConfig, error) {
-	if contourCfg.GlobalExtProc == nil || contourCfg.GlobalExtProc.Processor == nil || contourCfg.GlobalExtProc.Processor.GRPCService == nil {
+	extProc := contourCfg.GlobalExtProc
+	if extProc == nil || extProc.Disabled || extProc.Processor == nil || extProc.Processor.GRPCService == nil {
 		return nil, nil
 	}
 
-	grpcSvc := contourCfg.GlobalExtProc.Processor.GRPCService
+	grpcSvc := extProc.Processor.GRPCService
 
 	// ensure the specified ExtensionService exists
 	extSvcCfg, err := s.getExtensionSvcConfig(grpcSvc.ExtensionServiceRef.Name, grpcSvc.ExtensionServiceRef.Namespace)

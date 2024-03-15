@@ -524,7 +524,6 @@ type ExternalProcessor struct {
 	//
 	// if both Disabled and Processor are set. use disabled.
 	//
-	// it just work for virtualhost
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 }
