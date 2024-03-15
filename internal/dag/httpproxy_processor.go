@@ -205,13 +205,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		return
 	}
 
-	if proxy.Spec.VirtualHost.ExtProc != nil && proxy.Spec.VirtualHost.TLS == nil &&
-		len(proxy.Spec.VirtualHost.ExtProc.Processor.GRPCService.ExtensionServiceRef.Name) > 0 {
+	extProc := proxy.Spec.VirtualHost.ExtProc
+	if extProc != nil && extProc.Processor != nil && extProc.Processor.GRPCService != nil &&
+		proxy.Spec.VirtualHost.TLS == nil && len(extProc.Processor.GRPCService.ExtensionServiceRef.Name) > 0 {
 		validCond.AddError(contour_v1.ConditionTypeExtProcError, "VirtualHostExtProcNotPermitted",
 			"Spec.VirtualHost.ExternalProcessor.Processors[*].ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
 		return
 	}
-
 	if len(proxy.Spec.VirtualHost.IPAllowFilterPolicy) > 0 && len(proxy.Spec.VirtualHost.IPDenyFilterPolicy) > 0 {
 		validCond.AddError(contour_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
 			"Spec.VirtualHost.IPAllowFilterPolicy and Spec.VirtualHost.IPDepnyFilterPolicy cannot both be defined.")
