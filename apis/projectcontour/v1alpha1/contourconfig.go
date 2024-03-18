@@ -89,7 +89,7 @@ type ContourConfigurationSpec struct {
 	// Available toggles are:
 	// useEndpointSlices - Configures contour to fetch endpoint data
 	// from k8s endpoint slices. defaults to true,
-	// if false then reading endpoint data from the k8s endpoints.
+	// If false then reads endpoint data from the k8s endpoints.
 	FeatureFlags FeatureFlags `json:"featureFlags,omitempty"`
 }
 

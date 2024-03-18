@@ -638,7 +638,7 @@ spec:
                   Available toggles are:
                   useEndpointSlices - Configures contour to fetch endpoint data
                   from k8s endpoint slices. defaults to true,
-                  if false then reading endpoint data from the k8s endpoints.
+                  If false then reads endpoint data from the k8s endpoints.
                 items:
                   type: string
                 type: array
@@ -4323,7 +4323,7 @@ spec:
                       Available toggles are:
                       useEndpointSlices - Configures contour to fetch endpoint data
                       from k8s endpoint slices. defaults to true,
-                      if false then reading endpoint data from the k8s endpoints.
+                      If false then reads endpoint data from the k8s endpoints.
                     items:
                       type: string
                     type: array
