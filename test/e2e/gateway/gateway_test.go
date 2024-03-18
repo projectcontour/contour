@@ -315,7 +315,7 @@ var _ = Describe("Gateway API", func() {
 				},
 			}
 
-			return testWithGateway(gateway, gatewayClass, func(namespace string, gateway types.NamespacedName) {
+			return testWithGateway(gateway, gatewayClass, func(namespace string, _ types.NamespacedName) {
 				BeforeEach(func() {
 					f.Certs.CreateSelfSignedCert(namespace, "tlscert-1", "tlscert-1", "https-1.gateway.projectcontour.io")
 					f.Certs.CreateSelfSignedCert(namespace, "tlscert-2", "tlscert-2", "https-2.gateway.projectcontour.io")

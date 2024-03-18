@@ -232,7 +232,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 			}
 			if err == nil {
 				expectedCert, _ := tc.serverCredentials.X509Certificate()
-				assert.Equal(t, receivedCert, &expectedCert)
+				assert.Equal(t, &expectedCert, receivedCert)
 			}
 		})
 	}
@@ -379,7 +379,7 @@ func TestConvertServeContext(t *testing.T) {
 	defaultContourConfiguration := func() contour_v1alpha1.ContourConfigurationSpec {
 		return contour_v1alpha1.ContourConfigurationSpec{
 			XDSServer: &contour_v1alpha1.XDSServerConfig{
-				Type:    contour_v1alpha1.ContourServerType,
+				Type:    contour_v1alpha1.EnvoyServerType,
 				Address: "127.0.0.1",
 				Port:    8001,
 				TLS: &contour_v1alpha1.TLS{

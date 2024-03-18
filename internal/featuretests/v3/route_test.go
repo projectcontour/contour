@@ -988,7 +988,7 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 	rh.OnAdd(s1)
 
 	go func() {
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			rh.OnAdd(&contour_v1.HTTPProxy{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      fmt.Sprintf("simple-%d", i),

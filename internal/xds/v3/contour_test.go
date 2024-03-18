@@ -111,7 +111,7 @@ func TestXDSHandlerStream(t *testing.T) {
 						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
-				send: func(resp *envoy_service_discovery_v3.DiscoveryResponse) error {
+				send: func(*envoy_service_discovery_v3.DiscoveryResponse) error {
 					return io.EOF
 				},
 			},
@@ -122,7 +122,7 @@ func TestXDSHandlerStream(t *testing.T) {
 				FieldLogger: log,
 				resources: map[string]xds.Resource{
 					"io.projectcontour.potato": &mockResource{
-						register: func(ch chan int, i int) {
+						register: func(chan int, int) {
 							// do nothing
 						},
 						typeurl: func() string { return "io.projectcontour.potato" },
@@ -141,7 +141,7 @@ func TestXDSHandlerStream(t *testing.T) {
 						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
-				send: func(resp *envoy_service_discovery_v3.DiscoveryResponse) error {
+				send: func(*envoy_service_discovery_v3.DiscoveryResponse) error {
 					return io.EOF
 				},
 			},

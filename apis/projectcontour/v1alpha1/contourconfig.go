@@ -101,7 +101,7 @@ type FeatureFlags []string
 type XDSServerType string
 
 const (
-	// Use Contour's xDS server.
+	// Use Contour's xDS server (deprecated).
 	ContourServerType XDSServerType = "contour"
 	// Use the upstream `go-control-plane`-based xDS server.
 	EnvoyServerType XDSServerType = "envoy"
@@ -126,7 +126,7 @@ type GlobalCircuitBreakerDefaults struct {
 type XDSServerConfig struct {
 	// Defines the XDSServer to use for `contour serve`.
 	//
-	// Values: `contour` (default), `envoy`.
+	// Values: `envoy` (default), `contour (deprecated)`.
 	//
 	// Other values will produce an error.
 	// +optional

@@ -16,6 +16,8 @@
 package gateway
 
 import (
+	"context"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +35,7 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 	Specify("A TCPRoute does L4 TCP proxying of traffic for its Listener port", func() {
 		t := f.T()
 
-		f.Fixtures.Echo.Deploy(namespace, "echo")
+		f.Fixtures.Echo.Deploy(namespace, "echo-tcproute-backend")
 
 		route := &gatewayapi_v1alpha2.TCPRoute{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -51,7 +53,7 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 				},
 				Rules: []gatewayapi_v1alpha2.TCPRouteRule{
 					{
-						BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, ptr.To(int32(1))),
+						BackendRefs: gatewayapi.TLSRouteBackendRef("echo-tcproute-backend", 80, ptr.To(int32(1))),
 					},
 				},
 			},
@@ -64,12 +66,25 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 			Condition: e2e.HasStatusCode(200),
 		})
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
+		assert.Equal(t, "echo-tcproute-backend", f.GetEchoResponseBody(res.Body).Service)
 
 		// Envoy is expected to add the "server: envoy" and
 		// "x-envoy-upstream-service-time" HTTP headers when
 		// proxying HTTP; this ensures we are proxying TCP only.
 		assert.Equal(t, "", res.Headers.Get("server"))
 		assert.Equal(t, "", res.Headers.Get("x-envoy-upstream-service-time"))
+
+		// Delete route and wait for config to no longer be present so this
+		// test doesn't pollute others. This route effectively matches all
+		// hostnames so it can affect other tests.
+		require.NoError(t, f.Client.Delete(context.Background(), route))
+		require.Eventually(t, func() bool {
+			_, err := f.HTTP.Request(&e2e.HTTPRequestOpts{})
+			return err != nil
+		}, f.RetryTimeout, f.RetryInterval, "expected request to eventually fail")
+		require.Never(t, func() bool {
+			_, err := f.HTTP.Request(&e2e.HTTPRequestOpts{})
+			return err == nil
+		}, f.RetryTimeout, f.RetryInterval, "expected request to never succeed after failing")
 	})
 }

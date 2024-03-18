@@ -15,8 +15,6 @@
 package protobuf
 
 import (
-	"reflect"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -42,21 +40,18 @@ func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 	}
 }
 
-// AsMessages casts the given slice of values (that implement the proto.Message
+// AsMessages converts the given slice of values (that implement the proto.Message
 // interface) to a slice of proto.Message. If the length of the slice is 0, it
 // returns nil.
-func AsMessages(messages any) []proto.Message {
-	v := reflect.ValueOf(messages)
-	if v.Len() == 0 {
+func AsMessages[T proto.Message](messages []T) []proto.Message {
+	if len(messages) == 0 {
 		return nil
 	}
 
-	protos := make([]proto.Message, v.Len())
-
-	for i := range protos {
-		protos[i] = v.Index(i).Interface().(proto.Message)
+	protos := make([]proto.Message, len(messages))
+	for i, message := range messages {
+		protos[i] = message
 	}
-
 	return protos
 }
 

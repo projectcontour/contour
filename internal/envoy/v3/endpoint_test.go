@@ -18,7 +18,10 @@ import (
 
 	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	"github.com/stretchr/testify/require"
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -95,5 +98,78 @@ func TestClusterLoadAssignment(t *testing.T) {
 		),
 	}
 
+	protobuf.RequireEqual(t, want, got)
+}
+
+func TestExternalNameClusterLoadAssignment(t *testing.T) {
+	s1 := &dag.Service{
+		Weighted: dag.WeightedService{
+			Weight:           1,
+			ServiceName:      "kuard",
+			ServiceNamespace: "default",
+			ServicePort: core_v1.ServicePort{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt32(8080),
+			},
+			HealthPort: core_v1.ServicePort{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt32(8080),
+			},
+		},
+		ExternalName: "foo.io",
+	}
+
+	s2 := &dag.Service{
+		Weighted: dag.WeightedService{
+			Weight:           1,
+			ServiceName:      "kuard",
+			ServiceNamespace: "default",
+			ServicePort: core_v1.ServicePort{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt32(8080),
+			},
+			HealthPort: core_v1.ServicePort{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8998,
+				TargetPort: intstr.FromInt32(8998),
+			},
+		},
+		ExternalName: "foo.io",
+	}
+
+	got := ExternalNameClusterLoadAssignment(s1)
+	want := &envoy_config_endpoint_v3.ClusterLoadAssignment{
+		ClusterName: "default/kuard/http",
+		Endpoints: Endpoints(
+			SocketAddress("foo.io", 80),
+		),
+	}
+	protobuf.RequireEqual(t, want, got)
+
+	got = ExternalNameClusterLoadAssignment(s2)
+	want = &envoy_config_endpoint_v3.ClusterLoadAssignment{
+		ClusterName: "default/kuard/http",
+		Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
+			{
+				LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
+					{
+						HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+							Endpoint: &envoy_config_endpoint_v3.Endpoint{
+								Address:           SocketAddress("foo.io", 80),
+								HealthCheckConfig: HealthCheckConfig(8998),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 	protobuf.RequireEqual(t, want, got)
 }

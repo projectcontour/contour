@@ -242,12 +242,8 @@ func TestEndpointFilter(t *testing.T) {
 		),
 	})
 
-	c.Request(endpointType, "default/kuard/bar").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
-		TypeUrl: endpointType,
-		Resources: resources(t,
-			envoy_v3.ClusterLoadAssignment("default/kuard/bar"),
-		),
-	})
+	// Nonexistent endpoint shouldn't return anything.
+	c.Request(endpointType, "default/kuard/bar").Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
 }
 
 // issue 602, test that an update from N endpoints

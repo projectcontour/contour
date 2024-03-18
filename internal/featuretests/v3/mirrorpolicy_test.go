@@ -23,13 +23,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 )
 
 func TestMirrorPolicy(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc1 := fixture.NewService("kuard").
@@ -87,7 +86,7 @@ func TestMirrorPolicy(t *testing.T) {
 }
 
 func TestFractionalMirrorPolicy(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t)
 	defer done()
 
 	svc1 := fixture.NewService("kuard").
