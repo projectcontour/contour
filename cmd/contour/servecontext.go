@@ -457,6 +457,28 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		}
 	}
 
+	var globalExtProc *contour_v1.ExternalProcessor
+	if ctx.Config.GlobalExtProc != nil {
+		// disabled or no processor, ignore it
+		if !ctx.Config.GlobalExtProc.Disabled && ctx.Config.GlobalExtProc.Processor != nil {
+			extProc := ctx.Config.GlobalExtProc.Processor
+
+			nsedName := k8s.NamespacedNameFrom(extProc.ExtensionService)
+			globalExtProc = &contour_v1.ExternalProcessor{
+				Processor: &contour_v1.ExtProc{
+					GRPCService: &contour_v1.GRPCService{
+						ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+							Name:      nsedName.Name,
+							Namespace: nsedName.Namespace,
+						},
+						ResponseTimeout: extProc.ResponseTimeout,
+						FailOpen:        extProc.FailOpen,
+					},
+				},
+			}
+		}
+	}
+
 	policy := &contour_v1alpha1.PolicyConfig{
 		RequestHeadersPolicy: &contour_v1alpha1.HeadersPolicy{
 			Set:    ctx.Config.Policy.RequestHeadersPolicy.Set,
@@ -590,6 +612,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		},
 		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
 		GlobalExternalAuthorization: globalExtAuth,
+		GlobalExtProc:               globalExtProc,
 		RateLimitService:            rateLimitService,
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,
