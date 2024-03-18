@@ -41,13 +41,13 @@ Contour will add HTTP support for Envoy's External Processing.
 
 new type: `ExternalProcessor` and its friends: `ExtProc`, `ExtProcOverride`, `ProcessingMode`, `HeaderMutationRules`,`GRPCService`, `ExtProcPolicy` and more, will be defined for implement the design.
 
-In this design, the configuration is divided into three levels: `Global`, `VirtualHost`, `Route`, each level can be set up to one External processing; each level has a `Disabled` option, but at different levels, it has different meanings.
+In this design, the configuration is divided into three levels: `Global`, `VirtualHost`, `Route`, each level can be set up to one External processing; each level has a `disabled` option, but at different levels, it has different meanings.
 
 If the external procssing is added to the filter chain(s), it will be inserted just before the `Router` filter.
 
 ### Global level
 
-At the `Global` level, there is at most one external processing configured, and if the `globalExtProc` is NOT nil, and the `processor` is set but `Disabled == false`, then it will be append to the filter chain for HTTP and the fallback chain for HTTPS, and for HTTPS it varies depending on the configuration at the `VirtualHost` level(see below). If `Disabled == true`, it will be ignored.
+At the `Global` level, there is at most one external processing configured, and if the `globalExtProc` is NOT nil, and the `processor` is set but `disabled == false`, then it will be append to the filter chain for HTTP and the default chain for HTTPS if this VirtualHost has enabled the fallback certificate; but for the normal HTTPS it varies depending on the configuration at the `VirtualHost` level(see below). If `disabled == true`, it will be ignored.
 
 ```yaml
 kind: ContourConfiguration
@@ -466,25 +466,67 @@ An external processing service can be configured in the Contour config file.
 This External processing configuration will be used for all HTTP & HTTPS(if not override at VirtualHost and/or Route Level) routes.
 
 ```go
+
+// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy
+// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type ExternalProcessor struct {
+	// ExtensionService identifies the extension service defining the RLS,
+	// formatted as <namespace>/<name>.
+	ExtensionService string `yaml:"extensionService,omitempty"`
+
+	// ResponseTimeout configures maximum time to wait for a check response from the expProc server.
+	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string "infinity" is also a valid input and specifies no timeout.
+	//
+	// +optional
+	ResponseTimeout string `yaml:"responseTimeout,omitempty"`
+
+	// If FailOpen is true, the client request is forwarded to the upstream service
+	// even if the authorization server fails to respond. This field should not be
+	// set in most cases. It is intended for use only while migrating applications
+	// from internal authorization to Contour external authorization.
+	//
+	// +optional
+	FailOpen bool `yaml:"failOpen,omitempty"`
+}
+
+// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy
+// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type GlobalExternalProcessor struct {
+	// Processor configures the global external processing
+	//
+	// +optional
+	Processor *ExternalProcessor `yaml:"processor,omitempty"`
+
+	// If Disabled is true, no external processing will be append to the filter chain.
+	//
+	// +optional
+	Disabled bool `yaml:"disabled,omitempty"`
+}
+
+
 type Parameters struct {
   ...
-	// GlobalExternalProcessor optionally holds properties of the global external processing configurations.
-	GlobalExternalProcessor *contour_api_v1.ExternalProcessor `yaml:"globalExtProc,omitempty"`
+	// GlobalExtProc optionally holds properties of the global external processing configurations.
+	GlobalExtProc *GlobalExternalProcessor `yaml:"globalExtProc,omitempty"`
   ...
 }
 
 type ContourConfigurationSpec struct {
   ...
-	// GlobalExternalProcessor allows envoys external processing filters
+	// GlobalExtProc allows envoys external processing filter
 	// to be enabled for all virtual hosts.
-    //
+	//
 	// +optional
-	GlobalExternalProcessor *contour_api_v1.ExternalProcessor `json:"globalExtProc,omitempty"`
+	GlobalExtProc *contour_v1.ExternalProcessor `json:"globalExtProc,omitempty"`
   ...
 }
 ```
 
-An operator configures external processing on a root `HTTPProxy` by setting the `VirtualHost.ExternalProcessor` field.
+An operator configures external processing on a root `HTTPProxy` by setting the `VirtualHost.ExtProc` field.
 Setting this field without also setting the `TLS` field is an error.
 
 ### Progressing Flow
@@ -533,7 +575,7 @@ NOTE: this snippet only represents the relevant bits of the Route.
                                    },
                                    {
                                         "match": {
-                                             "prefix": "/use-route"
+                                             "prefix": "/override"
                                         },
                                         "route": {
                                              "cluster": "extproc-test/http-echo-service3/5678/da39a3ee5e"
@@ -561,7 +603,7 @@ NOTE: this snippet only represents the relevant bits of the Route.
                                    },
                                    {
                                         "match": {
-                                             "prefix": "/use-vh"
+                                             "prefix": "/inherit"
                                         },
                                         "route": {
                                              "cluster": "extproc-test/http-echo-service2/5678/da39a3ee5e"
@@ -573,31 +615,6 @@ NOTE: this snippet only represents the relevant bits of the Route.
                },
                "version_info": "7"
           },
-          {
-               "route_config": {
-                    "@type": "type.googleapis.com/envoy.config.route.v3.RouteConfiguration",
-                    "name": "ingress_http",
-                    "virtual_hosts": [
-                         {
-                              "domains": [
-                                   "http.projectcontour.io"
-                              ],
-                              "name": "http.projectcontour.io",
-                              "routes": [
-                                   {
-                                        "match": {
-                                             "prefix": "/use-default"
-                                        },
-                                        "route": {
-                                             "cluster": "extproc-test/http-echo-service4/5678/da39a3ee5e"
-                                        }
-                                   }
-                              ]
-                         }
-                    ]
-               },
-               "version_info": "7"
-          }
      ]
   ...
 }
@@ -619,7 +636,6 @@ _TBD_
 
 HTTPProxy will opt-out to use the default global external processing explicitly and the `GlobalExtProc` in the Contour configuration is optional. This solution should not introduce any regressions or breaking changes.
 
-
 [1]: https://github.com/projectcontour/contour/issues/1015
 [2]: https://github.com/projectcontour/contour/issues/1176
 [3]: https://github.com/projectcontour/contour/issues/2385
@@ -630,4 +646,3 @@ HTTPProxy will opt-out to use the default global external processing explicitly 
 [8]: https://github.com/projectcontour/contour/issues/5123
 [9]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto
 [10]: https://docs.google.com/document/d/1IZqm5IUnG9gc2VqwGaN5C2TZAD9_QbsY9Vvy5vr9Zmw/edit#heading=h.5irk4csrpu0y
-
