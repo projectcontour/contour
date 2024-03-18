@@ -405,15 +405,6 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	return b
 }
 
-func findFilterIndex(filters []*envoy_filter_network_http_connection_manager_v3.HttpFilter, name string) int {
-	for i, v := range filters {
-		if v.Name == name {
-			return i
-		}
-	}
-	return -1
-}
-
 // AddFilter appends f to the list of filters for this HTTPConnectionManager. f
 // may be nil, in which case it is ignored. Note that Router filters
 // (filters with TypeUrl `type.googleapis.com/envoy.extensions.filters.envoy_filter_network_http_connection_manager_v3.router.v3.Router`)
