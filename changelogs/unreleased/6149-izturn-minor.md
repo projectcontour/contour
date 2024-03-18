@@ -1,5 +1,5 @@
 
 ## Use EndpointSlices by default
 
-Enables contour to consume the kubernetes endpointslice API to determine the endpoints to configure Envoy with by default.
-Note: if you need to continue using the old configuration, please set the flag: `useEndpointSlices=false` explicitly.
+Contour now uses the Kubernetes EndpointSlices API by default to determine the endpoints to configure Envoy, instead of the Endpoints API.
+Note: if you need to continue using the Endpoints API, you can disable the feature flag via `featureFlags: ["useEndpointSlices=false"]` in the Contour config file or ContourConfiguration CRD.
