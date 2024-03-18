@@ -40,9 +40,8 @@ func RuntimeLayers(configurableRuntimeFields map[string]*structpb.Value) []*envo
 func baseRuntimeLayer() *structpb.Struct {
 	return &structpb.Struct{
 		Fields: map[string]*structpb.Value{
-			// Disable Envoy removing the client "accepted transfer encoding"
-			// request header. Removing the header was added by default in Envoy
-			// v1.29.0.
+			// Disable Envoy removing the client TE request header. Removing
+			// the header was added by default in Envoy v1.29.0.
 			// Can remove once https://github.com/envoyproxy/envoy/pull/32255 is
 			// backported or present in a new release of Envoy.
 			"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
