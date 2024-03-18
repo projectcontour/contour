@@ -160,7 +160,7 @@ spec:
       services:
         - name: http-echo-service
           port: 5678
-    - conditions:   # overrided
+    - conditions:   # overridden
         - prefix: /override
       extProcPolicy:
         disabled: false
