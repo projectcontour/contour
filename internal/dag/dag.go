@@ -912,6 +912,10 @@ type ExtProc struct {
 	// from internal to external authorization.
 	FailOpen bool
 
+	// If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+	// If false, `mode_override` API in the response message will be ignored.
+	AllowModeOverride bool
+
 	// Specifies default options for how HTTP headers, trailers, and bodies are sent.
 	ProcessingMode *contour_v1.ProcessingMode
 

@@ -1157,7 +1157,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 }
 
 func toExtProcOverrides(
-	override *contour_v1.ExtProcOverride,
+	override *contour_v1.ExtProc,
 	validCond *contour_v1.DetailedCondition,
 	defaultNamespace string,
 	extClusterGetter func(name string) *ExtensionCluster,
@@ -1511,11 +1511,12 @@ func (p *HTTPProxyProcessor) computeVirtualHostExtProc(
 	}
 
 	return &ExtProc{
-		ExtProcService:  extSvc,
-		ResponseTimeout: *respTimeout,
-		FailOpen:        grpcSvc.FailOpen,
-		ProcessingMode:  extProc.Processor.ProcessingMode,
-		MutationRules:   extProc.Processor.MutationRules,
+		ExtProcService:    extSvc,
+		ResponseTimeout:   *respTimeout,
+		FailOpen:          grpcSvc.FailOpen,
+		AllowModeOverride: extProc.Processor.AllowModeOverride,
+		ProcessingMode:    extProc.Processor.ProcessingMode,
+		MutationRules:     extProc.Processor.MutationRules,
 	}
 }
 

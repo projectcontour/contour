@@ -210,8 +210,9 @@ type GlobalExtProcConfig struct {
 	ExtensionServiceConfig
 	FailOpen bool
 
-	ProcessingMode *contour_v1.ProcessingMode
-	MutationRules  *contour_v1.HeaderMutationRules
+	AllowModeOverride bool
+	ProcessingMode    *contour_v1.ProcessingMode
+	MutationRules     *contour_v1.HeaderMutationRules
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -641,10 +642,11 @@ func toExtProc(p *GlobalExtProcConfig) *dag.ExtProc {
 			Name: dag.ExtensionClusterName(p.ExtensionServiceConfig.ExtensionService),
 			SNI:  p.ExtensionServiceConfig.SNI,
 		},
-		FailOpen:        p.FailOpen,
-		ResponseTimeout: p.ExtensionServiceConfig.Timeout,
-		ProcessingMode:  p.ProcessingMode,
-		MutationRules:   p.MutationRules,
+		FailOpen:          p.FailOpen,
+		ResponseTimeout:   p.ExtensionServiceConfig.Timeout,
+		ProcessingMode:    p.ProcessingMode,
+		MutationRules:     p.MutationRules,
+		AllowModeOverride: p.AllowModeOverride,
 	}
 }
 

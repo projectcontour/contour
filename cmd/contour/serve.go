@@ -907,6 +907,7 @@ func (s *Server) setupGlobalExtProc(contourCfg contour_v1alpha1.ContourConfigura
 		FailOpen:               grpcSvc.FailOpen,
 		ProcessingMode:         contourCfg.GlobalExtProc.Processor.ProcessingMode,
 		MutationRules:          contourCfg.GlobalExtProc.Processor.MutationRules,
+		AllowModeOverride:      contourCfg.GlobalExtProc.Processor.AllowModeOverride,
 	}, nil
 }
 

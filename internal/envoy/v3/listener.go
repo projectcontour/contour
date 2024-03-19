@@ -840,7 +840,7 @@ func FilterExtProc(extProc *dag.ExtProc) *envoy_filter_network_http_connection_m
 		MessageTimeout:         envoy.Timeout(extProc.ResponseTimeout),
 		MaxMessageTimeout:      envoy.Timeout(extProc.ResponseTimeout),
 		DisableClearRouteCache: false,
-		AllowModeOverride:      true,
+		AllowModeOverride:      extProc.AllowModeOverride,
 		MutationRules: &envoy_mutation_rules_v3.HeaderMutationRules{
 			AllowAllRouting: &wrapperspb.BoolValue{Value: extProc.MutationRules.AllowAllRouting},
 			AllowEnvoy:      &wrapperspb.BoolValue{Value: extProc.MutationRules.AllowEnvoy},

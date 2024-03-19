@@ -951,6 +951,11 @@ spec:
                       If no phase is specified, it will be added before the Router.
                       If no Priority is specified, the filters will be added in the order they appear in the list.
                     properties:
+                      allowModeOverride:
+                        description: |-
+                          If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+                          If false, `mode_override` API in the response message will be ignored.
+                        type: boolean
                       grpcService:
                         description: GRPCService configure the gRPC service that the
                           filter will communicate with.
@@ -998,6 +1003,7 @@ spec:
                         description: |-
                           MutationRules specifies what headers may be manipulated by a processing filter.
                           This set of rules makes it possible to control which modifications a filter may make.
+                          for Overrides is must be nil
                         properties:
                           allowAllRouting:
                             description: |-
@@ -4810,6 +4816,11 @@ spec:
                           If no phase is specified, it will be added before the Router.
                           If no Priority is specified, the filters will be added in the order they appear in the list.
                         properties:
+                          allowModeOverride:
+                            description: |-
+                              If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+                              If false, `mode_override` API in the response message will be ignored.
+                            type: boolean
                           grpcService:
                             description: GRPCService configure the gRPC service that
                               the filter will communicate with.
@@ -4857,6 +4868,7 @@ spec:
                             description: |-
                               MutationRules specifies what headers may be manipulated by a processing filter.
                               This set of rules makes it possible to control which modifications a filter may make.
+                              for Overrides is must be nil
                             properties:
                               allowAllRouting:
                                 description: |-
@@ -6423,6 +6435,11 @@ spec:
                           description: Overrides aspects of the configuration for
                             this route.
                           properties:
+                            allowModeOverride:
+                              description: |-
+                                If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+                                If false, `mode_override` API in the response message will be ignored.
+                              type: boolean
                             grpcService:
                               description: GRPCService configure the gRPC service
                                 that the filter will communicate with.
@@ -6465,6 +6482,50 @@ spec:
                                     The string "infinity" is also a valid input and specifies no timeout.
                                   pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                                   type: string
+                              type: object
+                            mutationRules:
+                              description: |-
+                                MutationRules specifies what headers may be manipulated by a processing filter.
+                                This set of rules makes it possible to control which modifications a filter may make.
+                                for Overrides is must be nil
+                              properties:
+                                allowAllRouting:
+                                  description: |-
+                                    By default, certain headers that could affect processing of subsequent
+                                    filters or request routing cannot be modified. These headers are
+                                    ``host``, ``:authority``, ``:scheme``, and ``:method``.
+                                    Setting this parameter to true allows these headers to be modified as well.
+                                  type: boolean
+                                allowEnvoy:
+                                  description: |-
+                                    If true, allow modification of envoy internal headers. By default, these
+                                    start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
+                                    Default is false.
+                                  type: boolean
+                                disallowAll:
+                                  description: |-
+                                    If true, prevent modifications of all header values, regardless of any
+                                    other settings. A processing server may still override the ``:status``
+                                    of an HTTP response using an ``ImmediateResponse`` message.
+                                    Default is false.
+                                  type: boolean
+                                disallowIsError:
+                                  description: |-
+                                    If true, and if the rules in this list cause a header mutation to be
+                                    disallowed, then the filter using this configuration will terminate the
+                                    request with a 500 error. In addition, regardless of the setting of this
+                                    parameter, any attempt to set, add, or modify a disallowed header will
+                                    cause the ``rejected_header_mutations`` counter to be incremented.
+                                    Default is false.
+                                  type: boolean
+                                disallowSystem:
+                                  description: |-
+                                    If true, prevent modification of any system header, defined as a header
+                                    that starts with a ``:`` character, regardless of any other settings.
+                                    A processing server may still override the ``:status`` of an HTTP response
+                                    using an ``ImmediateResponse`` message.
+                                    Default is false.
+                                  type: boolean
                               type: object
                             processingMode:
                               description: |-
@@ -8107,6 +8168,11 @@ spec:
                           If no phase is specified, it will be added before the Router.
                           If no Priority is specified, the filters will be added in the order they appear in the list.
                         properties:
+                          allowModeOverride:
+                            description: |-
+                              If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+                              If false, `mode_override` API in the response message will be ignored.
+                            type: boolean
                           grpcService:
                             description: GRPCService configure the gRPC service that
                               the filter will communicate with.
@@ -8154,6 +8220,7 @@ spec:
                             description: |-
                               MutationRules specifies what headers may be manipulated by a processing filter.
                               This set of rules makes it possible to control which modifications a filter may make.
+                              for Overrides is must be nil
                             properties:
                               allowAllRouting:
                                 description: |-

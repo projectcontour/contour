@@ -490,23 +490,16 @@ type ExtProc struct {
 	// MutationRules specifies what headers may be manipulated by a processing filter.
 	// This set of rules makes it possible to control which modifications a filter may make.
 	//
+	// for Overrides is must be nil
+	//
 	// +optional
 	MutationRules *HeaderMutationRules `json:"mutationRules,omitempty"`
-}
 
-// ExtProcOverride override aspects of the configuration for this route.
-// A set of overrides in a more specific configuration will override a “disabled” flag set in a less-specific one.
-type ExtProcOverride struct {
-	// GRPCService configure the gRPC service that the filter will communicate with.
+	// If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+	// If false, `mode_override` API in the response message will be ignored.
 	//
 	// +optional
-	GRPCService *GRPCService `json:"grpcService,omitempty"`
-
-	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
-	// and how they are delivered.
-	//
-	// +optional
-	ProcessingMode *ProcessingMode `json:"processingMode,omitempty"`
+	AllowModeOverride bool `json:"allowModeOverride,omitempty"`
 }
 
 // ExternalProcessor defines a processing filter list and the policy for fine-grained at VirutalHost and/or Route level.
@@ -541,7 +534,7 @@ type ExtProcPolicy struct {
 	// Overrides aspects of the configuration for this route.
 	//
 	// +optional
-	Overrides *ExtProcOverride `json:"overrides,omitempty"`
+	Overrides *ExtProc `json:"overrides,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
