@@ -43,7 +43,7 @@ new type: `ExternalProcessor` and its friends: `ExtProc`, `ExtProcOverride`, `Pr
 
 In this design, the configuration is divided into three levels: `Global`, `VirtualHost`, `Route`, each level can be set up to one External processing; each level has a `disabled` option, but at different levels, it has different meanings.
 
-If the external procssing is added to the filter chain(s), it will be inserted just before the `Router` filter.
+If the external processing is added to the filter chain(s), it will be inserted just before the `Router` filter.
 
 ### Global level
 
@@ -358,6 +358,7 @@ type GRPCService struct {
 	FailOpen bool `json:"failOpen,omitempty"`
 }
 
+
 // ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
 // The external server must implement the v3 Envoy external processing GRPC protocol
 // (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
@@ -376,23 +377,16 @@ type ExtProc struct {
 	// MutationRules specifies what headers may be manipulated by a processing filter.
 	// This set of rules makes it possible to control which modifications a filter may make.
 	//
+	// for Overrides is must be nil
+	//
 	// +optional
 	MutationRules *HeaderMutationRules `json:"mutationRules,omitempty"`
-}
 
-// ExtProcOverride override aspects of the configuration for this route.
-// A set of overrides in a more specific configuration will override a “disabled” flag set in a less-specific one.
-type ExtProcOverride struct {
-	// GRPCService configure the gRPC service that the filter will communicate with.
+	// If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+	// If false, `mode_override` API in the response message will be ignored.
 	//
 	// +optional
-	GRPCService *GRPCService `json:"grpcService,omitempty"`
-
-	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
-	// and how they are delivered.
-	//
-	// +optional
-	ProcessingMode *ProcessingMode `json:"processingMode,omitempty"`
+	AllowModeOverride bool `json:"allowModeOverride,omitempty"`
 }
 
 // ExternalProcessor defines a processing filter list and the policy for fine-grained at VirutalHost and/or Route level.
@@ -410,7 +404,6 @@ type ExternalProcessor struct {
 	//
 	// if both Disabled and Processor are set. use disabled.
 	//
-	// it just work for virtualhost
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 }
@@ -428,8 +421,9 @@ type ExtProcPolicy struct {
 	// Overrides aspects of the configuration for this route.
 	//
 	// +optional
-	Overrides *ExtProcOverride `json:"overrides,omitempty"`
+	Overrides *ExtProc `json:"overrides,omitempty"`
 }
+
 
 ```
 
