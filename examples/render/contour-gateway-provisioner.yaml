@@ -736,11 +736,9 @@ spec:
                       if both Disabled and Processor are set. use disabled.
                     type: boolean
                   processor:
-                    description: |-
-                      Processor defines a processing filter list,and each filter in the list
-                      will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
-                      If no phase is specified, it will be added before the Router.
-                      If no Priority is specified, the filters will be added in the order they appear in the list.
+                    description: Processor defines a external processing filter which
+                      allows an external service to act on HTTP traffic in a flexible
+                      way.
                     properties:
                       allowModeOverride:
                         description: |-
@@ -4601,11 +4599,9 @@ spec:
                           if both Disabled and Processor are set. use disabled.
                         type: boolean
                       processor:
-                        description: |-
-                          Processor defines a processing filter list,and each filter in the list
-                          will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
-                          If no phase is specified, it will be added before the Router.
-                          If no Priority is specified, the filters will be added in the order they appear in the list.
+                        description: Processor defines a external processing filter
+                          which allows an external service to act on HTTP traffic
+                          in a flexible way.
                         properties:
                           allowModeOverride:
                             description: |-
@@ -7953,11 +7949,9 @@ spec:
                           if both Disabled and Processor are set. use disabled.
                         type: boolean
                       processor:
-                        description: |-
-                          Processor defines a processing filter list,and each filter in the list
-                          will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
-                          If no phase is specified, it will be added before the Router.
-                          If no Priority is specified, the filters will be added in the order they appear in the list.
+                        description: Processor defines a external processing filter
+                          which allows an external service to act on HTTP traffic
+                          in a flexible way.
                         properties:
                           allowModeOverride:
                             description: |-
