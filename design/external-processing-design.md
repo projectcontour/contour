@@ -389,12 +389,9 @@ type ExtProc struct {
 	AllowModeOverride bool `json:"allowModeOverride,omitempty"`
 }
 
-// ExternalProcessor defines a processing filter list and the policy for fine-grained at VirutalHost and/or Route level.
+// ExternalProcessor defines a external processing filter and the policy for fine-grained at VirutalHost and/or Route level.
 type ExternalProcessor struct {
-	// Processor defines a processing filter list,and each filter in the list
-	// will be added to the corresponding processing Priority in ascending order of it's Priority within the same phase.
-	// If no phase is specified, it will be added before the Router.
-	// If no Priority is specified, the filters will be added in the order they appear in the list.
+	// Processor defines a external processing filter which allows an external service to act on HTTP traffic in a flexible way.
 	//
 	// +optional
 	Processor *ExtProc `json:"processor,omitempty"`
