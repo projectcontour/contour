@@ -20,19 +20,19 @@ import (
 	"encoding/json"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	certmanagermeta_v1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
@@ -42,7 +42,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 
 		// Top level issuer.
 		selfSignedIssuer := &certmanagerv1.Issuer{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "selfsigned",
 			},
@@ -56,7 +56,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 
 		// CA to sign backend certs with.
 		caCertificate := &certmanagerv1.Certificate{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "ca-cert",
 			},
@@ -68,7 +68,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 				},
 				CommonName: "ca-cert",
 				SecretName: "ca-cert",
-				IssuerRef: certmanagermetav1.ObjectReference{
+				IssuerRef: certmanagermeta_v1.ObjectReference{
 					Name: "selfsigned",
 				},
 			},
@@ -77,7 +77,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 
 		// Issuer based on CA to generate new certs with.
 		basedOnCAIssuer := &certmanagerv1.Issuer{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "ca-issuer",
 			},
@@ -93,7 +93,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 
 		// Backend server cert signed by CA.
 		backendServerCert := &certmanagerv1.Certificate{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "backend-server-cert",
 			},
@@ -104,30 +104,30 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 				CommonName: "echo-secure",
 				DNSNames:   []string{"echo-secure"},
 				SecretName: "backend-server-cert",
-				IssuerRef: certmanagermetav1.ObjectReference{
+				IssuerRef: certmanagermeta_v1.ObjectReference{
 					Name: "ca-issuer",
 				},
 			},
 		}
 
 		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
-		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", func(deployment *appsv1.Deployment, service *corev1.Service) {
+		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", func(_ *apps_v1.Deployment, service *core_v1.Service) {
 			delete(service.Annotations, "projectcontour.io/upstream-protocol.tls")
 		})
 
-		route := &gatewayapi_v1beta1.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
+		route := &gatewayapi_v1.HTTPRoute{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
 			},
-			Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1beta1.Hostname{"backend-tls-policy.projectcontour.io"},
-				CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1beta1.ParentReference{
+			Spec: gatewayapi_v1.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1.Hostname{"backend-tls-policy.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef(gateway.Namespace, gateway.Name),
 					},
 				},
-				Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+				Rules: []gatewayapi_v1.HTTPRouteRule{
 					{
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-secure", 443, 1),
@@ -138,7 +138,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
 
 		backendTLSPolicy := &gatewayapi_v1alpha2.BackendTLSPolicy{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "echo-secure-backend-tls-policy",
 				Namespace: namespace,
 			},
@@ -163,7 +163,8 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 			},
 		}
 
-		f.CreateBackendTLSPolicyAndWaitFor(backendTLSPolicy, e2e.BackendTLSPolicyAccepted)
+		_, ok := f.CreateBackendTLSPolicyAndWaitFor(backendTLSPolicy, e2e.BackendTLSPolicyAccepted)
+		assert.Truef(t, ok, "expected policy condition accepted on backend tls policy")
 
 		type responseTLSDetails struct {
 			TLS struct {

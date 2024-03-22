@@ -1,1 +1,0 @@
-Gateway API provisioner now checks `gateway.networking.k8s.io/bundle-version` annotation on Gateway CRDs and sets SupportedVersion status condition on GatewayClass if annotation value matches supported Gateway API version. Best-effort support is provided if version does not match.

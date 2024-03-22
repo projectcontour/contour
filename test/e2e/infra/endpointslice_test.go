@@ -19,37 +19,37 @@ import (
 	"slices"
 	"sort"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/admin/v3"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/admin/v3"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func testSimpleEndpointSlice(namespace string) {
 	Specify("test endpoint slices", func() {
 		f.Fixtures.Echo.DeployN(namespace, "echo", 1)
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "endpoint-slice",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "eps.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{
 								Prefix: "/",
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -117,7 +117,7 @@ func GetIPsFromAdminRequest() ([]string, error) {
 
 	ips := make([]string, 0)
 
-	clusters := &envoy_cluster_v3.Clusters{}
+	clusters := &envoy_config_cluster_v3.Clusters{}
 	err := protojson.Unmarshal(resp.Body, clusters)
 	if err != nil {
 		return nil, err

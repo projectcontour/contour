@@ -19,174 +19,174 @@ import (
 	"testing"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/internal/status"
-	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/status"
+	"github.com/projectcontour/contour/internal/timeout"
 )
 
 func TestDAGInsertGatewayAPI(t *testing.T) {
-	kuardService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	kuardService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	kuardService2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	kuardService2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard2",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	kuardService3 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	kuardService3 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard3",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	kuardServiceCustomNs := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	kuardServiceCustomNs := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "custom",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	blogService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	blogService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blogsvc",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 8080)},
 		},
 	}
 
-	tlsService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	tlsService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "tlssvc",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 8443)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("https", "TCP", 443, 8443)},
 		},
 	}
 
-	tlsAndNonTLSService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	tlsAndNonTLSService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "tlsandnontlssvc",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{
 				makeServicePort("http", "TCP", 80, 8080),
 				makeServicePort("https", "TCP", 443, 8443),
 			},
 		},
 	}
 
-	validClass := &gatewayapi_v1beta1.GatewayClass{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
+	validClass := &gatewayapi_v1.GatewayClass{
+		TypeMeta: meta_v1.TypeMeta{},
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "test-validClass",
 		},
-		Spec: gatewayapi_v1beta1.GatewayClassSpec{
+		Spec: gatewayapi_v1.GatewayClassSpec{
 			ControllerName: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1beta1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
+		Status: gatewayapi_v1.GatewayClassStatus{
+			Conditions: []meta_v1.Condition{
 				{
 					Type:   string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-					Status: metav1.ConditionTrue,
+					Status: meta_v1.ConditionTrue,
 				},
 			},
 		},
 	}
 
-	gatewayHTTPAllNamespaces := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPAllNamespaces := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayHTTPSameNamespace := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPSameNamespace := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromSame),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayHTTPNamespaceSelector := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPNamespaceSelector := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-						Selector: &metav1.LabelSelector{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromSelector),
+						Selector: &meta_v1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app": "contour",
 							},
-							MatchExpressions: []metav1.LabelSelectorRequirement{{
+							MatchExpressions: []meta_v1.LabelSelectorRequirement{{
 								Key:      "type",
 								Operator: "In",
 								Values:   []string{"controller"},
@@ -198,136 +198,136 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	hostname := gatewayapi_v1beta1.Hostname("gateway.projectcontour.io")
-	wildcardHostname := gatewayapi_v1beta1.Hostname("*.projectcontour.io")
+	hostname := gatewayapi_v1.Hostname("gateway.projectcontour.io")
+	wildcardHostname := gatewayapi_v1.Hostname("*.projectcontour.io")
 
-	gatewayHTTPWithHostname := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPWithHostname := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Hostname: &hostname,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayHTTPWithWildcardHostname := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPWithWildcardHostname := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     80,
 				Hostname: &wildcardHostname,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayHTTPWithAddresses := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPWithAddresses := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Addresses: []gatewayapi_v1beta1.GatewayAddress{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Addresses: []gatewayapi_v1.GatewayAddress{
 				{
-					Type:  ref.To(gatewayapi_v1beta1.IPAddressType),
+					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "1.2.3.4",
 				},
 			},
-			Listeners: []gatewayapi_v1beta1.Listener{{
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "http",
 				Port:     80,
 				Protocol: gatewayapi_v1.HTTPProtocolType,
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayTLSPassthroughAllNamespaces := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayTLSPassthroughAllNamespaces := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
+					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayTLSPassthroughSameNamespace := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayTLSPassthroughSameNamespace := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
+					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromSame),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromSame),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayTLSPassthroughNamespaceSelector := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayTLSPassthroughNamespaceSelector := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
+					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromSelector),
-						Selector: &metav1.LabelSelector{
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromSelector),
+						Selector: &meta_v1.LabelSelector{
 							MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
 						},
 					},
@@ -336,29 +336,29 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	cert1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	cert1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ca",
 			Namespace: "projectcontour",
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
 	}
-	cert2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	cert2 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ca2",
 			Namespace: "projectcontour",
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.EC_CERTIFICATE),
 		},
 	}
 
-	configMapCert1 := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
+	configMapCert1 := &core_v1.ConfigMap{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ca",
 			Namespace: "projectcontour",
 		},
@@ -367,89 +367,89 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "projectcontour",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	sec2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec2 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "tls-cert-namespace",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	gatewayTLSTerminateCertInDifferentNamespace := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayTLSTerminateCertInDifferentNamespace := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Name:     "https",
 				Port:     443,
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
+					Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
+					CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 						gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
 					},
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayHTTPSAllNamespaces := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPSAllNamespaces := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-					CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+				TLS: &gatewayapi_v1.GatewayTLSConfig{
+					CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 						gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 					},
 				},
-				AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-					Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-						From: ref.To(gatewayapi_v1.NamespacesFromAll),
+				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+					Namespaces: &gatewayapi_v1.RouteNamespaces{
+						From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 					},
 				},
 			}},
 		},
 	}
 
-	gatewayHTTPAndHTTPS := &gatewayapi_v1beta1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+	gatewayHTTPAndHTTPS := &gatewayapi_v1.Gateway{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.GatewaySpec{
-			GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1beta1.Listener{
+		Spec: gatewayapi_v1.GatewaySpec{
+			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1.Listener{
 				{
 					Name:     "http-listener",
 					Port:     80,
 					Protocol: gatewayapi_v1.HTTPProtocolType,
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -457,14 +457,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name:     "https-listener",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-						CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+					TLS: &gatewayapi_v1.GatewayTLSConfig{
+						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 						},
 					},
-					AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-						Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-							From: ref.To(gatewayapi_v1.NamespacesFromAll),
+					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+						Namespaces: &gatewayapi_v1.RouteNamespaces{
+							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
 				},
@@ -472,19 +472,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	basicHTTPRoute := &gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+	basicHTTPRoute := &gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 			}},
@@ -492,7 +492,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 	}
 
 	basicTLSRoute := &gatewayapi_v1alpha2.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
@@ -508,7 +508,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 	}
 
 	basicGRPCRoute := &gatewayapi_v1alpha2.GRPCRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
@@ -526,25 +526,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	crossNSBackendHTTPRoute := makeHTTPRoute("basic", "default", "", gatewayapi_v1beta1.HTTPRouteRule{
+	crossNSBackendHTTPRoute := makeHTTPRoute("basic", "default", "", gatewayapi_v1.HTTPRouteRule{
 		Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-		BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{{
-			BackendRef: gatewayapi_v1beta1.BackendRef{
-				BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-					Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-					Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
-					Name:      gatewayapi_v1beta1.ObjectName(kuardService.Name),
-					Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+		BackendRefs: []gatewayapi_v1.HTTPBackendRef{{
+			BackendRef: gatewayapi_v1.BackendRef{
+				BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+					Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+					Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
+					Name:      gatewayapi_v1.ObjectName(kuardService.Name),
+					Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 				},
-				Weight: ref.To(int32(1)),
+				Weight: ptr.To(int32(1)),
 			},
 		}},
 	})
 
 	tests := map[string]struct {
 		objs         []any
-		gatewayclass *gatewayapi_v1beta1.GatewayClass
-		gateway      *gatewayapi_v1beta1.Gateway
+		gatewayclass *gatewayapi_v1.GatewayClass
+		gateway      *gatewayapi_v1.Gateway
 		upstreamTLS  *UpstreamTLS
 		want         []*Listener
 	}{
@@ -610,8 +610,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPNamespaceSelector,
 			objs: []any{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Namespace{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name: "custom",
 						Labels: map[string]string{
 							"app":  "contour",
@@ -635,8 +635,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPNamespaceSelector,
 			objs: []any{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Namespace{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name: "custom",
 						Labels: map[string]string{
 							"app":  "notmatch",
@@ -655,22 +655,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+				&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway"),
 								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway-2"),
 							},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
@@ -687,7 +687,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardServiceCustomNs,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "custom",
 					},
@@ -724,7 +724,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: gatewayTLSPassthroughSameNamespace.Namespace,
 					},
@@ -761,7 +761,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardServiceCustomNs,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
@@ -783,14 +783,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughNamespaceSelector,
 			objs: []any{
 				kuardServiceCustomNs,
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Namespace{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:   kuardServiceCustomNs.Namespace,
 						Labels: map[string]string{"matching-label-key": "matching-label-value"},
 					},
 				},
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
@@ -826,14 +826,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughNamespaceSelector,
 			objs: []any{
 				kuardServiceCustomNs,
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Namespace{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:   kuardServiceCustomNs.Namespace,
 						Labels: map[string]string{"matching-label-key": "this-label-value-does-not-match"},
 					},
 				},
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
@@ -867,7 +867,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardService.Namespace,
 					},
@@ -888,24 +888,24 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 		"TLS Listener with TLS.Mode=Passthrough is invalid if certificateRef is specified": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
+							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -919,22 +919,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener with TLS.Mode=Terminate is invalid if certificateRef is not specified": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					GatewayClassName: gatewayapi_v1beta1.ObjectName(validClass.Name),
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							Mode: ref.To(gatewayapi_v1.TLSModeTerminate),
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -949,18 +949,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener with TLS not defined is invalid": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -974,21 +974,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLSRoute with invalid listener protocol of HTTP": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -1030,23 +1030,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert gateway with selector kind that doesn't match": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
-							Kinds: []gatewayapi_v1beta1.RouteGroupKind{
+							Kinds: []gatewayapi_v1.RouteGroupKind{
 								{
-									Group: ref.To(gatewayapi_v1beta1.Group(gatewayapi_v1beta1.GroupName)),
-									Kind:  gatewayapi_v1beta1.Kind("INVALID-KIND"),
+									Group: ptr.To(gatewayapi_v1.Group(gatewayapi_v1.GroupName)),
+									Kind:  gatewayapi_v1.Kind("INVALID-KIND"),
 								},
 							},
 						},
@@ -1061,23 +1061,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert gateway with selector group that doesn't match": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
-							Kinds: []gatewayapi_v1beta1.RouteGroupKind{
+							Kinds: []gatewayapi_v1.RouteGroupKind{
 								{
-									Group: ref.To(gatewayapi_v1beta1.Group("invalid-group-name")),
-									Kind:  gatewayapi_v1beta1.Kind("HTTPRoute"),
+									Group: ptr.To(gatewayapi_v1.Group("invalid-group-name")),
+									Kind:  gatewayapi_v1.Kind("HTTPRoute"),
 								},
 							},
 						},
@@ -1099,10 +1099,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io",
 					makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "kuard", 8080, 1),
 					makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/blog", "blogsvc", 80, 1),
-					gatewayapi_v1beta1.HTTPRouteRule{
+					gatewayapi_v1.HTTPRouteRule{
 						Matches: append(
 							gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/another"),
-							gatewayapi_v1beta1.HTTPRouteMatch{
+							gatewayapi_v1.HTTPRouteMatch{
 								Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1.HeaderMatchExact, "X-Foo-Header", "some_value"),
 							},
 						),
@@ -1145,22 +1145,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+				&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 							"test2.projectcontour.io",
 							"test3.projectcontour.io",
 							"test4.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
@@ -1263,13 +1263,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
-				makeHTTPRoute("basic", "default", "", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "default", "", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
-								BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-									Kind: ref.To(gatewayapi_v1beta1.Kind("Service")),
+							BackendRef: gatewayapi_v1.BackendRef{
+								BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+									Kind: ptr.To(gatewayapi_v1.Kind("Service")),
 									Name: "kuard",
 								},
 							},
@@ -1307,13 +1307,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				crossNSBackendHTTPRoute,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
@@ -1335,19 +1335,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				crossNSBackendHTTPRoute,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName(kuardService.Name)),
+							Name: ptr.To(gatewayapi_v1.ObjectName(kuardService.Name)),
 						}},
 					},
 				},
@@ -1364,13 +1364,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				crossNSBackendHTTPRoute,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
@@ -1394,13 +1394,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				crossNSBackendHTTPRoute,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: "some-other-namespace", // would need to be "projectcontour" to be valid
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
@@ -1424,13 +1424,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				crossNSBackendHTTPRoute,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "some-other-namespace", // would need to be "default" to be valid
 						}},
@@ -1454,19 +1454,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				crossNSBackendHTTPRoute,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName("some-other-service")), // would need to be "kuard" to be valid.
+							Name: ptr.To(gatewayapi_v1.ObjectName("some-other-service")), // would need to be "kuard" to be valid.
 						}},
 					},
 				},
@@ -1519,21 +1519,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io",
-					gatewayapi_v1beta1.HTTPRouteRule{
-						Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-								Value: ref.To("/"),
+					gatewayapi_v1.HTTPRouteRule{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{{
+							Path: &gatewayapi_v1.HTTPPathMatch{
+								Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+								Value: ptr.To("/"),
 							},
 						}, {
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-								Value: ref.To("/blog"),
+							Path: &gatewayapi_v1.HTTPPathMatch{
+								Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+								Value: ptr.To("/blog"),
 							},
 						}, {
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-								Value: ref.To("/tech"),
+							Path: &gatewayapi_v1.HTTPPathMatch{
+								Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+								Value: ptr.To("/tech"),
 							},
 						}},
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -1553,23 +1553,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert basic single route, single hostname, gateway with TLS, HTTP protocol is ignored": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -1596,18 +1596,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"insert basic single route, single hostname, gateway with TLS, HTTPS protocol missing certificateRef": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -1656,12 +1656,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSAllNamespaces,
 			objs: []any{
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tlscert",
 						Namespace: "projectcontour",
 					},
-					Type: v1.SecretTypeTLS,
+					Type: core_v1.SecretTypeTLS,
 					Data: secretdata("wrong", "wronger"),
 				},
 				kuardService,
@@ -1700,27 +1700,27 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener Gateway CertificateRef must be type core.Secret": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-							CertificateRefs: []gatewayapi_v1beta1.SecretObjectReference{
+						TLS: &gatewayapi_v1.GatewayTLSConfig{
+							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								{
-									Group: ref.To(gatewayapi_v1beta1.Group("custom")),
-									Kind:  ref.To(gatewayapi_v1beta1.Kind("shhhh")),
-									Name:  gatewayapi_v1beta1.ObjectName(sec1.Name),
+									Group: ptr.To(gatewayapi_v1.Group("custom")),
+									Kind:  ptr.To(gatewayapi_v1.Kind("shhhh")),
+									Name:  gatewayapi_v1.ObjectName(sec1.Name),
 								},
 							},
 						},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -1735,19 +1735,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"TLS Listener Gateway CertificateRef must be specified": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						TLS:      &gatewayapi_v1beta1.GatewayTLSConfig{},
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						TLS:      &gatewayapi_v1.GatewayTLSConfig{},
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -1768,15 +1768,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1817,19 +1817,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName(sec2.Name)),
+							Name: ptr.To(gatewayapi_v1.ObjectName(sec2.Name)),
 						}},
 					},
 				},
@@ -1857,15 +1857,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: "wrong-namespace",
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1883,15 +1883,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace("wrong-namespace"),
+							Namespace: gatewayapi_v1.Namespace("wrong-namespace"),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1909,15 +1909,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "WrongKind",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
@@ -1935,15 +1935,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "WrongKind",
@@ -1961,19 +1961,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				sec2,
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "tls-cert-reference-grant",
 						Namespace: sec2.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "Gateway",
-							Namespace: gatewayapi_v1beta1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+							Namespace: gatewayapi_v1.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Secret",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName("wrong-name")),
+							Name: ptr.To(gatewayapi_v1.ObjectName("wrong-name")),
 						}},
 					},
 				},
@@ -1995,18 +1995,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"Invalid listener protocol type (TCP)": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TCPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -2017,18 +2017,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"Invalid listener protocol type (UDP)": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.UDPProtocolType,
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -2039,18 +2039,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		"Invalid listener protocol type (custom)": {
 			gatewayclass: validClass,
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
-					Listeners: []gatewayapi_v1beta1.Listener{{
+				Spec: gatewayapi_v1.GatewaySpec{
+					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: "projectcontour.io/HTTPUDP",
-						AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-							Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-								From: ref.To(gatewayapi_v1.NamespacesFromAll),
+						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+							Namespaces: &gatewayapi_v1.RouteNamespaces{
+								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 							},
 						},
 					}},
@@ -2066,41 +2066,41 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				sec1,
 				kuardService,
 				blogService,
-				&gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+				&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener", 0),
 							},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						}},
 					},
 				},
-				&gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+				&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basictls",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
 							},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("blogsvc", 80, 1),
 						}},
@@ -2133,11 +2133,11 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
 						Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1.HeaderMatchExact, "foo", "bar"),
 					}},
@@ -2164,17 +2164,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{
 						{
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-								Value: ref.To("/blog"),
+							Path: &gatewayapi_v1.HTTPPathMatch{
+								Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+								Value: ptr.To("/blog"),
 							},
 						}, {
-							Path: &gatewayapi_v1beta1.HTTPPathMatch{
-								Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-								Value: ref.To("/tech"),
+							Path: &gatewayapi_v1.HTTPPathMatch{
+								Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+								Value: ptr.To("/tech"),
 							},
 							Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1.HeaderMatchExact, "foo", "bar"),
 						},
@@ -2206,8 +2206,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
 						Headers: gatewayapi.HTTPHeaderMatch(gatewayapi_v1.HeaderMatchRegularExpression, "foo", "^abc$"),
 					}},
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -2233,9 +2233,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Headers: []gatewayapi_v1beta1.HTTPHeaderMatch{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Headers: []gatewayapi_v1.HTTPHeaderMatch{
 							{Name: "header-1", Value: "value-1"},
 							{Name: "header-2", Value: "value-2"},
 							{Name: "header-1", Value: "value-3"},
@@ -2266,13 +2266,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						Method: ref.To(gatewayapi_v1.HTTPMethodGet),
+						Method: ptr.To(gatewayapi_v1.HTTPMethodGet),
 					}},
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 				}),
@@ -2297,13 +2297,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
 								Name:  "param-1",
 								Value: "value-1",
@@ -2333,15 +2333,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
 								Value: "value-1",
 							},
@@ -2370,30 +2370,30 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
 								Value: "value-1",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-2",
 								Value: "value-2",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
 								Value: "value-3",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "Param-1",
 								Value: "value-4",
 							},
@@ -2424,30 +2424,30 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
 								Value: "value-1",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-2",
 								Value: "value-2",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
 								Value: "value-3",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
 								Name:  "Param-1",
 								Value: "value-4",
 							},
@@ -2480,20 +2480,20 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchExact),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchExact),
 								Name:  "param-1",
 								Value: "value-1",
 							},
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
 								Name:  "param-1",
 								Value: "value-2",
 							},
@@ -2524,15 +2524,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
-					Matches: []gatewayapi_v1beta1.HTTPRouteMatch{{
-						Path: &gatewayapi_v1beta1.HTTPPathMatch{
-							Type:  ref.To(gatewayapi_v1.PathMatchPathPrefix),
-							Value: ref.To("/"),
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: []gatewayapi_v1.HTTPRouteMatch{{
+						Path: &gatewayapi_v1.HTTPPathMatch{
+							Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
 						},
-						QueryParams: []gatewayapi_v1beta1.HTTPQueryParamMatch{
+						QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
 							{
-								Type:  ref.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+								Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
 								Name:  "query-param-regex",
 								Value: "value-%d-[a-zA-Z0-9]",
 							},
@@ -2562,18 +2562,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "foo-bar"},
 								},
 								Remove: []string{"x-remove"},
@@ -2582,12 +2582,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						{
 							// Second instance of filter should be ignored.
 							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "ignored"},
 								},
 								Remove: []string{"x-remove-ignored"},
@@ -2623,18 +2623,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-							ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "foo-bar"},
 								},
 								Remove: []string{"x-remove"},
@@ -2643,12 +2643,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						{
 							// Second instance of filter should be ignored.
 							Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-							ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 									{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 								},
-								Add: []gatewayapi_v1beta1.HTTPHeader{
+								Add: []gatewayapi_v1.HTTPHeader{
 									{Name: "custom-header-add", Value: "ignored"},
 								},
 								Remove: []string{"x-remove-ignored"},
@@ -2684,23 +2684,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-								Weight:                 ref.To(int32(1)),
+								Weight:                 ptr.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{
 								{
 									Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "foo-bar"},
 										},
 										Remove: []string{"x-remove"},
@@ -2709,12 +2709,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								{
 									// Second instance of filter should be ignored.
 									Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-									RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "ignored"},
 										},
 										Remove: []string{"x-remove-ignored"},
@@ -2742,23 +2742,23 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-								Weight:                 ref.To(int32(1)),
+								Weight:                 ptr.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{
 								{
 									Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "foo-bar"},
 										},
 										Remove: []string{"x-remove"},
@@ -2767,12 +2767,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								{
 									// Second instance of filter should be ignored.
 									Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-									ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-										Set: []gatewayapi_v1beta1.HTTPHeader{
+									ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+										Set: []gatewayapi_v1.HTTPHeader{
 											{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "ignored"},
 											{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar-ignored.com"},
 										},
-										Add: []gatewayapi_v1beta1.HTTPHeader{
+										Add: []gatewayapi_v1.HTTPHeader{
 											{Name: "custom-header-add", Value: "ignored"},
 										},
 										Remove: []string{"x-remove-ignored"},
@@ -2800,17 +2800,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-						RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-							Set: []gatewayapi_v1beta1.HTTPHeader{
+						RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+							Set: []gatewayapi_v1.HTTPHeader{
 								{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 								{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 							},
-							Add: []gatewayapi_v1beta1.HTTPHeader{
+							Add: []gatewayapi_v1.HTTPHeader{
 								{Name: "!invalid-header-add", Value: "foo-bar"},
 							},
 						},
@@ -2839,22 +2839,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-								Weight:                 ref.To(int32(1)),
+								Weight:                 ptr.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{{
 								Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Set: []gatewayapi_v1beta1.HTTPHeader{
+								RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+									Set: []gatewayapi_v1.HTTPHeader{
 										{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 										{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 									},
-									Add: []gatewayapi_v1beta1.HTTPHeader{
+									Add: []gatewayapi_v1.HTTPHeader{
 										{Name: "!invalid-header-add", Value: "foo-bar"},
 									},
 								},
@@ -2880,22 +2880,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
-					BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+					BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 						{
-							BackendRef: gatewayapi_v1beta1.BackendRef{
+							BackendRef: gatewayapi_v1.BackendRef{
 								BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-								Weight:                 ref.To(int32(1)),
+								Weight:                 ptr.To(int32(1)),
 							},
 							Filters: []gatewayapi_v1.HTTPRouteFilter{{
 								Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-								ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-									Set: []gatewayapi_v1beta1.HTTPHeader{
+								ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+									Set: []gatewayapi_v1.HTTPHeader{
 										{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
 										{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com"},
 									},
-									Add: []gatewayapi_v1beta1.HTTPHeader{
+									Add: []gatewayapi_v1.HTTPHeader{
 										{Name: "!invalid-header-add", Value: "foo-bar"},
 									},
 								},
@@ -2921,15 +2921,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Scheme:     ref.To("https"),
-							Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
-							Port:       ref.To(gatewayapi_v1beta1.PortNumber(443)),
-							StatusCode: ref.To(301),
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Scheme:     ptr.To("https"),
+							Hostname:   ptr.To(gatewayapi_v1.PreciseHostname("envoyproxy.io")),
+							Port:       ptr.To(gatewayapi_v1.PortNumber(443)),
+							StatusCode: ptr.To(301),
 						},
 					}},
 				}),
@@ -2956,18 +2956,18 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: append(
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/another-match")...,
 					),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Scheme:     ref.To("https"),
-							Hostname:   ref.To(gatewayapi_v1beta1.PreciseHostname("envoyproxy.io")),
-							Port:       ref.To(gatewayapi_v1beta1.PortNumber(443)),
-							StatusCode: ref.To(301),
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Scheme:     ptr.To("https"),
+							Hostname:   ptr.To(gatewayapi_v1.PreciseHostname("envoyproxy.io")),
+							Port:       ptr.To(gatewayapi_v1.PortNumber(443)),
+							StatusCode: ptr.To(301),
 						},
 					}},
 				}),
@@ -3003,14 +3003,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
-								ReplacePrefixMatch: ref.To("/replacement"),
+								ReplacePrefixMatch: ptr.To("/replacement"),
 							},
 						},
 					}},
@@ -3038,14 +3038,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
-								ReplacePrefixMatch: ref.To("/"),
+								ReplacePrefixMatch: ptr.To("/"),
 							},
 						},
 					}},
@@ -3073,14 +3073,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
-						RequestRedirect: &gatewayapi_v1beta1.HTTPRequestRedirectFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:            gatewayapi_v1.FullPathHTTPPathModifier,
-								ReplaceFullPath: ref.To("/replacement"),
+								ReplaceFullPath: ptr.To("/replacement"),
 							},
 						},
 					}},
@@ -3109,12 +3109,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				kuardService2,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-						RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
 						},
 					}},
@@ -3135,19 +3135,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+							RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
 							},
 						},
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-							RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+							RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
 							},
 						},
@@ -3168,7 +3168,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				kuardService2,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: append(
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/another-match")...,
@@ -3176,7 +3176,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
-						RequestMirror: &gatewayapi_v1beta1.HTTPRequestMirrorFilter{
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
 							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
 						},
 					}},
@@ -3197,14 +3197,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
-								ReplacePrefixMatch: ref.To("/replacement"),
+								ReplacePrefixMatch: ptr.To("/replacement"),
 							},
 						},
 					}},
@@ -3231,14 +3231,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
-								ReplacePrefixMatch: ref.To("/"),
+								ReplacePrefixMatch: ptr.To("/"),
 							},
 						},
 					}},
@@ -3265,14 +3265,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Path: &gatewayapi_v1beta1.HTTPPathModifier{
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
 								Type:            gatewayapi_v1.FullPathHTTPPathModifier,
-								ReplaceFullPath: ref.To("/replacement"),
+								ReplaceFullPath: ptr.To("/replacement"),
 							},
 						},
 					}},
@@ -3299,12 +3299,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{{
 						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-						URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-							Hostname: ref.To(gatewayapi_v1beta1.PreciseHostname("rewritten.com")),
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Hostname: ptr.To(gatewayapi_v1.PreciseHostname("rewritten.com")),
 						},
 					}},
 					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
@@ -3328,13 +3328,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/prefix"),
 					Filters: []gatewayapi_v1.HTTPRouteFilter{
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
-							RequestHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-								Set: []gatewayapi_v1beta1.HTTPHeader{
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
 									{
 										Name:  "Host",
 										Value: "requestheader.rewritten.com",
@@ -3344,8 +3344,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						{
 							Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
-							URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
-								Hostname: ref.To(gatewayapi_v1beta1.PreciseHostname("url.rewritten.com")),
+							URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+								Hostname: ptr.To(gatewayapi_v1.PreciseHostname("url.rewritten.com")),
 							},
 						},
 					},
@@ -3434,7 +3434,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				configMapCert1,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3501,7 +3501,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				cert1,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3569,7 +3569,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				cert2,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3642,16 +3642,16 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsAndNonTLSService,
 				cert1,
 				makeHTTPRoute("tls-basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/tls", "tlsandnontlssvc", 443, 1)),
-				&gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+				&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "non-tls-basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
 							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/non-tls"),
 							BackendRefs: gatewayapi.HTTPBackendRefs(
 								gatewayapi.HTTPBackendRef("tlsandnontlssvc", 80, 1),
@@ -3660,7 +3660,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 				},
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3749,7 +3749,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsService,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3804,7 +3804,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsService,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3859,7 +3859,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsService,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
 				&gatewayapi_v1alpha2.BackendTLSPolicy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -3910,7 +3910,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRefs(
 						gatewayapi.HTTPBackendRef("kuard", 8080, 5),
@@ -3963,7 +3963,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1beta1.HTTPRouteRule{
+				makeHTTPRoute("basic", "projectcontour", "", gatewayapi_v1.HTTPRouteRule{
 					Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 					BackendRefs: gatewayapi.HTTPBackendRefs(
 						gatewayapi.HTTPBackendRef("kuard", 8080, 5),
@@ -4041,7 +4041,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4078,7 +4078,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4101,7 +4101,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4114,25 +4114,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
@@ -4164,7 +4164,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4177,31 +4177,31 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName(kuardService.Name)),
+							Name: ptr.To(gatewayapi_v1.ObjectName(kuardService.Name)),
 						}},
 					},
 				},
@@ -4228,7 +4228,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4241,25 +4241,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "HTTPRoute", // would need to be TLSRoute to be valid
 							Namespace: "default",
 						}},
@@ -4277,7 +4277,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4290,25 +4290,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: "some-other-namespace", // would have to be "projectcontour" to be valid
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
@@ -4326,7 +4326,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4339,25 +4339,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "some-other-namespace", // would have to be "default" to be valid
 						}},
@@ -4375,7 +4375,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -4388,31 +4388,31 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1beta1.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1beta1.Namespace(kuardService.Namespace)),
+										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1beta1.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1beta1.ReferenceGrantSpec{
 						From: []gatewayapi_v1beta1.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1beta1.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "TLSRoute",
 							Namespace: "default",
 						}},
 						To: []gatewayapi_v1beta1.ReferenceGrantTo{{
 							Kind: "Service",
-							Name: ref.To(gatewayapi_v1beta1.ObjectName("some-other-service")), // would have to be "kuard" to be valid
+							Name: ptr.To(gatewayapi_v1.ObjectName("some-other-service")), // would have to be "kuard" to be valid
 						}},
 					},
 				},
@@ -4425,7 +4425,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4482,7 +4482,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4531,7 +4531,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4558,7 +4558,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4593,7 +4593,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4618,7 +4618,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService2,
 				kuardService3,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4629,9 +4629,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
-								gatewayapi.TLSRouteBackendRef("kuard", 8080, ref.To(int32(1))),
-								gatewayapi.TLSRouteBackendRef("kuard2", 8080, ref.To(int32(2))),
-								gatewayapi.TLSRouteBackendRef("kuard3", 8080, ref.To(int32(3))),
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, ptr.To(int32(1))),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, ptr.To(int32(2))),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, ptr.To(int32(3))),
 							),
 						}},
 					},
@@ -4665,7 +4665,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService2,
 				kuardService3,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4676,9 +4676,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
-								gatewayapi.TLSRouteBackendRef("kuard", 8080, ref.To(int32(1))),
-								gatewayapi.TLSRouteBackendRef("kuard2", 8080, ref.To(int32(0))),
-								gatewayapi.TLSRouteBackendRef("kuard3", 8080, ref.To(int32(3))),
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, ptr.To(int32(1))),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, ptr.To(int32(0))),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, ptr.To(int32(3))),
 							),
 						}},
 					},
@@ -4712,7 +4712,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService2,
 				kuardService3,
 				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4807,7 +4807,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "different-ns-than-gateway",
 					},
@@ -4835,7 +4835,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4867,7 +4867,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				blogService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4889,7 +4889,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 				},
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basictls",
 						Namespace: "projectcontour",
 					},
@@ -4938,7 +4938,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -4980,7 +4980,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5022,7 +5022,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5063,7 +5063,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5099,7 +5099,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5176,7 +5176,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5253,7 +5253,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5310,7 +5310,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5318,7 +5318,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1beta1.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha2.GRPCRouteRule{
@@ -5330,7 +5330,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									{
 										BackendRef: gatewayapi_v1alpha2.BackendRef{
 											BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-											Weight:                 ref.To(int32(1)),
+											Weight:                 ptr.To(int32(1)),
 										},
 										Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{{
 											Type: gatewayapi_v1alpha2.GRPCRouteFilterResponseHeaderModifier,
@@ -5370,7 +5370,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5412,7 +5412,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService2,
 				kuardService3,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
@@ -5461,7 +5461,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&gatewayapi_v1alpha2.GRPCRoute{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
@@ -5475,20 +5475,20 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							}},
 							BackendRefs: []gatewayapi_v1alpha2.GRPCBackendRef{{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-										Kind:      ref.To(gatewayapi_v1alpha2.Kind("Service")),
-										Namespace: ref.To(gatewayapi_v1alpha2.Namespace(kuardService.Namespace)),
+									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+										Kind:      ptr.To(gatewayapi_v1alpha2.Kind("Service")),
+										Namespace: ptr.To(gatewayapi_v1alpha2.Namespace(kuardService.Namespace)),
 										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
-										Port:      ref.To(gatewayapi_v1alpha2.PortNumber(8080)),
+										Port:      ptr.To(gatewayapi_v1alpha2.PortNumber(8080)),
 									},
-									Weight: ref.To(int32(1)),
+									Weight: ptr.To(int32(1)),
 								},
 							}},
 						}},
 					},
 				},
 				&gatewayapi_v1beta1.ReferenceGrant{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "foo",
 						Namespace: kuardService.Namespace,
 					},
@@ -5554,102 +5554,102 @@ func TestDAGInsert(t *testing.T) {
 	// The DAG is insensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	// Invalid cert in the secret
-	secInvalid := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	secInvalid := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata("wrong", "wronger"),
 	}
 
 	// weird secret with a blank ca.crt that
 	// cert manager creates. #1644
-	sec3 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec3 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: map[string][]byte{
-			CACertificateKey:    []byte(""),
-			v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
-			v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+			CACertificateKey:         []byte(""),
+			core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+			core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 		},
 	}
 
-	sec4 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec4 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "root",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	fallbackCertificateSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	fallbackCertificateSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "fallbacksecret",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	fallbackCertificateSecretRootNamespace := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	fallbackCertificateSecretRootNamespace := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "fallbacksecret",
 			Namespace: "root",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	cert1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	cert1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ca",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
 	}
 
-	cert2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	cert2 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ca",
 			Namespace: "caCertOriginalNs",
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
 	}
 
-	crl := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	crl := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "crl",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeOpaque,
+		Type: core_v1.SecretTypeOpaque,
 		Data: map[string][]byte{
 			CRLKey: []byte(fixture.CRL),
 		},
 	}
 
 	i1V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -5667,7 +5667,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i1aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5689,7 +5689,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i2V1 is functionally identical to i1V1
 	i2V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -5703,7 +5703,7 @@ func TestDAGInsert(t *testing.T) {
 	// i2aV1 is missing a http key from the spec.rule.
 	// see issue 606
 	i2aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -5716,7 +5716,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i3V1 is similar to i2V1 but includes a hostname on the ingress rule
 	i3V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -5733,7 +5733,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 	// i4V1 is like i1V1 except it uses a named service port
 	i4V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -5752,7 +5752,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i5V1 is functionally identical to i2V1
 	i5V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -5765,7 +5765,7 @@ func TestDAGInsert(t *testing.T) {
 	// i6V1 contains two named vhosts which point to the same service
 	// one of those has TLS
 	i6V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-vhosts",
 			Namespace: "default",
 		},
@@ -5785,7 +5785,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i6aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-vhosts",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5808,7 +5808,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i6bV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-vhosts",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5828,7 +5828,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i6cV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-vhosts",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5850,7 +5850,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i7V1 contains a single vhost with two paths
 	i7V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-paths",
 			Namespace: "default",
 		},
@@ -5877,7 +5877,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i8V1 is identical to i7V1 but uses multiple IngressRules
 	i8V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-rules",
 			Namespace: "default",
 		},
@@ -5910,7 +5910,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 	// i9V1 is identical to i8V1 but disables non TLS connections
 	i9V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-rules",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5946,7 +5946,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i10aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "two-rules",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5974,7 +5974,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i11V1 has a websocket route
 	i11V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "websocket",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -5999,7 +5999,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i12aV1 has an invalid timeout
 	i12aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6022,7 +6022,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i12bV1 has a reasonable timeout
 	i12bV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6045,7 +6045,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i12cV1 has an unreasonable timeout
 	i12cV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6067,7 +6067,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i12dV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6089,7 +6089,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i12eV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6111,7 +6111,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i12fV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6136,7 +6136,7 @@ func TestDAGInsert(t *testing.T) {
 	// they represent a tricky way over 'overlaying' routes from one
 	// ingress onto another
 	i13aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "app",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6163,7 +6163,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i13bV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
+		ObjectMeta: meta_v1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
 				Host: "example.com",
@@ -6180,7 +6180,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i3aV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -6192,7 +6192,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i14V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6216,7 +6216,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i15V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "regex",
 			Namespace: "default",
 		},
@@ -6235,7 +6235,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i15InvalidRegexV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "regex",
 			Namespace: "default",
 		},
@@ -6254,7 +6254,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i16V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "wildcards",
 			Namespace: "default",
 		},
@@ -6284,7 +6284,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	i17V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -6298,7 +6298,7 @@ func TestDAGInsert(t *testing.T) {
 
 	// i18V1 is  use secret from another namespace using annotation projectcontour.io/tls-cert-namespace
 	i18V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "tls-from-other-ns-annotation",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6318,7 +6318,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	iPathMatchTypesV1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "pathmatchtypes",
 			Namespace: "default",
 		},
@@ -6328,37 +6328,37 @@ func TestDAGInsert(t *testing.T) {
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{
 							{
-								PathType: (*networking_v1.PathType)(ref.To("Exact")),
+								PathType: (*networking_v1.PathType)(ptr.To("Exact")),
 								Path:     "/exact",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(ref.To("Exact")),
+								PathType: (*networking_v1.PathType)(ptr.To("Exact")),
 								Path:     "/exact_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+								PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 								Path:     "/prefix",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+								PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 								Path:     "/prefix_trailing_slash/",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(ref.To("Prefix")),
+								PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
 								Path:     "/prefix_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+								PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 								Path:     "/implementation_specific",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
 							{
-								PathType: (*networking_v1.PathType)(ref.To("ImplementationSpecific")),
+								PathType: (*networking_v1.PathType)(ptr.To("ImplementationSpecific")),
 								Path:     "/implementation_specific_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
@@ -6370,21 +6370,21 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// s3a and b have http/2 protocol annotations
-	s3a := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s3a := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
 				"projectcontour.io/upstream-protocol.h2c": "80,http",
 			},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 80, 8888)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 8888)},
 		},
 	}
 
-	s3b := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s3b := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      s3a.Name,
 			Namespace: s3a.Namespace,
 			Annotations: map[string]string{
@@ -6394,8 +6394,8 @@ func TestDAGInsert(t *testing.T) {
 		Spec: s3a.Spec,
 	}
 
-	s3c := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s3c := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      s3b.Name,
 			Namespace: s3b.Namespace,
 			Annotations: map[string]string{
@@ -6405,49 +6405,49 @@ func TestDAGInsert(t *testing.T) {
 		Spec: s3b.Spec,
 	}
 
-	sec13 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec13 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-tls",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
-	s13a := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s13a := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "app-service",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	s13b := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s13b := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "challenge-service",
 			Namespace: "nginx-ingress",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8009, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8009, 8080)},
 		},
 	}
 
-	proxyMultipleBackends := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyMultipleBackends := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}, {
@@ -6458,25 +6458,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyTLS12 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyTLS12 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.2",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6484,25 +6484,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyTLS13 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyTLS13 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "1.3",
 					MaximumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6510,25 +6510,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyTLSInvalid := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyTLSInvalid := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName:             sec1.Name,
 					MinimumProtocolVersion: "0.999",
 					MaximumProtocolVersion: "1.4",
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6536,29 +6536,29 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyWeightsTwoRoutesDiffWeights := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyWeightsTwoRoutesDiffWeights := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   8080,
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/b",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   8080,
 					Weight: 60,
@@ -6567,20 +6567,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyWeightsOneRouteDiffWeights := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyWeightsOneRouteDiffWeights := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:   "kuard",
 					Port:   8080,
 					Weight: 90,
@@ -6593,24 +6593,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyRetryPolicyValidTimeout := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyRetryPolicyValidTimeout := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "bar-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "bar.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				RetryPolicy: &contour_api_v1.RetryPolicy{
+				RetryPolicy: &contour_v1.RetryPolicy{
 					NumRetries:    6,
 					PerTryTimeout: "10s",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6618,24 +6618,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyRetryPolicyInvalidTimeout := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyRetryPolicyInvalidTimeout := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "bar-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "bar.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				RetryPolicy: &contour_api_v1.RetryPolicy{
+				RetryPolicy: &contour_v1.RetryPolicy{
 					NumRetries:    6,
 					PerTryTimeout: "please",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6643,24 +6643,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyRetryPolicyZeroRetries := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyRetryPolicyZeroRetries := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "bar-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "bar.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				RetryPolicy: &contour_api_v1.RetryPolicy{
+				RetryPolicy: &contour_v1.RetryPolicy{
 					NumRetries:    0,
 					PerTryTimeout: "10s",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6668,23 +6668,23 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyTimeoutPolicyInvalidResponse := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyTimeoutPolicyInvalidResponse := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "bar-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "bar.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
+				TimeoutPolicy: &contour_v1.TimeoutPolicy{
 					Response: "peanut",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6692,23 +6692,23 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyTimeoutPolicyValidResponse := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyTimeoutPolicyValidResponse := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "bar-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "bar.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
+				TimeoutPolicy: &contour_v1.TimeoutPolicy{
 					Response: "1m30s",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6716,23 +6716,23 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyTimeoutPolicyInfiniteResponse := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyTimeoutPolicyInfiniteResponse := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "bar-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "bar.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
+				TimeoutPolicy: &contour_v1.TimeoutPolicy{
 					Response: "infinite",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6740,20 +6740,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyWildcardFQDN := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyWildcardFQDN := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "wildcard",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "*.projectcontour.io",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6761,33 +6761,33 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	// s1a carries the tls annotation
-	s1a := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1a := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
 				"projectcontour.io/upstream-protocol.tls": "8080",
 			},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	// s1b carries all four ingress annotations{
-	s1b := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1b := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -6798,140 +6798,140 @@ func TestDAGInsert(t *testing.T) {
 				"projectcontour.io/per-host-max-connections": "45",
 			},
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	// s2 is like s1 but with a different name
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	// s2a is like s1 but with a different name again.
 	// used in testing override priority.
-	s2a := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2a := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuardest",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	// s3 is like s1 but has a different port
-	s3 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s3 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 9999, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 9999, 8080)},
 		},
 	}
 
-	s4 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s4 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "marketing",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	s9 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s9 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "nginx",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Protocol: "TCP",
 				Port:     80,
 			}},
 		},
 	}
 
-	s10 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s10 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "tls-passthrough",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("https", "TCP", 443, 443), makeServicePort("http", "TCP", 80, 80)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("https", "TCP", 443, 443), makeServicePort("http", "TCP", 80, 80)},
 		},
 	}
 
-	s11 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s11 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "it",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("blog", "TCP", 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("blog", "TCP", 8080)},
 		},
 	}
 
-	s12 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s12 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "teama",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	s13 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s13 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "teamb",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	s14 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s14 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "nginx",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
 			ExternalName: "externalservice.io",
-			Ports: []v1.ServicePort{{
+			Ports: []core_v1.ServicePort{{
 				Protocol: "TCP",
 				Port:     80,
 			}},
-			Type: v1.ServiceTypeExternalName,
+			Type: core_v1.ServiceTypeExternalName,
 		},
 	}
 
-	proxyDelegatedTLSSecret := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyDelegatedTLSSecret := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "app-with-tls-delegation",
 			Namespace: s10.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: "projectcontour/ssl-cert", // not delegated
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s10.Name,
 					Port: 80,
 				}},
@@ -6939,20 +6939,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6961,20 +6961,20 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy1a tcp forwards traffic to default/kuard:8080 by TLS pass-through it.
-	proxy1a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-tcp",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -6983,17 +6983,17 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy1b is a straight HTTP forward, no conditions.
-	proxy1b := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1b := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7002,45 +7002,45 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy1c is a straight forward, with prefix and header conditions.
-	proxy1c := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1c := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Header: &contour_api_v1.HeaderMatchCondition{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:    "x-request-id",
 						Present: true,
 					},
 				}, {
 					Prefix: "/kuard",
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:     "e-tag",
 						Contains: "abcdef",
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:        "x-timeout",
 						NotContains: "infinity",
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:  "digest-auth",
 						Exact: "scott",
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:     "digest-password",
 						NotExact: "tiger",
 					},
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7050,26 +7050,26 @@ func TestDAGInsert(t *testing.T) {
 
 	// proxy1d tcp forwards secure traffic to default/kuard:8080 by TLS pass-through it,
 	// insecure traffic is 301 upgraded.
-	proxy1d := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1d := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-tcp",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
 			}},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7079,27 +7079,27 @@ func TestDAGInsert(t *testing.T) {
 
 	// proxy1e tcp forwards secure traffic to default/kuard:8080 by TLS pass-through it,
 	// insecure traffic is not 301 upgraded because of the permitInsecure: true annotation.
-	proxy1e := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1e := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-tcp",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			Routes: []contour_api_v1.Route{{
+			Routes: []contour_v1.Route{{
 				PermitInsecure: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s10.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: s10.Name,
 					Port: 443,
 				}},
@@ -7109,20 +7109,20 @@ func TestDAGInsert(t *testing.T) {
 
 	// proxy1f is identical to proxy1 and ir1, except for a different service.
 	// Used to test priority when importing ir then httproxy.
-	proxy1f := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1f := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s2a.Name,
 					Port: 8080,
 				}},
@@ -7130,28 +7130,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy2a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy2a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "kubesystem",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Header: &contour_api_v1.HeaderMatchCondition{
+			Includes: []contour_v1.Include{{
+				Conditions: []contour_v1.MatchCondition{{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:    "x-request-id",
 						Present: true,
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:        "x-timeout",
 						NotContains: "infinity",
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:  "digest-auth",
 						Exact: "scott",
 					},
@@ -7162,18 +7162,18 @@ func TestDAGInsert(t *testing.T) {
 				// This second include has a similar set of conditions with
 				// slight differences which should still ensure there is a
 				// route programmed.
-				Conditions: []contour_api_v1.MatchCondition{{
-					Header: &contour_api_v1.HeaderMatchCondition{
+				Conditions: []contour_v1.MatchCondition{{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:    "x-request-id",
 						Present: true,
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:       "x-timeout",
 						NotPresent: true,
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:  "digest-auth",
 						Exact: "scott",
 					},
@@ -7184,27 +7184,27 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy2b := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy2b := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/kuard",
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:     "e-tag",
 						Contains: "abcdef",
 					},
 				}, {
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:     "digest-password",
 						NotExact: "tiger",
 					},
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7212,23 +7212,23 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy2c := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy2c := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
+				HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
 					Path: "/healthz",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7238,20 +7238,20 @@ func TestDAGInsert(t *testing.T) {
 
 	// proxy2d is a proxy with two routes that have the same prefix and a Contains header
 	// condition on the same header, differing only in the value of the condition.
-	proxy2d := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy2d := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Conditions: []contour_api_v1.MatchCondition{
+					Conditions: []contour_v1.MatchCondition{
 						{
-							Header: &contour_api_v1.HeaderMatchCondition{
+							Header: &contour_v1.HeaderMatchCondition{
 								Name:     "e-tag",
 								Contains: "abc",
 							},
@@ -7260,15 +7260,15 @@ func TestDAGInsert(t *testing.T) {
 							Prefix: "/",
 						},
 					},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "kuard",
 						Port: 8080,
 					}},
 				},
 				{
-					Conditions: []contour_api_v1.MatchCondition{
+					Conditions: []contour_v1.MatchCondition{
 						{
-							Header: &contour_api_v1.HeaderMatchCondition{
+							Header: &contour_v1.HeaderMatchCondition{
 								Name:     "e-tag",
 								Contains: "def",
 							},
@@ -7277,7 +7277,7 @@ func TestDAGInsert(t *testing.T) {
 							Prefix: "/",
 						},
 					},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "kuard",
 						Port: 8080,
 					}},
@@ -7288,20 +7288,20 @@ func TestDAGInsert(t *testing.T) {
 
 	// proxy2e is a proxy with two routes that both have a condition on the same
 	// header, one using Contains and one using NotContains.
-	proxy2e := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy2e := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{
+			Routes: []contour_v1.Route{
 				{
-					Conditions: []contour_api_v1.MatchCondition{
+					Conditions: []contour_v1.MatchCondition{
 						{
-							Header: &contour_api_v1.HeaderMatchCondition{
+							Header: &contour_v1.HeaderMatchCondition{
 								Name:     "e-tag",
 								Contains: "abc",
 							},
@@ -7310,15 +7310,15 @@ func TestDAGInsert(t *testing.T) {
 							Prefix: "/",
 						},
 					},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "kuard",
 						Port: 8080,
 					}},
 				},
 				{
-					Conditions: []contour_api_v1.MatchCondition{
+					Conditions: []contour_v1.MatchCondition{
 						{
-							Header: &contour_api_v1.HeaderMatchCondition{
+							Header: &contour_v1.HeaderMatchCondition{
 								Name:        "e-tag",
 								NotContains: "abc",
 							},
@@ -7327,7 +7327,7 @@ func TestDAGInsert(t *testing.T) {
 							Prefix: "/",
 						},
 					},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "kuard",
 						Port: 8080,
 					}},
@@ -7337,23 +7337,23 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy6 has TLS and does not specify min tls version
-	proxy6 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy6 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "foo.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7361,23 +7361,23 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy17 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy17 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+					UpstreamValidation: &contour_v1.UpstreamValidation{
 						CACertificate: cert1.Name,
 						SubjectName:   "example.com",
 					},
@@ -7386,24 +7386,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 	protocolh2 := "h2"
-	proxy17h2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy17h2 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:     "kuard",
 					Port:     8080,
 					Protocol: &protocolh2,
-					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+					UpstreamValidation: &contour_v1.UpstreamValidation{
 						CACertificate: cert1.Name,
 						SubjectName:   "example.com",
 					},
@@ -7411,23 +7411,23 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
-	proxy17UpstreamCACertDelegation := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy17UpstreamCACertDelegation := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
-					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+					UpstreamValidation: &contour_v1.UpstreamValidation{
 						CACertificate: fmt.Sprintf("%s/%s", cert2.Namespace, cert2.Name),
 						SubjectName:   "example.com",
 					},
@@ -7437,26 +7437,26 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy18 is downstream validation, HTTP route
-	proxy18 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy18 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate: cert1.Name,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7465,23 +7465,23 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy19 is downstream validation, TCP proxying
-	proxy19 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy19 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate: cert1.Name,
 					},
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7490,29 +7490,29 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy10 has a websocket route
-	proxy10 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy10 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/websocket",
 				}},
 				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7521,29 +7521,29 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy10b has a websocket route w/multiple upstreams
-	proxy10b := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy10b := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
 			}, {
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/websocket",
 				}},
 				EnableWebsockets: true,
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -7552,20 +7552,20 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy12 tests mirroring
-	proxy12 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy12 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}, {
@@ -7578,20 +7578,20 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy13 has two mirrors, invalid.
-	proxy13 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy13 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}, {
@@ -7611,26 +7611,26 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy20 is downstream validation, skip cert validation
-	proxy20 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy20 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						SkipClientCertValidation: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7639,27 +7639,27 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy21 is downstream validation, skip cert validation, with a CA
-	proxy21 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy21 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						SkipClientCertValidation: true,
 						CACertificate:            cert1.Name,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7668,27 +7668,27 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy22 is downstream validation with CRL check.
-	proxy22 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy22 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             cert1.Name,
 						CertificateRevocationList: crl.Name,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7697,28 +7697,28 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy22 is downstream validation with CRL check but only for leaf-certificate.
-	proxy23 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy23 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             cert1.Name,
 						CertificateRevocationList: crl.Name,
 						OnlyVerifyLeafCertCrl:     true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7727,27 +7727,27 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy24 is downstream validation, optional cert validation
-	proxy24 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy24 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             cert1.Name,
 						OptionalClientCertificate: true,
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7756,19 +7756,19 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy25 is downstream validation, fwd client cert details
-	proxy25 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy25 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
+					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate: cert1.Name,
-						ForwardClientCertificate: &contour_api_v1.ClientCertificateDetails{
+						ForwardClientCertificate: &contour_v1.ClientCertificateDetails{
 							Subject: true,
 							Cert:    true,
 							Chain:   true,
@@ -7778,11 +7778,11 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7792,24 +7792,24 @@ func TestDAGInsert(t *testing.T) {
 
 	// invalid because tcpproxy both includes another and
 	// has a list of services.
-	proxy37 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy37 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "roots",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "passthrough.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Include: &contour_api_v1.TCPProxyInclude{
+			TCPProxy: &contour_v1.TCPProxy{
+				Include: &contour_v1.TCPProxyInclude{
 					Name:      "foo",
 					Namespace: "roots",
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7819,38 +7819,38 @@ func TestDAGInsert(t *testing.T) {
 
 	// Invalid because tcpproxy neither includes another httpproxy
 	// nor has a list of services.
-	proxy37a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy37a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "roots",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "passthrough.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{},
+			TCPProxy: &contour_v1.TCPProxy{},
 		},
 	}
 
 	// proxy38 is invalid when combined with proxy39
 	// as the latter is a root.
-	proxy38 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy38 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "roots",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "passthrough.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Include: &contour_api_v1.TCPProxyInclude{
+			TCPProxy: &contour_v1.TCPProxy{
+				Include: &contour_v1.TCPProxyInclude{
 					Name:      "foo",
 					Namespace: s1.Namespace,
 				},
@@ -7858,20 +7858,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy39 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy39 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "foo",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "www.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7880,20 +7880,20 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy39broot is a valid TCPProxy which includes to another TCPProxy
-	proxy39broot := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy39broot := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "root",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "www.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Include: &contour_api_v1.TCPProxyInclude{
+			TCPProxy: &contour_v1.TCPProxy{
+				Include: &contour_v1.TCPProxyInclude{
 					Name:      "foo",
 					Namespace: s1.Namespace,
 				},
@@ -7901,20 +7901,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy39brootplural := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy39brootplural := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "root",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "www.example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				IncludesDeprecated: &contour_api_v1.TCPProxyInclude{
+			TCPProxy: &contour_v1.TCPProxy{
+				IncludesDeprecated: &contour_v1.TCPProxyInclude{
 					Name:      "foo",
 					Namespace: s1.Namespace,
 				},
@@ -7922,14 +7922,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy39bchild := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy39bchild := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "foo",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7937,14 +7937,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy40 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy40 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "foo",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7953,17 +7953,17 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// issue 2309, each route must have at least one service
-	proxy41 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy41 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "missing-service",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "missing-service.example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: nil, // missing
@@ -7971,27 +7971,27 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy100 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy100 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name:      "marketingwww",
 				Namespace: "marketing",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -7999,14 +7999,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy100a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy100a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "marketingwww",
 			Namespace: "marketing",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "blog",
 					Port: 8080,
 				}},
@@ -8014,17 +8014,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy100b := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy100b := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "marketingwww",
 			Namespace: "marketing",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/infotech",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "blog",
 					Port: 8080,
 				}},
@@ -8032,29 +8032,29 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy100c := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy100c := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "marketingwww",
 			Namespace: "marketing",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Includes: []contour_api_v1.Include{{
+		Spec: contour_v1.HTTPProxySpec{
+			Includes: []contour_v1.Include{{
 				Name:      "marketingit",
 				Namespace: "it",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/it",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/infotech",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "blog",
 					Port: 8080,
 				}},
 			}, {
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "blog",
 					Port: 8080,
 				}},
@@ -8062,17 +8062,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy100d := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy100d := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "marketingit",
 			Namespace: "it",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "blog",
 					Port: 8080,
 				}},
@@ -8081,26 +8081,26 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy101 and proxy101a test inclusion without a specified namespace.
-	proxy101 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy101 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "kuarder",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8108,14 +8108,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy101a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy101a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: proxy101.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -8124,22 +8124,22 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// invalid because two prefix conditions on route.
-	proxy102 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy102 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/v1",
 				}, {
 					Prefix: "/api",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8148,26 +8148,26 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// invalid because two prefix conditions on include.
-	proxy103 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy103 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name:      "www",
 				Namespace: "teama",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/v1",
 				}, {
 					Prefix: "/api",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8175,14 +8175,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy103a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy103a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "www",
 			Namespace: "teama",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s12.Name,
 					Port: 8080,
 				}},
@@ -8190,26 +8190,26 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy104 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy104 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "kuarder",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8217,14 +8217,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy104a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy104a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: proxy104.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -8232,26 +8232,26 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy105 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy105 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "kuarder",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8259,17 +8259,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy105a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy105a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: proxy105.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -8277,26 +8277,26 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy106 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy106 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "kuarder",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/kuarder/",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8304,17 +8304,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy106a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy106a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: proxy105.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -8322,26 +8322,26 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy107 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy107 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "kuarder",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/kuarder",
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8349,17 +8349,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy107a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy107a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: proxy105.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/withavengeance",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -8368,21 +8368,21 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy108 and proxy108a test duplicate conditions on include
-	proxy108 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy108 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "root",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/blog",
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -8390,19 +8390,19 @@ func TestDAGInsert(t *testing.T) {
 			}, {
 				Name:      "blogteama",
 				Namespace: "teamb",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/blog",
-					Header: &contour_api_v1.HeaderMatchCondition{
+					Header: &contour_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8410,14 +8410,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy108a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy108a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blogteama",
 			Namespace: "teama",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s12.Name,
 					Port: 8080,
 				}},
@@ -8425,14 +8425,14 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy108b := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy108b := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blogteamb",
 			Namespace: "teamb",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: s13.Name,
 					Port: 8080,
 				}},
@@ -8440,25 +8440,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyReplaceHostHeaderRoute := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyReplaceHostHeaderRoute := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "bar.com",
 					}},
@@ -8467,24 +8467,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyReplaceHostHeaderService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyReplaceHostHeaderService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
-					RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-						Set: []contour_api_v1.HeaderValue{{
+					RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+						Set: []contour_v1.HeaderValue{{
 							Name:  "Host",
 							Value: "bar.com",
 						}},
@@ -8494,25 +8494,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyReplaceHostHeaderMultiple := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyReplaceHostHeaderMultiple := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "bar.com",
 					}, {
@@ -8527,25 +8527,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyReplaceNonHostHeader := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyReplaceNonHostHeader := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name:  "x-header",
 						Value: "bar.com",
 					}},
@@ -8554,25 +8554,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyReplaceHeaderEmptyValue := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyReplaceHeaderEmptyValue := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name: "x-header",
 					}},
 				},
@@ -8580,59 +8580,59 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyCookieLoadBalancer := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyCookieLoadBalancer := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "Cookie",
 				},
 			}},
 		},
 	}
 
-	proxyLoadBalancerHashPolicyHeader := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyLoadBalancerHashPolicyHeader := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "RequestHash",
-					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+					RequestHashPolicies: []contour_v1.RequestHashPolicy{
 						{
 							Terminal: true,
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "X-Some-Header",
 							},
 						},
 						{
 							// Lower case but duplicated, should be ignored.
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "x-some-header",
 							},
 						},
@@ -8640,12 +8640,12 @@ func TestDAGInsert(t *testing.T) {
 							HeaderHashOptions: nil,
 						},
 						{
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "X-Some-Other-Header",
 							},
 						},
 						{
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "",
 							},
 						},
@@ -8655,29 +8655,29 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyLoadBalancerHashPolicyQueryParameter := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyLoadBalancerHashPolicyQueryParameter := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "RequestHash",
-					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+					RequestHashPolicies: []contour_v1.RequestHashPolicy{
 						{
 							Terminal: true,
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "something",
 							},
 						},
@@ -8685,12 +8685,12 @@ func TestDAGInsert(t *testing.T) {
 							QueryParameterHashOptions: nil,
 						},
 						{
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "other",
 							},
 						},
 						{
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "",
 							},
 						},
@@ -8700,30 +8700,30 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyLoadBalancerHashPolicySourceIP := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyLoadBalancerHashPolicySourceIP := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "RequestHash",
-					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+					RequestHashPolicies: []contour_v1.RequestHashPolicy{
 						{
 							// Ensure header hash policies and source IP hashing
 							// can coexist.
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "X-Some-Header",
 							},
 						},
@@ -8741,59 +8741,59 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyLoadBalancerHashPolicyAllInvalid := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyLoadBalancerHashPolicyAllInvalid := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 					Strategy: "RequestHash",
-					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+					RequestHashPolicies: []contour_v1.RequestHashPolicy{
 						{
 							HeaderHashOptions: nil,
 						},
 						{
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "",
 							},
 						},
 						{
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "X-Foo",
 							},
 							HashSourceIP: true,
 						},
 						{
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "X-Foo",
 							},
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "something",
 							},
 						},
 						{
-							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+							HeaderHashOptions: &contour_v1.HeaderHashOptions{
 								HeaderName: "X-Foo",
 							},
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "something",
 							},
 							HashSourceIP: true,
 						},
 						{
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "something",
 							},
 							HashSourceIP: true,
@@ -8802,7 +8802,7 @@ func TestDAGInsert(t *testing.T) {
 							QueryParameterHashOptions: nil,
 						},
 						{
-							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+							QueryParameterHashOptions: &contour_v1.QueryParameterHashOptions{
 								ParameterName: "",
 							},
 						},
@@ -8813,25 +8813,25 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy109 has a route that rewrites headers.
-	proxy109 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy109 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
-				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name:  "In-Foo",
 						Value: "bar",
 					}},
@@ -8839,8 +8839,8 @@ func TestDAGInsert(t *testing.T) {
 						"In-Baz",
 					},
 				},
-				ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name:  "Out-Foo",
 						Value: "bar",
 					}},
@@ -8852,25 +8852,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 	// proxy111 has a route that rewrites headers.
-	proxy111 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy111 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
-				ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
-					Set: []contour_api_v1.HeaderValue{{
+				ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "bar.baz",
 					}},
@@ -8879,24 +8879,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 	// proxy112 has a route that rewrites headers.
-	proxy112 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy112 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
-					ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
-						Set: []contour_api_v1.HeaderValue{{
+					ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+						Set: []contour_v1.HeaderValue{{
 							Name:  "Host",
 							Value: "bar.baz",
 						}},
@@ -8907,60 +8907,60 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// Invalid because has exact in include match conditions
-	proxy113 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy113 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example113-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example113.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "kuarder",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Exact: "/kuarder",
 				}},
 			}},
 		},
 	}
 
-	proxy114 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy114 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example114-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example114.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name:      "proxy114a",
 				Namespace: s1.Namespace,
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name:      "proxy114b",
 				Namespace: s2.Namespace,
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
 		},
 	}
 
-	proxy114a := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy114a := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "proxy114a",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Exact: "/exact",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -8968,17 +8968,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxy114b := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy114b := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "proxy114b",
 			Namespace: s2.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/prefix",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -8986,38 +8986,38 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	cookieRewritePoliciesRoute := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	cookieRewritePoliciesRoute := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+				CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 					{
 						Name: "some-cookie",
-						PathRewrite: &contour_api_v1.CookiePathRewrite{
+						PathRewrite: &contour_v1.CookiePathRewrite{
 							Value: "/foo",
 						},
-						DomainRewrite: &contour_api_v1.CookieDomainRewrite{
+						DomainRewrite: &contour_v1.CookieDomainRewrite{
 							Value: "example.com",
 						},
-						Secure:   ref.To(true),
-						SameSite: ref.To("Strict"),
+						Secure:   ptr.To(true),
+						SameSite: ptr.To("Strict"),
 					},
 					{
 						Name:     "some-other-cookie",
-						SameSite: ref.To("Lax"),
-						Secure:   ref.To(false),
+						SameSite: ptr.To("Lax"),
+						Secure:   ptr.To(false),
 					},
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
@@ -9025,37 +9025,37 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	cookieRewritePoliciesService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	cookieRewritePoliciesService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
-					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 						{
 							Name: "some-cookie",
-							PathRewrite: &contour_api_v1.CookiePathRewrite{
+							PathRewrite: &contour_v1.CookiePathRewrite{
 								Value: "/foo",
 							},
-							DomainRewrite: &contour_api_v1.CookieDomainRewrite{
+							DomainRewrite: &contour_v1.CookieDomainRewrite{
 								Value: "example.com",
 							},
-							Secure:   ref.To(true),
-							SameSite: ref.To("Strict"),
+							Secure:   ptr.To(true),
+							SameSite: ptr.To("Strict"),
 						},
 						{
 							Name:     "some-other-cookie",
-							SameSite: ref.To("Lax"),
+							SameSite: ptr.To("Lax"),
 						},
 					},
 				}},
@@ -9063,30 +9063,30 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	duplicateCookieRewritePoliciesRoute := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	duplicateCookieRewritePoliciesRoute := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+				CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 					{
 						Name:   "some-cookie",
-						Secure: ref.To(true),
+						Secure: ptr.To(true),
 					},
 					{
 						Name:     "some-cookie",
-						SameSite: ref.To("Lax"),
+						SameSite: ptr.To("Lax"),
 					},
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
@@ -9094,30 +9094,30 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	duplicateCookieRewritePoliciesService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	duplicateCookieRewritePoliciesService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
-					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 						{
 							Name:   "some-cookie",
-							Secure: ref.To(true),
+							Secure: ptr.To(true),
 						},
 						{
 							Name:     "some-cookie",
-							SameSite: ref.To("Lax"),
+							SameSite: ptr.To("Lax"),
 						},
 					},
 				}},
@@ -9125,25 +9125,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	emptyCookieRewritePolicyRoute := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	emptyCookieRewritePolicyRoute := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+				CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 					{
 						Name: "some-cookie",
 					},
 				},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
 				}},
@@ -9151,23 +9151,23 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	emptyCookieRewritePolicyService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	emptyCookieRewritePolicyService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "nginx",
 					Port: 80,
-					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 						{
 							Name: "some-cookie",
 						},
@@ -9178,20 +9178,20 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	protocol := "h2c"
-	proxy110 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy110 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name:     "kuard",
 					Port:     8080,
 					Protocol: &protocol,
@@ -9201,7 +9201,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	ingressExternalNameService := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "externalname",
 			Namespace: "default",
 		},
@@ -9219,20 +9219,20 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyExternalNameService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyExternalNameService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s14.GetName(),
 					Port: 80,
 				}},
@@ -9240,83 +9240,83 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	tcpProxyExternalNameService := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	tcpProxyExternalNameService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
+				TLS: &contour_v1.TLS{
 					SecretName: sec1.Name,
 				},
 			},
-			TCPProxy: &contour_api_v1.TCPProxy{
-				Services: []contour_api_v1.Service{{
+			TCPProxy: &contour_v1.TCPProxy{
+				Services: []contour_v1.Service{{
 					Name:     s14.GetName(),
 					Port:     80,
-					Protocol: ref.To("tls"),
+					Protocol: ptr.To("tls"),
 				}},
 			},
 		},
 	}
 
 	// Invalid proxy because the regex match is in the includes block.
-	proxyInvalidRegexPath := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyInvalidRegexPath := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-invalid-regexpath-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.invalid.regexpath.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name: "path",
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Regex: "/.*/path",
 				}},
 			}},
 		},
 	}
 
-	proxyRegexPath := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyRegexPath := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-valid-regexpath-com",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.valid.regexpath.com",
 			},
-			Includes: []contour_api_v1.Include{{
+			Includes: []contour_v1.Include{{
 				Name:      "child1",
 				Namespace: s1.Namespace,
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name:      "child2",
 				Namespace: s2.Namespace,
-				Conditions: []contour_api_v1.MatchCondition{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
 		},
 	}
 
-	child1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	child1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "child1",
 			Namespace: s1.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Regex: "/regex/.*",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s1.Name,
 					Port: 8080,
 				}},
@@ -9324,17 +9324,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	child2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	child2 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "child2",
 			Namespace: s2.Namespace,
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/prefix",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: s2.Name,
 					Port: 8080,
 				}},
@@ -10649,17 +10649,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert httproxy with invalid include": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "default",
 						Name:      "example-com",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
 						},
-						Includes: []contour_api_v1.Include{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Includes: []contour_v1.Include{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/finance",
 							}},
 							Name:      "non-existent",
@@ -10685,17 +10685,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert httproxy with include references another root": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "default",
 						Name:      "example-com",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
 						},
-						Includes: []contour_api_v1.Include{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Includes: []contour_v1.Include{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/finance",
 							}},
 							Name:      "other-root",
@@ -10703,13 +10703,13 @@ func TestDAGInsert(t *testing.T) {
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "other-root",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example2.com",
 						},
 					},
@@ -11058,13 +11058,13 @@ func TestDAGInsert(t *testing.T) {
 		"insert httpproxy expecting upstream verification, CA secret in different namespace is delegated": {
 			objs: []any{
 				cert2, s1a,
-				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.TLSCertificateDelegation{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "CACertDelagation",
 						Namespace: cert2.Namespace,
 					},
-					Spec: contour_api_v1.TLSCertificateDelegationSpec{
-						Delegations: []contour_api_v1.CertificateDelegation{{
+					Spec: contour_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_v1.CertificateDelegation{{
 							SecretName:       cert2.Name,
 							TargetNamespaces: []string{"*"},
 						}},
@@ -12078,7 +12078,7 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
@@ -12093,20 +12093,20 @@ func TestDAGInsert(t *testing.T) {
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: sec1.Name,
 							},
 						},
-						TCPProxy: &contour_api_v1.TCPProxy{
-							Services: []contour_api_v1.Service{{
+						TCPProxy: &contour_v1.TCPProxy{
+							Services: []contour_v1.Service{{
 								Name: s9.Name,
 								Port: 80,
 							}},
@@ -12147,27 +12147,27 @@ func TestDAGInsert(t *testing.T) {
 			objs: []any{
 				sec1,
 				s9,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: sec1.Name,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
+						Routes: []contour_v1.Route{{
 							PermitInsecure: true,
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: s9.Name,
 								Port: 80,
 							}},
 						}},
-						TCPProxy: &contour_api_v1.TCPProxy{
-							Services: []contour_api_v1.Service{{
+						TCPProxy: &contour_v1.TCPProxy{
+							Services: []contour_v1.Service{{
 								Name: s9.Name,
 								Port: 80,
 							}},
@@ -12207,27 +12207,27 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy tcpproxy + tlspassthrough + permitinsecure": {
 			objs: []any{
 				s9,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								Passthrough: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
+						Routes: []contour_v1.Route{{
 							PermitInsecure: true,
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: s9.Name,
 								Port: 80,
 							}},
 						}},
-						TCPProxy: &contour_api_v1.TCPProxy{
-							Services: []contour_api_v1.Service{{
+						TCPProxy: &contour_v1.TCPProxy{
+							Services: []contour_v1.Service{{
 								Name: s9.Name,
 								Port: 80,
 							}},
@@ -12264,24 +12264,24 @@ func TestDAGInsert(t *testing.T) {
 		"HTTPProxy request redirect policy": {
 			objs: []any{
 				s1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "redirect",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     ref.To("https"),
-								Hostname:   ref.To("envoyproxy.io"),
-								Port:       ref.To(int32(443)),
-								StatusCode: ref.To(301),
+							RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
+								Scheme:     ptr.To("https"),
+								Hostname:   ptr.To("envoyproxy.io"),
+								Port:       ptr.To(int32(443)),
+								StatusCode: ptr.To(301),
 							},
 						}},
 					},
@@ -12307,24 +12307,24 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"HTTPProxy request redirect policy - no services": {
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "redirect",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     ref.To("https"),
-								Hostname:   ref.To("envoyproxy.io"),
-								Port:       ref.To(int32(443)),
-								StatusCode: ref.To(301),
+							RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
+								Scheme:     ptr.To("https"),
+								Hostname:   ptr.To("envoyproxy.io"),
+								Port:       ptr.To(int32(443)),
+								StatusCode: ptr.To(301),
 							},
 						}},
 					},
@@ -12351,32 +12351,32 @@ func TestDAGInsert(t *testing.T) {
 		"HTTPProxy request redirect policy with multiple matches": {
 			objs: []any{
 				s1, s2,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "redirect",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: s2.Name,
 								Port: 8080,
 							}},
 						}, {
-							Conditions: []contour_api_v1.MatchCondition{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/blog",
 							}},
-							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-								Scheme:     ref.To("https"),
-								Hostname:   ref.To("envoyproxy.io"),
-								Port:       ref.To(int32(443)),
-								StatusCode: ref.To(301),
+							RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
+								Scheme:     ptr.To("https"),
+								Hostname:   ptr.To("envoyproxy.io"),
+								Port:       ptr.To(int32(443)),
+								StatusCode: ptr.To(301),
 							},
 						}},
 					},
@@ -12417,20 +12417,20 @@ func TestDAGInsert(t *testing.T) {
 		"HTTPProxy DirectResponse policy - code 200": {
 			objs: []any{
 				s1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "direct-response",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+							DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 								StatusCode: 200,
 								Body:       "success",
 							},
@@ -12457,20 +12457,20 @@ func TestDAGInsert(t *testing.T) {
 		"HTTPProxy DirectResponse policy - no body": {
 			objs: []any{
 				s1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "direct-response",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+							DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 								StatusCode: 503,
 							},
 						}},
@@ -12495,41 +12495,41 @@ func TestDAGInsert(t *testing.T) {
 		"HTTPProxy DirectResponse policy with multiple matches": {
 			objs: []any{
 				s1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "direct-response",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{{
+								Conditions: []contour_v1.MatchCondition{{
 									Prefix: "/",
 								}},
-								Services: []contour_api_v1.Service{{
+								Services: []contour_v1.Service{{
 									Name: s1.Name,
 									Port: 8080,
 								}},
 							}, {
-								Conditions: []contour_api_v1.MatchCondition{{
+								Conditions: []contour_v1.MatchCondition{{
 									Prefix: "/direct",
 								}},
-								DirectResponsePolicy: &contour_api_v1.HTTPDirectResponsePolicy{
+								DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
 									StatusCode: 404,
 									Body:       "page not found",
 								},
 							}, {
-								Conditions: []contour_api_v1.MatchCondition{{
+								Conditions: []contour_v1.MatchCondition{{
 									Prefix: "/redirect",
 								}},
-								RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
-									Scheme:     ref.To("https"),
-									Hostname:   ref.To("envoyproxy.io"),
-									Port:       ref.To(int32(443)),
-									StatusCode: ref.To(301),
+								RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
+									Scheme:     ptr.To("https"),
+									Hostname:   ptr.To("envoyproxy.io"),
+									Port:       ptr.To(int32(443)),
+									StatusCode: ptr.To(301),
 								},
 							},
 						},
@@ -12613,13 +12613,13 @@ func TestDAGInsert(t *testing.T) {
 			objs: []any{
 				s1,
 				sec4,
-				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.TLSCertificateDelegation{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "CertDelagation",
 						Namespace: sec4.Namespace,
 					},
-					Spec: contour_api_v1.TLSCertificateDelegationSpec{
-						Delegations: []contour_api_v1.CertificateDelegation{{
+					Spec: contour_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_v1.CertificateDelegation{{
 							SecretName:       sec4.Name,
 							TargetNamespaces: []string{"*"},
 						}},
@@ -12983,14 +12983,14 @@ func TestDAGInsert(t *testing.T) {
 							CookieRewritePolicies: []CookieRewritePolicy{
 								{
 									Name:     "some-cookie",
-									Path:     ref.To("/foo"),
-									Domain:   ref.To("example.com"),
+									Path:     ptr.To("/foo"),
+									Domain:   ptr.To("example.com"),
 									Secure:   2,
-									SameSite: ref.To("Strict"),
+									SameSite: ptr.To("Strict"),
 								},
 								{
 									Name:     "some-other-cookie",
-									SameSite: ref.To("Lax"),
+									SameSite: ptr.To("Lax"),
 									Secure:   1,
 								},
 							},
@@ -13017,14 +13017,14 @@ func TestDAGInsert(t *testing.T) {
 									CookieRewritePolicies: []CookieRewritePolicy{
 										{
 											Name:     "some-cookie",
-											Path:     ref.To("/foo"),
-											Domain:   ref.To("example.com"),
+											Path:     ptr.To("/foo"),
+											Domain:   ptr.To("example.com"),
 											Secure:   2,
-											SameSite: ref.To("Strict"),
+											SameSite: ptr.To("Strict"),
 										},
 										{
 											Name:     "some-other-cookie",
-											SameSite: ref.To("Lax"),
+											SameSite: ptr.To("Lax"),
 										},
 									},
 								},
@@ -13215,21 +13215,21 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13271,21 +13271,21 @@ func TestDAGInsert(t *testing.T) {
 				sec4,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13302,33 +13302,33 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecretRootNamespace,
-				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.TLSCertificateDelegation{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbackcertdelegation",
 						Namespace: "root",
 					},
-					Spec: contour_api_v1.TLSCertificateDelegationSpec{
-						Delegations: []contour_api_v1.CertificateDelegation{{
+					Spec: contour_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_v1.CertificateDelegation{{
 							SecretName:       "fallbacksecret",
 							TargetNamespaces: []string{"*"},
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13369,33 +13369,33 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecretRootNamespace,
-				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.TLSCertificateDelegation{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbackcertdelegation",
 						Namespace: "root",
 					},
-					Spec: contour_api_v1.TLSCertificateDelegationSpec{
-						Delegations: []contour_api_v1.CertificateDelegation{{
+					Spec: contour_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_v1.CertificateDelegation{{
 							SecretName:       "fallbacksecret",
 							TargetNamespaces: []string{"default"},
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13437,20 +13437,20 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13467,23 +13467,23 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								EnableFallbackCertificate: true,
-								ClientValidation: &contour_api_v1.DownstreamValidation{
+								ClientValidation: &contour_v1.DownstreamValidation{
 									CACertificate: cert1.Name,
 								},
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13500,42 +13500,42 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx-disabled",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "projectcontour.io",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: false,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13587,20 +13587,20 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: sec1.Name,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13642,21 +13642,21 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				s9,
 				fallbackCertificateSecret,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName:                sec1.Name,
 								EnableFallbackCertificate: false,
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
 								Name: "nginx",
 								Port: 80,
 							}},
@@ -13693,20 +13693,20 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with tcpproxy with multiple services, no explicit weights": {
 			objs: []any{
 				s1, s2, s9,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "weighted-tcpproxy",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								Passthrough: true,
 							},
 						},
-						TCPProxy: &contour_api_v1.TCPProxy{
-							Services: []contour_api_v1.Service{
+						TCPProxy: &contour_v1.TCPProxy{
+							Services: []contour_v1.Service{
 								{Name: s1.Name, Port: int(s1.Spec.Ports[0].Port)},
 								{Name: s2.Name, Port: int(s2.Spec.Ports[0].Port)},
 								{Name: s9.Name, Port: int(s9.Spec.Ports[0].Port)},
@@ -13735,20 +13735,20 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with tcpproxy with multiple weighted services": {
 			objs: []any{
 				s1, s2, s9,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "weighted-tcpproxy",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								Passthrough: true,
 							},
 						},
-						TCPProxy: &contour_api_v1.TCPProxy{
-							Services: []contour_api_v1.Service{
+						TCPProxy: &contour_v1.TCPProxy{
+							Services: []contour_v1.Service{
 								{Name: s1.Name, Port: int(s1.Spec.Ports[0].Port), Weight: 1},
 								{Name: s2.Name, Port: int(s2.Spec.Ports[0].Port), Weight: 2},
 								{Name: s9.Name, Port: int(s9.Spec.Ports[0].Port), Weight: 3},
@@ -13782,20 +13782,20 @@ func TestDAGInsert(t *testing.T) {
 		"httpproxy with tcpproxy with multiple services, some weighted, some not": {
 			objs: []any{
 				s1, s2, s9,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "weighted-tcpproxy",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								Passthrough: true,
 							},
 						},
-						TCPProxy: &contour_api_v1.TCPProxy{
-							Services: []contour_api_v1.Service{
+						TCPProxy: &contour_v1.TCPProxy{
+							Services: []contour_v1.Service{
 								{Name: s1.Name, Port: int(s1.Spec.Ports[0].Port), Weight: 1},
 								{Name: s2.Name, Port: int(s2.Spec.Ports[0].Port), Weight: 0},
 								{Name: s9.Name, Port: int(s9.Spec.Ports[0].Port), Weight: 3},
@@ -13899,45 +13899,45 @@ func TestDAGInsert(t *testing.T) {
 }
 
 func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
-	kuardService := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	kuardService := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "projectcontour",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "projectcontour",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	tests := map[string]struct {
-		gateway *gatewayapi_v1beta1.Gateway
+		gateway *gatewayapi_v1.Gateway
 		objs    []any
 		want    []*Listener
 	}{
 		"HTTPProxy attached to HTTP-only Gateway": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -13946,23 +13946,23 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			},
 			objs: []any{
 				kuardService,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-proxy",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "kuard.projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{
+								Conditions: []contour_v1.MatchCondition{
 									{
 										Prefix: "/",
 									},
 								},
-								Services: []contour_api_v1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "kuard",
 										Port: 8080,
@@ -13983,21 +13983,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy attached to Gateway with multiple HTTP listeners": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14005,9 +14005,9 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "http-2",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     81,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14016,23 +14016,23 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			},
 			objs: []any{
 				kuardService,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-proxy",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "kuard.projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{
+								Conditions: []contour_v1.MatchCondition{
 									{
 										Prefix: "/",
 									},
 								},
-								Services: []contour_api_v1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "kuard",
 										Port: 8080,
@@ -14046,21 +14046,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			want: nil,
 		},
 		"HTTPProxy attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14068,13 +14068,13 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
+								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
 					},
@@ -14082,23 +14082,23 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			},
 			objs: []any{
 				kuardService,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-proxy",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "kuard.projectcontour.io",
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{
+								Conditions: []contour_v1.MatchCondition{
 									{
 										Prefix: "/",
 									},
 								},
-								Services: []contour_api_v1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "kuard",
 										Port: 8080,
@@ -14119,21 +14119,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy with TLS attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14141,13 +14141,13 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
+								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
 					},
@@ -14156,26 +14156,26 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			objs: []any{
 				kuardService,
 				sec1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-proxy",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "kuard.projectcontour.io",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: sec1.Name,
 							},
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{
+								Conditions: []contour_v1.MatchCondition{
 									{
 										Prefix: "/",
 									},
 								},
-								Services: []contour_api_v1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "kuard",
 										Port: 8080,
@@ -14202,21 +14202,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy with TLS attached to Gateway with HTTP and HTTPS listener using projectcontour.io/https protocol": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14224,9 +14224,9 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi.ContourHTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14236,26 +14236,26 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			objs: []any{
 				kuardService,
 				sec1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-proxy",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "kuard.projectcontour.io",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: sec1.Name,
 							},
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{
+								Conditions: []contour_v1.MatchCondition{
 									{
 										Prefix: "/",
 									},
 								},
-								Services: []contour_api_v1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "kuard",
 										Port: 8080,
@@ -14282,21 +14282,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"HTTPProxy with TLS attached to Gateway with no HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14306,26 +14306,26 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			objs: []any{
 				kuardService,
 				sec1,
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-proxy",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "kuard.projectcontour.io",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: sec1.Name,
 							},
 						},
-						Routes: []contour_api_v1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Conditions: []contour_api_v1.MatchCondition{
+								Conditions: []contour_v1.MatchCondition{
 									{
 										Prefix: "/",
 									},
 								},
-								Services: []contour_api_v1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "kuard",
 										Port: 8080,
@@ -14340,21 +14340,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 		},
 
 		"Ingress attached to HTTP-only Gateway": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14364,7 +14364,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-ingress",
 					},
@@ -14396,21 +14396,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress attached to Gateway with multiple HTTP listeners": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14418,9 +14418,9 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "http-2",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     81,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14430,7 +14430,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-ingress",
 					},
@@ -14455,21 +14455,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			want: nil,
 		},
 		"Ingress attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14477,13 +14477,13 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
+								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
 					},
@@ -14492,7 +14492,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			objs: []any{
 				kuardService,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-ingress",
 					},
@@ -14524,21 +14524,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress with TLS attached to Gateway with HTTP and HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14546,13 +14546,13 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1beta1.GatewayTLSConfig{
-								Mode: ref.To(gatewayapi_v1.TLSModePassthrough),
+							TLS: &gatewayapi_v1.GatewayTLSConfig{
+								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
 					},
@@ -14562,7 +14562,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				kuardService,
 				sec1,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-ingress",
 					},
@@ -14606,21 +14606,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress with TLS attached to Gateway with HTTP and HTTPS listener using projectcontour.io/https protocol": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14628,9 +14628,9 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 							Name:     "https-1",
 							Protocol: gatewayapi.ContourHTTPSProtocolType,
 							Port:     443,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14641,7 +14641,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				kuardService,
 				sec1,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-ingress",
 					},
@@ -14685,21 +14685,21 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 			),
 		},
 		"Ingress with TLS (with HTTP not allowed) attached to Gateway with no HTTPS listener": {
-			gateway: &gatewayapi_v1beta1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+			gateway: &gatewayapi_v1.Gateway{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: "projectcontour",
 					Name:      "contour",
 				},
-				Spec: gatewayapi_v1beta1.GatewaySpec{
+				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: "contour-gc",
-					Listeners: []gatewayapi_v1beta1.Listener{
+					Listeners: []gatewayapi_v1.Listener{
 						{
 							Name:     "http-1",
 							Protocol: gatewayapi_v1.HTTPProtocolType,
 							Port:     80,
-							AllowedRoutes: &gatewayapi_v1beta1.AllowedRoutes{
-								Namespaces: &gatewayapi_v1beta1.RouteNamespaces{
-									From: ref.To(gatewayapi_v1.NamespacesFromAll),
+							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
+								Namespaces: &gatewayapi_v1.RouteNamespaces{
+									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
 						},
@@ -14710,7 +14710,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				kuardService,
 				sec1,
 				&networking_v1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: "projectcontour",
 						Name:      "kuard-ingress",
 						Annotations: map[string]string{
@@ -14747,11 +14747,11 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			gc := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+			gc := &gatewayapi_v1.GatewayClass{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour-gc",
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
+				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: "projectcontour.io/gateway-controller",
 				},
 			}
@@ -14826,17 +14826,17 @@ func ingressrulev1value(backend *networking_v1.IngressBackend) networking_v1.Ing
 }
 
 func TestDAGRootNamespaces(t *testing.T) {
-	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "allowed1",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -14845,17 +14845,17 @@ func TestDAGRootNamespaces(t *testing.T) {
 	}
 
 	// proxy2 is like proxy1, but in a different namespace
-	proxy2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxy2 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "allowed2",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example2.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Services: []contour_api_v1.Service{{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -14863,23 +14863,23 @@ func TestDAGRootNamespaces(t *testing.T) {
 		},
 	}
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "allowed1",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080)},
 		},
 	}
 
-	s3 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s3 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "allowed2",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080)},
 		},
 	}
 
@@ -14980,7 +14980,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 	type testcase struct {
 		objs          []any
 		wantListeners []*Listener
-		wantStatus    map[types.NamespacedName]contour_api_v1.DetailedCondition
+		wantStatus    map[types.NamespacedName]contour_v1.DetailedCondition
 	}
 
 	run := func(t *testing.T, name string, tc testcase) {
@@ -15012,7 +15012,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 			}
 			assert.Equal(t, want, gotListeners)
 
-			gotStatus := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
+			gotStatus := make(map[types.NamespacedName]contour_v1.DetailedCondition)
 			for _, pu := range dag.StatusCache.GetProxyUpdates() {
 				gotStatus[pu.Fullname] = *pu.Conditions[status.ValidCondition]
 			}
@@ -15021,39 +15021,39 @@ func TestHTTPProxyConficts(t *testing.T) {
 		})
 	}
 
-	existingService1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	existingService1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "existing-service-1",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
-	existingService2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	existingService2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "existing-service-2",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	run(t, "root proxy with no route conditions refers to a missing service", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Routes: []contour_api_v1.Route{{
-						Services: []contour_api_v1.Service{{
+					Routes: []contour_v1.Route{{
+						Services: []contour_v1.Service{{
 							Name: "missing-service",
 							Port: 8080,
 						}},
@@ -15070,24 +15070,24 @@ func TestHTTPProxyConficts(t *testing.T) {
 				),
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+				WithError(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
 		},
 	})
 
 	run(t, "root proxy with no route conditions refers to a missing include", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Includes: []contour_api_v1.Include{{
+					Includes: []contour_v1.Include{{
 						Name:      "missing-httpproxy",
 						Namespace: "default",
 					}},
@@ -15095,25 +15095,25 @@ func TestHTTPProxyConficts(t *testing.T) {
 			},
 		},
 		wantListeners: listeners(), // No listeners and direct response since we have no route conditions to program.
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-httpproxy not found`),
+				WithError(contour_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-httpproxy not found`),
 		},
 	})
 
 	run(t, "root proxy with prefix route condition refers to a missing include", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Includes: []contour_api_v1.Include{{
-						Conditions: []contour_api_v1.MatchCondition{{
+					Includes: []contour_v1.Include{{
+						Conditions: []contour_v1.MatchCondition{{
 							Prefix: "/",
 						}},
 						Name:      "missing-child-proxy",
@@ -15131,33 +15131,33 @@ func TestHTTPProxyConficts(t *testing.T) {
 				),
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-child-proxy not found`),
+				WithError(contour_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-child-proxy not found`),
 		},
 	})
 
 	run(t, "root proxy refers to two services, one is missing", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Routes: []contour_api_v1.Route{
+					Routes: []contour_v1.Route{
 						{
-							Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
-							Services: []contour_api_v1.Service{{
+							Conditions: []contour_v1.MatchCondition{{Prefix: "/"}},
+							Services: []contour_v1.Service{{
 								Name: "missing-service",
 								Port: 8080,
 							}},
 						}, {
-							Conditions: []contour_api_v1.MatchCondition{{Prefix: "/valid"}},
-							Services: []contour_api_v1.Service{{
+							Conditions: []contour_v1.MatchCondition{{Prefix: "/valid"}},
+							Services: []contour_v1.Service{{
 								Name: "existing-service-1",
 								Port: 8080,
 							}},
@@ -15178,27 +15178,27 @@ func TestHTTPProxyConficts(t *testing.T) {
 				),
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+				WithError(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
 		},
 	})
 
 	run(t, "root proxy refers to three services with weights, one is missing", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Routes: []contour_api_v1.Route{
+					Routes: []contour_v1.Route{
 						{
-							Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
-							Services: []contour_api_v1.Service{{
+							Conditions: []contour_v1.MatchCondition{{Prefix: "/"}},
+							Services: []contour_v1.Service{{
 								Name:   "missing-service",
 								Port:   8080,
 								Weight: 50,
@@ -15237,31 +15237,31 @@ func TestHTTPProxyConficts(t *testing.T) {
 				),
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+				WithError(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
 		},
 	})
 
 	run(t, "root proxy with two includes, one refers to a missing child proxy", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Includes: []contour_api_v1.Include{{
-						Conditions: []contour_api_v1.MatchCondition{{
+					Includes: []contour_v1.Include{{
+						Conditions: []contour_v1.MatchCondition{{
 							Prefix: "/",
 						}},
 						Name:      "missing-child-proxy",
 						Namespace: "default",
 					}, {
-						Conditions: []contour_api_v1.MatchCondition{{
+						Conditions: []contour_v1.MatchCondition{{
 							Prefix: "/valid",
 						}},
 						Name:      "valid-child-proxy",
@@ -15269,14 +15269,14 @@ func TestHTTPProxyConficts(t *testing.T) {
 					}},
 				},
 			},
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "valid-child-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					Routes: []contour_api_v1.Route{{
-						Services: []contour_api_v1.Service{{
+				Spec: contour_v1.HTTPProxySpec{
+					Routes: []contour_v1.Route{{
+						Services: []contour_v1.Service{{
 							Name: "existing-service-1",
 							Port: 8080,
 						}},
@@ -15297,39 +15297,39 @@ func TestHTTPProxyConficts(t *testing.T) {
 				),
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "valid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-child-proxy not found`),
+				WithError(contour_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-child-proxy not found`),
 		},
 	})
 
 	run(t, "root proxy includes child proxy that refers to a missing service", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Includes: []contour_api_v1.Include{{
+					Includes: []contour_v1.Include{{
 						Name:       "invalid-child-proxy",
 						Namespace:  "default",
-						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/missing"}},
+						Conditions: []contour_v1.MatchCondition{{Prefix: "/missing"}},
 					}},
 				},
 			},
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "invalid-child-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					Routes: []contour_api_v1.Route{{
-						Services: []contour_api_v1.Service{{
+				Spec: contour_v1.HTTPProxySpec{
+					Routes: []contour_v1.Route{{
+						Services: []contour_v1.Service{{
 							Name: "missing-service",
 							Port: 8080,
 						}},
@@ -15346,57 +15346,57 @@ func TestHTTPProxyConficts(t *testing.T) {
 				),
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "invalid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+				WithError(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
 			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
 		},
 	})
 
 	run(t, "root proxy includes two child proxies, one refers to a missing service", testcase{
 		objs: []any{
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "root-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					VirtualHost: &contour_api_v1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: "example.com",
 					},
-					Includes: []contour_api_v1.Include{{
+					Includes: []contour_v1.Include{{
 						Name:       "invalid-child-proxy",
 						Namespace:  "default",
-						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/missing"}},
+						Conditions: []contour_v1.MatchCondition{{Prefix: "/missing"}},
 					}, {
 						Name:       "valid-child-proxy",
 						Namespace:  "default",
-						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/existing"}},
+						Conditions: []contour_v1.MatchCondition{{Prefix: "/existing"}},
 					}},
 				},
 			},
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "invalid-child-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					Routes: []contour_api_v1.Route{{
-						Services: []contour_api_v1.Service{{
+				Spec: contour_v1.HTTPProxySpec{
+					Routes: []contour_v1.Route{{
+						Services: []contour_v1.Service{{
 							Name: "missing-service",
 							Port: 8080,
 						}},
 					}},
 				},
 			},
-			&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "valid-child-proxy",
 					Namespace: "default",
 				},
-				Spec: contour_api_v1.HTTPProxySpec{
-					Routes: []contour_api_v1.Route{{
-						Services: []contour_api_v1.Service{{
+				Spec: contour_v1.HTTPProxySpec{
+					Routes: []contour_v1.Route{{
+						Services: []contour_v1.Service{{
 							Name: "existing-service-1",
 							Port: 8080,
 						}},
@@ -15416,9 +15416,9 @@ func TestHTTPProxyConficts(t *testing.T) {
 				},
 			},
 		),
-		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: "invalid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+				WithError(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
 			{Name: "valid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
 			{Name: "root-proxy", Namespace: "default"}:        fixture.NewValidCondition().Valid(),
 		},
@@ -15428,7 +15428,7 @@ func TestHTTPProxyConficts(t *testing.T) {
 func TestDefaultHeadersPolicies(t *testing.T) {
 	// i2V1 is functionally identical to i1V1
 	i2V1 := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
@@ -15439,20 +15439,20 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		},
 	}
 
-	proxyMultipleBackends := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+	proxyMultipleBackends := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
 		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []contour_api_v1.Service{{
+				Services: []contour_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}, {
@@ -15463,24 +15463,24 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 		},
 	}
 
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
 	// s2 is like s1 but with a different name
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
 		},
 	}
 
@@ -15818,11 +15818,11 @@ func clustersWeight(services ...*Service) (c []*Cluster) {
 	return c
 }
 
-func service(s *v1.Service) *Service {
+func service(s *core_v1.Service) *Service {
 	return weightedService(s, 1)
 }
 
-func appProtcolService(s *v1.Service, protocol string, portIndex ...int) *Service {
+func appProtcolService(s *core_v1.Service, protocol string, portIndex ...int) *Service {
 	idx := 0
 	if len(portIndex) > 0 {
 		idx = portIndex[0]
@@ -15839,7 +15839,7 @@ func appProtcolService(s *v1.Service, protocol string, portIndex ...int) *Servic
 	}
 }
 
-func weightedService(s *v1.Service, weight uint32) *Service {
+func weightedService(s *core_v1.Service, weight uint32) *Service {
 	return &Service{
 		Weighted: WeightedService{
 			Weight:           weight,
@@ -15851,7 +15851,7 @@ func weightedService(s *v1.Service, weight uint32) *Service {
 	}
 }
 
-func grpcService(s *v1.Service, protocol string) *Service {
+func grpcService(s *core_v1.Service, protocol string) *Service {
 	return &Service{
 		Protocol: protocol,
 		Weighted: WeightedService{
@@ -15864,11 +15864,11 @@ func grpcService(s *v1.Service, protocol string) *Service {
 	}
 }
 
-func healthService(s *v1.Service) *Service {
+func healthService(s *core_v1.Service) *Service {
 	return weightedHealthService(s, 1)
 }
 
-func weightedHealthService(s *v1.Service, weight uint32) *Service {
+func weightedHealthService(s *core_v1.Service, weight uint32) *Service {
 	return &Service{
 		Weighted: WeightedService{
 			Weight:           weight,
@@ -15880,7 +15880,7 @@ func weightedHealthService(s *v1.Service, weight uint32) *Service {
 	}
 }
 
-func clustermap(services ...*v1.Service) []*Cluster {
+func clustermap(services ...*core_v1.Service) []*Cluster {
 	var c []*Cluster
 	for _, s := range services {
 		c = append(c, &Cluster{
@@ -15890,21 +15890,21 @@ func clustermap(services ...*v1.Service) []*Cluster {
 	return c
 }
 
-func secret(s *v1.Secret) *Secret {
+func secret(s *core_v1.Secret) *Secret {
 	return &Secret{
 		Object:         s,
 		ValidTLSSecret: &SecretValidationStatus{},
 	}
 }
 
-func caSecret(s *v1.Secret) *Secret {
+func caSecret(s *core_v1.Secret) *Secret {
 	return &Secret{
 		Object:        s,
 		ValidCASecret: &SecretValidationStatus{},
 	}
 }
 
-func crlSecret(s *v1.Secret) *Secret {
+func crlSecret(s *core_v1.Secret) *Secret {
 	return &Secret{
 		Object:         s,
 		ValidCRLSecret: &SecretValidationStatus{},
@@ -15926,7 +15926,7 @@ func virtualhost(name string, first *Route, rest ...*Route) *VirtualHost {
 	}
 }
 
-func securevirtualhost(name string, sec *v1.Secret, first *Route, rest ...*Route) *SecureVirtualHost {
+func securevirtualhost(name string, sec *core_v1.Secret, first *Route, rest ...*Route) *SecureVirtualHost {
 	return &SecureVirtualHost{
 		VirtualHost: VirtualHost{
 			Name:   name,
@@ -15993,29 +15993,29 @@ func makeHTTPRouteTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRo
 	httpRouteTimeouts := &gatewayapi_v1.HTTPRouteTimeouts{}
 
 	if request != "" {
-		httpRouteTimeouts.Request = ref.To(gatewayapi_v1.Duration(request))
+		httpRouteTimeouts.Request = ptr.To(gatewayapi_v1.Duration(request))
 	}
 	if backendRequest != "" {
-		httpRouteTimeouts.BackendRequest = ref.To(gatewayapi_v1.Duration(backendRequest))
+		httpRouteTimeouts.BackendRequest = ptr.To(gatewayapi_v1.Duration(backendRequest))
 	}
 
 	return httpRouteTimeouts
 }
 
-func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1beta1.HTTPRoute {
-	return &gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1.HTTPRoute {
+	return &gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
-			Hostnames: []gatewayapi_v1beta1.Hostname{
+			Hostnames: []gatewayapi_v1.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
 				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 				Timeouts:    makeHTTPRouteTimeouts(request, backendRequest),
@@ -16024,25 +16024,25 @@ func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1bet
 	}
 }
 
-func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1beta1.HTTPRouteRule, additionalRules ...gatewayapi_v1beta1.HTTPRouteRule) *gatewayapi_v1beta1.HTTPRoute {
-	rules := []gatewayapi_v1beta1.HTTPRouteRule{firstRule}
+func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1.HTTPRouteRule, additionalRules ...gatewayapi_v1.HTTPRouteRule) *gatewayapi_v1.HTTPRoute {
+	rules := []gatewayapi_v1.HTTPRouteRule{firstRule}
 	if len(additionalRules) > 0 {
 		rules = append(rules, additionalRules...)
 	}
-	var hostnames []gatewayapi_v1beta1.Hostname
+	var hostnames []gatewayapi_v1.Hostname
 	if hostname != "" {
-		hostnames = []gatewayapi_v1beta1.Hostname{
-			gatewayapi_v1beta1.Hostname(hostname),
+		hostnames = []gatewayapi_v1.Hostname{
+			gatewayapi_v1.Hostname(hostname),
 		}
 	}
-	return &gatewayapi_v1beta1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+	return &gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
 			Hostnames: hostnames,
 			Rules:     rules,
@@ -16050,8 +16050,8 @@ func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1beta
 	}
 }
 
-func makeHTTPRouteRule(pathType gatewayapi_v1beta1.PathMatchType, pathValue, serviceName string, port int, weight int32) gatewayapi_v1beta1.HTTPRouteRule {
-	return gatewayapi_v1beta1.HTTPRouteRule{
+func makeHTTPRouteRule(pathType gatewayapi_v1.PathMatchType, pathValue, serviceName string, port int, weight int32) gatewayapi_v1.HTTPRouteRule {
+	return gatewayapi_v1.HTTPRouteRule{
 		Matches:     gatewayapi.HTTPRouteMatch(pathType, pathValue),
 		BackendRefs: gatewayapi.HTTPBackendRef(serviceName, port, weight),
 	}

@@ -17,24 +17,25 @@ import (
 	"sort"
 	"strings"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
-	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_network_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+
 	"github.com/projectcontour/contour/internal/dag"
 )
 
 // Sorts the given route configuration values by name.
-type routeConfigurationSorter []*envoy_route_v3.RouteConfiguration
+type routeConfigurationSorter []*envoy_config_route_v3.RouteConfiguration
 
 func (s routeConfigurationSorter) Len() int           { return len(s) }
 func (s routeConfigurationSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s routeConfigurationSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 // Sorts the given host values by name.
-type virtualHostSorter []*envoy_route_v3.VirtualHost
+type virtualHostSorter []*envoy_config_route_v3.VirtualHost
 
 func (s virtualHostSorter) Len() int           { return len(s) }
 func (s virtualHostSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
@@ -260,7 +261,7 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 
 	// HeaderMatchConditions are equal length: compare item by item.
 	pair := make([]dag.HeaderMatchCondition, 2)
-	for i := 0; i < len(lhsHeaderMatchConditions); i++ {
+	for i := range len(lhsHeaderMatchConditions) {
 		pair[0] = lhsHeaderMatchConditions[i]
 		pair[1] = rhsHeaderMatchConditions[i]
 
@@ -270,7 +271,7 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 	}
 
 	// QueryParamMatchConditions are equal length: compare item by item.
-	for i := 0; i < len(lhs.QueryParamMatchConditions); i++ {
+	for i := range len(lhs.QueryParamMatchConditions) {
 		qPair := make([]dag.QueryParamMatchCondition, 2)
 		qPair[0] = lhs.QueryParamMatchConditions[i]
 		qPair[1] = rhs.QueryParamMatchConditions[i]
@@ -367,21 +368,21 @@ func (s routeSorter) Less(i, j int) bool {
 }
 
 // Sorts clusters by name.
-type clusterSorter []*envoy_cluster_v3.Cluster
+type clusterSorter []*envoy_config_cluster_v3.Cluster
 
 func (s clusterSorter) Len() int           { return len(s) }
 func (s clusterSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s clusterSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 // Sorts cluster load assignments by name.
-type clusterLoadAssignmentSorter []*envoy_endpoint_v3.ClusterLoadAssignment
+type clusterLoadAssignmentSorter []*envoy_config_endpoint_v3.ClusterLoadAssignment
 
 func (s clusterLoadAssignmentSorter) Len() int           { return len(s) }
 func (s clusterLoadAssignmentSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s clusterLoadAssignmentSorter) Less(i, j int) bool { return s[i].ClusterName < s[j].ClusterName }
 
 // Sorts the weighted clusters by name, then by weight.
-type httpWeightedClusterSorter []*envoy_route_v3.WeightedCluster_ClusterWeight
+type httpWeightedClusterSorter []*envoy_config_route_v3.WeightedCluster_ClusterWeight
 
 func (s httpWeightedClusterSorter) Len() int      { return len(s) }
 func (s httpWeightedClusterSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -394,7 +395,7 @@ func (s httpWeightedClusterSorter) Less(i, j int) bool {
 }
 
 // Sorts the weighted clusters by name, then by weight.
-type tcpWeightedClusterSorter []*tcp.TcpProxy_WeightedCluster_ClusterWeight
+type tcpWeightedClusterSorter []*envoy_filter_network_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight
 
 func (s tcpWeightedClusterSorter) Len() int      { return len(s) }
 func (s tcpWeightedClusterSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -407,14 +408,14 @@ func (s tcpWeightedClusterSorter) Less(i, j int) bool {
 }
 
 // Listeners sorts the listeners by name.
-type listenerSorter []*envoy_listener_v3.Listener
+type listenerSorter []*envoy_config_listener_v3.Listener
 
 func (s listenerSorter) Len() int           { return len(s) }
 func (s listenerSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s listenerSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 // FilterChains sorts the filter chains by the first server name in the chain match.
-type filterChainSorter []*envoy_listener_v3.FilterChain
+type filterChainSorter []*envoy_config_listener_v3.FilterChain
 
 func (s filterChainSorter) Len() int      { return len(s) }
 func (s filterChainSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -436,7 +437,7 @@ func (s filterChainSorter) Less(i, j int) bool {
 }
 
 // Sorts the secret values by name.
-type secretSorter []*envoy_tls_v3.Secret
+type secretSorter []*envoy_transport_socket_tls_v3.Secret
 
 func (s secretSorter) Len() int           { return len(s) }
 func (s secretSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
@@ -447,11 +448,11 @@ func (s secretSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 // value.
 func For(v any) sort.Interface {
 	switch v := v.(type) {
-	case []*envoy_tls_v3.Secret:
+	case []*envoy_transport_socket_tls_v3.Secret:
 		return secretSorter(v)
-	case []*envoy_route_v3.RouteConfiguration:
+	case []*envoy_config_route_v3.RouteConfiguration:
 		return routeConfigurationSorter(v)
-	case []*envoy_route_v3.VirtualHost:
+	case []*envoy_config_route_v3.VirtualHost:
 		return virtualHostSorter(v)
 	case []*dag.Route:
 		return routeSorter(v)
@@ -459,17 +460,17 @@ func For(v any) sort.Interface {
 		return headerMatchConditionSorter(v)
 	case []dag.QueryParamMatchCondition:
 		return queryParamMatchConditionSorter(v)
-	case []*envoy_cluster_v3.Cluster:
+	case []*envoy_config_cluster_v3.Cluster:
 		return clusterSorter(v)
-	case []*envoy_endpoint_v3.ClusterLoadAssignment:
+	case []*envoy_config_endpoint_v3.ClusterLoadAssignment:
 		return clusterLoadAssignmentSorter(v)
-	case []*envoy_route_v3.WeightedCluster_ClusterWeight:
+	case []*envoy_config_route_v3.WeightedCluster_ClusterWeight:
 		return httpWeightedClusterSorter(v)
-	case []*tcp.TcpProxy_WeightedCluster_ClusterWeight:
+	case []*envoy_filter_network_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight:
 		return tcpWeightedClusterSorter(v)
-	case []*envoy_listener_v3.Listener:
+	case []*envoy_config_listener_v3.Listener:
 		return listenerSorter(v)
-	case []*envoy_listener_v3.FilterChain:
+	case []*envoy_config_listener_v3.FilterChain:
 		return filterChainSorter(v)
 	default:
 		return nil

@@ -27,7 +27,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -44,7 +44,7 @@ metadata:
   name: projectcontour
 ---
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour
@@ -73,7 +73,7 @@ This command creates:
 - Envoy DaemonSet / Service
 - Contour ConfigMap
 
-Update the Contour configmap to enable Gateway API processing by specifying a gateway controller name, and restart Contour to pick up the config change:
+Update the Contour configmap to enable Gateway API processing by specifying a gateway, and restart Contour to pick up the config change:
 
 ```shell
 kubectl apply -f - <<EOF
@@ -85,7 +85,9 @@ metadata:
 data:
   contour.yaml: |
     gateway:
-      controllerName: projectcontour.io/gateway-controller
+      gatewayRef:
+        name: contour
+        namespace: projectcontour
 EOF
 
 kubectl -n projectcontour rollout restart deployment/contour
@@ -113,7 +115,7 @@ Create a GatewayClass:
 ```shell
 kubectl apply -f - <<EOF
 kind: GatewayClass
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
 spec:
@@ -126,7 +128,7 @@ Create a Gateway:
 ```shell
 kubectl apply -f - <<EOF
 kind: Gateway
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: contour
   namespace: projectcontour

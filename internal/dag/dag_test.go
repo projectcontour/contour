@@ -18,7 +18,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -78,7 +78,7 @@ func TestPeerValidationContext(t *testing.T) {
 	pvc1 := PeerValidationContext{
 		CACertificates: []*Secret{
 			{
-				Object: &v1.Secret{
+				Object: &core_v1.Secret{
 					Data: map[string][]byte{
 						CACertificateKey: []byte("cacert"),
 					},
@@ -92,21 +92,21 @@ func TestPeerValidationContext(t *testing.T) {
 	pvc4 := PeerValidationContext{
 		CACertificates: []*Secret{
 			{
-				Object: &v1.Secret{
+				Object: &core_v1.Secret{
 					Data: map[string][]byte{
 						CACertificateKey: []byte("-cacert-"),
 					},
 				},
 			},
 			{
-				Object: &v1.Secret{
+				Object: &core_v1.Secret{
 					Data: map[string][]byte{
 						CACertificateKey: []byte("-cacert2-"),
 					},
 				},
 			},
 			{
-				Object: &v1.Secret{
+				Object: &core_v1.Secret{
 					Data: map[string][]byte{},
 				},
 			},

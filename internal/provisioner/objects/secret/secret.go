@@ -18,14 +18,15 @@ import (
 	"fmt"
 	"strings"
 
+	core_v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/pkg/certs"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // generatedByVersionAnnotation is the key for the annotation that stores
@@ -107,7 +108,7 @@ func tlsSecretsExist(contour *model.Contour, cli client.Client, generatedByVersi
 		contour.ContourCertsSecretName(),
 		contour.EnvoyCertsSecretName(),
 	} {
-		s := &corev1.Secret{}
+		s := &core_v1.Secret{}
 
 		key := client.ObjectKey{
 			Namespace: contour.Namespace,
@@ -131,8 +132,8 @@ func EnsureXDSSecretsDeleted(ctx context.Context, cli client.Client, contour *mo
 		contour.ContourCertsSecretName(),
 		contour.EnvoyCertsSecretName(),
 	} {
-		s := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		s := &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: contour.Namespace,
 				Name:      secretName,
 			},

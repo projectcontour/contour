@@ -14,12 +14,12 @@
 package config
 
 import (
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 // DefaultFields are fields that will be included by default when JSON logging is enabled.
-var DefaultFields = AccessLogFields(contour_api_v1alpha1.DefaultAccessLogJSONFields)
+var DefaultFields = AccessLogFields(contour_v1alpha1.DefaultAccessLogJSONFields)
 
 // DEFAULT_ACCESS_LOG_TYPE is the default access log format.
 // nolint:revive
-const DEFAULT_ACCESS_LOG_TYPE AccessLogType = AccessLogType(contour_api_v1alpha1.DefaultAccessLogType)
+const DEFAULT_ACCESS_LOG_TYPE AccessLogType = AccessLogType(contour_v1alpha1.DefaultAccessLogType)

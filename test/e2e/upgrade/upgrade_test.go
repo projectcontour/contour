@@ -26,16 +26,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 var (
@@ -84,23 +84,23 @@ var _ = Describe("When upgrading", func() {
 			Specify("applications remain routable after the upgrade", func() {
 				By("deploying an app")
 				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
-				p := &contourv1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				p := &contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "echo",
 					},
-					Spec: contourv1.HTTPProxySpec{
-						VirtualHost: &contourv1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: appHost,
 						},
-						Routes: []contourv1.Route{
+						Routes: []contour_v1.Route{
 							{
-								Services: []contourv1.Service{
+								Services: []contour_v1.Service{
 									{
 										Name: "echo",
 										Port: 80,
-										ResponseHeadersPolicy: &contourv1.HeadersPolicy{
-											Set: []contourv1.HeaderValue{
+										ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+											Set: []contour_v1.HeaderValue{
 												{
 													Name:  "X-Envoy-Response-Flags",
 													Value: "%RESPONSE_FLAGS%",
@@ -147,12 +147,12 @@ var _ = Describe("When upgrading", func() {
 
 			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
-			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1.GatewayClass{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: gatewayClassName,
 				},
-				Spec: gatewayapi_v1beta1.GatewayClassSpec{
-					ControllerName: gatewayapi_v1beta1.GatewayController("projectcontour.io/gateway-controller"),
+				Spec: gatewayapi_v1.GatewayClassSpec{
+					ControllerName: gatewayapi_v1.GatewayController("projectcontour.io/gateway-controller"),
 				},
 			}, e2e.GatewayClassAccepted)
 
@@ -163,8 +163,8 @@ var _ = Describe("When upgrading", func() {
 		AfterEach(func() {
 			require.NoError(f.T(), f.Provisioner.DeleteResourcesForInclusterProvisioner())
 
-			gc := &gatewayapi_v1beta1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
+			gc := &gatewayapi_v1.GatewayClass{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: gatewayClassName,
 				},
 			}
@@ -178,23 +178,23 @@ var _ = Describe("When upgrading", func() {
 
 				appHost := "upgrade.provisioner.projectcontour.io"
 
-				gateway, ok := f.CreateGatewayAndWaitFor(&gatewayapi_v1beta1.Gateway{
-					ObjectMeta: metav1.ObjectMeta{
+				gateway, ok := f.CreateGatewayAndWaitFor(&gatewayapi_v1.Gateway{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "upgrade-gateway",
 					},
-					Spec: gatewayapi_v1beta1.GatewaySpec{
+					Spec: gatewayapi_v1.GatewaySpec{
 						GatewayClassName: gatewayClassName,
-						Listeners: []gatewayapi_v1beta1.Listener{
+						Listeners: []gatewayapi_v1.Listener{
 							{
 								Name:     "http",
-								Port:     gatewayapi_v1beta1.PortNumber(80),
+								Port:     gatewayapi_v1.PortNumber(80),
 								Protocol: gatewayapi_v1.HTTPProtocolType,
-								Hostname: ref.To(gatewayapi_v1beta1.Hostname(appHost)),
+								Hostname: ptr.To(gatewayapi_v1.Hostname(appHost)),
 							},
 						},
 					},
-				}, func(gw *gatewayapi_v1beta1.Gateway) bool {
+				}, func(gw *gatewayapi_v1.Gateway) bool {
 					return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
 				})
 				require.True(t, ok)
@@ -204,34 +204,34 @@ var _ = Describe("When upgrading", func() {
 
 				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 
-				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1beta1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
+				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "echo",
 					},
-					Spec: gatewayapi_v1beta1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1beta1.ParentReference{
-								{Name: gatewayapi_v1beta1.ObjectName(gateway.Name)},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
+								{Name: gatewayapi_v1.ObjectName(gateway.Name)},
 							},
 						},
-						Rules: []gatewayapi_v1beta1.HTTPRouteRule{
+						Rules: []gatewayapi_v1.HTTPRouteRule{
 							{
-								BackendRefs: []gatewayapi_v1beta1.HTTPBackendRef{
+								BackendRefs: []gatewayapi_v1.HTTPBackendRef{
 									{
-										BackendRef: gatewayapi_v1beta1.BackendRef{
-											BackendObjectReference: gatewayapi_v1beta1.BackendObjectReference{
-												Name: gatewayapi_v1beta1.ObjectName("echo"),
-												Port: ref.To(gatewayapi_v1beta1.PortNumber(80)),
+										BackendRef: gatewayapi_v1.BackendRef{
+											BackendObjectReference: gatewayapi_v1.BackendObjectReference{
+												Name: gatewayapi_v1.ObjectName("echo"),
+												Port: ptr.To(gatewayapi_v1.PortNumber(80)),
 											},
 										},
 									},
 								},
-								Filters: []gatewayapi_v1beta1.HTTPRouteFilter{
+								Filters: []gatewayapi_v1.HTTPRouteFilter{
 									{
 										Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
-										ResponseHeaderModifier: &gatewayapi_v1beta1.HTTPHeaderFilter{
-											Set: []gatewayapi_v1beta1.HTTPHeader{
+										ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+											Set: []gatewayapi_v1.HTTPHeader{
 												{
 													Name:  gatewayapi_v1.HTTPHeaderName("X-Envoy-Response-Flags"),
 													Value: "%RESPONSE_FLAGS%",
@@ -255,8 +255,8 @@ var _ = Describe("When upgrading", func() {
 				require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
 
 				By("waiting for Gateway's Contour deployment to upgrade")
-				deployment := &appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
+				deployment := &apps_v1.Deployment{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      fmt.Sprintf("contour-%s", gateway.Name),
 					},
@@ -265,8 +265,8 @@ var _ = Describe("When upgrading", func() {
 				require.NoError(t, e2e.WaitForContourDeploymentUpdated(deployment, f.Client, os.Getenv("CONTOUR_E2E_IMAGE")))
 
 				By("waiting for Gateway's Envoy daemonset to upgrade")
-				daemonset := &appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{
+				daemonset := &apps_v1.DaemonSet{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      fmt.Sprintf("envoy-%s", gateway.Name),
 					},

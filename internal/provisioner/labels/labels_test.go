@@ -16,8 +16,9 @@ package labels
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
 func TestAnyExist(t *testing.T) {

@@ -23,16 +23,17 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_v1 "k8s.io/api/apps/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 func testInvalidCookieRewriteFields(namespace string) {
@@ -48,24 +49,24 @@ func testInvalidCookieRewriteFields(namespace string) {
 		}, controlChars...)
 
 		for _, c := range invalidNameChars {
-			p := &contourv1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			p := &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      fmt.Sprintf("invalid-cookie-name-%d", c),
 				},
-				Spec: contourv1.HTTPProxySpec{
-					VirtualHost: &contourv1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: fmt.Sprintf("invalid-cookie-name-%d.projectcontour.io", c),
 					},
-					Routes: []contourv1.Route{
+					Routes: []contour_v1.Route{
 						{
-							CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+							CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 								{
 									Name:        fmt.Sprintf("invalid%cchar", c),
-									PathRewrite: &contourv1.CookiePathRewrite{Value: "/foo"},
+									PathRewrite: &contour_v1.CookiePathRewrite{Value: "/foo"},
 								},
 							},
-							Services: []contourv1.Service{
+							Services: []contour_v1.Service{
 								{
 									Name: "echo",
 									Port: 80,
@@ -81,24 +82,24 @@ func testInvalidCookieRewriteFields(namespace string) {
 		// ;, DEL, and control chars.
 		invalidPathChars := append([]rune{';', 127}, controlChars...)
 		for _, c := range invalidPathChars {
-			p := &contourv1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			p := &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      fmt.Sprintf("invalid-path-%d", c),
 				},
-				Spec: contourv1.HTTPProxySpec{
-					VirtualHost: &contourv1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: fmt.Sprintf("invalid-path-%d.projectcontour.io", c),
 					},
-					Routes: []contourv1.Route{
+					Routes: []contour_v1.Route{
 						{
-							CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+							CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 								{
 									Name:        "invalidpath",
-									PathRewrite: &contourv1.CookiePathRewrite{Value: fmt.Sprintf("/invalid%cpath", c)},
+									PathRewrite: &contour_v1.CookiePathRewrite{Value: fmt.Sprintf("/invalid%cpath", c)},
 								},
 							},
-							Services: []contourv1.Service{
+							Services: []contour_v1.Service{
 								{
 									Name: "echo",
 									Port: 80,
@@ -115,26 +116,26 @@ func testInvalidCookieRewriteFields(namespace string) {
 			"*", "*.foo.com", "invalid.char&.com",
 		}
 		for i, d := range invalidDomains {
-			p := &contourv1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+			p := &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      fmt.Sprintf("invalid-domain-%d", i),
 				},
-				Spec: contourv1.HTTPProxySpec{
-					VirtualHost: &contourv1.VirtualHost{
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
 						Fqdn: fmt.Sprintf("invalid-domain-%d.projectcontour.io", i),
 					},
-					Routes: []contourv1.Route{
+					Routes: []contour_v1.Route{
 						{
-							CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+							CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 								{
 									Name: "invaliddomain",
-									DomainRewrite: &contourv1.CookieDomainRewrite{
+									DomainRewrite: &contour_v1.CookieDomainRewrite{
 										Value: d,
 									},
 								},
 							},
-							Services: []contourv1.Service{
+							Services: []contour_v1.Service{
 								{
 									Name: "echo",
 									Port: 80,
@@ -147,24 +148,24 @@ func testInvalidCookieRewriteFields(namespace string) {
 			require.Error(f.T(), f.Client.Create(context.TODO(), p), "expected domain rewrite %q to be invalid", d)
 		}
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "invalid-samesite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "invalid-samesite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:     "invalid-samesite",
-								SameSite: ref.To("Invalid"),
+								SameSite: ptr.To("Invalid"),
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -183,21 +184,21 @@ func testAppCookieRewrite(namespace string) {
 		deployEchoServer(f.T(), f.Client, namespace, "echo")
 		deployEchoServer(f.T(), f.Client, namespace, "echo-other")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "app-cookie-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "app-cookie-rewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/no-rewrite"},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -205,19 +206,19 @@ func testAppCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/no-attributes"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:          "no-attributes",
-								PathRewrite:   &contourv1.CookiePathRewrite{Value: "/foo"},
-								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "foo.com"},
-								Secure:        ref.To(true),
-								SameSite:      ref.To("Strict"),
+								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/foo"},
+								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "foo.com"},
+								Secure:        ptr.To(true),
+								SameSite:      ptr.To("Strict"),
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -225,19 +226,19 @@ func testAppCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/rewrite-all"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:          "rewrite-all",
-								PathRewrite:   &contourv1.CookiePathRewrite{Value: "/ra"},
-								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "ra.com"},
-								Secure:        ref.To(false),
-								SameSite:      ref.To("Lax"),
+								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/ra"},
+								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "ra.com"},
+								Secure:        ptr.To(false),
+								SameSite:      ptr.To("Lax"),
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -245,16 +246,16 @@ func testAppCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/rewrite-some"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:          "rewrite-some",
-								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "rs.com"},
+								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "rs.com"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -262,20 +263,20 @@ func testAppCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/multi"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:        "multi-1",
-								PathRewrite: &contourv1.CookiePathRewrite{Value: "/m1"},
+								PathRewrite: &contour_v1.CookiePathRewrite{Value: "/m1"},
 							},
 							{
 								Name:          "multi-2",
-								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "m2.com"},
+								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "m2.com"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -283,61 +284,61 @@ func testAppCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/service"},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
-								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+								CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 									{
 										Name:        "service",
-										PathRewrite: &contourv1.CookiePathRewrite{Value: "/svc-new"},
+										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/svc-new"},
 									},
 								},
 							},
 							{
 								Name: "echo-other",
 								Port: 80,
-								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+								CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 									{
 										Name:        "service",
-										PathRewrite: &contourv1.CookiePathRewrite{Value: "/svc-new-other"},
+										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/svc-new-other"},
 									},
 								},
 							},
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/route-and-service"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:          "route-service",
-								PathRewrite:   &contourv1.CookiePathRewrite{Value: "/route"},
-								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "route.com"},
+								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/route"},
+								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "route.com"},
 							},
 							{
 								Name:        "route",
-								PathRewrite: &contourv1.CookiePathRewrite{Value: "/route"},
+								PathRewrite: &contour_v1.CookiePathRewrite{Value: "/route"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
-								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+								CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 									{
 										Name:        "route-service",
-										PathRewrite: &contourv1.CookiePathRewrite{Value: "/service"},
-										Secure:      ref.To(true),
-										SameSite:    ref.To("Lax"),
+										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/service"},
+										Secure:      ptr.To(true),
+										SameSite:    ptr.To("Lax"),
 									},
 									{
 										Name:        "service",
-										PathRewrite: &contourv1.CookiePathRewrite{Value: "/service"},
+										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/service"},
 									},
 								},
 							},
@@ -389,7 +390,7 @@ func testAppCookieRewrite(namespace string) {
 		// Rewrite on a service, balancing to multiple services.
 		services := map[string]struct{}{}
 		// Use a few attempts to make sure we hit both services.
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/service", "service=baz; Path=/svc")
 			for headerName, values := range headers {
 				if headerName != "Set-Cookie" {
@@ -438,27 +439,27 @@ func testHeaderGlobalRewriteCookieRewrite(namespace string) {
 	Specify("cookies from global header rewrites can be rewritten", func() {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "global-header-rewrite-cookie-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "global-header-rewrite-cookie-rewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/global"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:        "global",
-								PathRewrite: &contourv1.CookiePathRewrite{Value: "/global"},
+								PathRewrite: &contour_v1.CookiePathRewrite{Value: "/global"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -485,31 +486,31 @@ func testHeaderRewriteCookieRewrite(namespace string) {
 	Specify("cookies from HTTPProxy header rewrites can be rewritten", func() {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "header-rewrite-cookie-rewrite",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "header-rewrite-cookie-rewrite.projectcontour.io",
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/cookie-lb"},
 						},
-						LoadBalancerPolicy: &contourv1.LoadBalancerPolicy{
+						LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 							Strategy: "Cookie",
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:     "X-Contour-Session-Affinity",
-								Secure:   ref.To(true),
-								SameSite: ref.To("Strict"),
+								Secure:   ptr.To(true),
+								SameSite: ptr.To("Strict"),
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -517,21 +518,21 @@ func testHeaderRewriteCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/route-route"},
 						},
-						ResponseHeadersPolicy: &contourv1.HeadersPolicy{
-							Set: []contourv1.HeaderValue{
+						ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+							Set: []contour_v1.HeaderValue{
 								{Name: "Set-Cookie", Value: "route-route=foo"},
 							},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:        "route-route",
-								PathRewrite: &contourv1.CookiePathRewrite{Value: "/route-route"},
+								PathRewrite: &contour_v1.CookiePathRewrite{Value: "/route-route"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -539,65 +540,65 @@ func testHeaderRewriteCookieRewrite(namespace string) {
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/route-service"},
 						},
-						ResponseHeadersPolicy: &contourv1.HeadersPolicy{
-							Set: []contourv1.HeaderValue{
+						ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+							Set: []contour_v1.HeaderValue{
 								{Name: "Set-Cookie", Value: "route-service=foo"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
-								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+								CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 									{
 										Name:        "route-service",
-										PathRewrite: &contourv1.CookiePathRewrite{Value: "/route-service"},
+										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/route-service"},
 									},
 								},
 							},
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/service-service"},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
-								ResponseHeadersPolicy: &contourv1.HeadersPolicy{
-									Set: []contourv1.HeaderValue{
+								ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+									Set: []contour_v1.HeaderValue{
 										{Name: "Set-Cookie", Value: "service-service=bar"},
 									},
 								},
-								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+								CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 									{
 										Name:        "service-service",
-										PathRewrite: &contourv1.CookiePathRewrite{Value: "/service-service"},
+										PathRewrite: &contour_v1.CookiePathRewrite{Value: "/service-service"},
 									},
 								},
 							},
 						},
 					},
 					{
-						Conditions: []contourv1.MatchCondition{
+						Conditions: []contour_v1.MatchCondition{
 							{Prefix: "/service-route"},
 						},
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:        "service-route",
-								PathRewrite: &contourv1.CookiePathRewrite{Value: "/service-route"},
+								PathRewrite: &contour_v1.CookiePathRewrite{Value: "/service-route"},
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
-								ResponseHeadersPolicy: &contourv1.HeadersPolicy{
-									Set: []contourv1.HeaderValue{
+								ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+									Set: []contour_v1.HeaderValue{
 										{Name: "Set-Cookie", Value: "service-route=bar"},
 									},
 								},
@@ -661,30 +662,30 @@ func testCookieRewriteTLS(namespace string) {
 		deployEchoServer(f.T(), f.Client, namespace, "echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "cookie-rewrite-tls.projectcontour.io")
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "cookie-rewrite-tls",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "cookie-rewrite-tls.projectcontour.io",
-					TLS: &contourv1.TLS{
+					TLS: &contour_v1.TLS{
 						SecretName: "echo",
 					},
 				},
-				Routes: []contourv1.Route{
+				Routes: []contour_v1.Route{
 					{
-						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
 							{
 								Name:          "a-cookie",
-								PathRewrite:   &contourv1.CookiePathRewrite{Value: "/"},
-								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "cookie-rewrite-tls.projectcontour.io"},
-								Secure:        ref.To(true),
-								SameSite:      ref.To("Strict"),
+								PathRewrite:   &contour_v1.CookiePathRewrite{Value: "/"},
+								DomainRewrite: &contour_v1.CookieDomainRewrite{Value: "cookie-rewrite-tls.projectcontour.io"},
+								Secure:        ptr.To(true),
+								SameSite:      ptr.To("Strict"),
 							},
 						},
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "echo",
 								Port: 80,
@@ -807,25 +808,25 @@ func requestSetCookieHeader(https bool, host, route string, setCookieValues ...s
 }
 
 func deployEchoServer(t require.TestingT, c client.Client, ns, name string) {
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
+	deployment := &apps_v1.Deployment{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
+		Spec: apps_v1.DeploymentSpec{
+			Selector: &meta_v1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
+			Template: core_v1.PodTemplateSpec{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Labels: map[string]string{"app.kubernetes.io/name": name},
 				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
+				Spec: core_v1.PodSpec{
+					Containers: []core_v1.Container{
 						{
 							Name:  "echo",
 							Image: "docker.io/ealen/echo-server:0.5.1",
-							Env: []corev1.EnvVar{
+							Env: []core_v1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
 									Value: name,
@@ -836,16 +837,16 @@ func deployEchoServer(t require.TestingT, c client.Client, ns, name string) {
 								},
 								{
 									Name: "POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
+									ValueFrom: &core_v1.EnvVarSource{
+										FieldRef: &core_v1.ObjectFieldSelector{
 											FieldPath: "metadata.name",
 										},
 									},
 								},
 								{
 									Name: "NAMESPACE",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
+									ValueFrom: &core_v1.EnvVarSource{
+										FieldRef: &core_v1.ObjectFieldSelector{
 											FieldPath: "metadata.namespace",
 										},
 									},
@@ -855,15 +856,15 @@ func deployEchoServer(t require.TestingT, c client.Client, ns, name string) {
 									Value: "3000",
 								},
 							},
-							Ports: []corev1.ContainerPort{
+							Ports: []core_v1.ContainerPort{
 								{
 									Name:          "http",
 									ContainerPort: 3000,
 								},
 							},
-							ReadinessProbe: &corev1.Probe{
-								ProbeHandler: corev1.ProbeHandler{
-									HTTPGet: &corev1.HTTPGetAction{
+							ReadinessProbe: &core_v1.Probe{
+								ProbeHandler: core_v1.ProbeHandler{
+									HTTPGet: &core_v1.HTTPGetAction{
 										Path: "/ping",
 										Port: intstr.FromInt(3000),
 									},
@@ -877,13 +878,13 @@ func deployEchoServer(t require.TestingT, c client.Client, ns, name string) {
 	}
 	require.NoError(t, c.Create(context.TODO(), deployment))
 
-	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	service := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{
 				{
 					Name:       "http",
 					Port:       80,

@@ -17,36 +17,37 @@ import (
 	"testing"
 	"time"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
-	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/projectcontour/contour/internal/xds"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
+
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/internal/xds"
 )
 
 func TestCluster(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
@@ -55,14 +56,14 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
 			ExternalName: "foo.io",
-			Ports: []v1.ServicePort{{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
@@ -71,61 +72,84 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
-	svcExternal := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s3 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
+			ExternalName: "foo.io",
+			Ports: []core_v1.ServicePort{
+				{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8080),
+				}, {
+					Name:       "health-check",
+					Protocol:   "TCP",
+					Port:       8998,
+					TargetPort: intstr.FromInt(8998),
+				},
+			},
+		},
+	}
+
+	svcExternal := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: core_v1.ServiceSpec{
 			ExternalName: "projectcontour.local",
-			Ports: []v1.ServicePort{{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
 				TargetPort: intstr.FromInt(8080),
 			}},
-			Type: v1.ServiceTypeExternalName,
+			Type: core_v1.ServiceTypeExternalName,
 		},
 	}
 
 	secret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "secret",
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: map[string][]byte{dag.CACertificateKey: []byte("cacert")},
 		},
 	}
 
 	clientSecret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "clientcertsecret",
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: map[string][]byte{
-				v1.TLSCertKey:       []byte("cert"),
-				v1.TLSPrivateKeyKey: []byte("key"),
+				core_v1.TLSCertKey:       []byte("cert"),
+				core_v1.TLSPrivateKeyKey: []byte("key"),
 			},
 		},
 	}
 
 	tests := map[string]struct {
 		cluster *dag.Cluster
-		want    *envoy_cluster_v3.Cluster
+		want    *envoy_config_cluster_v3.Cluster
 	}{
 		"simple service": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1),
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -136,20 +160,20 @@ func TestCluster(t *testing.T) {
 				Upstream: service(s1, "h2c"),
 				Protocol: "h2c",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/f4f94965ec",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+						&envoy_upstream_http_v3.HttpProtocolOptions{
+							UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
 								},
 							},
 						}),
@@ -161,11 +185,11 @@ func TestCluster(t *testing.T) {
 				Upstream: service(s1, "h2"),
 				Protocol: "h2",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/bf1c365741",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -174,10 +198,10 @@ func TestCluster(t *testing.T) {
 				),
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+						&envoy_upstream_http_v3.HttpProtocolOptions{
+							UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
 								},
 							},
 						}),
@@ -188,11 +212,22 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: service(s2),
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+			},
+		},
+		"externalName service healthcheckport": {
+			cluster: &dag.Cluster{
+				Upstream: healthcheckService(s3),
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment:       ExternalNameClusterLoadAssignment(healthcheckService(s3)),
 			},
 		},
 		"externalName service - dns-lookup-family v4": {
@@ -200,12 +235,12 @@ func TestCluster(t *testing.T) {
 				Upstream:        service(s2),
 				DNSLookupFamily: "v4",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_V4_ONLY,
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_V4_ONLY,
 			},
 		},
 		"externalName service - dns-lookup-family v6": {
@@ -213,12 +248,12 @@ func TestCluster(t *testing.T) {
 				Upstream:        service(s2),
 				DNSLookupFamily: "v6",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_V6_ONLY,
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_V6_ONLY,
 			},
 		},
 		"externalName service - dns-lookup-family auto": {
@@ -226,12 +261,12 @@ func TestCluster(t *testing.T) {
 				Upstream:        service(s2),
 				DNSLookupFamily: "auto",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 			},
 		},
 		"externalName service - dns-lookup-family all": {
@@ -239,12 +274,12 @@ func TestCluster(t *testing.T) {
 				Upstream:        service(s2),
 				DNSLookupFamily: "all",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_LOGICAL_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_ALL,
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_ALL,
 			},
 		},
 		"externalName service - dns-lookup-family not defined": {
@@ -252,12 +287,12 @@ func TestCluster(t *testing.T) {
 				Upstream: service(s2),
 				// DNSLookupFamily: "auto",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 			},
 		},
 		"tls upstream": {
@@ -265,11 +300,11 @@ func TestCluster(t *testing.T) {
 				Upstream: service(s1, "tls"),
 				Protocol: "tls",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/4929fca9d4",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -284,10 +319,10 @@ func TestCluster(t *testing.T) {
 				Protocol: "tls",
 				SNI:      "projectcontour.local",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/a996a742af",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       ExternalNameClusterLoadAssignment(service(svcExternal, "tls")),
 				TransportSocket: UpstreamTLSTransportSocket(
 					UpstreamTLSContext(nil, "projectcontour.local", nil, nil),
@@ -305,11 +340,11 @@ func TestCluster(t *testing.T) {
 					SubjectNames: []string{"foo.bar.io"},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/62d1f9ad02",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -342,11 +377,11 @@ func TestCluster(t *testing.T) {
 					MaximumProtocolVersion: "1.3",
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/62d1f9ad02",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -381,19 +416,19 @@ func TestCluster(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(9000),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -410,19 +445,19 @@ func TestCluster(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(4096),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -439,19 +474,19 @@ func TestCluster(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxRequests: wrapperspb.UInt32(404),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -468,19 +503,19 @@ func TestCluster(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxRetries: wrapperspb.UInt32(7),
 					}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
 				},
 			},
 		},
@@ -497,17 +532,17 @@ func TestCluster(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{}},
-					PerHostThresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
+				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(45),
 					}},
 				},
@@ -518,15 +553,15 @@ func TestCluster(t *testing.T) {
 				Upstream:           service(s1),
 				LoadBalancerPolicy: "Random",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/58d888c08a",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RANDOM,
+				LbPolicy: envoy_config_cluster_v3.Cluster_RANDOM,
 			},
 		},
 		"cluster with cookie policy": {
@@ -534,15 +569,15 @@ func TestCluster(t *testing.T) {
 				Upstream:           service(s1),
 				LoadBalancerPolicy: "Cookie",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/e4f81994fe",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
 			},
 		},
 
@@ -550,11 +585,11 @@ func TestCluster(t *testing.T) {
 			cluster: &dag.Cluster{
 				Upstream: service(s1),
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -570,22 +605,22 @@ func TestCluster(t *testing.T) {
 					HealthyThreshold:   2,
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
 				IgnoreHealthOnHostRemoval: true,
-				HealthChecks: []*envoy_core_v3.HealthCheck{{
+				HealthChecks: []*envoy_config_core_v3.HealthCheck{{
 					Timeout:            durationOrDefault(2, envoy.HCTimeout),
 					Interval:           durationOrDefault(10, envoy.HCInterval),
 					UnhealthyThreshold: protobuf.UInt32OrDefault(3, envoy.HCUnhealthyThreshold),
 					HealthyThreshold:   protobuf.UInt32OrDefault(2, envoy.HCHealthyThreshold),
-					HealthChecker: &envoy_core_v3.HealthCheck_TcpHealthCheck_{
-						TcpHealthCheck: &envoy_core_v3.HealthCheck_TcpHealthCheck{},
+					HealthChecker: &envoy_config_core_v3.HealthCheck_TcpHealthCheck_{
+						TcpHealthCheck: &envoy_config_core_v3.HealthCheck_TcpHealthCheck{},
 					},
 				}},
 			},
@@ -596,11 +631,11 @@ func TestCluster(t *testing.T) {
 				Protocol:          "tls",
 				ClientCertificate: clientSecret,
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/4929fca9d4",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -614,11 +649,11 @@ func TestCluster(t *testing.T) {
 				Upstream:      service(s1),
 				TimeoutPolicy: dag.ClusterTimeoutPolicy{ConnectTimeout: 10 * time.Second},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -630,23 +665,23 @@ func TestCluster(t *testing.T) {
 				Upstream:      service(s1),
 				TimeoutPolicy: dag.ClusterTimeoutPolicy{IdleConnectionTimeout: timeout.DurationSetting(10 * time.Second)},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/357c84df09",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+						&envoy_upstream_http_v3.HttpProtocolOptions{
+							CommonHttpProtocolOptions: &envoy_config_core_v3.HttpProtocolOptions{
 								IdleTimeout: durationpb.New(10 * time.Second),
 							},
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+							UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
 								},
 							},
 						},
@@ -663,23 +698,23 @@ func TestCluster(t *testing.T) {
 					MinWeightPercent: 10,
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/2c8f64025b",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				LbConfig: &envoy_cluster_v3.Cluster_RoundRobinLbConfig_{
-					RoundRobinLbConfig: &envoy_cluster_v3.Cluster_RoundRobinLbConfig{
-						SlowStartConfig: &envoy_cluster_v3.Cluster_SlowStartConfig{
+				LbConfig: &envoy_config_cluster_v3.Cluster_RoundRobinLbConfig_{
+					RoundRobinLbConfig: &envoy_config_cluster_v3.Cluster_RoundRobinLbConfig{
+						SlowStartConfig: &envoy_config_cluster_v3.Cluster_SlowStartConfig{
 							SlowStartWindow: durationpb.New(10 * time.Second),
-							Aggression: &envoy_core_v3.RuntimeDouble{
+							Aggression: &envoy_config_core_v3.RuntimeDouble{
 								DefaultValue: 1.0,
 								RuntimeKey:   "contour.slowstart.aggression",
 							},
-							MinWeightPercent: &envoy_type.Percent{
+							MinWeightPercent: &envoy_type_v3.Percent{
 								Value: 10.0,
 							},
 						},
@@ -697,24 +732,24 @@ func TestCluster(t *testing.T) {
 				},
 				LoadBalancerPolicy: dag.LoadBalancerPolicyWeightedLeastRequest,
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/0b01a6912a",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				LbPolicy: envoy_cluster_v3.Cluster_LEAST_REQUEST,
-				LbConfig: &envoy_cluster_v3.Cluster_LeastRequestLbConfig_{
-					LeastRequestLbConfig: &envoy_cluster_v3.Cluster_LeastRequestLbConfig{
-						SlowStartConfig: &envoy_cluster_v3.Cluster_SlowStartConfig{
+				LbPolicy: envoy_config_cluster_v3.Cluster_LEAST_REQUEST,
+				LbConfig: &envoy_config_cluster_v3.Cluster_LeastRequestLbConfig_{
+					LeastRequestLbConfig: &envoy_config_cluster_v3.Cluster_LeastRequestLbConfig{
+						SlowStartConfig: &envoy_config_cluster_v3.Cluster_SlowStartConfig{
 							SlowStartWindow: durationpb.New(10 * time.Second),
-							Aggression: &envoy_core_v3.RuntimeDouble{
+							Aggression: &envoy_config_core_v3.RuntimeDouble{
 								DefaultValue: 1.0,
 								RuntimeKey:   "contour.slowstart.aggression",
 							},
-							MinWeightPercent: &envoy_type.Percent{
+							MinWeightPercent: &envoy_type_v3.Percent{
 								Value: 10.0,
 							},
 						},
@@ -725,13 +760,13 @@ func TestCluster(t *testing.T) {
 		"cluster with per connection buffer limit bytes set": {
 			cluster: &dag.Cluster{
 				Upstream:                      service(s1),
-				PerConnectionBufferLimitBytes: ref.To(uint32(32768)),
+				PerConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
@@ -741,25 +776,25 @@ func TestCluster(t *testing.T) {
 		"cluster with max requests per connection set": {
 			cluster: &dag.Cluster{
 				Upstream:                 service(s1),
-				MaxRequestsPerConnection: ref.To(uint32(1)),
+				MaxRequestsPerConnection: ptr.To(uint32(1)),
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+						&envoy_upstream_http_v3.HttpProtocolOptions{
+							CommonHttpProtocolOptions: &envoy_config_core_v3.HttpProtocolOptions{
 								MaxRequestsPerConnection: wrapperspb.UInt32(1),
 							},
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+							UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
 								},
 							},
 						},
@@ -770,29 +805,29 @@ func TestCluster(t *testing.T) {
 		"cluster with max requests per connection and idle timeout set": {
 			cluster: &dag.Cluster{
 				Upstream:                 service(s1),
-				MaxRequestsPerConnection: ref.To(uint32(1)),
+				MaxRequestsPerConnection: ptr.To(uint32(1)),
 				TimeoutPolicy: dag.ClusterTimeoutPolicy{
 					IdleConnectionTimeout: timeout.DurationSetting(time.Second * 60),
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/47b66db27a",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+						&envoy_upstream_http_v3.HttpProtocolOptions{
+							CommonHttpProtocolOptions: &envoy_config_core_v3.HttpProtocolOptions{
 								MaxRequestsPerConnection: wrapperspb.UInt32(1),
 								IdleTimeout:              durationpb.New(60 * time.Second),
 							},
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+							UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+								ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+									ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
 								},
 							},
 						},
@@ -892,7 +927,7 @@ func TestCluster(t *testing.T) {
 func TestDNSNameCluster(t *testing.T) {
 	tests := map[string]struct {
 		cluster *dag.DNSNameCluster
-		want    *envoy_cluster_v3.Cluster
+		want    *envoy_config_cluster_v3.Cluster
 	}{
 		"plain HTTP cluster": {
 			cluster: &dag.DNSNameCluster{
@@ -901,18 +936,18 @@ func TestDNSNameCluster(t *testing.T) {
 				Port:            80,
 				DNSLookupFamily: "auto",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/http/foo.projectcontour.io",
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/http/foo.projectcontour.io",
-					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
-							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
 								{
-									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-										Endpoint: &envoy_endpoint_v3.Endpoint{
+									HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_config_endpoint_v3.Endpoint{
 											Address: SocketAddress("foo.projectcontour.io", 80),
 										},
 									},
@@ -930,18 +965,18 @@ func TestDNSNameCluster(t *testing.T) {
 				Port:            80,
 				DNSLookupFamily: "v4",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/http/foo.projectcontour.io",
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_V4_ONLY,
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_V4_ONLY,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/http/foo.projectcontour.io",
-					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
-							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
 								{
-									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-										Endpoint: &envoy_endpoint_v3.Endpoint{
+									HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_config_endpoint_v3.Endpoint{
 											Address: SocketAddress("foo.projectcontour.io", 80),
 										},
 									},
@@ -959,18 +994,18 @@ func TestDNSNameCluster(t *testing.T) {
 				Port:            80,
 				DNSLookupFamily: "all",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/http/foo.projectcontour.io",
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_ALL,
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS),
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_ALL,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_LOGICAL_DNS),
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/http/foo.projectcontour.io",
-					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
-							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
 								{
-									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-										Endpoint: &envoy_endpoint_v3.Endpoint{
+									HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_config_endpoint_v3.Endpoint{
 											Address: SocketAddress("foo.projectcontour.io", 80),
 										},
 									},
@@ -988,18 +1023,18 @@ func TestDNSNameCluster(t *testing.T) {
 				Port:            443,
 				DNSLookupFamily: "auto",
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/https/foo.projectcontour.io",
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/foo.projectcontour.io",
-					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
-							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
 								{
-									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-										Endpoint: &envoy_endpoint_v3.Endpoint{
+									HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_config_endpoint_v3.Endpoint{
 											Address: SocketAddress("foo.projectcontour.io", 443),
 										},
 									},
@@ -1020,7 +1055,7 @@ func TestDNSNameCluster(t *testing.T) {
 				UpstreamValidation: &dag.PeerValidationContext{
 					CACertificates: []*dag.Secret{
 						{
-							Object: &v1.Secret{
+							Object: &core_v1.Secret{
 								Data: map[string][]byte{
 									"ca.crt": []byte("ca-cert"),
 								},
@@ -1030,18 +1065,18 @@ func TestDNSNameCluster(t *testing.T) {
 					SubjectNames: []string{"foo.projectcontour.io"},
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/https/foo.projectcontour.io",
-				DnsLookupFamily:      envoy_cluster_v3.Cluster_AUTO,
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
+				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "dnsname/https/foo.projectcontour.io",
-					Endpoints: []*envoy_endpoint_v3.LocalityLbEndpoints{
+					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
-							LbEndpoints: []*envoy_endpoint_v3.LbEndpoint{
+							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
 								{
-									HostIdentifier: &envoy_endpoint_v3.LbEndpoint_Endpoint{
-										Endpoint: &envoy_endpoint_v3.Endpoint{
+									HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+										Endpoint: &envoy_config_endpoint_v3.Endpoint{
 											Address: SocketAddress("foo.projectcontour.io", 443),
 										},
 									},
@@ -1053,7 +1088,7 @@ func TestDNSNameCluster(t *testing.T) {
 				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(&dag.PeerValidationContext{
 					CACertificates: []*dag.Secret{
 						{
-							Object: &v1.Secret{
+							Object: &core_v1.Secret{
 								Data: map[string][]byte{
 									"ca.crt": []byte("ca-cert"),
 								},
@@ -1106,7 +1141,7 @@ func TestClustername(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "backend",
 					ServiceNamespace: "default",
-					ServicePort: v1.ServicePort{
+					ServicePort: core_v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       80,
@@ -1125,7 +1160,7 @@ func TestClustername(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "must-be-in-want-of-a-wife",
 					ServiceNamespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-					ServicePort: v1.ServicePort{
+					ServicePort: core_v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       9999,
@@ -1144,7 +1179,7 @@ func TestClustername(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "backend",
 					ServiceNamespace: "default",
-					ServicePort: v1.ServicePort{
+					ServicePort: core_v1.ServicePort{
 						Name:       "http",
 						Protocol:   "TCP",
 						Port:       80,
@@ -1170,7 +1205,7 @@ func TestClustername(t *testing.T) {
 				Weight:           1,
 				ServiceName:      "backend",
 				ServiceNamespace: "default",
-				ServicePort: v1.ServicePort{
+				ServicePort: core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -1182,8 +1217,8 @@ func TestClustername(t *testing.T) {
 		UpstreamValidation: &dag.PeerValidationContext{
 			CACertificates: []*dag.Secret{
 				{
-					Object: &v1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
+					Object: &core_v1.Secret{
+						ObjectMeta: meta_v1.ObjectMeta{
 							Name:      "secret",
 							Namespace: "default",
 						},
@@ -1216,19 +1251,19 @@ func TestClustername(t *testing.T) {
 }
 
 func TestLBPolicy(t *testing.T) {
-	tests := map[string]envoy_cluster_v3.Cluster_LbPolicy{
-		"WeightedLeastRequest": envoy_cluster_v3.Cluster_LEAST_REQUEST,
-		"Random":               envoy_cluster_v3.Cluster_RANDOM,
-		"RoundRobin":           envoy_cluster_v3.Cluster_ROUND_ROBIN,
-		"":                     envoy_cluster_v3.Cluster_ROUND_ROBIN,
-		"unknown":              envoy_cluster_v3.Cluster_ROUND_ROBIN,
-		"Cookie":               envoy_cluster_v3.Cluster_RING_HASH,
-		"RequestHash":          envoy_cluster_v3.Cluster_RING_HASH,
+	tests := map[string]envoy_config_cluster_v3.Cluster_LbPolicy{
+		"WeightedLeastRequest": envoy_config_cluster_v3.Cluster_LEAST_REQUEST,
+		"Random":               envoy_config_cluster_v3.Cluster_RANDOM,
+		"RoundRobin":           envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
+		"":                     envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
+		"unknown":              envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
+		"Cookie":               envoy_config_cluster_v3.Cluster_RING_HASH,
+		"RequestHash":          envoy_config_cluster_v3.Cluster_RING_HASH,
 
 		// RingHash and Maglev were removed as options in 0.13.
 		// See #1150
-		"RingHash": envoy_cluster_v3.Cluster_ROUND_ROBIN,
-		"Maglev":   envoy_cluster_v3.Cluster_ROUND_ROBIN,
+		"RingHash": envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
+		"Maglev":   envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
 	}
 
 	for policy, want := range tests {
@@ -1241,15 +1276,15 @@ func TestLBPolicy(t *testing.T) {
 
 func TestClusterCommonLBConfig(t *testing.T) {
 	got := ClusterCommonLBConfig()
-	want := &envoy_cluster_v3.Cluster_CommonLbConfig{
-		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+	want := &envoy_config_cluster_v3.Cluster_CommonLbConfig{
+		HealthyPanicThreshold: &envoy_type_v3.Percent{ // Disable HealthyPanicThreshold
 			Value: 0,
 		},
 	}
 	assert.Equal(t, want, got)
 }
 
-func service(s *v1.Service, protocols ...string) *dag.Service {
+func service(s *core_v1.Service, protocols ...string) *dag.Service {
 	protocol := ""
 	if len(protocols) > 0 {
 		protocol = protocols[0]
@@ -1264,5 +1299,18 @@ func service(s *v1.Service, protocols ...string) *dag.Service {
 		},
 		ExternalName: s.Spec.ExternalName,
 		Protocol:     protocol,
+	}
+}
+
+func healthcheckService(s *core_v1.Service) *dag.Service {
+	return &dag.Service{
+		Weighted: dag.WeightedService{
+			Weight:           1,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+			HealthPort:       s.Spec.Ports[1],
+		},
+		ExternalName: s.Spec.ExternalName,
 	}
 }

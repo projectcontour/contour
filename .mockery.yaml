@@ -5,11 +5,6 @@ outpkg: "mocks"
 dir: '{{trimPrefix .PackagePath "github.com/projectcontour/contour/" }}/mocks'
 disable-version-string: True
 packages:
-    sigs.k8s.io/controller-runtime/pkg/manager:
-        config:
-            dir: "internal/controller/mocks"
-        interfaces:
-            Manager:
     github.com/projectcontour/contour/internal/debug:
         interfaces:
             DagBuilder:

@@ -17,19 +17,20 @@ import (
 	"testing"
 	"time"
 
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestHealthCheck(t *testing.T) {
 	tests := map[string]struct {
 		cluster *dag.Cluster
-		want    *envoy_core_v3.HealthCheck
+		want    *envoy_config_core_v3.HealthCheck
 	}{
 		// this is an odd case because contour.edshealthcheck will not call envoy.HealthCheck
 		// when hc is nil, so if hc is not nil, at least one of the parameters on it must be set.
@@ -37,13 +38,13 @@ func TestHealthCheck(t *testing.T) {
 			cluster: &dag.Cluster{
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
-			want: &envoy_core_v3.HealthCheck{
+			want: &envoy_config_core_v3.HealthCheck{
 				Timeout:            durationpb.New(envoy.HCTimeout),
 				Interval:           durationpb.New(envoy.HCInterval),
 				UnhealthyThreshold: wrapperspb.UInt32(3),
 				HealthyThreshold:   wrapperspb.UInt32(2),
-				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+				HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 						// TODO(dfc) this doesn't seem right
 						Host: "contour-envoy-healthcheck",
 					},
@@ -56,13 +57,13 @@ func TestHealthCheck(t *testing.T) {
 					Path: "/healthy",
 				},
 			},
-			want: &envoy_core_v3.HealthCheck{
+			want: &envoy_config_core_v3.HealthCheck{
 				Timeout:            durationpb.New(envoy.HCTimeout),
 				Interval:           durationpb.New(envoy.HCInterval),
 				UnhealthyThreshold: wrapperspb.UInt32(3),
 				HealthyThreshold:   wrapperspb.UInt32(2),
-				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+				HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 						Path: "/healthy",
 						Host: "contour-envoy-healthcheck",
 					},
@@ -80,13 +81,13 @@ func TestHealthCheck(t *testing.T) {
 					HealthyThreshold:   96,
 				},
 			},
-			want: &envoy_core_v3.HealthCheck{
+			want: &envoy_config_core_v3.HealthCheck{
 				Timeout:            durationpb.New(99 * time.Second),
 				Interval:           durationpb.New(98 * time.Second),
 				UnhealthyThreshold: wrapperspb.UInt32(97),
 				HealthyThreshold:   wrapperspb.UInt32(96),
-				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+				HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 						Path: "/healthy",
 						Host: "foo-bar-host",
 					},
@@ -98,15 +99,15 @@ func TestHealthCheck(t *testing.T) {
 				Protocol:              "h2",
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
-			want: &envoy_core_v3.HealthCheck{
+			want: &envoy_config_core_v3.HealthCheck{
 				Timeout:            durationpb.New(envoy.HCTimeout),
 				Interval:           durationpb.New(envoy.HCInterval),
 				UnhealthyThreshold: wrapperspb.UInt32(3),
 				HealthyThreshold:   wrapperspb.UInt32(2),
-				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+				HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 						Host:            "contour-envoy-healthcheck",
-						CodecClientType: typev3.CodecClientType_HTTP2,
+						CodecClientType: envoy_type_v3.CodecClientType_HTTP2,
 					},
 				},
 			},
@@ -116,15 +117,15 @@ func TestHealthCheck(t *testing.T) {
 				Protocol:              "h2c",
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
-			want: &envoy_core_v3.HealthCheck{
+			want: &envoy_config_core_v3.HealthCheck{
 				Timeout:            durationpb.New(envoy.HCTimeout),
 				Interval:           durationpb.New(envoy.HCInterval),
 				UnhealthyThreshold: wrapperspb.UInt32(3),
 				HealthyThreshold:   wrapperspb.UInt32(2),
-				HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
-					HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
+				HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+					HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
 						Host:            "contour-envoy-healthcheck",
-						CodecClientType: typev3.CodecClientType_HTTP2,
+						CodecClientType: envoy_type_v3.CodecClientType_HTTP2,
 					},
 				},
 			},

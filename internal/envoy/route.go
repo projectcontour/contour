@@ -14,9 +14,10 @@
 package envoy
 
 import (
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/timeout"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func HostRewriteLiteral(hp *dag.HeadersPolicy) string {

@@ -6,6 +6,8 @@ linters:
   - bodyclose
   - gofumpt
   - goimports
+  - gci
+  - importas
   - revive
   - gosec
   - misspell
@@ -62,6 +64,41 @@ linters-settings:
     forbid-focus-container: true
   gofumpt:
     extra-rules: true
+  gci:
+    custom-order: true
+    sections:
+    - standard
+    - default
+    - prefix(github.com/projectcontour/contour)
+  importas:
+    no-unaliased: true
+    alias:
+    - pkg: github.com/projectcontour/contour/apis/projectcontour/(v\w+)
+      alias: contour_${1}
+    - pkg: sigs.k8s.io/gateway-api/apis/(v\w+)
+      alias: gatewayapi_${1}
+    - pkg: k8s.io.*/apis?/(\w+)/(v\w+)
+      alias: ${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/config/(\w+)/(v\w+)
+      alias: envoy_config_${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/service/(\w+)/(v\w+)
+      alias: envoy_service_${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/filters/(\w+)/(\w+)/(v\w+)
+      alias: envoy_filter_${1}_${2}_${3}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/(\w+)/(v\w+)
+      alias: envoy_transport_socket_${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/compression/(\w+)/(\w+)/(v\w+)
+      alias: envoy_compression_${1}_${2}_${3}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/(\w+)/(v\w+)
+      alias: envoy_access_logger_${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/(\w+)/(v\w+)
+      alias: envoy_formatter_${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/(\w+)/(v\w+)
+      alias: envoy_upstream_${1}_${2}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/type/(v\w+)
+      alias: envoy_type_${1}
+    - pkg: github.com/envoyproxy/go-control-plane/envoy/type/matcher/(v\w+)
+      alias: envoy_matcher_${1}
 
 issues:
   max-issues-per-linter: 0
@@ -76,3 +113,6 @@ issues:
   - path: test/e2e
     linters: ["revive"]
     text: "should not use dot imports"
+  - path: test/e2e
+    linters: ["testifylint"]
+    text: "require must only be used in the goroutine running the test function"

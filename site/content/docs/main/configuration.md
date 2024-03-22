@@ -206,7 +206,7 @@ The server configuration block can be used to configure various settings for the
 
 | Field Name      | Type   | Default | Description                                                                   |
 | --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
-| xds-server-type | string | contour | This field specifies the xDS Server to use. Options are `contour` or `envoy`. |
+| xds-server-type | string | envoy   | This field specifies the xDS Server to use. Options are `envoy` or `contour` (deprecated). |
 
 ### Gateway Configuration
 
@@ -214,8 +214,7 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 
 | Field Name     | Type           | Default | Description                                                                    |
 | -------------- | -------------- | ------- | ------------------------------------------------------------------------------ |
-| controllerName | string         |         | **DEPRECATED**: Use `gatewayRef` or the Gateway provisioner instead. This field will be removed in a future release. Gateway Class controller name (i.e. projectcontour.io/gateway-controller). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayRef` must be set. |
-| gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). If set, Contour will reconcile this specific Gateway. Only one of `controllerName` or `gatewayRef` must be set. |
+| gatewayRef     | NamespacedName |         | [Gateway namespace and name](#gateway-ref). |
 
 ### Gateway Ref
 
@@ -317,11 +316,12 @@ data:
     #
     # server:
     #   determine which XDS Server implementation to utilize in Contour.
-    #   xds-server-type: contour
+    #   xds-server-type: envoy
     #
     # specify the gateway-api Gateway Contour should configure
     # gateway:
-    #   controllerName: projectcontour.io/gateway-controller
+    #   namespace: projectcontour
+    #   name: contour
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true

@@ -25,10 +25,10 @@ import (
 	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,7 +46,7 @@ type Certs struct {
 // and uses it to create a self-signed Certificate. It returns a cleanup function.
 func (c *Certs) CreateSelfSignedCert(ns, name, secretName, dnsName string) func() {
 	issuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      "selfsigned",
 		},
@@ -62,7 +62,7 @@ func (c *Certs) CreateSelfSignedCert(ns, name, secretName, dnsName string) func(
 	}
 
 	cert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
@@ -110,7 +110,7 @@ func (c *Certs) CreateCertAndWaitFor(cert *certmanagerv1.Certificate, condition 
 // secret and optional CA certificate. The secret must have the "tls.crt" and "tls.key" keys,
 // and "ca.crt" if CA certificate is also provided.
 func (c *Certs) GetTLSCertificate(secretNamespace, secretName string) (tls.Certificate, *x509.CertPool) {
-	secret := &corev1.Secret{}
+	secret := &core_v1.Secret{}
 	require.NoError(c.t, c.client.Get(context.TODO(), client.ObjectKey{Namespace: secretNamespace, Name: secretName}, secret))
 
 	cert, err := tls.X509KeyPair(secret.Data["tls.crt"], secret.Data["tls.key"])
@@ -129,7 +129,7 @@ func (c *Certs) GetTLSCertificate(secretNamespace, secretName string) (tls.Certi
 // ensureSelfSignedIssuer ensuers that selfsigned issuer is created.
 func (c *Certs) ensureSelfSignedIssuer(ns string) *certmanagerv1.Issuer {
 	issuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      "selfsigned",
 		},
@@ -156,7 +156,7 @@ func (c *Certs) CreateCA(ns, name string) func() {
 	issuer := c.ensureSelfSignedIssuer(ns)
 
 	caSigningCert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
@@ -183,7 +183,7 @@ func (c *Certs) CreateCA(ns, name string) func() {
 	require.NoError(c.t, c.client.Create(context.TODO(), caSigningCert))
 
 	localCAIssuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
@@ -199,8 +199,8 @@ func (c *Certs) CreateCA(ns, name string) func() {
 	require.NoError(c.t, c.client.Create(context.TODO(), localCAIssuer))
 
 	return func() {
-		caSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		caSecret := &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: ns,
 				Name:      name,
 			},
@@ -215,7 +215,7 @@ func (c *Certs) CreateCA(ns, name string) func() {
 // CreateCert creates end-entity certificate using given CA issuer.
 func (c *Certs) CreateCert(ns, name, issuer string, dnsNames ...string) func() {
 	cert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
@@ -231,8 +231,8 @@ func (c *Certs) CreateCert(ns, name, issuer string, dnsNames ...string) func() {
 	require.NoError(c.t, c.client.Create(context.TODO(), cert))
 
 	return func() {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		secret := &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: ns,
 				Name:      name,
 			},

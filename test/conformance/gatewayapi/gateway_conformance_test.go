@@ -31,9 +31,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	v1 "sigs.k8s.io/gateway-api/apis/v1"
-	"sigs.k8s.io/gateway-api/apis/v1alpha2"
-	"sigs.k8s.io/gateway-api/apis/v1beta1"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	conformance_v1alpha1 "sigs.k8s.io/gateway-api/conformance/apis/v1alpha1"
 	"sigs.k8s.io/gateway-api/conformance/tests"
 	"sigs.k8s.io/gateway-api/conformance/utils/flags"
@@ -53,9 +53,9 @@ func TestGatewayConformance(t *testing.T) {
 	clientset, err := kubernetes.NewForConfig(cfg)
 	require.NoError(t, err)
 
-	require.NoError(t, v1alpha2.AddToScheme(client.Scheme()))
-	require.NoError(t, v1beta1.AddToScheme(client.Scheme()))
-	require.NoError(t, v1.AddToScheme(client.Scheme()))
+	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(client.Scheme()))
+	require.NoError(t, gatewayapi_v1beta1.AddToScheme(client.Scheme()))
+	require.NoError(t, gatewayapi_v1.AddToScheme(client.Scheme()))
 
 	cSuiteOptions := suite.Options{
 		Client: client,

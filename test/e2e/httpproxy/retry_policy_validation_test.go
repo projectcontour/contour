@@ -20,32 +20,33 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 func testRetryPolicyValidation(namespace string) {
 	Specify("retry policy is validated on create", func() {
 		t := f.T()
 
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "invalid-retry-on-condition",
 			},
-			Spec: contourv1.HTTPProxySpec{
-				Routes: []contourv1.Route{
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
 					{
-						Services: []contourv1.Service{
+						Services: []contour_v1.Service{
 							{
 								Name: "foo",
 								Port: 80,
 							},
 						},
-						RetryPolicy: &contourv1.RetryPolicy{
-							RetryOn: []contourv1.RetryOn{
+						RetryPolicy: &contour_v1.RetryPolicy{
+							RetryOn: []contour_v1.RetryOn{
 								"foobar",
 							},
 						},

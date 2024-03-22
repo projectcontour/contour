@@ -16,15 +16,14 @@
 package e2e
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // GatewayClassAccepted returns true if the gateway has a .status.conditions
 // entry of Accepted: true".
-func GatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
+func GatewayClassAccepted(gatewayClass *gatewayapi_v1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
@@ -32,13 +31,13 @@ func GatewayClassAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
 	return conditionExists(
 		gatewayClass.Status.Conditions,
 		string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-		metav1.ConditionTrue,
+		meta_v1.ConditionTrue,
 	)
 }
 
 // GatewayClassNotAccepted returns true if the gateway has a .status.conditions
 // entry of Accepted: false".
-func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool {
+func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
@@ -46,13 +45,13 @@ func GatewayClassNotAccepted(gatewayClass *gatewayapi_v1beta1.GatewayClass) bool
 	return conditionExists(
 		gatewayClass.Status.Conditions,
 		string(gatewayapi_v1.GatewayClassConditionStatusAccepted),
-		metav1.ConditionFalse,
+		meta_v1.ConditionFalse,
 	)
 }
 
 // GatewayAccepted returns true if the gateway has a .status.conditions
 // entry of "Accepted: true".
-func GatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
+func GatewayAccepted(gateway *gatewayapi_v1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
@@ -60,13 +59,13 @@ func GatewayAccepted(gateway *gatewayapi_v1beta1.Gateway) bool {
 	return conditionExists(
 		gateway.Status.Conditions,
 		string(gatewayapi_v1.GatewayConditionAccepted),
-		metav1.ConditionTrue,
+		meta_v1.ConditionTrue,
 	)
 }
 
 // GatewayProgrammed returns true if the gateway has a .status.conditions
 // entry of "Programmed: true".
-func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
+func GatewayProgrammed(gateway *gatewayapi_v1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
@@ -74,19 +73,19 @@ func GatewayProgrammed(gateway *gatewayapi_v1beta1.Gateway) bool {
 	return conditionExists(
 		gateway.Status.Conditions,
 		string(gatewayapi_v1.GatewayConditionProgrammed),
-		metav1.ConditionTrue,
+		meta_v1.ConditionTrue,
 	)
 }
 
 // ListenerAccepted returns true if the gateway has status for the named
 // listener with a condition of "Accepted: true".
-func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v1beta1.SectionName) bool {
+func ListenerAccepted(gateway *gatewayapi_v1.Gateway, listener gatewayapi_v1.SectionName) bool {
 	for _, listenerStatus := range gateway.Status.Listeners {
 		if listenerStatus.Name == listener {
 			return conditionExists(
 				listenerStatus.Conditions,
 				string(gatewayapi_v1.ListenerConditionAccepted),
-				metav1.ConditionTrue,
+				meta_v1.ConditionTrue,
 			)
 		}
 	}
@@ -96,7 +95,7 @@ func ListenerAccepted(gateway *gatewayapi_v1beta1.Gateway, listener gatewayapi_v
 
 // GatewayHasAddress returns true if the gateway has a non-empty
 // .status.addresses entry.
-func GatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
+func GatewayHasAddress(gateway *gatewayapi_v1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
@@ -106,13 +105,13 @@ func GatewayHasAddress(gateway *gatewayapi_v1beta1.Gateway) bool {
 
 // HTTPRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
-func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
+func HTTPRouteAccepted(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -121,7 +120,7 @@ func HTTPRouteAccepted(route *gatewayapi_v1beta1.HTTPRoute) bool {
 }
 
 // HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
-func HTTPRouteIgnoredByContour(route *gatewayapi_v1beta1.HTTPRoute) bool {
+func HTTPRouteIgnoredByContour(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
@@ -137,7 +136,32 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1beta1.RouteConditionAccepted), metav1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// TLSRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
+func TLSRouteIgnoredByContour(route *gatewayapi_v1alpha2.TLSRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	return len(route.Status.Parents) == 0
+}
+
+// TLSRouteAccepted returns true if the route has a .status.conditions
+// entry of "Accepted: true".
+func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}
@@ -148,12 +172,20 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 // BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
 // entry of "Accepted: true".
 func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
-	// TODO (christianang): Right now this always returns true if a backendtlspolicy is
-	// provided since status conditions are not implemented yet for BackendTLSPolicy
-	return btp != nil
+	if btp == nil {
+		return false
+	}
+
+	for _, gw := range btp.Status.Ancestors {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.PolicyConditionAccepted), meta_v1.ConditionTrue) {
+			return true
+		}
+	}
+
+	return false
 }
 
-func conditionExists(conditions []metav1.Condition, conditionType string, conditionStatus metav1.ConditionStatus) bool {
+func conditionExists(conditions []meta_v1.Condition, conditionType string, conditionStatus meta_v1.ConditionStatus) bool {
 	for _, cond := range conditions {
 		if cond.Type == conditionType && cond.Status == conditionStatus {
 			return true

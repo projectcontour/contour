@@ -17,13 +17,14 @@ import (
 	"path"
 	"testing"
 
-	envoy_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
+	envoy_config_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestBootstrap(t *testing.T) {
@@ -2002,7 +2003,7 @@ func TestBootstrap(t *testing.T) {
 			sdsValidationContextPath := path.Join(tc.config.ResourcesDir, envoy.SDSResourcesSubdirectory, envoy.SDSValidationContextFile)
 
 			if tc.wantedBootstrapConfig != "" {
-				want := new(envoy_bootstrap_v3.Bootstrap)
+				want := new(envoy_config_bootstrap_v3.Bootstrap)
 				unmarshal(t, tc.wantedBootstrapConfig, want)
 				protobuf.ExpectEqual(t, want, gotConfigs[tc.config.Path])
 				delete(gotConfigs, tc.config.Path)

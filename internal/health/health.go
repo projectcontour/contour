@@ -23,7 +23,7 @@ import (
 
 // Handler returns a http Handler for a health endpoint.
 func Handler(client *kubernetes.Clientset) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		// Try and lookup Kubernetes server version as a quick and dirty check
 		_, err := client.ServerVersion()
 		if err != nil {

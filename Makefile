@@ -6,13 +6,13 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.29.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.29.2
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
-LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | head -n1 | awk '{print $$2}')
+LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 'inet 127.' | head -n1 | awk '{print $$2}')
 
 # Variables needed for running e2e tests.
 CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
@@ -44,7 +44,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.21.6@sha256:acab8ef05990e50fe0bc8446398d93d91fa89b3608661529dbd6744b77fcea90
+BUILD_BASE_IMAGE ?= golang:1.22.1@sha256:34ce21a9696a017249614876638ea37ceca13cdd88f582caad06f87a8aa45bf3
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -226,7 +226,9 @@ lint-flags:
 .PHONY: format
 format: ## Run gofumpt to format the codebase.
 	@echo Running gofumpt...
-	@./hack/gofumpt -l -w -extra .
+	@go run mvdan.cc/gofumpt@v0.5.0 -l -w -extra .
+	@echo Running gci...
+	@go run github.com/daixiang0/gci@v0.12.1 write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation

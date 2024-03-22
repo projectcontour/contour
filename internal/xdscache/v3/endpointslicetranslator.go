@@ -18,26 +18,27 @@ import (
 	"sort"
 	"sync"
 
-	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
+	core_v1 "k8s.io/api/core/v1"
+	discovery_v1 "k8s.io/api/discovery/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
+
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/proto"
-	v1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/cache"
 )
 
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
-// resources by matching the given service port to the given discoveryv1.EndpointSlice.
+// resources by matching the given service port to the given discovery_v1.EndpointSlice.
 // endpointSliceMap may be nil, in which case, the result is also nil.
-func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort v1.ServicePort, endpointSliceMap map[string]*discoveryv1.EndpointSlice) []*LoadBalancingEndpoint {
+func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort core_v1.ServicePort, endpointSliceMap map[string]*discovery_v1.EndpointSlice) []*LoadBalancingEndpoint {
 	var lb []*LoadBalancingEndpoint
 	uniqueEndpoints := make(map[string]struct{}, 0)
 	var healthCheckPort int32
@@ -65,7 +66,7 @@ func (c *EndpointSliceCache) RecalculateEndpoints(port, healthPort v1.ServicePor
 					continue
 				}
 
-				if *endpointPort.Protocol != v1.ProtocolTCP {
+				if *endpointPort.Protocol != core_v1.ProtocolTCP {
 					continue
 				}
 
@@ -130,7 +131,7 @@ type EndpointSliceCache struct {
 	// Cache of endpointsSlices, indexed by Namespaced name of the associated service.
 	// the Inner map is a map[k,v] where k is the endpoint slice name and v is the
 	// endpoint slice itself.
-	endpointSlices map[types.NamespacedName]map[string]*discoveryv1.EndpointSlice
+	endpointSlices map[types.NamespacedName]map[string]*discovery_v1.EndpointSlice
 }
 
 // Recalculate regenerates all the ClusterLoadAssignments from the
@@ -138,11 +139,11 @@ type EndpointSliceCache struct {
 // will be generated for every stale ServerCluster, however, if there
 // are no endpointSlices for the Services in the ServiceCluster, the
 // ClusterLoadAssignment will be empty.
-func (c *EndpointSliceCache) Recalculate() map[string]*envoy_endpoint_v3.ClusterLoadAssignment {
+func (c *EndpointSliceCache) Recalculate() map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	assignments := map[string]*envoy_endpoint_v3.ClusterLoadAssignment{}
+	assignments := map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{}
 	for _, cluster := range c.stale {
 		// Clusters can be in the stale list multiple times;
 		// skip to avoid duplicate recalculations.
@@ -150,7 +151,7 @@ func (c *EndpointSliceCache) Recalculate() map[string]*envoy_endpoint_v3.Cluster
 			continue
 		}
 
-		cla := envoy_endpoint_v3.ClusterLoadAssignment{
+		cla := envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: cluster.ClusterName,
 			Endpoints:   nil,
 			Policy:      nil,
@@ -226,14 +227,14 @@ func (c *EndpointSliceCache) SetClusters(clusters []*dag.ServiceCluster) error {
 // already cached. Any ServiceClusters that are backed by a Service
 // that endpointSlice belongs become stale. Returns a boolean indicating whether
 // any ServiceClusters use endpointSlice or not.
-func (c *EndpointSliceCache) UpdateEndpointSlice(endpointSlice *discoveryv1.EndpointSlice) bool {
+func (c *EndpointSliceCache) UpdateEndpointSlice(endpointSlice *discovery_v1.EndpointSlice) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := types.NamespacedName{Namespace: endpointSlice.Namespace, Name: endpointSlice.Labels[discoveryv1.LabelServiceName]}
+	name := types.NamespacedName{Namespace: endpointSlice.Namespace, Name: endpointSlice.Labels[discovery_v1.LabelServiceName]}
 
 	if c.endpointSlices[name] == nil {
-		c.endpointSlices[name] = make(map[string]*discoveryv1.EndpointSlice)
+		c.endpointSlices[name] = make(map[string]*discovery_v1.EndpointSlice)
 	}
 	c.endpointSlices[name][endpointSlice.Name] = endpointSlice.DeepCopy()
 
@@ -250,11 +251,11 @@ func (c *EndpointSliceCache) UpdateEndpointSlice(endpointSlice *discoveryv1.Endp
 // DeleteEndpointSlice deletes endpointSlice from the cache. Any ServiceClusters
 // that are backed by a Service that endpointSlice belongs to, become stale. Returns
 // a boolean indicating whether any ServiceClusters use endpointSlice or not.
-func (c *EndpointSliceCache) DeleteEndpointSlice(endpointSlice *discoveryv1.EndpointSlice) bool {
+func (c *EndpointSliceCache) DeleteEndpointSlice(endpointSlice *discovery_v1.EndpointSlice) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	name := types.NamespacedName{Namespace: endpointSlice.Namespace, Name: endpointSlice.Labels[discoveryv1.LabelServiceName]}
+	name := types.NamespacedName{Namespace: endpointSlice.Namespace, Name: endpointSlice.Labels[discovery_v1.LabelServiceName]}
 	delete(c.endpointSlices[name], endpointSlice.Name)
 
 	// If any service clusters include this endpointSlice, mark them
@@ -272,11 +273,11 @@ func NewEndpointSliceTranslator(log logrus.FieldLogger) *EndpointSliceTranslator
 	return &EndpointSliceTranslator{
 		Cond:        contour.Cond{},
 		FieldLogger: log,
-		entries:     map[string]*envoy_endpoint_v3.ClusterLoadAssignment{},
+		entries:     map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
 		cache: EndpointSliceCache{
 			stale:          nil,
 			services:       map[types.NamespacedName][]*dag.ServiceCluster{},
-			endpointSlices: map[types.NamespacedName]map[string]*discoveryv1.EndpointSlice{},
+			endpointSlices: map[types.NamespacedName]map[string]*discovery_v1.EndpointSlice{},
 		},
 	}
 }
@@ -293,13 +294,13 @@ type EndpointSliceTranslator struct {
 	cache EndpointSliceCache
 
 	mu      sync.Mutex // Protects entries.
-	entries map[string]*envoy_endpoint_v3.ClusterLoadAssignment
+	entries map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 }
 
 // Merge combines the given entries with the existing entries in the
 // EndpointSliceTranslator. If the same key exists in both maps, an existing entry
 // is replaced.
-func (e *EndpointSliceTranslator) Merge(entries map[string]*envoy_endpoint_v3.ClusterLoadAssignment) {
+func (e *EndpointSliceTranslator) Merge(entries map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -350,6 +351,9 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 	if changed {
 		e.Debug("cluster load assignments changed, notifying waiters")
 		e.Notify()
+		if e.Observer != nil {
+			e.Observer.Refresh()
+		}
 	} else {
 		e.Debug("cluster load assignments did not change")
 	}
@@ -357,7 +361,7 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 
 func (e *EndpointSliceTranslator) OnAdd(obj any, _ bool) {
 	switch obj := obj.(type) {
-	case *discoveryv1.EndpointSlice:
+	case *discovery_v1.EndpointSlice:
 		if !e.cache.UpdateEndpointSlice(obj) {
 			return
 		}
@@ -375,8 +379,8 @@ func (e *EndpointSliceTranslator) OnAdd(obj any, _ bool) {
 
 func (e *EndpointSliceTranslator) OnUpdate(oldObj, newObj any) {
 	switch newObj := newObj.(type) {
-	case *discoveryv1.EndpointSlice:
-		oldObj, ok := oldObj.(*discoveryv1.EndpointSlice)
+	case *discovery_v1.EndpointSlice:
+		oldObj, ok := oldObj.(*discovery_v1.EndpointSlice)
 		if !ok {
 			e.Errorf("OnUpdate endpointSlice %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
 			return
@@ -412,7 +416,7 @@ func (e *EndpointSliceTranslator) OnUpdate(oldObj, newObj any) {
 
 func (e *EndpointSliceTranslator) OnDelete(obj any) {
 	switch obj := obj.(type) {
-	case *discoveryv1.EndpointSlice:
+	case *discovery_v1.EndpointSlice:
 		if !e.cache.DeleteEndpointSlice(obj) {
 			return
 		}
@@ -435,7 +439,7 @@ func (e *EndpointSliceTranslator) Contents() []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	values := make([]*envoy_endpoint_v3.ClusterLoadAssignment, 0, len(e.entries))
+	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(e.entries))
 	for _, v := range e.entries {
 		values = append(values, v)
 	}
@@ -448,12 +452,12 @@ func (e *EndpointSliceTranslator) Query(names []string) []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	values := make([]*envoy_endpoint_v3.ClusterLoadAssignment, 0, len(names))
+	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(names))
 	for _, n := range names {
 		v, ok := e.entries[n]
 		if !ok {
 			e.Debugf("no cache entry for %q", n)
-			v = &envoy_endpoint_v3.ClusterLoadAssignment{
+			v = &envoy_config_endpoint_v3.ClusterLoadAssignment{
 				ClusterName: n,
 			}
 		}

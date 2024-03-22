@@ -19,7 +19,7 @@ permissions:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.21.6
+  GO_VERSION: 1.22.1
 
 jobs:
   build:
@@ -31,11 +31,11 @@ jobs:
       with:
         persist-credentials: false
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+      uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3.2.0
       with:
         version: latest
     - name: Log in to GHCR
-      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+      uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -59,7 +59,7 @@ jobs:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         persist-credentials: false
-    - uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
+    - uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
       with:
         # * Module download cache
         # * Build cache (Linux)
@@ -84,7 +84,7 @@ jobs:
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(git describe --tags)"
         make setup-kind-cluster run-gateway-conformance cleanup-kind
     - name: Upload gateway conformance report
-      uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+      uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
       with:
         name: gateway-conformance-report
         path: gateway-conformance-report/projectcontour-contour-*.yaml

@@ -16,26 +16,27 @@ package v1alpha1_test
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/require"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestValidateAccessLogType(t *testing.T) {
-	require.Error(t, v1alpha1.AccessLogType("").Validate())
-	require.Error(t, v1alpha1.AccessLogType("foo").Validate())
+	require.Error(t, contour_v1alpha1.AccessLogType("").Validate())
+	require.Error(t, contour_v1alpha1.AccessLogType("foo").Validate())
 
-	require.NoError(t, v1alpha1.EnvoyAccessLog.Validate())
-	require.NoError(t, v1alpha1.JSONAccessLog.Validate())
+	require.NoError(t, contour_v1alpha1.EnvoyAccessLog.Validate())
+	require.NoError(t, contour_v1alpha1.JSONAccessLog.Validate())
 }
 
 func TestValidateAccessLogLevel(t *testing.T) {
-	require.Error(t, v1alpha1.AccessLogLevel("").Validate())
-	require.Error(t, v1alpha1.AccessLogLevel("foo").Validate())
+	require.Error(t, contour_v1alpha1.AccessLogLevel("").Validate())
+	require.Error(t, contour_v1alpha1.AccessLogLevel("foo").Validate())
 
-	require.NoError(t, v1alpha1.LogLevelInfo.Validate())
-	require.NoError(t, v1alpha1.LogLevelError.Validate())
-	require.NoError(t, v1alpha1.LogLevelCritical.Validate())
-	require.NoError(t, v1alpha1.LogLevelDisabled.Validate())
+	require.NoError(t, contour_v1alpha1.LogLevelInfo.Validate())
+	require.NoError(t, contour_v1alpha1.LogLevelError.Validate())
+	require.NoError(t, contour_v1alpha1.LogLevelCritical.Validate())
+	require.NoError(t, contour_v1alpha1.LogLevelDisabled.Validate())
 }
 
 func TestValidateAccessLogJSONFields(t *testing.T) {
@@ -59,7 +60,7 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 	}
 
 	for _, c := range errorCases {
-		require.Error(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
+		require.Error(t, contour_v1alpha1.AccessLogJSONFields(c).Validate(), c)
 	}
 
 	successCases := [][]string{
@@ -82,7 +83,7 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 	}
 
 	for _, c := range successCases {
-		require.NoError(t, v1alpha1.AccessLogJSONFields(c).Validate(), c)
+		require.NoError(t, contour_v1alpha1.AccessLogJSONFields(c).Validate(), c)
 	}
 }
 
@@ -103,7 +104,7 @@ func TestAccessLogFormatString(t *testing.T) {
 	}
 
 	for _, c := range errorCases {
-		require.Error(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
+		require.Error(t, contour_v1alpha1.AccessLogFormatString(c).Validate(), c)
 	}
 
 	successCases := []string{
@@ -135,6 +136,6 @@ func TestAccessLogFormatString(t *testing.T) {
 	}
 
 	for _, c := range successCases {
-		require.NoError(t, v1alpha1.AccessLogFormatString(c).Validate(), c)
+		require.NoError(t, contour_v1alpha1.AccessLogFormatString(c).Validate(), c)
 	}
 }

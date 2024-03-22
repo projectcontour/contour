@@ -17,14 +17,15 @@ import (
 	"testing"
 
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/ref"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestRuntimeCacheContents(t *testing.T) {
@@ -37,7 +38,7 @@ func TestRuntimeCacheContents(t *testing.T) {
 		},
 		"http max requests per io cycle set": {
 			runtimeSettings: ConfigurableRuntimeSettings{
-				MaxRequestsPerIOCycle: ref.To(uint32(1)),
+				MaxRequestsPerIOCycle: ptr.To(uint32(1)),
 			},
 			additionalFields: map[string]*structpb.Value{
 				"http.max_requests_per_io_cycle": structpb.NewNumberValue(1),
@@ -45,7 +46,7 @@ func TestRuntimeCacheContents(t *testing.T) {
 		},
 		"http max requests per io cycle set invalid": {
 			runtimeSettings: ConfigurableRuntimeSettings{
-				MaxRequestsPerIOCycle: ref.To(uint32(0)),
+				MaxRequestsPerIOCycle: ptr.To(uint32(0)),
 			},
 		},
 		"http max requests per io cycle set nil": {
@@ -58,8 +59,9 @@ func TestRuntimeCacheContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			rc := NewRuntimeCache(tc.runtimeSettings)
 			fields := map[string]*structpb.Value{
-				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
-				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
+				"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
+				"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
+				"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
 			}
 			for k, v := range tc.additionalFields {
 				fields[k] = v
@@ -82,8 +84,9 @@ func TestRuntimeCacheQuery(t *testing.T) {
 			Name: "dynamic",
 			Layer: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
-					"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
+					"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
+					"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
+					"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
 				},
 			},
 		},
@@ -114,21 +117,21 @@ func TestRuntimeCacheQuery(t *testing.T) {
 }
 
 func TestRuntimeVisit(t *testing.T) {
-	service := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	service := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Name:     "http",
 				Protocol: "TCP",
 				Port:     8080,
 			}},
 		},
 	}
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	secret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -148,8 +151,9 @@ func TestRuntimeVisit(t *testing.T) {
 					Name: "dynamic",
 					Layer: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
-							"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
+							"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
+							"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
+							"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
 						},
 					},
 				},
@@ -157,23 +161,23 @@ func TestRuntimeVisit(t *testing.T) {
 		},
 		"configure max connection per listener for one listener": {
 			ConfigurableRuntimeSettings: ConfigurableRuntimeSettings{
-				MaxConnectionsPerListener: ref.To(uint32(100)),
+				MaxConnectionsPerListener: ptr.To(uint32(100)),
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -187,6 +191,7 @@ func TestRuntimeVisit(t *testing.T) {
 					Name: "dynamic",
 					Layer: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
+							"envoy.reloadable_features.sanitize_te":                        structpb.NewBoolValue(false),
 							"envoy.resource_limits.listener.ingress_http.connection_limit": structpb.NewNumberValue(100),
 							"re2.max_program_size.error_level":                             structpb.NewNumberValue(1 << 20),
 							"re2.max_program_size.warn_level":                              structpb.NewNumberValue(1000),
@@ -197,26 +202,26 @@ func TestRuntimeVisit(t *testing.T) {
 		},
 		"configure max connection per listener for two listeners": {
 			ConfigurableRuntimeSettings: ConfigurableRuntimeSettings{
-				MaxConnectionsPerListener: ref.To(uint32(100)),
+				MaxConnectionsPerListener: ptr.To(uint32(100)),
 			},
 			objs: []any{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
+							TLS: &contour_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []contour_api_v1.Route{{
-							Conditions: []contour_api_v1.MatchCondition{{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []contour_api_v1.Service{{
+							Services: []contour_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -231,6 +236,7 @@ func TestRuntimeVisit(t *testing.T) {
 					Name: "dynamic",
 					Layer: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
+							"envoy.reloadable_features.sanitize_te":                         structpb.NewBoolValue(false),
 							"envoy.resource_limits.listener.ingress_http.connection_limit":  structpb.NewNumberValue(100),
 							"envoy.resource_limits.listener.ingress_https.connection_limit": structpb.NewNumberValue(100),
 							"re2.max_program_size.error_level":                              structpb.NewNumberValue(1 << 20),
@@ -253,36 +259,36 @@ func TestRuntimeVisit(t *testing.T) {
 
 func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 	configurableRuntimeSettings := ConfigurableRuntimeSettings{
-		MaxConnectionsPerListener: ref.To(uint32(100)),
+		MaxConnectionsPerListener: ptr.To(uint32(100)),
 	}
 	objs := []any{
-		&contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+		&contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "simple",
 				Namespace: "default",
 			},
-			Spec: contour_api_v1.HTTPProxySpec{
-				VirtualHost: &contour_api_v1.VirtualHost{
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "www.example.com",
 				},
-				Routes: []contour_api_v1.Route{{
-					Conditions: []contour_api_v1.MatchCondition{{
+				Routes: []contour_v1.Route{{
+					Conditions: []contour_v1.MatchCondition{{
 						Prefix: "/",
 					}},
-					Services: []contour_api_v1.Service{{
+					Services: []contour_v1.Service{{
 						Name: "backend",
 						Port: 80,
 					}},
 				}},
 			},
 		},
-		&v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
+		&core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "kuard",
 				Namespace: "default",
 			},
-			Spec: v1.ServiceSpec{
-				Ports: []v1.ServicePort{{
+			Spec: core_v1.ServiceSpec{
+				Ports: []core_v1.ServicePort{{
 					Name:     "http",
 					Protocol: "TCP",
 					Port:     8080,
@@ -298,6 +304,7 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 			Name: "dynamic",
 			Layer: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
+					"envoy.reloadable_features.sanitize_te":                        structpb.NewBoolValue(false),
 					"envoy.resource_limits.listener.ingress_http.connection_limit": structpb.NewNumberValue(100),
 					"re2.max_program_size.error_level":                             structpb.NewNumberValue(1 << 20),
 					"re2.max_program_size.warn_level":                              structpb.NewNumberValue(1000),
@@ -312,8 +319,9 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 			Name: "dynamic",
 			Layer: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
-					"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
+					"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
+					"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
+					"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
 				},
 			},
 		},

@@ -611,22 +611,10 @@ spec:
                   Gateway contains parameters for the gateway-api Gateway that Contour
                   is configured to serve traffic.
                 properties:
-                  controllerName:
-                    description: |-
-                      ControllerName is used to determine whether Contour should reconcile a
-                      GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-                      If unset, the gatewayclass controller will not be started.
-                      Exactly one of ControllerName or GatewayRef must be set.
-                      Deprecated: users should use GatewayRef, or the Gateway provisioner,
-                      in place of this field. This field will be removed in a future release.
-                    type: string
                   gatewayRef:
                     description: |-
-                      GatewayRef defines a specific Gateway that this Contour
-                      instance corresponds to. If set, Contour will reconcile
-                      only this gateway, and will not reconcile any gateway
-                      classes.
-                      Exactly one of ControllerName or GatewayRef must be set.
+                      GatewayRef defines the specific Gateway that this Contour
+                      instance corresponds to.
                     properties:
                       name:
                         type: string
@@ -636,6 +624,8 @@ spec:
                     - name
                     - namespace
                     type: object
+                required:
+                - gatewayRef
                 type: object
               globalExtAuth:
                 description: |-
@@ -1225,7 +1215,7 @@ spec:
                   type:
                     description: |-
                       Defines the XDSServer to use for `contour serve`.
-                      Values: `contour` (default), `envoy`.
+                      Values: `envoy` (default), `contour (deprecated)`.
                       Other values will produce an error.
                     type: string
                 type: object
@@ -1553,6 +1543,20 @@ spec:
                             type: string
                         type: object
                     type: object
+                  disabledFeatures:
+                    description: |-
+                      DisabledFeatures defines an array of resources that will be ignored by
+                      contour reconciler.
+                    items:
+                      enum:
+                      - grpcroutes
+                      - tlsroutes
+                      - extensionservices
+                      - backendtlspolicies
+                      type: string
+                    maxItems: 42
+                    minItems: 1
+                    type: array
                   kubernetesLogLevel:
                     description: |-
                       KubernetesLogLevel Enable Kubernetes client debug logging with log level. If unset,
@@ -4366,22 +4370,10 @@ spec:
                       Gateway contains parameters for the gateway-api Gateway that Contour
                       is configured to serve traffic.
                     properties:
-                      controllerName:
-                        description: |-
-                          ControllerName is used to determine whether Contour should reconcile a
-                          GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
-                          If unset, the gatewayclass controller will not be started.
-                          Exactly one of ControllerName or GatewayRef must be set.
-                          Deprecated: users should use GatewayRef, or the Gateway provisioner,
-                          in place of this field. This field will be removed in a future release.
-                        type: string
                       gatewayRef:
                         description: |-
-                          GatewayRef defines a specific Gateway that this Contour
-                          instance corresponds to. If set, Contour will reconcile
-                          only this gateway, and will not reconcile any gateway
-                          classes.
-                          Exactly one of ControllerName or GatewayRef must be set.
+                          GatewayRef defines the specific Gateway that this Contour
+                          instance corresponds to.
                         properties:
                           name:
                             type: string
@@ -4391,6 +4383,8 @@ spec:
                         - name
                         - namespace
                         type: object
+                    required:
+                    - gatewayRef
                     type: object
                   globalExtAuth:
                     description: |-
@@ -4982,7 +4976,7 @@ spec:
                       type:
                         description: |-
                           Defines the XDSServer to use for `contour serve`.
-                          Values: `contour` (default), `envoy`.
+                          Values: `envoy` (default), `contour (deprecated)`.
                           Other values will produce an error.
                         type: string
                     type: object

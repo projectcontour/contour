@@ -17,12 +17,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/projectcontour/contour/internal/provisioner/labels"
-	"github.com/projectcontour/contour/internal/provisioner/model"
-
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/projectcontour/contour/internal/provisioner/labels"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
 const (
@@ -42,11 +42,11 @@ const (
 
 // NewUnprivilegedPodSecurity makes a a non-root PodSecurityContext object
 // using 65534 as the user and group ID.
-func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
+func NewUnprivilegedPodSecurity() *core_v1.PodSecurityContext {
 	user := int64(65534)
 	group := int64(65534)
 	nonRoot := true
-	return &corev1.PodSecurityContext{
+	return &core_v1.PodSecurityContext{
 		RunAsUser:    &user,
 		RunAsGroup:   &group,
 		RunAsNonRoot: &nonRoot,

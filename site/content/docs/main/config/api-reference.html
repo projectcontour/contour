@@ -1176,6 +1176,14 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.Feature">Feature
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
+<p>
+</p>
 <h3 id="projectcontour.io/v1.GenericKeyDescriptor">GenericKeyDescriptor
 </h3>
 <p>
@@ -6492,6 +6500,22 @@ the annotations for Prometheus will be appended or overwritten with predefined v
 to only watch this subset of namespaces.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disabledFeatures</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.Feature">
+[]Feature
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisabledFeatures defines an array of resources that will be ignored by
+contour reconciler.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
@@ -7840,24 +7864,6 @@ to toggle new contour features.</p>
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>controllerName</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ControllerName is used to determine whether Contour should reconcile a
-GatewayClass. The string takes the form of &ldquo;projectcontour.io/<namespace>/contour&rdquo;.
-If unset, the gatewayclass controller will not be started.
-Exactly one of ControllerName or GatewayRef must be set.</p>
-<p>Deprecated: users should use GatewayRef, or the Gateway provisioner,
-in place of this field. This field will be removed in a future release.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>gatewayRef</code>
 <br>
 <em>
@@ -7867,12 +7873,8 @@ NamespacedName
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>GatewayRef defines a specific Gateway that this Contour
-instance corresponds to. If set, Contour will reconcile
-only this gateway, and will not reconcile any gateway
-classes.
-Exactly one of ControllerName or GatewayRef must be set.</p>
+<p>GatewayRef defines the specific Gateway that this Contour
+instance corresponds to.</p>
 </td>
 </tr>
 </tbody>
@@ -9235,7 +9237,7 @@ XDSServerType
 <td>
 <em>(Optional)</em>
 <p>Defines the XDSServer to use for <code>contour serve</code>.</p>
-<p>Values: <code>contour</code> (default), <code>envoy</code>.</p>
+<p>Values: <code>envoy</code> (default), <code>contour (deprecated)</code>.</p>
 <p>Other values will produce an error.</p>
 </td>
 </tr>
@@ -9302,7 +9304,7 @@ TLS
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;contour&#34;</p></td>
-<td><p>Use Contour&rsquo;s xDS server.</p>
+<td><p>Use Contour&rsquo;s xDS server (deprecated).</p>
 </td>
 </tr><tr><td><p>&#34;envoy&#34;</p></td>
 <td><p>Use the upstream <code>go-control-plane</code>-based xDS server.</p>

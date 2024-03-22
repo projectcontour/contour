@@ -21,32 +21,32 @@ import (
 	"strings"
 	"text/template"
 
-	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
-	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_jwt_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
-	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
-	envoy_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
+	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
+	envoy_filter_http_lua_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_filter_http_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
 	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/sorter"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/sorter"
 )
 
 // VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
-func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool) *envoy_route_v3.VirtualHost {
-	var envoyRoutes []*envoy_route_v3.Route
+func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool) *envoy_config_route_v3.VirtualHost {
+	var envoyRoutes []*envoy_config_route_v3.Route
 	for _, route := range dagRoutes {
 		envoyRoutes = append(envoyRoutes, buildRoute(route, vh.Name, secure))
 	}
@@ -82,7 +82,7 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 	return evh
 }
 
-func getRouteMetadata(dagRoute *dag.Route) *envoy_core_v3.Metadata {
+func getRouteMetadata(dagRoute *dag.Route) *envoy_config_core_v3.Metadata {
 	metadataFields := map[string]*structpb.Value{}
 	if len(dagRoute.Kind) > 0 {
 		metadataFields["io.projectcontour.kind"] = structpb.NewStringValue(dagRoute.Kind)
@@ -98,7 +98,7 @@ func getRouteMetadata(dagRoute *dag.Route) *envoy_core_v3.Metadata {
 		return nil
 	}
 
-	return &envoy_core_v3.Metadata{
+	return &envoy_config_core_v3.Metadata{
 		FilterMetadata: map[string]*structpb.Struct{
 			"envoy.access_loggers.file": {
 				Fields: metadataFields,
@@ -108,8 +108,8 @@ func getRouteMetadata(dagRoute *dag.Route) *envoy_core_v3.Metadata {
 }
 
 // buildRoute converts a DAG route to an Envoy route.
-func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route_v3.Route {
-	route := &envoy_route_v3.Route{
+func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_config_route_v3.Route {
+	route := &envoy_config_route_v3.Route{
 		Match:    RouteMatch(dagRoute),
 		Metadata: getRouteMetadata(dagRoute),
 	}
@@ -160,8 +160,8 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 		// config referencing a requirement in the main filter
 		// config.
 		if len(dagRoute.JWTProvider) > 0 {
-			route.TypedPerFilterConfig[JWTAuthnFilterName] = protobuf.MustMarshalAny(&envoy_jwt_v3.PerRouteConfig{
-				RequirementSpecifier: &envoy_jwt_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
+			route.TypedPerFilterConfig[JWTAuthnFilterName] = protobuf.MustMarshalAny(&envoy_filter_http_jwt_authn_v3.PerRouteConfig{
+				RequirementSpecifier: &envoy_filter_http_jwt_authn_v3.PerRouteConfig_RequirementName{RequirementName: dagRoute.JWTProvider},
 			})
 		}
 
@@ -184,8 +184,8 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_route
 // routeAuthzDisabled returns a per-route config to disable authorization.
 func routeAuthzDisabled() *anypb.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+		&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+			Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
 				Disabled: true,
 			},
 		},
@@ -196,9 +196,9 @@ func routeAuthzDisabled() *anypb.Any {
 // context entries in the check request.
 func routeAuthzContext(settings map[string]string) *anypb.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-				CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+		&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+			Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+				CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
 					ContextExtensions: settings,
 				},
 			},
@@ -206,7 +206,7 @@ func routeAuthzContext(settings map[string]string) *anypb.Any {
 	)
 }
 
-func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_rbac_v3.RBACPerRoute {
+func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rbac_v3.RBACPerRoute {
 	action := envoy_config_rbac_v3.RBAC_ALLOW
 	if !allow {
 		action = envoy_config_rbac_v3.RBAC_DENY
@@ -218,7 +218,7 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_rbac_v3.RBACPer
 		var principal *envoy_config_rbac_v3.Principal
 
 		prefixLen, _ := f.CIDR.Mask.Size()
-		cidr := &envoy_core_v3.CidrRange{
+		cidr := &envoy_config_core_v3.CidrRange{
 			AddressPrefix: f.CIDR.IP.String(),
 			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)),
 		}
@@ -241,8 +241,8 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_rbac_v3.RBACPer
 		principals = append(principals, principal)
 	}
 
-	return &envoy_rbac_v3.RBACPerRoute{
-		Rbac: &envoy_rbac_v3.RBAC{
+	return &envoy_filter_http_rbac_v3.RBACPerRoute{
+		Rbac: &envoy_filter_http_rbac_v3.RBAC{
 			Rules: &envoy_config_rbac_v3.RBAC{
 				Action: action,
 				Policies: map[string]*envoy_config_rbac_v3.Policy{
@@ -260,8 +260,8 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_rbac_v3.RBACPer
 	}
 }
 
-// RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
-func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
+// RouteMatch creates a *envoy_config_route_v3.RouteMatch for the supplied *dag.Route.
+func RouteMatch(route *dag.Route) *envoy_config_route_v3.RouteMatch {
 	routeMatch := PathRouteMatch(route.PathMatchCondition)
 
 	routeMatch.Headers = headerMatcher(route.HeaderMatchConditions)
@@ -270,13 +270,13 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	return routeMatch
 }
 
-// PathRouteMatch creates a *envoy_route_v3.RouteMatch with *only* a PathSpecifier
+// PathRouteMatch creates a *envoy_config_route_v3.RouteMatch with *only* a PathSpecifier
 // populated.
-func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.RouteMatch {
+func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_config_route_v3.RouteMatch {
 	switch c := pathMatchCondition.(type) {
 	case *dag.RegexMatchCondition:
-		return &envoy_route_v3.RouteMatch{
-			PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+		return &envoy_config_route_v3.RouteMatch{
+			PathSpecifier: &envoy_config_route_v3.RouteMatch_SafeRegex{
 				// Add an anchor since we at the very least have a / as a string literal prefix.
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
 				SafeRegex: SafeRegexMatch("^" + c.Regex),
@@ -285,8 +285,8 @@ func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.Route
 	case *dag.PrefixMatchCondition:
 		switch c.PrefixMatchType {
 		case dag.PrefixMatchSegment:
-			return &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_PathSeparatedPrefix{
+			return &envoy_config_route_v3.RouteMatch{
+				PathSpecifier: &envoy_config_route_v3.RouteMatch_PathSeparatedPrefix{
 					// Trim trailing slash as PathSeparatedPrefix expects
 					// no trailing slashes.
 					PathSeparatedPrefix: strings.TrimRight(c.Prefix, "/"),
@@ -295,35 +295,35 @@ func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_route_v3.Route
 		case dag.PrefixMatchString:
 			fallthrough
 		default:
-			return &envoy_route_v3.RouteMatch{
-				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
+			return &envoy_config_route_v3.RouteMatch{
+				PathSpecifier: &envoy_config_route_v3.RouteMatch_Prefix{
 					Prefix: c.Prefix,
 				},
 			}
 		}
 	case *dag.ExactMatchCondition:
-		return &envoy_route_v3.RouteMatch{
-			PathSpecifier: &envoy_route_v3.RouteMatch_Path{
+		return &envoy_config_route_v3.RouteMatch{
+			PathSpecifier: &envoy_config_route_v3.RouteMatch_Path{
 				Path: c.Path,
 			},
 		}
 	default:
-		return &envoy_route_v3.RouteMatch{}
+		return &envoy_config_route_v3.RouteMatch{}
 	}
 }
 
-// routeDirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
+// routeDirectResponse creates a *envoy_config_route_v3.Route_DirectResponse for the
 // http status code and body supplied. This allows a direct response to a route request
 // with an HTTP status code without needing to route to a specific cluster.
-func routeDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
-	r := &envoy_route_v3.Route_DirectResponse{
-		DirectResponse: &envoy_route_v3.DirectResponseAction{
+func routeDirectResponse(response *dag.DirectResponse) *envoy_config_route_v3.Route_DirectResponse {
+	r := &envoy_config_route_v3.Route_DirectResponse{
+		DirectResponse: &envoy_config_route_v3.DirectResponseAction{
 			Status: response.StatusCode,
 		},
 	}
 	if response.Body != "" {
-		r.DirectResponse.Body = &envoy_core_v3.DataSource{
-			Specifier: &envoy_core_v3.DataSource_InlineString{
+		r.DirectResponse.Body = &envoy_config_core_v3.DataSource{
+			Specifier: &envoy_config_core_v3.DataSource_InlineString{
 				InlineString: response.Body,
 			},
 		}
@@ -331,12 +331,12 @@ func routeDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_Dir
 	return r
 }
 
-// routeRedirect creates a *envoy_route_v3.Route_Redirect for the
+// routeRedirect creates a *envoy_config_route_v3.Route_Redirect for the
 // redirect specified. This allows a redirect to be returned to the
 // client.
-func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
-	r := &envoy_route_v3.Route_Redirect{
-		Redirect: &envoy_route_v3.RedirectAction{},
+func routeRedirect(redirect *dag.Redirect) *envoy_config_route_v3.Route_Redirect {
+	r := &envoy_config_route_v3.Route_Redirect{
+		Redirect: &envoy_config_route_v3.RedirectAction{},
 	}
 
 	if len(redirect.Hostname) > 0 {
@@ -344,7 +344,7 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	}
 
 	if len(redirect.Scheme) > 0 {
-		r.Redirect.SchemeRewriteSpecifier = &envoy_route_v3.RedirectAction_SchemeRedirect{
+		r.Redirect.SchemeRewriteSpecifier = &envoy_config_route_v3.RedirectAction_SchemeRedirect{
 			SchemeRedirect: redirect.Scheme,
 		}
 	}
@@ -356,16 +356,16 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	if redirect.PathRewritePolicy != nil {
 		switch {
 		case len(redirect.PathRewritePolicy.FullPathRewrite) > 0:
-			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PathRedirect{
+			r.Redirect.PathRewriteSpecifier = &envoy_config_route_v3.RedirectAction_PathRedirect{
 				PathRedirect: redirect.PathRewritePolicy.FullPathRewrite,
 			}
 		case len(redirect.PathRewritePolicy.PrefixRewrite) > 0:
-			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
+			r.Redirect.PathRewriteSpecifier = &envoy_config_route_v3.RedirectAction_PrefixRewrite{
 				PrefixRewrite: redirect.PathRewritePolicy.PrefixRewrite,
 			}
 		case len(redirect.PathRewritePolicy.PrefixRegexRemove) > 0:
-			r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_RegexRewrite{
-				RegexRewrite: &matcher.RegexMatchAndSubstitute{
+			r.Redirect.PathRewriteSpecifier = &envoy_config_route_v3.RedirectAction_RegexRewrite{
+				RegexRewrite: &envoy_matcher_v3.RegexMatchAndSubstitute{
 					Pattern:      SafeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
 					Substitution: "/",
 				},
@@ -376,19 +376,19 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	// Envoy's default is a 301 if not otherwise specified.
 	switch redirect.StatusCode {
 	case http.StatusMovedPermanently:
-		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_MOVED_PERMANENTLY
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_MOVED_PERMANENTLY
 	case http.StatusFound:
-		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_FOUND
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_FOUND
 	}
 
 	return r
 }
 
-// routeRoute creates a *envoy_route_v3.Route_Route for the services supplied.
+// routeRoute creates a *envoy_config_route_v3.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
-	ra := envoy_route_v3.RouteAction{
+func routeRoute(r *dag.Route) *envoy_config_route_v3.Route_Route {
+	ra := envoy_config_route_v3.RouteAction{
 		RetryPolicy:            retryPolicy(r),
 		Timeout:                envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
 		IdleTimeout:            envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
@@ -402,12 +402,12 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		case len(r.PathRewritePolicy.PrefixRewrite) > 0:
 			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
 		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
-			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+			ra.RegexRewrite = &envoy_matcher_v3.RegexMatchAndSubstitute{
 				Pattern:      SafeRegexMatch("^/.*$"), // match the entire path
 				Substitution: r.PathRewritePolicy.FullPathRewrite,
 			}
 		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
-			ra.RegexRewrite = &matcher.RegexMatchAndSubstitute{
+			ra.RegexRewrite = &envoy_matcher_v3.RegexMatchAndSubstitute{
 				Pattern:      SafeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
 				Substitution: "/",
 			}
@@ -420,33 +420,33 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 
 	// Check for host header policy and set if found
 	if val := envoy.HostRewriteLiteral(r.RequestHeadersPolicy); val != "" {
-		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteLiteral{
+		ra.HostRewriteSpecifier = &envoy_config_route_v3.RouteAction_HostRewriteLiteral{
 			HostRewriteLiteral: val,
 		}
 	} else if val := envoy.HostRewriteHeader(r.RequestHeadersPolicy); val != "" {
-		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteHeader{
+		ra.HostRewriteSpecifier = &envoy_config_route_v3.RouteAction_HostRewriteHeader{
 			HostRewriteHeader: val,
 		}
 	}
 
 	if r.Websocket {
 		ra.UpgradeConfigs = append(ra.UpgradeConfigs,
-			&envoy_route_v3.RouteAction_UpgradeConfig{
+			&envoy_config_route_v3.RouteAction_UpgradeConfig{
 				UpgradeType: "websocket",
 			},
 		)
 	}
 
 	if envoy.SingleSimpleCluster(r) {
-		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_Cluster{
+		ra.ClusterSpecifier = &envoy_config_route_v3.RouteAction_Cluster{
 			Cluster: envoy.Clustername(r.Clusters[0]),
 		}
 	} else {
-		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_WeightedClusters{
+		ra.ClusterSpecifier = &envoy_config_route_v3.RouteAction_WeightedClusters{
 			WeightedClusters: weightedClusters(r),
 		}
 	}
-	return &envoy_route_v3.Route_Route{
+	return &envoy_config_route_v3.Route_Route{
 		Route: &ra,
 	}
 }
@@ -454,32 +454,32 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 // hashPolicy returns a slice of Envoy hash policies from the passed in Contour
 // request hash policy configuration. Only one of header or cookie hash policies
 // should be set on any RequestHashPolicy element.
-func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
+func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_config_route_v3.RouteAction_HashPolicy {
 	if len(requestHashPolicies) == 0 {
 		return nil
 	}
-	hashPolicies := []*envoy_route_v3.RouteAction_HashPolicy{}
+	hashPolicies := []*envoy_config_route_v3.RouteAction_HashPolicy{}
 	for _, rhp := range requestHashPolicies {
-		newHP := &envoy_route_v3.RouteAction_HashPolicy{
+		newHP := &envoy_config_route_v3.RouteAction_HashPolicy{
 			Terminal: rhp.Terminal,
 		}
 		if rhp.HeaderHashOptions != nil {
-			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
-				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+			newHP.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_Header_{
+				Header: &envoy_config_route_v3.RouteAction_HashPolicy_Header{
 					HeaderName: rhp.HeaderHashOptions.HeaderName,
 				},
 			}
 		}
 		if rhp.QueryParameterHashOptions != nil {
-			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
-				QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+			newHP.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_QueryParameter_{
+				QueryParameter: &envoy_config_route_v3.RouteAction_HashPolicy_QueryParameter{
 					Name: rhp.QueryParameterHashOptions.ParameterName,
 				},
 			}
 		}
 		if rhp.CookieHashOptions != nil {
-			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
-				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
+			newHP.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_Cookie_{
+				Cookie: &envoy_config_route_v3.RouteAction_HashPolicy_Cookie{
 					Name: rhp.CookieHashOptions.CookieName,
 					Ttl:  durationpb.New(rhp.CookieHashOptions.TTL),
 					Path: rhp.CookieHashOptions.Path,
@@ -487,8 +487,8 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 			}
 		}
 		if rhp.HashSourceIP {
-			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
-				ConnectionProperties: &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties{
+			newHP.PolicySpecifier = &envoy_config_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
+				ConnectionProperties: &envoy_config_route_v3.RouteAction_HashPolicy_ConnectionProperties{
 					SourceIp: true,
 				},
 			}
@@ -498,16 +498,16 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 	return hashPolicies
 }
 
-func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolicy {
+func mirrorPolicy(r *dag.Route) []*envoy_config_route_v3.RouteAction_RequestMirrorPolicy {
 	if len(r.MirrorPolicies) == 0 {
 		return nil
 	}
 
-	mirrorPolicies := []*envoy_route_v3.RouteAction_RequestMirrorPolicy{}
+	mirrorPolicies := []*envoy_config_route_v3.RouteAction_RequestMirrorPolicy{}
 	for _, mp := range r.MirrorPolicies {
-		mirrorPolicies = append(mirrorPolicies, &envoy_route_v3.RouteAction_RequestMirrorPolicy{
+		mirrorPolicies = append(mirrorPolicies, &envoy_config_route_v3.RouteAction_RequestMirrorPolicy{
 			Cluster: envoy.Clustername(mp.Cluster),
-			RuntimeFraction: &envoy_core_v3.RuntimeFractionalPercent{
+			RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
 				DefaultValue: &envoy_type_v3.FractionalPercent{
 					Numerator:   uint32(mp.Weight),
 					Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
@@ -518,7 +518,7 @@ func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolic
 	return mirrorPolicies
 }
 
-func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
+func retryPolicy(r *dag.Route) *envoy_config_route_v3.RetryPolicy {
 	if r.RetryPolicy == nil {
 		return nil
 	}
@@ -526,7 +526,7 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 		return nil
 	}
 
-	rp := &envoy_route_v3.RetryPolicy{
+	rp := &envoy_config_route_v3.RetryPolicy{
 		RetryOn:              r.RetryPolicy.RetryOn,
 		RetriableStatusCodes: r.RetryPolicy.RetriableStatusCodes,
 	}
@@ -538,12 +538,12 @@ func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 	return rp
 }
 
-func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_route_v3.InternalRedirectPolicy {
+func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_config_route_v3.InternalRedirectPolicy {
 	if p == nil {
 		return nil
 	}
 
-	var predicates []*envoy_core_v3.TypedExtensionConfig
+	var predicates []*envoy_config_core_v3.TypedExtensionConfig
 	allowCrossSchemeRedirect := false
 
 	switch p.AllowCrossSchemeRedirect {
@@ -551,20 +551,20 @@ func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_route_v3.Inter
 		allowCrossSchemeRedirect = true
 	case dag.InternalRedirectCrossSchemeSafeOnly:
 		allowCrossSchemeRedirect = true
-		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+		predicates = append(predicates, &envoy_config_core_v3.TypedExtensionConfig{
 			Name:        "envoy.internal_redirect_predicates.safe_cross_scheme",
 			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_safe_cross_scheme_v3.SafeCrossSchemeConfig{}),
 		})
 	}
 
 	if p.DenyRepeatedRouteRedirect {
-		predicates = append(predicates, &envoy_core_v3.TypedExtensionConfig{
+		predicates = append(predicates, &envoy_config_core_v3.TypedExtensionConfig{
 			Name:        "envoy.internal_redirect_predicates.previous_routes",
 			TypedConfig: protobuf.MustMarshalAny(&envoy_internal_redirect_previous_routes_v3.PreviousRoutesConfig{}),
 		})
 	}
 
-	return &envoy_route_v3.InternalRedirectPolicy{
+	return &envoy_config_route_v3.InternalRedirectPolicy{
 		MaxInternalRedirects:     protobuf.UInt32OrNil(p.MaxInternalRedirects),
 		RedirectResponseCodes:    p.RedirectResponseCodes,
 		Predicates:               predicates,
@@ -573,10 +573,10 @@ func internalRedirectPolicy(p *dag.InternalRedirectPolicy) *envoy_route_v3.Inter
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
-func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
-	return &envoy_route_v3.Route_Redirect{
-		Redirect: &envoy_route_v3.RedirectAction{
-			SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+func UpgradeHTTPS() *envoy_config_route_v3.Route_Redirect {
+	return &envoy_config_route_v3.Route_Redirect{
+		Redirect: &envoy_config_route_v3.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
 		},
@@ -584,17 +584,17 @@ func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
 }
 
 // headerValueList creates a list of Envoy HeaderValueOptions from the provided map.
-func headerValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderValueOption {
-	var hvs []*envoy_core_v3.HeaderValueOption
+func headerValueList(hvm map[string]string, app bool) []*envoy_config_core_v3.HeaderValueOption {
+	var hvs []*envoy_config_core_v3.HeaderValueOption
 
-	appendAction := envoy_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD
+	appendAction := envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD
 	if app {
-		appendAction = envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD
+		appendAction = envoy_config_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD
 	}
 
 	for key, value := range hvm {
-		hvs = append(hvs, &envoy_core_v3.HeaderValueOption{
-			Header: &envoy_core_v3.HeaderValue{
+		hvs = append(hvs, &envoy_config_core_v3.HeaderValueOption{
+			Header: &envoy_config_core_v3.HeaderValue{
 				Key:   key,
 				Value: value,
 			},
@@ -610,13 +610,13 @@ func headerValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderVal
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
-func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
-	var wc envoy_route_v3.WeightedCluster
+func weightedClusters(route *dag.Route) *envoy_config_route_v3.WeightedCluster {
+	var wc envoy_config_route_v3.WeightedCluster
 	var total uint32
 	for _, cluster := range route.Clusters {
 		total += cluster.Weight
 
-		c := &envoy_route_v3.WeightedCluster_ClusterWeight{
+		c := &envoy_config_route_v3.WeightedCluster_ClusterWeight{
 			Name:   envoy.Clustername(cluster),
 			Weight: wrapperspb.UInt32(cluster.Weight),
 		}
@@ -625,7 +625,7 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 			// Check for host header policy and set if found
 			if val := envoy.HostRewriteLiteral(cluster.RequestHeadersPolicy); val != "" {
-				c.HostRewriteSpecifier = &envoy_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{
+				c.HostRewriteSpecifier = &envoy_config_route_v3.WeightedCluster_ClusterWeight_HostRewriteLiteral{
 					HostRewriteLiteral: val,
 				}
 			}
@@ -654,8 +654,8 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 }
 
 // VirtualHost creates a new route.VirtualHost.
-func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
-	return &envoy_route_v3.VirtualHost{
+func VirtualHost(hostname string, routes ...*envoy_config_route_v3.Route) *envoy_config_route_v3.VirtualHost {
+	return &envoy_config_route_v3.VirtualHost{
 		Name:    envoy.Hashname(60, hostname),
 		Domains: []string{hostname},
 		Routes:  routes,
@@ -663,7 +663,7 @@ func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_
 }
 
 // CORSVirtualHost creates a new route.VirtualHost with a CORS policy.
-func CORSVirtualHost(hostname string, corspolicy *envoy_cors_v3.CorsPolicy, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
+func CORSVirtualHost(hostname string, corspolicy *envoy_filter_http_cors_v3.CorsPolicy, routes ...*envoy_config_route_v3.Route) *envoy_config_route_v3.VirtualHost {
 	vh := VirtualHost(hostname, routes...)
 	if corspolicy != nil {
 		vh.TypedPerFilterConfig = map[string]*anypb.Any{
@@ -673,9 +673,9 @@ func CORSVirtualHost(hostname string, corspolicy *envoy_cors_v3.CorsPolicy, rout
 	return vh
 }
 
-// RouteConfiguration returns a *envoy_route_v3.RouteConfiguration.
-func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost) *envoy_route_v3.RouteConfiguration {
-	return &envoy_route_v3.RouteConfiguration{
+// RouteConfiguration returns a *envoy_config_route_v3.RouteConfiguration.
+func RouteConfiguration(name string, virtualhosts ...*envoy_config_route_v3.VirtualHost) *envoy_config_route_v3.RouteConfiguration {
+	return &envoy_config_route_v3.RouteConfiguration{
 		Name:         name,
 		VirtualHosts: virtualhosts,
 		RequestHeadersToAdd: headers(
@@ -687,12 +687,12 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost
 	}
 }
 
-// corsPolicy returns a *envoy_cors_v3.CorsPolicy
-func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
+// corsPolicy returns a *envoy_filter_http_cors_v3.CorsPolicy
+func corsPolicy(cp *dag.CORSPolicy) *envoy_filter_http_cors_v3.CorsPolicy {
 	if cp == nil {
 		return nil
 	}
-	ecp := &envoy_cors_v3.CorsPolicy{
+	ecp := &envoy_filter_http_cors_v3.CorsPolicy{
 		AllowCredentials:          wrapperspb.Bool(cp.AllowCredentials),
 		AllowHeaders:              strings.Join(cp.AllowHeaders, ","),
 		AllowMethods:              strings.Join(cp.AllowMethods, ","),
@@ -706,19 +706,19 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 		ecp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
 	}
 
-	ecp.AllowOriginStringMatch = []*matcher.StringMatcher{}
+	ecp.AllowOriginStringMatch = []*envoy_matcher_v3.StringMatcher{}
 	for _, ao := range cp.AllowOrigin {
-		m := &matcher.StringMatcher{}
+		m := &envoy_matcher_v3.StringMatcher{}
 		switch ao.Type {
 		case dag.CORSAllowOriginMatchExact:
 			// Even though we use the exact matcher, Envoy always makes an exception for the `*` value
 			// https://github.com/envoyproxy/envoy/blob/d6e2fd0185ca620745479da2c43c0564eeaf35c5/source/extensions/filters/http/cors/cors_filter.cc#L142
-			m.MatchPattern = &matcher.StringMatcher_Exact{
+			m.MatchPattern = &envoy_matcher_v3.StringMatcher_Exact{
 				Exact: ao.Value,
 			}
 			m.IgnoreCase = true
 		case dag.CORSAllowOriginMatchRegex:
-			m.MatchPattern = &matcher.StringMatcher_SafeRegex{
+			m.MatchPattern = &envoy_matcher_v3.StringMatcher_SafeRegex{
 				SafeRegex: SafeRegexMatch(ao.Value),
 			}
 		}
@@ -727,25 +727,25 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_cors_v3.CorsPolicy {
 	return ecp
 }
 
-func headers(first *envoy_core_v3.HeaderValueOption, rest ...*envoy_core_v3.HeaderValueOption) []*envoy_core_v3.HeaderValueOption {
-	return append([]*envoy_core_v3.HeaderValueOption{first}, rest...)
+func headers(first *envoy_config_core_v3.HeaderValueOption, rest ...*envoy_config_core_v3.HeaderValueOption) []*envoy_config_core_v3.HeaderValueOption {
+	return append([]*envoy_config_core_v3.HeaderValueOption{first}, rest...)
 }
 
-func appendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
-	return &envoy_core_v3.HeaderValueOption{
-		Header: &envoy_core_v3.HeaderValue{
+func appendHeader(key, value string) *envoy_config_core_v3.HeaderValueOption {
+	return &envoy_config_core_v3.HeaderValueOption{
+		Header: &envoy_config_core_v3.HeaderValue{
 			Key:   key,
 			Value: value,
 		},
-		AppendAction: envoy_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
+		AppendAction: envoy_config_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
 	}
 }
 
-func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderMatcher {
-	var envoyHeaders []*envoy_route_v3.HeaderMatcher
+func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_config_route_v3.HeaderMatcher {
+	var envoyHeaders []*envoy_config_route_v3.HeaderMatcher
 
 	for _, h := range headers {
-		header := &envoy_route_v3.HeaderMatcher{
+		header := &envoy_config_route_v3.HeaderMatcher{
 			Name:        h.Name,
 			InvertMatch: h.Invert,
 			// We only want to turn on TreatMissingHeaderAsEmpty on invert matches
@@ -754,20 +754,20 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 
 		switch h.MatchType {
 		case dag.HeaderMatchTypeExact:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_Exact{Exact: h.Value},
+			header.HeaderMatchSpecifier = &envoy_config_route_v3.HeaderMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: h.Value},
 					IgnoreCase:   h.IgnoreCase,
 				},
 			}
 		case dag.HeaderMatchTypeContains:
 			header.HeaderMatchSpecifier = containsMatch(h.Value, h.IgnoreCase)
 		case dag.HeaderMatchTypePresent:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
+			header.HeaderMatchSpecifier = &envoy_config_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		case dag.HeaderMatchTypeRegex:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_SafeRegex{
+			header.HeaderMatchSpecifier = &envoy_config_route_v3.HeaderMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
 						SafeRegex: SafeRegexMatch(h.Value),
 					},
 				},
@@ -778,53 +778,53 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 	return envoyHeaders
 }
 
-func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_route_v3.QueryParameterMatcher {
-	var envoyQueryParamMatchers []*envoy_route_v3.QueryParameterMatcher
+func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_config_route_v3.QueryParameterMatcher {
+	var envoyQueryParamMatchers []*envoy_config_route_v3.QueryParameterMatcher
 
 	for _, q := range queryParams {
-		queryParam := &envoy_route_v3.QueryParameterMatcher{
+		queryParam := &envoy_config_route_v3.QueryParameterMatcher{
 			Name: q.Name,
 		}
 
 		switch q.MatchType {
 		case dag.QueryParamMatchTypeExact:
-			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_Exact{Exact: q.Value},
+			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: q.Value},
 					IgnoreCase:   q.IgnoreCase,
 				},
 			}
 		case dag.QueryParamMatchTypePrefix:
-			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_Prefix{Prefix: q.Value},
+			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{Prefix: q.Value},
 					IgnoreCase:   q.IgnoreCase,
 				},
 			}
 		case dag.QueryParamMatchTypeSuffix:
-			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_Suffix{Suffix: q.Value},
+			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_Suffix{Suffix: q.Value},
 					IgnoreCase:   q.IgnoreCase,
 				},
 			}
 		case dag.QueryParamMatchTypeRegex:
-			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_SafeRegex{
+			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
 						SafeRegex: SafeRegexMatch(q.Value),
 					},
 				},
 			}
 		case dag.QueryParamMatchTypeContains:
-			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_StringMatch{
-				StringMatch: &matcher.StringMatcher{
-					MatchPattern: &matcher.StringMatcher_Contains{Contains: q.Value},
+			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
+				StringMatch: &envoy_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_matcher_v3.StringMatcher_Contains{Contains: q.Value},
 					IgnoreCase:   q.IgnoreCase,
 				},
 			}
 		case dag.QueryParamMatchTypePresent:
-			queryParam.QueryParameterMatchSpecifier = &envoy_route_v3.QueryParameterMatcher_PresentMatch{
+			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_PresentMatch{
 				PresentMatch: true,
 			}
 		}
@@ -837,11 +837,11 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_rout
 
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
-func containsMatch(s string, ignoreCase bool) *envoy_route_v3.HeaderMatcher_StringMatch {
-	return &envoy_route_v3.HeaderMatcher_StringMatch{
-		StringMatch: &matcher.StringMatcher{
+func containsMatch(s string, ignoreCase bool) *envoy_config_route_v3.HeaderMatcher_StringMatch {
+	return &envoy_config_route_v3.HeaderMatcher_StringMatch{
+		StringMatch: &envoy_matcher_v3.StringMatcher{
 			IgnoreCase: ignoreCase,
-			MatchPattern: &matcher.StringMatcher_Contains{
+			MatchPattern: &envoy_matcher_v3.StringMatcher_Contains{
 				Contains: s,
 			},
 		},
@@ -986,10 +986,10 @@ end
 		return nil
 	}
 
-	c := &lua.LuaPerRoute{
-		Override: &lua.LuaPerRoute_SourceCode{
-			SourceCode: &envoy_core_v3.DataSource{
-				Specifier: &envoy_core_v3.DataSource_InlineString{
+	c := &envoy_filter_http_lua_v3.LuaPerRoute{
+		Override: &envoy_filter_http_lua_v3.LuaPerRoute_SourceCode{
+			SourceCode: &envoy_config_core_v3.DataSource{
+				Specifier: &envoy_config_core_v3.DataSource_InlineString{
 					InlineString: t.String(),
 				},
 			},

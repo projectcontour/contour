@@ -15,6 +15,7 @@ package main
 
 import (
 	"github.com/alecthomas/kingpin/v2"
+
 	"github.com/projectcontour/contour/internal/envoy"
 )
 

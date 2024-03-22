@@ -14,12 +14,13 @@
 package v3
 
 import (
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+
 	"github.com/projectcontour/contour/internal/envoy"
 )
 
 type SocketOptions struct {
-	options []*envoy_core_v3.SocketOption
+	options []*envoy_config_core_v3.SocketOption
 }
 
 func NewSocketOptions() *SocketOptions {
@@ -29,39 +30,39 @@ func NewSocketOptions() *SocketOptions {
 func (so *SocketOptions) TCPKeepalive() *SocketOptions {
 	so.options = append(so.options,
 		// Enable TCP keep-alive.
-		&envoy_core_v3.SocketOption{
+		&envoy_config_core_v3.SocketOption{
 			Description: "Enable TCP keep-alive",
 			Level:       envoy.SOL_SOCKET,
 			Name:        envoy.SO_KEEPALIVE,
-			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 1},
-			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+			Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 1},
+			State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The time (in seconds) the connection needs to remain idle
 		// before TCP starts sending keepalive probes.
-		&envoy_core_v3.SocketOption{
+		&envoy_config_core_v3.SocketOption{
 			Description: "TCP keep-alive initial idle time",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPIDLE,
-			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 45},
-			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+			Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 45},
+			State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The time (in seconds) between individual keepalive probes.
-		&envoy_core_v3.SocketOption{
+		&envoy_config_core_v3.SocketOption{
 			Description: "TCP keep-alive time between probes",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPINTVL,
-			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 5},
-			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+			Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 5},
+			State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The maximum number of TCP keep-alive probes to send before
 		// giving up and killing the connection if no response is
 		// obtained from the other end.
-		&envoy_core_v3.SocketOption{
+		&envoy_config_core_v3.SocketOption{
 			Description: "TCP keep-alive probe count",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPCNT,
-			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 9},
-			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
+			Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: 9},
+			State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
 		},
 	)
 
@@ -72,12 +73,12 @@ func (so *SocketOptions) TCPKeepalive() *SocketOptions {
 func (so *SocketOptions) TOS(value int32) *SocketOptions {
 	if value != 0 {
 		so.options = append(so.options,
-			&envoy_core_v3.SocketOption{
+			&envoy_config_core_v3.SocketOption{
 				Description: "Set IPv4 TOS field",
 				Level:       envoy.IPPROTO_IP,
 				Name:        envoy.IP_TOS,
-				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
-				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: int64(value)},
+				State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: int64(value)},
 			})
 	}
 	return so
@@ -87,17 +88,17 @@ func (so *SocketOptions) TOS(value int32) *SocketOptions {
 func (so *SocketOptions) TrafficClass(value int32) *SocketOptions {
 	if value != 0 {
 		so.options = append(so.options,
-			&envoy_core_v3.SocketOption{
+			&envoy_config_core_v3.SocketOption{
 				Description: "Set IPv6 Traffic Class field",
 				Level:       envoy.IPPROTO_IPV6,
 				Name:        envoy.IPV6_TCLASS,
-				State:       envoy_core_v3.SocketOption_STATE_LISTENING,
-				Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: int64(value)},
+				State:       envoy_config_core_v3.SocketOption_STATE_LISTENING,
+				Value:       &envoy_config_core_v3.SocketOption_IntValue{IntValue: int64(value)},
 			})
 	}
 	return so
 }
 
-func (so *SocketOptions) Build() []*envoy_core_v3.SocketOption {
+func (so *SocketOptions) Build() []*envoy_config_core_v3.SocketOption {
 	return so.options
 }

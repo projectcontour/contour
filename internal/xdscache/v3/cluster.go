@@ -17,26 +17,27 @@ import (
 	"sort"
 	"sync"
 
-	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
-	"google.golang.org/protobuf/proto"
 )
 
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
 	mu     sync.Mutex
-	values map[string]*envoy_cluster_v3.Cluster
+	values map[string]*envoy_config_cluster_v3.Cluster
 	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ClusterCache) Update(v map[string]*envoy_cluster_v3.Cluster) {
+func (c *ClusterCache) Update(v map[string]*envoy_config_cluster_v3.Cluster) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -48,7 +49,7 @@ func (c *ClusterCache) Update(v map[string]*envoy_cluster_v3.Cluster) {
 func (c *ClusterCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_cluster_v3.Cluster
+	var values []*envoy_config_cluster_v3.Cluster
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -59,7 +60,7 @@ func (c *ClusterCache) Contents() []proto.Message {
 func (c *ClusterCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_cluster_v3.Cluster
+	var values []*envoy_config_cluster_v3.Cluster
 	for _, n := range names {
 		// if the cluster is not registered we cannot return
 		// a blank cluster because each cluster has a required
@@ -77,7 +78,7 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 func (*ClusterCache) TypeURL() string { return resource.ClusterType }
 
 func (c *ClusterCache) OnChange(root *dag.DAG) {
-	clusters := map[string]*envoy_cluster_v3.Cluster{}
+	clusters := map[string]*envoy_config_cluster_v3.Cluster{}
 
 	for _, cluster := range root.GetClusters() {
 		name := envoy.Clustername(cluster)

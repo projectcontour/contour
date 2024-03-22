@@ -18,9 +18,10 @@ package debug_test
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/debug"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/projectcontour/contour/internal/debug"
 )
 
 func TestDebugServiceNotRequireLeaderElection(t *testing.T) {
