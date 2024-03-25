@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1
+  namespace: service-a
+spec:
+  selector:
+    app.kubernetes.io/name: test
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+
+---
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: proxy-a
+  namespace: service-a
+spec:
+  virtualhost:
+    fqdn: foo-basic.bar.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80

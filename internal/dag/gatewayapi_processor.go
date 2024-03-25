@@ -1021,6 +1021,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 				TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
+				UseReadableNames:              p.dag.UseReadableClusterNames,
 			})
 		}
 
@@ -1710,6 +1711,7 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
+			UseReadableNames:              p.dag.UseReadableClusterNames,
 		})
 	}
 
@@ -2048,6 +2050,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			UpstreamValidation:            upstreamValidation,
 			UpstreamTLS:                   upstreamTLS,
+			UseReadableNames:              p.dag.UseReadableClusterNames,
 		})
 	}
 	return clusters, totalWeight, true
@@ -2249,6 +2252,7 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
+			UseReadableNames:              p.dag.UseReadableClusterNames,
 		})
 	}
 	return clusters, totalWeight, true

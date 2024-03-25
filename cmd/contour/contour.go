@@ -80,6 +80,8 @@ func main() {
 	serve, serveCtx := registerServe(app)
 	version := app.Command("version", "Build information for Contour.")
 
+	routeGenApp, routeGenConfig := registerRouteGen(app)
+
 	args := os.Args[1:]
 	cmd := kingpin.MustParse(app.Parse(args))
 
@@ -181,6 +183,8 @@ func main() {
 		if err := serve.doServe(); err != nil {
 			log.WithError(err).Fatal("Contour server failed")
 		}
+	case routeGenApp.FullCommand():
+		doRouteGen(routeGenConfig, log)
 	case version.FullCommand():
 		println(build.PrintBuildInfo())
 	default:

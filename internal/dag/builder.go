@@ -52,6 +52,9 @@ type Builder struct {
 
 	// Metrics contains Prometheus metrics.
 	Metrics *metrics.Metrics
+
+	// Config Contains the dag builder configuration
+	Config Config
 }
 
 // Build builds and returns a new DAG by running the
@@ -67,8 +70,9 @@ func (b *Builder) Build() *DAG {
 	}
 
 	dag := &DAG{
-		StatusCache: status.NewCache(gatewayNSName, gatewayController),
-		Listeners:   map[string]*Listener{},
+		StatusCache:             status.NewCache(gatewayNSName, gatewayController),
+		Listeners:               map[string]*Listener{},
+		UseReadableClusterNames: b.Config.UseReadableClusterNames,
 	}
 
 	if b.Metrics != nil {
@@ -124,4 +128,14 @@ func (b *Builder) Build() *DAG {
 	dag.Listeners = listeners
 
 	return dag
+}
+
+// Config holds builder related flags and settings.
+type Config struct {
+	// UseReadableClusterNames controls whether the routes
+	// that are generated will use readable cluster names.
+	// This is used with the routegen command to generate human
+	// readable routes for debugging and testing with the envoy route
+	// testing tool.
+	UseReadableClusterNames bool
 }

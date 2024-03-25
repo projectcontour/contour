@@ -68,6 +68,12 @@ type DAG struct {
 	// and Listeners are derived from the Gateway's Listeners, or
 	// false otherwise.
 	HasDynamicListeners bool
+
+	// UseReadableClusterNames controls whether the routes
+	// that are generated will use the readable cluster names.
+	// This is used with the routegen command to generate human
+	// readable routes for debugging and testing.
+	UseReadableClusterNames bool
 }
 
 type MatchCondition interface {
@@ -1057,6 +1063,12 @@ type Cluster struct {
 
 	// UpstreamTLS contains the TLS version and cipher suite configurations for upstream connections
 	UpstreamTLS *UpstreamTLS
+
+	// UseReadableNames controls whether the routes
+	// that are generated will use the readable cluster names.
+	// This is used with the routegen command to generate human
+	// readable routes for debugging and testing.
+	UseReadableNames bool
 }
 
 // WeightedService represents the load balancing weight of a

@@ -1038,6 +1038,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 				UpstreamTLS:                   p.UpstreamTLS,
+				UseReadableNames:              p.dag.UseReadableClusterNames,
 			}
 			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -1245,6 +1246,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_v1.Deta
 				UpstreamTLS:          p.UpstreamTLS,
 				UpstreamValidation:   uv,
 				ClientCertificate:    clientCertSecret,
+				UseReadableNames:     p.dag.UseReadableClusterNames,
 			})
 		}
 
