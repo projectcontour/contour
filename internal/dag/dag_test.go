@@ -265,3 +265,200 @@ func TestServiceClusterRebalance(t *testing.T) {
 		})
 	}
 }
+
+func TestHasConflictRouteForVirtualHost(t *testing.T) {
+	cases := map[string]struct {
+		vHost          VirtualHost
+		rs             []Route
+		expectConflict bool
+	}{
+		"2 different routes with same path and header, with same kind, expect conflict": {
+			vHost: VirtualHost{
+				Routes: map[string]*Route{},
+			},
+			rs: []Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "a",
+					Namespace:          "b",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "b",
+					Namespace:          "c",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+				},
+			},
+			expectConflict: true,
+		},
+		"2 different routes with same path and header and query params, with same kind, expect conflict": {
+			vHost: VirtualHost{
+				Routes: map[string]*Route{},
+			},
+			rs: []Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "a",
+					Namespace:          "b",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "c",
+					Namespace:          "d",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			expectConflict: true,
+		},
+		"2 different routes with same path and header, but different kind, expect no conflict": {
+			vHost: VirtualHost{
+				Routes: map[string]*Route{},
+			},
+			rs: []Route{
+				{
+					Kind:               KindGRPCRoute,
+					Name:               "a",
+					Namespace:          "b",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "b",
+					Namespace:          "c",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+				},
+			},
+			expectConflict: false,
+		},
+		"2 different routes with same path and header and query params, but different kind, expect no conflict": {
+			vHost: VirtualHost{
+				Routes: map[string]*Route{},
+			},
+			rs: []Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "a",
+					Namespace:          "b",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+				{
+					Kind:               KindGRPCRoute,
+					Name:               "c",
+					Namespace:          "d",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			expectConflict: false,
+		},
+		"2 different routes with same path and header, but different query params, with same kind, don't expect conflict": {
+			vHost: VirtualHost{
+				Routes: map[string]*Route{},
+			},
+			rs: []Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "a",
+					Namespace:          "b",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "c",
+					Namespace:          "d",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-2different", Value: "value-2different", MatchType: QueryParamMatchTypePrefix},
+					},
+				},
+			},
+			expectConflict: false,
+		},
+		"2 different routes with different path, with same kind, don't expect conflict": {
+			vHost: VirtualHost{
+				Routes: map[string]*Route{},
+			},
+			rs: []Route{
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "a",
+					Namespace:          "b",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+				{
+					Kind:               KindHTTPRoute,
+					Name:               "c",
+					Namespace:          "d",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+			},
+			expectConflict: false,
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(n, func(t *testing.T) {
+			c.vHost.AddRoute(&c.rs[0])
+
+			assert.Equal(t, c.vHost.HasConflictRoute(&c.rs[1]), c.expectConflict)
+		})
+	}
+}

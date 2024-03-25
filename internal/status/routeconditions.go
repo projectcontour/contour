@@ -32,11 +32,16 @@ const (
 )
 
 const (
-	ReasonDegraded                      gatewayapi_v1.RouteConditionReason = "Degraded"
-	ReasonAllBackendRefsHaveZeroWeights gatewayapi_v1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
-	ReasonInvalidPathMatch              gatewayapi_v1.RouteConditionReason = "InvalidPathMatch"
-	ReasonInvalidMethodMatch            gatewayapi_v1.RouteConditionReason = "InvalidMethodMatch"
-	ReasonInvalidGateway                gatewayapi_v1.RouteConditionReason = "InvalidGateway"
+	ReasonDegraded                        gatewayapi_v1.RouteConditionReason = "Degraded"
+	ReasonAllBackendRefsHaveZeroWeights   gatewayapi_v1.RouteConditionReason = "AllBackendRefsHaveZeroWeights"
+	ReasonInvalidPathMatch                gatewayapi_v1.RouteConditionReason = "InvalidPathMatch"
+	ReasonInvalidMethodMatch              gatewayapi_v1.RouteConditionReason = "InvalidMethodMatch"
+	ReasonInvalidGateway                  gatewayapi_v1.RouteConditionReason = "InvalidGateway"
+	ReasonRouteRuleMatchConflict          gatewayapi_v1.RouteConditionReason = "RuleMatchConflict"
+	ReasonRouteRuleMatchPartiallyConflict gatewayapi_v1.RouteConditionReason = "RuleMatchPartiallyConflict"
+
+	MessageRouteRuleMatchConflict          string = "HTTPRoute's Match has conflict with other HTTPRoute's Match"
+	MessageRouteRuleMatchPartiallyConflict string = "Dropped Rule: HTTPRoute's rule(s) has(ve) been dropped because of conflict against other HTTPRoute's rule(s)"
 )
 
 // RouteStatusUpdate represents an atomic update to a

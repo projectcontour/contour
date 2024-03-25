@@ -181,6 +181,10 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 
 		f.NamespacedTest("gateway-backend-tls-policy", testWithHTTPGateway(testBackendTLSPolicy))
+
+		f.NamespacedTest("gateway-httproute-conflict-match", testWithHTTPGateway(testHTTPRouteConflictMatch))
+
+		f.NamespacedTest("gateway-httproute-partially-conflict-match", testWithHTTPGateway(testHTTPRoutePartiallyConflictMatch))
 	})
 
 	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
