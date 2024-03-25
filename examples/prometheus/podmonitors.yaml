@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: contour-pods
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: contour
+  namespaceSelector:
+    matchNames:
+    - projectcontour
+  podMetricsEndpoints:
+  - port: metrics
+    path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-pods
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: envoy
+  namespaceSelector:
+    matchNames:
+    - projectcontour
+  podMetricsEndpoints:
+  - port: metrics
+    path: /stats/prometheus

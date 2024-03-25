@@ -561,15 +561,6 @@ func (d *Deployment) mutatePodTemplate(pts core_v1.PodTemplateSpec) core_v1.PodT
 	// Remove shutdown-manager container.
 	pts.Spec.Containers = pts.Spec.Containers[1:]
 
-	// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
-	pts.Spec.Containers[0].Ports = append(pts.Spec.Containers[0].Ports,
-		core_v1.ContainerPort{
-			Name:          "metrics",
-			ContainerPort: 8002,
-			HostPort:      8002,
-			Protocol:      core_v1.ProtocolTCP,
-		})
-
 	return pts
 }
 

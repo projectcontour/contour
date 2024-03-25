@@ -1,0 +1,14 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  virtualhost:
+    fqdn: prometheus-example.projectcontour.io
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: prometheus-k8s
+      port: 9090
