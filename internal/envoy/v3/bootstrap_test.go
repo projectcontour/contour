@@ -74,13 +74,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -253,13 +255,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -432,13 +436,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -612,13 +618,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -792,13 +800,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -972,13 +982,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -1153,13 +1165,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -1336,13 +1350,15 @@ func TestBootstrap(t *testing.T) {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             },
             {
               "max_connections": 100000,
               "max_pending_requests": 100000,
               "max_requests": 60000000,
-              "max_retries": 50
+              "max_retries": 50,
+              "track_remaining": true
             }
           ]
         },
@@ -1553,13 +1569,15 @@ func TestBootstrap(t *testing.T) {
                     "max_connections": 100000,
                     "max_pending_requests": 100000,
                     "max_requests": 60000000,
-                    "max_retries": 50
+                    "max_retries": 50,
+                    "track_remaining": true
                   },
                   {
                     "max_connections": 100000,
                     "max_pending_requests": 100000,
                     "max_requests": 60000000,
-                    "max_retries": 50
+                    "max_retries": 50,
+                    "track_remaining": true
                   }
                 ]
               },
@@ -1810,13 +1828,15 @@ func TestBootstrap(t *testing.T) {
                     "max_connections": 100000,
                     "max_pending_requests": 100000,
                     "max_requests": 60000000,
-                    "max_retries": 50
+                    "max_retries": 50,
+                    "track_remaining": true
                   },
                   {
                     "max_connections": 100000,
                     "max_pending_requests": 100000,
                     "max_requests": 60000000,
-                    "max_retries": 50
+                    "max_retries": 50,
+                    "track_remaining": true
                   }
                 ]
               },

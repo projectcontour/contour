@@ -427,8 +427,11 @@ func TestCluster(t *testing.T) {
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(9000),
+						TrackRemaining: true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
@@ -456,8 +459,11 @@ func TestCluster(t *testing.T) {
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(4096),
+						TrackRemaining:     true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
@@ -484,9 +490,12 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxRequests: wrapperspb.UInt32(404),
+						MaxRequests:    wrapperspb.UInt32(404),
+						TrackRemaining: true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
@@ -513,9 +522,12 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxRetries: wrapperspb.UInt32(7),
+						MaxRetries:     wrapperspb.UInt32(7),
+						TrackRemaining: true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
@@ -541,9 +553,12 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(45),
+						TrackRemaining: true,
 					}},
 				},
 			},
