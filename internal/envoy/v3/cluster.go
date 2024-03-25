@@ -383,8 +383,8 @@ func slowStartConfig(slowStartConfig *dag.SlowStartConfig) *envoy_config_cluster
 	}
 }
 
-func outlierDetection(policy *dag.OutlierDetectionPolicy) *envoy_cluster_v3.OutlierDetection {
-	out := &envoy_cluster_v3.OutlierDetection{
+func outlierDetection(policy *dag.OutlierDetectionPolicy) *envoy_config_cluster_v3.OutlierDetection {
+	out := &envoy_config_cluster_v3.OutlierDetection{
 		EnforcingConsecutive_5Xx:           protobuf.UInt32Zero(),
 		EnforcingSuccessRate:               protobuf.UInt32Zero(),
 		EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),

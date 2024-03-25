@@ -833,7 +833,7 @@ func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.GlobalCircuitB
 	return s
 }
 
-func mergeOutlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *contour_api_v1.OutlierDetection) *contour_api_v1.OutlierDetection {
+func mergeOutlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *contour_v1.OutlierDetection) *contour_v1.OutlierDetection {
 	if serviceOutlierDetection == nil {
 		if globalOutlierDetection == nil || globalOutlierDetection.Disabled {
 			return nil
@@ -848,7 +848,7 @@ func mergeOutlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection
 	return serviceOutlierDetection
 }
 
-func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *contour_api_v1.OutlierDetection) (*OutlierDetectionPolicy, error) {
+func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *contour_v1.OutlierDetection) (*OutlierDetectionPolicy, error) {
 	outlierDetection := mergeOutlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection)
 
 	if outlierDetection == nil {
@@ -860,7 +860,7 @@ func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *con
 	}
 
 	var err error
-	out.Interval, err = time.ParseDuration(ref.Val(outlierDetection.Interval, "10s"))
+	out.Interval, err = time.ParseDuration(ptr.Deref(outlierDetection.Interval, "10s"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing interval: %w", err)
 	}
@@ -868,7 +868,7 @@ func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *con
 		return nil, fmt.Errorf("interval must be greater than 0s")
 	}
 
-	out.BaseEjectionTime, err = time.ParseDuration(ref.Val(outlierDetection.BaseEjectionTime, "30s"))
+	out.BaseEjectionTime, err = time.ParseDuration(ptr.Deref(outlierDetection.BaseEjectionTime, "30s"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing baseEjectionTime: %w", err)
 	}
@@ -876,7 +876,7 @@ func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *con
 		return nil, fmt.Errorf("baseEjectionTime must be greater than 0s")
 	}
 
-	out.MaxEjectionTime, err = time.ParseDuration(ref.Val(outlierDetection.MaxEjectionTime, "300s"))
+	out.MaxEjectionTime, err = time.ParseDuration(ptr.Deref(outlierDetection.MaxEjectionTime, "300s"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing maxEjectionTime: %w", err)
 	}
@@ -884,13 +884,13 @@ func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *con
 		return nil, fmt.Errorf("maxEjectionTime cannot be smaller than baseEjectionTime")
 	}
 
-	out.ConsecutiveServerErrors = ref.Val(outlierDetection.ConsecutiveServerErrors, 5)
+	out.ConsecutiveServerErrors = ptr.Deref(outlierDetection.ConsecutiveServerErrors, 5)
 
-	out.ConsecutiveLocalOriginFailure = ref.Val(outlierDetection.ConsecutiveLocalOriginFailure, 5)
+	out.ConsecutiveLocalOriginFailure = ptr.Deref(outlierDetection.ConsecutiveLocalOriginFailure, 5)
 
-	out.MaxEjectionPercent = ref.Val(outlierDetection.MaxEjectionPercent, 10)
+	out.MaxEjectionPercent = ptr.Deref(outlierDetection.MaxEjectionPercent, 10)
 
-	out.MaxEjectionTimeJitter, err = time.ParseDuration(ref.Val(outlierDetection.MaxEjectionTimeJitter, "0s"))
+	out.MaxEjectionTimeJitter, err = time.ParseDuration(ptr.Deref(outlierDetection.MaxEjectionTimeJitter, "0s"))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing maxEjectionTimeJitter: %w", err)
 	}

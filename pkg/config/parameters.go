@@ -708,7 +708,7 @@ type Parameters struct {
 
 	// GlobalOutlierDetection defines the configuration for outlier detection on all services.
 	// If defined, this will be used as the default for all services.
-	GlobalOutlierDetection *contour_api_v1.OutlierDetection `yaml:"outlierDetection,omitempty"`
+	GlobalOutlierDetection *contour_v1.OutlierDetection `yaml:"outlierDetection,omitempty"`
 
 	// FeatureFlags defines toggle to enable new contour features.
 	// available toggles are

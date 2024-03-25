@@ -114,7 +114,7 @@ type HTTPProxyProcessor struct {
 	SetSourceMetadataOnRoutes bool
 
 	// GlobalOutlierDetection defines route-service's Global Outlier Detection configuration.
-	GlobalOutlierDetection *contour_api_v1.OutlierDetection
+	GlobalOutlierDetection *contour_v1.OutlierDetection
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
 	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults
@@ -997,7 +997,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			outlierDetection, err := outlierDetectionPolicy(p.GlobalOutlierDetection, service.OutlierDetection)
 			if err != nil {
-				validCond.AddErrorf(contour_api_v1.ConditionTypeOutlierDetectionError, "OutlierDetectionInvalid",
+				validCond.AddErrorf(contour_v1.ConditionTypeOutlierDetectionError, "OutlierDetectionInvalid",
 					"%s on outlier detection", err)
 				return nil
 			}

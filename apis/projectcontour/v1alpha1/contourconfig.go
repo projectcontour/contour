@@ -88,7 +88,7 @@ type ContourConfigurationSpec struct {
 	// GlobalOutlierDetection defines the configuration for outlier detection on all services.
 	// If defined, this will be used as the default for all services.
 	// +optional
-	GlobalOutlierDetection *contour_api_v1.OutlierDetection `json:"outlierDetection,omitempty"`
+	GlobalOutlierDetection *contour_v1.OutlierDetection `json:"outlierDetection,omitempty"`
 
 	// FeatureFlags defines toggle to enable new contour features.
 	// Available toggles are:

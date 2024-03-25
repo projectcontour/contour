@@ -849,15 +849,15 @@ func TestCluster(t *testing.T) {
 					MaxEjectionTimeJitter:          0,
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/e08d8f1af7",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				OutlierDetection: &envoy_cluster_v3.OutlierDetection{
+				OutlierDetection: &envoy_config_cluster_v3.OutlierDetection{
 					EnforcingConsecutive_5Xx:           protobuf.UInt32Zero(),
 					EnforcingSuccessRate:               protobuf.UInt32Zero(),
 					EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),
@@ -886,15 +886,15 @@ func TestCluster(t *testing.T) {
 					MaxEjectionTimeJitter:          0,
 				},
 			},
-			want: &envoy_cluster_v3.Cluster{
+			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/447b5c0802",
 				AltStatName:          "default_kuard_443",
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				OutlierDetection: &envoy_cluster_v3.OutlierDetection{
+				OutlierDetection: &envoy_config_cluster_v3.OutlierDetection{
 					EnforcingConsecutive_5Xx:           protobuf.UInt32OrNil(100),
 					EnforcingSuccessRate:               protobuf.UInt32Zero(),
 					EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),

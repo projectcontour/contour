@@ -20,12 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/ref"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -1381,18 +1381,18 @@ func TestMergeOutlierDetectionPolicy(t *testing.T) {
 		},
 		"globalPolicy is not nil and globalPolicy is enabled and servicePolicy is not nil and servicePolicy is enabled": {
 			globalPolicy: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(5)),
+				ConsecutiveServerErrors: ptr.To(uint32(5)),
 			},
 			servicePolicy: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(10)),
+				ConsecutiveServerErrors: ptr.To(uint32(10)),
 			},
 			want: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(10)),
+				ConsecutiveServerErrors: ptr.To(uint32(10)),
 			},
 		},
 		"globalPolicy is not nil and globalPolicy is enabled and servicePolicy is not nil and servicePolicy is disabled": {
 			globalPolicy: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(5)),
+				ConsecutiveServerErrors: ptr.To(uint32(5)),
 			},
 			servicePolicy: &contour_v1.OutlierDetection{
 				Disabled: true,
@@ -1404,10 +1404,10 @@ func TestMergeOutlierDetectionPolicy(t *testing.T) {
 				Disabled: true,
 			},
 			servicePolicy: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(10)),
+				ConsecutiveServerErrors: ptr.To(uint32(10)),
 			},
 			want: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors: ref.To(uint32(10)),
+				ConsecutiveServerErrors: ptr.To(uint32(10)),
 			},
 		},
 	}
@@ -1444,27 +1444,27 @@ func TestOutlierDetectionPolicy(t *testing.T) {
 		},
 		"interval no unit": {
 			in: &contour_v1.OutlierDetection{
-				Interval: ref.To("10"),
+				Interval: ptr.To("10"),
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		"interval bad unit": {
 			in: &contour_v1.OutlierDetection{
-				Interval: ref.To("10f"),
+				Interval: ptr.To("10f"),
 			},
 			want:    nil,
 			wantErr: true,
 		},
 		"normal": {
 			in: &contour_v1.OutlierDetection{
-				ConsecutiveServerErrors:        ref.To(uint32(5)),
-				Interval:                       ref.To("10s"),
-				BaseEjectionTime:               ref.To("30s"),
-				MaxEjectionTime:                ref.To("300s"),
+				ConsecutiveServerErrors:        ptr.To(uint32(5)),
+				Interval:                       ptr.To("10s"),
+				BaseEjectionTime:               ptr.To("30s"),
+				MaxEjectionTime:                ptr.To("300s"),
 				SplitExternalLocalOriginErrors: true,
-				ConsecutiveLocalOriginFailure:  ref.To(uint32(3)),
-				MaxEjectionPercent:             ref.To(uint32(50)),
+				ConsecutiveLocalOriginFailure:  ptr.To(uint32(3)),
+				MaxEjectionPercent:             ptr.To(uint32(50)),
 			},
 			want: &OutlierDetectionPolicy{
 				ConsecutiveServerErrors:        5,
