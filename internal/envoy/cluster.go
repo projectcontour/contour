@@ -30,6 +30,15 @@ import (
 // Therefore the generated name must contain all relevant fields that make the cluster unique.
 func Clustername(cluster *dag.Cluster) string {
 	service := cluster.Upstream
+	ns := service.Weighted.ServiceNamespace
+	name := service.Weighted.ServiceName
+
+	if cluster.UseReadableNames {
+		port := service.Weighted.ServicePort.Port
+		// Use a more human-readable cluster name format for debug mode
+		return fmt.Sprintf("%s/%s/%d", ns, name, port)
+	}
+
 	buf := cluster.LoadBalancerPolicy
 	if hc := cluster.HTTPHealthCheckPolicy; hc != nil {
 		if hc.Timeout > 0 {
@@ -65,8 +74,6 @@ func Clustername(cluster *dag.Cluster) string {
 	// This isn't a crypto hash, we just want a unique name.
 	hash := sha1.Sum([]byte(buf)) // nolint:gosec
 
-	ns := service.Weighted.ServiceNamespace
-	name := service.Weighted.ServiceName
 	return Hashname(60, ns, name, strconv.Itoa(int(service.Weighted.ServicePort.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 

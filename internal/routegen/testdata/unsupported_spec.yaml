@@ -1,0 +1,8 @@
+---
+apiVersion: mysterapi.io/v1
+kind: Mystery
+metadata:
+  name: my-myster-cr
+  namespace: service-a
+spec:
+  random: field

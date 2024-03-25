@@ -304,6 +304,7 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host, path stri
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 			UpstreamTLS:                   p.UpstreamTLS,
+			UseReadableNames:              p.dag.UseReadableClusterNames,
 		}},
 	}
 

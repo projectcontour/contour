@@ -14,12 +14,14 @@
 package v3
 
 import (
+	"encoding/json"
 	"path"
 	"sort"
 	"sync"
 
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/projectcontour/contour/internal/contour"
@@ -57,6 +59,30 @@ func (c *RouteCache) Contents() []proto.Message {
 
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
+}
+
+// Raw returns a raw json copy of the cache's contents.
+// This is exclusively used for route testing.
+func (c *RouteCache) Raw() []json.RawMessage {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var values []*envoy_config_route_v3.RouteConfiguration
+	for _, v := range c.values {
+		values = append(values, v)
+	}
+
+	sort.Stable(sorter.For(values))
+
+	var jsonMessages []json.RawMessage
+
+	for _, msg := range protobuf.AsMessages(values) {
+		// Marshal the proto.Message into JSON
+		jsonBytes, _ := protojson.Marshal(msg)
+		jsonMessages = append(jsonMessages, jsonBytes)
+	}
+
+	return jsonMessages
 }
 
 // Query searches the RouteCache for the named RouteConfiguration entries.
