@@ -572,6 +572,7 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
+		globalOutlierDetection:             contourConfiguration.GlobalOutlierDetection,
 		globalCircuitBreakerDefaults:       contourConfiguration.Envoy.Cluster.GlobalCircuitBreakerDefaults,
 		upstreamTLS: &dag.UpstreamTLS{
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
@@ -1064,6 +1065,7 @@ type dagBuilderConfig struct {
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
 	globalCircuitBreakerDefaults       *contour_v1alpha1.GlobalCircuitBreakerDefaults
+	globalOutlierDetection             *contour_v1.OutlierDetection
 	upstreamTLS                        *dag.UpstreamTLS
 }
 
@@ -1161,6 +1163,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			SetSourceMetadataOnRoutes:     true,
 			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			UpstreamTLS:                   dbc.upstreamTLS,
+			GlobalOutlierDetection:        dbc.globalOutlierDetection,
 		},
 	}
 

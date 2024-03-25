@@ -144,6 +144,10 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		}
 	}
 
+	if c.OutlierDetectionPolicy != nil {
+		cluster.OutlierDetection = outlierDetection(c.OutlierDetectionPolicy)
+	}
+
 	return cluster
 }
 
@@ -377,4 +381,27 @@ func slowStartConfig(slowStartConfig *dag.SlowStartConfig) *envoy_config_cluster
 			Value: float64(slowStartConfig.MinWeightPercent),
 		},
 	}
+}
+
+func outlierDetection(policy *dag.OutlierDetectionPolicy) *envoy_config_cluster_v3.OutlierDetection {
+	out := &envoy_config_cluster_v3.OutlierDetection{
+		EnforcingConsecutive_5Xx:           protobuf.UInt32Zero(),
+		EnforcingSuccessRate:               protobuf.UInt32Zero(),
+		EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),
+		EnforcingLocalOriginSuccessRate:    protobuf.UInt32Zero(),
+		Interval:                           durationpb.New(policy.Interval),
+		BaseEjectionTime:                   durationpb.New(policy.BaseEjectionTime),
+		MaxEjectionTime:                    durationpb.New(policy.MaxEjectionTime),
+		MaxEjectionPercent:                 protobuf.UInt32OrNil(policy.MaxEjectionPercent),
+		SplitExternalLocalOriginErrors:     policy.SplitExternalLocalOriginErrors,
+		ConsecutiveLocalOriginFailure:      protobuf.UInt32OrNil(policy.ConsecutiveLocalOriginFailure),
+		MaxEjectionTimeJitter:              durationpb.New(policy.MaxEjectionTimeJitter),
+	}
+
+	if policy.ConsecutiveServerErrors > 0 {
+		out.Consecutive_5Xx = protobuf.UInt32OrNil(policy.ConsecutiveServerErrors)
+		out.EnforcingConsecutive_5Xx = protobuf.UInt32OrNil(100)
+	}
+
+	return out
 }

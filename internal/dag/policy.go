@@ -832,3 +832,68 @@ func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.GlobalCircuitB
 
 	return s
 }
+
+func mergeOutlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *contour_v1.OutlierDetection) *contour_v1.OutlierDetection {
+	if serviceOutlierDetection == nil {
+		if globalOutlierDetection == nil || globalOutlierDetection.Disabled {
+			return nil
+		}
+		return globalOutlierDetection
+	}
+
+	if serviceOutlierDetection.Disabled {
+		return nil
+	}
+
+	return serviceOutlierDetection
+}
+
+func outlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection *contour_v1.OutlierDetection) (*OutlierDetectionPolicy, error) {
+	outlierDetection := mergeOutlierDetectionPolicy(globalOutlierDetection, serviceOutlierDetection)
+
+	if outlierDetection == nil {
+		return nil, nil
+	}
+
+	out := &OutlierDetectionPolicy{
+		SplitExternalLocalOriginErrors: outlierDetection.SplitExternalLocalOriginErrors,
+	}
+
+	var err error
+	out.Interval, err = time.ParseDuration(ptr.Deref(outlierDetection.Interval, "10s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing interval: %w", err)
+	}
+	if out.Interval == 0 {
+		return nil, fmt.Errorf("interval must be greater than 0s")
+	}
+
+	out.BaseEjectionTime, err = time.ParseDuration(ptr.Deref(outlierDetection.BaseEjectionTime, "30s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing baseEjectionTime: %w", err)
+	}
+	if out.BaseEjectionTime == 0 {
+		return nil, fmt.Errorf("baseEjectionTime must be greater than 0s")
+	}
+
+	out.MaxEjectionTime, err = time.ParseDuration(ptr.Deref(outlierDetection.MaxEjectionTime, "300s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing maxEjectionTime: %w", err)
+	}
+	if out.MaxEjectionTime < out.BaseEjectionTime {
+		return nil, fmt.Errorf("maxEjectionTime cannot be smaller than baseEjectionTime")
+	}
+
+	out.ConsecutiveServerErrors = ptr.Deref(outlierDetection.ConsecutiveServerErrors, 5)
+
+	out.ConsecutiveLocalOriginFailure = ptr.Deref(outlierDetection.ConsecutiveLocalOriginFailure, 5)
+
+	out.MaxEjectionPercent = ptr.Deref(outlierDetection.MaxEjectionPercent, 10)
+
+	out.MaxEjectionTimeJitter, err = time.ParseDuration(ptr.Deref(outlierDetection.MaxEjectionTimeJitter, "0s"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing maxEjectionTimeJitter: %w", err)
+	}
+
+	return out, nil
+}
