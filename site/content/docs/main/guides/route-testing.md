@@ -18,7 +18,7 @@ router_check_tool --version
 ```
 
 ## Generating Envoy routes from Contour
-The Contour routegen tool requires Kubernetes manifests as input to generate envoy routes. The manifest should contain atleast one of APIGateway, HTTPProxy or an Ingress along with their referencing Kubernetes services.
+The Contour routegen tool requires Kubernetes manifests as input to generate envoy routes. The manifest should contain at least one of APIGateway, HTTPProxy or an Ingress along with their referencing Kubernetes services.
 
 A sample manifest is given below
 

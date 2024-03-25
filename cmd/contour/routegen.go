@@ -98,11 +98,11 @@ func registerRouteGen(app *kingpin.Application) (*kingpin.CmdClause, *routeGenCo
 		return nil
 	}
 
-	routeGenCmd := app.Command("routegen", "Generate Envoy route configuration based on server config and resources")
-	routeGenCmd.Arg("resources", "Set of input resource manifests for the Envoy route configuration").Required().StringsVar(&cfg.inputManifests)
-	routeGenCmd.Flag("config-path", "Path to base configuration file").Short('c').PlaceHolder("/path/to/file").Action(parseContourConfigFile).ExistingFileVar(&configFile)
-	routeGenCmd.Flag("ingress-class-name", "Contour IngressClass name").PlaceHolder("<name>").StringVar(&cfg.serveCtx.ingressClassName)
-	routeGenCmd.Flag("output", "File to write route config into (defaults to stdout)").StringVar(&cfg.output)
+	routeGenCmd := app.Command("routegen", "Generate Envoy route configuration based on server config and resources.")
+	routeGenCmd.Arg("resources", "Set of input resource manifests for the Envoy route configuration.").Required().StringsVar(&cfg.inputManifests)
+	routeGenCmd.Flag("config-path", "Path to base configuration file.").Short('c').PlaceHolder("/path/to/file").Action(parseContourConfigFile).ExistingFileVar(&configFile)
+	routeGenCmd.Flag("ingress-class-name", "Contour IngressClass name.").PlaceHolder("<name>").StringVar(&cfg.serveCtx.ingressClassName)
+	routeGenCmd.Flag("output", "File to write route config into (defaults to stdout).").StringVar(&cfg.output)
 
 	return routeGenCmd, cfg
 }
