@@ -87,9 +87,9 @@ type ContourConfigurationSpec struct {
 
 	// FeatureFlags defines toggle to enable new contour features.
 	// Available toggles are:
-	// useEndpointSlices - configures contour to fetch endpoint data
-	// from k8s endpoint slices. defaults to false and reading endpoint
-	// data from the k8s endpoints.
+	// useEndpointSlices - Configures contour to fetch endpoint data
+	// from k8s endpoint slices. defaults to true,
+	// If false then reads endpoint data from the k8s endpoints.
 	FeatureFlags FeatureFlags `json:"featureFlags,omitempty"`
 }
 

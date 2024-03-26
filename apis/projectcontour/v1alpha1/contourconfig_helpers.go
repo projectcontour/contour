@@ -15,18 +15,16 @@ package v1alpha1
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	featureFlagUseEndpointSlices string = "useEndpointSlices"
-)
+const featureFlagUseEndpointSlices string = "useEndpointSlices"
 
-var featureFlagsMap = map[string]bool{
-	featureFlagUseEndpointSlices: true,
+var featureFlagsMap = map[string]struct{}{
+	featureFlagUseEndpointSlices: {},
 }
 
 // Validate configuration that is not already covered by CRD validation.
@@ -226,16 +224,26 @@ func (e *EnvoyTLS) SanitizedCipherSuites() []string {
 
 func (f FeatureFlags) Validate() error {
 	for _, featureFlag := range f {
-		if _, found := featureFlagsMap[featureFlag]; !found {
+		fields := strings.Split(featureFlag, "=")
+		if _, found := featureFlagsMap[fields[0]]; !found {
 			return fmt.Errorf("invalid contour configuration, unknown feature flag:%s", featureFlag)
 		}
 	}
-
 	return nil
 }
 
 func (f FeatureFlags) IsEndpointSliceEnabled() bool {
-	return slices.Contains(f, featureFlagUseEndpointSlices)
+	// only when the flag: 'useEndpointSlices=false' is exists, return false
+	for _, flag := range f {
+		if !strings.HasPrefix(flag, featureFlagUseEndpointSlices) {
+			continue
+		}
+		fields := strings.Split(flag, "=")
+		if len(fields) == 2 && strings.ToLower(fields[1]) == "false" {
+			return false
+		}
+	}
+	return true
 }
 
 // Validate ensures that GatewayRef namespace/name is specified.
