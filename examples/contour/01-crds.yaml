@@ -6383,6 +6383,11 @@ spec:
                         Provided header must come from trusted source.
                         **NOTE: The header rewrite is only done while forwarding and has no bearing
                         on the routing decision.
+                        Headers are appended to requests in the following order,
+                        service level headers,
+                        route level headers,
+                        virtual host level headers,
+                        global level headers.
                       properties:
                         remove:
                           description: Remove specifies a list of HTTP header names
@@ -6472,6 +6477,11 @@ spec:
                       description: |-
                         The policy for managing response headers during proxying.
                         Rewriting the 'Host' header is not supported.
+                        Headers are appended to responses in the following order,
+                        service level headers,
+                        route level headers,
+                        virtual host level headers,
+                        global level headers.
                       properties:
                         remove:
                           description: Remove specifies a list of HTTP header names
@@ -6673,8 +6683,13 @@ spec:
                             - tls
                             type: string
                           requestHeadersPolicy:
-                            description: The policy for managing request headers during
-                              proxying.
+                            description: |-
+                              The policy for managing request headers during proxying.
+                              Headers are appended to requests in the following order,
+                              service level headers,
+                              route level headers,
+                              virtual host level headers,
+                              global level headers.
                             properties:
                               remove:
                                 description: Remove specifies a list of HTTP header
@@ -6709,6 +6724,11 @@ spec:
                             description: |-
                               The policy for managing response headers during proxying.
                               Rewriting the 'Host' header is not supported.
+                              Headers are appended to responses in the following order,
+                              service level headers,
+                              route level headers,
+                              virtual host level headers,
+                              global level headers.
                             properties:
                               remove:
                                 description: Remove specifies a list of HTTP header
@@ -7081,8 +7101,13 @@ spec:
                           - tls
                           type: string
                         requestHeadersPolicy:
-                          description: The policy for managing request headers during
-                            proxying.
+                          description: |-
+                            The policy for managing request headers during proxying.
+                            Headers are appended to requests in the following order,
+                            service level headers,
+                            route level headers,
+                            virtual host level headers,
+                            global level headers.
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header
@@ -7117,6 +7142,11 @@ spec:
                           description: |-
                             The policy for managing response headers during proxying.
                             Rewriting the 'Host' header is not supported.
+                            Headers are appended to responses in the following order,
+                            service level headers,
+                            route level headers,
+                            virtual host level headers,
+                            global level headers.
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header
@@ -7814,6 +7844,83 @@ spec:
                         - requests
                         - unit
                         type: object
+                    type: object
+                  requestHeadersPolicy:
+                    description: |-
+                      The policy for managing request headers during proxying.
+                      Headers are appended to requests in the following order,
+                      service level headers,
+                      route level headers,
+                      virtual host level headers,
+                      global level headers.
+                    properties:
+                      remove:
+                        description: Remove specifies a list of HTTP header names
+                          to remove.
+                        items:
+                          type: string
+                        type: array
+                      set:
+                        description: |-
+                          Set specifies a list of HTTP header values that will be set in the HTTP header.
+                          If the header does not exist it will be added, otherwise it will be overwritten with the new value.
+                        items:
+                          description: HeaderValue represents a header name/value
+                            pair
+                          properties:
+                            name:
+                              description: Name represents a key of a header
+                              minLength: 1
+                              type: string
+                            value:
+                              description: Value represents the value of a header
+                                specified by a key
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                    type: object
+                  responseHeadersPolicy:
+                    description: |-
+                      The policy for managing response headers during proxying.
+                      Rewriting the 'Host' header is not supported.
+                      Headers are appended to responses in the following order,
+                      service level headers,
+                      route level headers,
+                      virtual host level headers,
+                      global level headers.
+                    properties:
+                      remove:
+                        description: Remove specifies a list of HTTP header names
+                          to remove.
+                        items:
+                          type: string
+                        type: array
+                      set:
+                        description: |-
+                          Set specifies a list of HTTP header values that will be set in the HTTP header.
+                          If the header does not exist it will be added, otherwise it will be overwritten with the new value.
+                        items:
+                          description: HeaderValue represents a header name/value
+                            pair
+                          properties:
+                            name:
+                              description: Name represents a key of a header
+                              minLength: 1
+                              type: string
+                            value:
+                              description: Value represents the value of a header
+                                specified by a key
+                              minLength: 1
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
                     type: object
                   tls:
                     description: |-

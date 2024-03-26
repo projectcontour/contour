@@ -348,6 +348,24 @@ type VirtualHost struct {
 	// +optional
 	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
 
+	// The policy for managing request headers during proxying.
+	// Headers are appended to requests in the following order,
+	// service level headers,
+	// route level headers,
+	// virtual host level headers,
+	// global level headers.
+	// +optional
+	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
+	// The policy for managing response headers during proxying.
+	// Rewriting the 'Host' header is not supported.
+	// Headers are appended to responses in the following order,
+	// service level headers,
+	// route level headers,
+	// virtual host level headers,
+	// global level headers.
+	// +optional
+	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
+
 	// IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
 	// requests should be allowed. All other requests will be denied.
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
@@ -584,10 +602,20 @@ type Route struct {
 	// **NOTE: The header rewrite is only done while forwarding and has no bearing
 	// on the routing decision.
 	//
+	// Headers are appended to requests in the following order,
+	// service level headers,
+	// route level headers,
+	// virtual host level headers,
+	// global level headers.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying.
 	// Rewriting the 'Host' header is not supported.
+	// Headers are appended to responses in the following order,
+	// service level headers,
+	// route level headers,
+	// virtual host level headers,
+	// global level headers.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 	// The policies for rewriting Set-Cookie header attributes. Note that
@@ -1045,10 +1073,20 @@ type Service struct {
 	// values
 	Mirror bool `json:"mirror,omitempty"`
 	// The policy for managing request headers during proxying.
+	// Headers are appended to requests in the following order,
+	// service level headers,
+	// route level headers,
+	// virtual host level headers,
+	// global level headers.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
 	// The policy for managing response headers during proxying.
 	// Rewriting the 'Host' header is not supported.
+	// Headers are appended to responses in the following order,
+	// service level headers,
+	// route level headers,
+	// virtual host level headers,
+	// global level headers.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 	// The policies for rewriting Set-Cookie header attributes.

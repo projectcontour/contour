@@ -2730,3 +2730,91 @@ func TestRouteRedirect(t *testing.T) {
 func virtualhosts(v ...*envoy_config_route_v3.VirtualHost) []*envoy_config_route_v3.VirtualHost {
 	return v
 }
+
+func TestVirtualHostAndRoutes(t *testing.T) {
+	tests := map[string]struct {
+		vh     *dag.VirtualHost
+		route  []*dag.Route
+		secure bool
+		want   *envoy_config_route_v3.VirtualHost
+	}{
+		"dag virtual host to envoy virtual host with custom header": {
+			vh: &dag.VirtualHost{
+				Name: "example.com",
+				RequestHeadersPolicy: &dag.HeadersPolicy{
+					Set: map[string]string{
+						"In-Foo": "bar",
+					},
+					Add: map[string]string{
+						"In-Add": "bar",
+					},
+					Remove: []string{"In-Baz"},
+				},
+				ResponseHeadersPolicy: &dag.HeadersPolicy{
+					Set: map[string]string{
+						"Out-Foo": "bar",
+					},
+					Add: map[string]string{
+						"Out-Add": "bar",
+					},
+					Remove: []string{"Out-Baz"},
+				},
+			},
+			route: []*dag.Route{
+				{
+					PathMatchCondition: &dag.ExactMatchCondition{
+						Path: "/foo",
+					},
+				},
+			},
+			secure: false,
+			want: &envoy_config_route_v3.VirtualHost{
+				Name:    "example.com",
+				Domains: []string{"example.com"},
+				RequestHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "In-Foo",
+						Value: "bar",
+					},
+					AppendAction: envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+				}, {
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "In-Add",
+						Value: "bar",
+					},
+				}},
+				RequestHeadersToRemove: []string{"In-Baz"},
+				ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{{
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "Out-Foo",
+						Value: "bar",
+					},
+					AppendAction: envoy_config_core_v3.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+				}, {
+					Header: &envoy_config_core_v3.HeaderValue{
+						Key:   "Out-Add",
+						Value: "bar",
+					},
+				}},
+				ResponseHeadersToRemove: []string{"Out-Baz"},
+				Routes: []*envoy_config_route_v3.Route{
+					{
+						Match: &envoy_config_route_v3.RouteMatch{
+							PathSpecifier: &envoy_config_route_v3.RouteMatch_Path{Path: "/foo"},
+						},
+						Action: &envoy_config_route_v3.Route_Route{Route: &envoy_config_route_v3.RouteAction{
+							ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{WeightedClusters: nil},
+						}},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := VirtualHostAndRoutes(tc.vh, tc.route, tc.secure)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}

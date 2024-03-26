@@ -8851,6 +8851,47 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	// proxyWithVhostHeader has a vhost level header rewrites.
+	proxyWithVhostHeader := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
+						Name:  "In-Foo",
+						Value: "bar",
+					}},
+					Remove: []string{
+						"In-Baz",
+					},
+				},
+				ResponseHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
+						Name:  "Out-Foo",
+						Value: "bar",
+					}},
+					Remove: []string{
+						"Out-Baz",
+					},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// proxy111 has a route that rewrites headers.
 	proxy111 := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -12067,6 +12108,31 @@ func TestDAGInsert(t *testing.T) {
 								"Out-Foo": "bar",
 							}, []string{"Out-Baz"}, service(s1)),
 						),
+					),
+				},
+			),
+		},
+
+		"insert httpproxy with vhost-level header manipulation": {
+			objs: []any{
+				proxyWithVhostHeader, s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhostWithHeader("example.com", map[string]string{
+							"In-Foo": "bar",
+						}, []string{"In-Baz"}, map[string]string{
+							"Out-Foo": "bar",
+						}, []string{"Out-Baz"}, &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: service(s1),
+								SNI:      "",
+							}},
+						}),
 					),
 				},
 			),
@@ -15922,6 +15988,21 @@ func securevirtualhosts(vx ...*SecureVirtualHost) []*SecureVirtualHost {
 func virtualhost(name string, first *Route, rest ...*Route) *VirtualHost {
 	return &VirtualHost{
 		Name:   name,
+		Routes: routes(append([]*Route{first}, rest...)...),
+	}
+}
+
+func virtualhostWithHeader(name string, requestSet map[string]string, requestRemove []string, responseSet map[string]string, responseRemove []string, first *Route, rest ...*Route) *VirtualHost {
+	return &VirtualHost{
+		Name: name,
+		RequestHeadersPolicy: &HeadersPolicy{
+			Set:    requestSet,
+			Remove: requestRemove,
+		},
+		ResponseHeadersPolicy: &HeadersPolicy{
+			Set:    responseSet,
+			Remove: responseRemove,
+		},
 		Routes: routes(append([]*Route{first}, rest...)...),
 	}
 }

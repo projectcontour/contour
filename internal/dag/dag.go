@@ -734,6 +734,13 @@ type VirtualHost struct {
 	// CORSPolicy is the cross-origin policy to apply to the VirtualHost.
 	CORSPolicy *CORSPolicy
 
+	// The policy for managing request headers during proxying.
+	RequestHeadersPolicy *HeadersPolicy
+
+	// The policy for managing response headers during proxying.
+	// Rewriting the 'Host' header is not supported.
+	ResponseHeadersPolicy *HeadersPolicy
+
 	// RateLimitPolicy defines if/how requests for the virtual host
 	// are rate limited.
 	RateLimitPolicy *RateLimitPolicy
