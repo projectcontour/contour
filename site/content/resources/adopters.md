@@ -19,6 +19,8 @@ If you're using Contour and want to add your organization to this list, please
 
 <a href="https://snapp.ir/" target="_blank"><img alt="snapp.ir" src="../../img/adopters/snappcloud.png" height="50"></a>
 
+<a href="https://bugfender.com/" target="_blank"><img alt="bugfender.com" src="../../img/adopters/bugfender.svg" height="50"></a>
+
 ## Success Stories
 
 Below is a list of adopters of Contour in **production environments** that have
@@ -69,6 +71,12 @@ SnappCloud has developed several solutions to provide a complete self-service an
 5. [Contour Auth Multi-Tenant](https://github.com/snapp-incubator/contour-auth-multi-tenant): This project is an Envoy-compatible authorization server that builds upon the foundation of [contour-authserver](https://github.com/projectcontour/contour-authserver), enabling multi-tenancy by allowing different tenants to manage their authentication services independently, and referencing their own secrets in the same namespace of HTTPProxy.
 
 At SnappCloud, we are dedicated to enriching the open-source community by developing additional components and plugins, contributing to various projects, and weaving together open-source solutions to create integrated, full-fledged products that rival enterprise solutions. Our commitment is focused on building robust toolchains that enhance and extend the capabilities of the open-source ecosystem.
+
+**[Bugfender](https://bugfender.com)**
+
+Bugfender is a log aggregation platform designed for mobile and web front-end applications, with a strong focus on security and privacy. Its SDK seamlessly integrates into applications, facilitating log transmission to the Bugfender Dashboard. Bugfender streamlines bug identification and reproduction for enhanced user experience.
+
+At Bugfender, we chose Contour as Kubernetes ingress for its high performance. With millions of devices running Bugfender's SDK simultaneously communicating with our backend, Contour proves more efficient in handling TLS connections than its alternatives. This was pivotal for our growth.
 
 ## Adding a logo to projectcontour.io
 
