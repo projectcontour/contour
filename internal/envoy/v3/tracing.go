@@ -55,6 +55,7 @@ func TracingConfig(tracing *EnvoyTracingConfig) *envoy_filter_network_http_conne
 				}),
 			},
 		},
+		SpawnUpstreamSpan: wrapperspb.Bool(true),
 	}
 }
 
