@@ -153,6 +153,12 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		return
 	}
 
+	// It may be that there are no resources at all to process in watched namespaces.
+	// Initial (empty) DAG build is not needed and we can mark it as built immediately to allow the XDS server to start.
+	if e.syncTracker.HasSynced() {
+		e.initialDagBuilt.Store(true)
+	}
+
 	for {
 		// In the main loop one of four things can happen.
 		// 1. We're waiting for an event on op, stop, or pending, noting that
@@ -190,6 +196,12 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			if updateOpAdd, ok := op.(opAdd); ok {
 				if updateOpAdd.isInInitialList {
 					e.syncTracker.Finished()
+
+					// If this was the last event in the initial list but none of the events triggered DAG rebuild,
+					// then we can mark the (empty) DAG as built to allow the XDS server to start.
+					if e.syncTracker.HasSynced() && timer == nil {
+						e.initialDagBuilt.Store(true)
+					}
 				}
 			}
 		case <-pending:
