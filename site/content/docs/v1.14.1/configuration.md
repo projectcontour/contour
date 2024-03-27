@@ -215,7 +215,7 @@ The `remove` field removes an HTTP header.
 | set | map[string]string | none | Map of headers to set on all service routes if not overridden in the object |
 | remove | []string | none | List of headers to remove on all service routes if not overridden in the object |
 
-Note: the values of entries in the `set` and `remove` fields can be overridden in HTTPProxy objects but it it not possible to remove these entries.
+Note: the values of entries in the `set` and `remove` fields can be overridden in HTTPProxy objects but it is not possible to remove these entries.
 
 
 ### Rate Limit Service Configuration
