@@ -522,9 +522,30 @@ Setting this field without also setting the `TLS` field is an error.
 
 ### Progressing Flow
 
-This chart (copy from [External Processing Filter][10]) shows the simplest possible implementation of the filter -- a filter server receives the HTTP request headers, decides to accept the response (and can optionally modify the headers) so it closes the stream cleanly. At this point it is no longer involved in filter processing. see [External Processing Filter][10] for more information.
+This chart (copy/change from [External Processing Filter][10]) shows the simplest possible implementation of the filter -- a filter server receives the HTTP request headers, decides to accept the response (and can optionally modify the headers) so it closes the stream cleanly. At this point it is no longer involved in filter processing. see [External Processing Filter][10] for more information.
 
-![drawing](images/ext_proc_flow.png)
+```mermaid
+sequenceDiagram
+    participant D as Downstream
+    participant E as Envoy
+    participant F as Filter Server
+    Participant U as Upstream
+    D->>E: Request headers
+    E->>F: request_headers
+    F->>E: response_headers_response
+    F->>E: close stream (status = 0)
+    E->>U: Request headers
+    D->>E: Request body chunks
+    E->>U: Request body chunks
+    D-->>E: Request trailers
+    E-->>U: Request trailers
+    U->>E: Response headers
+    E->>D: Response headers
+    U->>E: Response body chunks
+    E->>D: Response body chunks
+    U-->>E: Response trailers
+    E-->>D: Response trailers
+```
 
 ### Sample configurations
 
