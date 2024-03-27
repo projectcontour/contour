@@ -25,7 +25,7 @@ type HTTPProxySpec struct {
 	// +optional
 	VirtualHost *VirtualHost `json:"virtualhost,omitempty"`
 	// Routes are the ingress routes. If TCPProxy is present, Routes is ignored.
-	//  +optional
+	// +optional
 	Routes []Route `json:"routes,omitempty"`
 	// TCPProxy holds TCP proxy information.
 	// +optional
@@ -312,6 +312,228 @@ type AuthorizationPolicy struct {
 	Context map[string]string `json:"context,omitempty"`
 }
 
+// HeaderSendMode control how headers and trailers are handled.
+type HeaderSendMode string
+
+const (
+	// The default HeaderSendMode depends on which part of the message is being
+	// processed. By default, request and response headers are sent,
+	// while trailers are skipped.
+	ProcessingModeDefault HeaderSendMode = "DEFAULT"
+
+	// Send the header or trailer.
+	ProcessingModeSend HeaderSendMode = "SEND"
+
+	// Do not send the header or trailer.
+	ProcessingModeSkip HeaderSendMode = "SKIP"
+)
+
+// BodySendMode control how the request and response bodies are handled
+type BodySendMode string
+
+const (
+	// Do not send the body at all. This is the default.
+	ProcessingModeNone BodySendMode = "NONE"
+
+	// Stream the body to the server in pieces as they arrive at the
+	// proxy.
+	ProcessingModeStreamed BodySendMode = "STREAMED"
+
+	// Buffer the message body in memory and send the entire body at once.
+	// If the body exceeds the configured buffer limit, then the
+	// downstream system will receive an error.
+	ProcessingModeBuffered BodySendMode = "BUFFERED"
+
+	// Buffer the message body in memory and send the entire body in one
+	// chunk. If the body exceeds the configured buffer limit, then the body contents
+	// up to the buffer limit will be sent.
+	ProcessingModeBufferedPartial BodySendMode = "BUFFERED_PARTIAL"
+)
+
+// HeaderMutationRules specifies what headers may be manipulated by a processing filter.
+// This set of rules makes it possible to control which modifications a filter may make.
+type HeaderMutationRules struct {
+	// By default, certain headers that could affect processing of subsequent
+	// filters or request routing cannot be modified. These headers are
+	// ``host``, ``:authority``, ``:scheme``, and ``:method``.
+	// Setting this parameter to true allows these headers to be modified as well.
+	//
+	// +optional
+	AllowAllRouting bool `json:"allowAllRouting,omitempty"`
+
+	// If true, allow modification of envoy internal headers. By default, these
+	// start with ``x-envoy`` but this may be overridden in the ``Bootstrap`` configuration.
+	// Default is false.
+	//
+	// +optional
+	AllowEnvoy bool `json:"allowEnvoy,omitempty"`
+
+	// If true, prevent modification of any system header, defined as a header
+	// that starts with a ``:`` character, regardless of any other settings.
+	// A processing server may still override the ``:status`` of an HTTP response
+	// using an ``ImmediateResponse`` message.
+	// Default is false.
+	//
+	// +optional
+	DisallowSystem bool `json:"disallowSystem,omitempty"`
+
+	// If true, prevent modifications of all header values, regardless of any
+	// other settings. A processing server may still override the ``:status``
+	// of an HTTP response using an ``ImmediateResponse`` message.
+	// Default is false.
+	//
+	// +optional
+	DisallowAll bool `json:"disallowAll,omitempty"`
+
+	// If true, and if the rules in this list cause a header mutation to be
+	// disallowed, then the filter using this configuration will terminate the
+	// request with a 500 error. In addition, regardless of the setting of this
+	// parameter, any attempt to set, add, or modify a disallowed header will
+	// cause the ``rejected_header_mutations`` counter to be incremented.
+	// Default is false.
+	//
+	// +optional
+	DisallowIsError bool `json:"disallowIsError,omitempty"`
+}
+
+// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+// and how they are delivered.
+type ProcessingMode struct {
+	// How to handle the request header.
+	// Default is "SEND".
+	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SEND
+	// +optional
+	RequestHeaderMode HeaderSendMode `json:"requestHeaderMode,omitempty"`
+
+	// How to handle the response header.
+	// Default is "SEND".
+	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SEND
+	// +optional
+	ResponseHeaderMode HeaderSendMode `json:"responseHeaderMode,omitempty"`
+
+	// How to handle the request body.
+	// Default is "NONE".
+	//
+	// +kubebuilder:validation:Enum=NONE;STREAMED;BUFFERED;BUFFERED_PARTIAL
+	// +kubebuilder:default=NONE
+	// +optional
+	RequestBodyMode BodySendMode `json:"requestBodyMode,omitempty"`
+
+	// How do handle the response body.
+	// Default is "NONE".
+	//
+	// +kubebuilder:validation:Enum=NONE;STREAMED;BUFFERED;BUFFERED_PARTIAL
+	// +kubebuilder:default=NONE
+	// +optional
+	ResponseBodyMode BodySendMode `json:"responseBodyMode,omitempty"`
+
+	// How to handle the request trailers.
+	// Default is "SKIP".
+	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SKIP
+	// +optional
+	RequestTrailerMode HeaderSendMode `json:"requestTrailerMode,omitempty"`
+
+	// How to handle the response trailers.
+	// Default is "SKIP".
+	//
+	// +kubebuilder:validation:Enum=DEFAULT;SEND;SKIP
+	// +kubebuilder:default=SKIP
+	// +optional
+	ResponseTrailerMode HeaderSendMode `json:"responseTrailerMode,omitempty"`
+}
+
+// GRPCService configure the gRPC service that the filter will communicate with.
+type GRPCService struct {
+	// ExtensionServiceRef specifies the extension resource that will handle the client requests.
+	//
+	// +optional
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
+
+	// ResponseTimeout sets how long the proxy should wait for responses.
+	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string "infinity" is also a valid input and specifies no timeout.
+	//
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	ResponseTimeout string `json:"responseTimeout,omitempty"`
+
+	// If FailOpen is true, the client request is forwarded to the upstream service
+	// even if the server fails to respond. This field should not be
+	// set in most cases.
+	//
+	// +optional
+	FailOpen bool `json:"failOpen,omitempty"`
+}
+
+// ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy external processing GRPC protocol
+// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type ExtProc struct {
+	// GRPCService configure the gRPC service that the filter will communicate with.
+	//
+	// +optional
+	GRPCService *GRPCService `json:"grpcService,omitempty"`
+
+	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+	// and how they are delivered.
+	//
+	// +optional
+	ProcessingMode *ProcessingMode `json:"processingMode,omitempty"`
+
+	// MutationRules specifies what headers may be manipulated by a processing filter.
+	// This set of rules makes it possible to control which modifications a filter may make.
+	//
+	// for Overrides is must be nil
+	//
+	// +optional
+	MutationRules *HeaderMutationRules `json:"mutationRules,omitempty"`
+
+	// If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+	// If false, `mode_override` API in the response message will be ignored.
+	//
+	// +optional
+	AllowModeOverride bool `json:"allowModeOverride,omitempty"`
+}
+
+// ExternalProcessor defines a external processing filter and the policy for fine-grained at VirutalHost and/or Route level.
+type ExternalProcessor struct {
+	// Processor defines a external processing filter which allows an external service to act on HTTP traffic in a flexible way.
+	//
+	// +optional
+	Processor *ExtProc `json:"processor,omitempty"`
+
+	// When true, this field disables the external processor: (neither global nor virtualHost)
+	// for the scope of the policy.
+	//
+	// if both Disabled and Processor are set. use disabled.
+	//
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+}
+
+// ExtProcPolicy modifies how requests/responses are operated.
+type ExtProcPolicy struct {
+	// When true, this field disables the specific client request external processor
+	// for the scope of the policy.
+	//
+	// if both disabled and overrides are set. use disabled.
+	//
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+
+	// Overrides aspects of the configuration for this route.
+	//
+	// +optional
+	Overrides *ExtProc `json:"overrides,omitempty"`
+}
+
 // VirtualHost appears at most once. If it is present, the object is considered
 // to be a "root".
 type VirtualHost struct {
@@ -359,6 +581,12 @@ type VirtualHost struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// ExtProc which allow to act on HTTP traffic in a flexible way
+	// and the policy for fine-grained at VirtualHost level.
+	//
+	// +optional
+	ExtProc *ExternalProcessor `json:"extProc,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -626,6 +854,12 @@ type Route struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// ExtProcPolicy updates the external processing policy that were set
+	// on the root HTTPProxy object for client requests/responses
+	//
+	// +optional
+	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
 }
 
 type JWTVerificationPolicy struct {

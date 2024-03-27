@@ -26,6 +26,7 @@ import (
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
 	envoy_filter_http_lua_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_filter_http_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
@@ -156,6 +157,16 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
+		// Apply per-route external processing policy modifications.
+		// if both disabled & overrides has been set, use disabled do
+		if dagRoute.ExtProcPolicy != nil {
+			if dagRoute.ExtProcPolicy.Disabled {
+				route.TypedPerFilterConfig[ExtProcFilterName] = routeExtProcDisabled()
+			} else if dagRoute.ExtProcPolicy.Overrides != nil {
+				route.TypedPerFilterConfig[ExtProcFilterName] = routeExtProcOverrides(dagRoute.ExtProcPolicy.Overrides)
+			}
+		}
+
 		// If JWT verification is enabled, add per-route filter
 		// config referencing a requirement in the main filter
 		// config.
@@ -179,6 +190,48 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 	}
 
 	return route
+}
+
+// routeExtProcDisabled returns a per-route config to disable extProc for this particular vhost or route.
+func routeExtProcDisabled() *anypb.Any {
+	return protobuf.MustMarshalAny(
+		&envoy_filter_http_ext_proc_v3.ExtProcPerRoute{
+			Override: &envoy_filter_http_ext_proc_v3.ExtProcPerRoute_Disabled{
+				Disabled: true,
+			},
+		},
+	)
+}
+
+func routeExtProcOverrides(overrides *dag.ExtProcOverrides) *anypb.Any {
+	reqHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.RequestHeaderMode)]
+	respHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.ResponseHeaderMode)]
+
+	reqBodyMode := envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode_value[string(overrides.ProcessingMode.RequestBodyMode)]
+	respBodyMode := envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode_value[string(overrides.ProcessingMode.ResponseBodyMode)]
+
+	reqTrailerMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.RequestHeaderMode)]
+	respTrailerMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(overrides.ProcessingMode.ResponseHeaderMode)]
+
+	pm := &envoy_filter_http_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
+		ResponseHeaderMode:  envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
+		RequestBodyMode:     envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
+		ResponseBodyMode:    envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
+		RequestTrailerMode:  envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
+		ResponseTrailerMode: envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
+	}
+
+	return protobuf.MustMarshalAny(
+		&envoy_filter_http_ext_proc_v3.ExtProcPerRoute{
+			Override: &envoy_filter_http_ext_proc_v3.ExtProcPerRoute_Overrides{
+				Overrides: &envoy_filter_http_ext_proc_v3.ExtProcOverrides{
+					ProcessingMode: pm,
+					GrpcService:    GrpcService(overrides.ExtProcService.Name, overrides.ExtProcService.SNI, *overrides.ResponseTimeout),
+				},
+			},
+		},
+	)
 }
 
 // routeAuthzDisabled returns a per-route config to disable authorization.
