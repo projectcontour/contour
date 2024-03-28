@@ -501,7 +501,7 @@ func (s *Server) doServe() error {
 	})
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort, envoyGen),
+		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort, contourConfiguration.Envoy.OMEnforcedHealth, envoyGen),
 		xdscache_v3.NewSecretsCache(envoy_v3.StatsSecrets(contourConfiguration.Envoy.Metrics.TLS)),
 		&xdscache_v3.RouteCache{},
 		xdscache_v3.NewClusterCache(envoyGen),

@@ -102,6 +102,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 			conf,
 			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
+			nil,
 			0,
 			envoyGen,
 		),

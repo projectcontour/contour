@@ -104,6 +104,9 @@ func main() {
 		if err := envoy.ValidAdminAddress(bootstrapCtx.AdminAddress); err != nil {
 			log.WithField("flag", "--admin-address").WithError(err).Fatal("failed to parse bootstrap args")
 		}
+		if err := envoy.ValidConnectionLimit(bootstrapCtx.GlobalDownstreamConnectionLimit); err != nil {
+			log.WithField("flag", "--overload-dowstream-max-conn").WithError(err).Fatal("failed to parse bootstrap args")
+		}
 		envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 			XDSClusterName: envoy_v3.DefaultXDSClusterName,
 		})

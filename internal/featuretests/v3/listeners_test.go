@@ -50,6 +50,7 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 			conf,
 			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
+			nil,
 			port,
 			envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 				XDSClusterName: envoy_v3.DefaultXDSClusterName,
