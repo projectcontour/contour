@@ -51,6 +51,7 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			port,
+			nil,
 		),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
