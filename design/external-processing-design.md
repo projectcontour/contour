@@ -39,7 +39,7 @@ For a long time, the community has been advocating for the inclusion of custom H
 
 Contour will add HTTP support for Envoy's External Processing.
 
-new type: `ExternalProcessor` and its friends: `ExtProc`, `ExtProcOverride`, `ProcessingMode`, `HeaderMutationRules`,`GRPCService`, `ExtProcPolicy` and more, will be defined for implement the design.
+new type: `ExternalProcessing` and its friends: `ExternalProcessor`, `ProcessingMode`, `HeaderMutationRules` and more, will be defined for implement the design.
 
 In this design, the configuration is divided into three levels: `Global`, `VirtualHost`, `Route`, each level can be set up to one External processing; each level has a `disabled` option, but at different levels, it has different meanings.
 
@@ -47,21 +47,20 @@ If the external processing is added to the filter chain(s), it will be inserted 
 
 ### Global level
 
-At the `Global` level, there is at most one external processing configured, and if the `globalExtProc` is NOT nil, and the `processor` is set but `disabled == false`, then it will be append to the filter chain for HTTP and the default chain for HTTPS if this VirtualHost has enabled the fallback certificate; but for the normal HTTPS it varies depending on the configuration at the `VirtualHost` level(see below). If `disabled == true`, it will be ignored.
+At the `Global` level, there is at most one external processing configured, and if the `globalExternalProcessing` is NOT nil, and the `processor` is set but `disabled == false`, then it will be append to the filter chain for HTTP and the default chain for HTTPS if this VirtualHost has enabled the fallback certificate; but for the normal HTTPS it varies depending on the configuration at the `VirtualHost` level(see below). If `disabled == true`, it will be ignored.
 
 ```yaml
 kind: ContourConfiguration
 ...
-  globalExtProc:
+  globalExternalProcessing:
     disabled: false  # ignore processor, if it's true
     processor:
-      grpcService:
-        extensionRef:
-          apiVersion: projectcontour.io/v1alpha1
-          name: extproc-extsvc
-          namespace: extproc-test
-        failOpen: true
-        responseTimeout: 60s
+      extensionRef:
+        apiVersion: projectcontour.io/v1alpha1
+        name: extproc-extsvc
+        namespace: extproc-test
+      failOpen: true
+      responseTimeout: 60s
       mutationRules:
         allowAllRouting: true
       processingMode:
@@ -80,11 +79,11 @@ Only available at HTTPS,for the FQDN.
 
 #### Global Level Set and not disabled
 
-- ##### extProc == nil
+- ##### externalProcessing == nil
 
   use the `Global` external processing.
 
-- ##### extProc != nil
+- ##### externalProcessing != nil
 
   - disabled == true
 
@@ -103,16 +102,15 @@ kind: HTTPProxy
 ...
 spec:
   virtualhost:
-    extProc:
+    externalProcessing:
       disabled: true  # both the `Global` and `VirtualHost` will be disabled
       processor:
-        grpcService:
-          extensionRef:
-            apiVersion: projectcontour.io/v1alpha1
-            name: extproc-extsvc2
+        extensionRef:
+          apiVersion: projectcontour.io/v1alpha1
+          name: extproc-extsvc2
           namespace: extproc-test
-          failOpen: true
-          responseTimeout: 60s
+        failOpen: true
+        responseTimeout: 60s
         mutationRules:
           allowAllRouting: false
         processingMode:
@@ -130,23 +128,23 @@ spec:
 For more precise control, the `Global/VirtualHost` external processing can also be **overrideed/toggled** on an individual route.
 
 
-- ##### extProcPolicy == nil
+- ##### externalProcessing == nil
 
   use the `Global` or `VirtualHost` external processing.
 
-- ##### extProcPolicy != nil
+- ##### externalProcessing != nil
 
   - disabled == true
 
-    - The `overrides` is NOT set: the `Global` or `VirtualHost` external processing will be disabled.
+    - The `processor` is NOT set: the `Global` or `VirtualHost` external processing will be disabled.
 
-    - The `overrides` is set:  the  `Global` or `VirtualHost` or `Route` external processing will be disabled.
+    - The `processor` is set:  the  `Global` or `VirtualHost` or `Route` external processing will be disabled.
 
   - disabled == false
 
-    - The `overrides` is NOT set: the `Global` or `VirtualHost` external processing will be disabled.
+    - The `processor` is NOT set: the `Global` or `VirtualHost` external processing will be disabled.
 
-    - The `overrides` is set:  the `Global` or `VirtualHost` or `Route` external processing will be disabled.
+    - The `processor` is set:  the `Global` or `VirtualHost` or `Route` external processing will be disabled.
 
 ```yaml
 kind: HTTPProxy
@@ -155,23 +153,22 @@ spec:
   routes:
     - conditions:
         - prefix: /disabled
-      extProcPolicy:  # disabled
+      externalProcessing:  # disabled
         disabled: true
       services:
         - name: http-echo-service
           port: 5678
     - conditions:   # overridden
         - prefix: /override
-      extProcPolicy:
+      externalProcessing:
         disabled: false
-        overrides:
-          grpcService:
-            extensionRef:
-              apiVersion: projectcontour.io/v1alpha1
-              name: extproc-extsvc3
-              namespace: extproc-test
-            failOpen: true
-            responseTimeout: 31s
+        processor:
+          extensionRef:
+            apiVersion: projectcontour.io/v1alpha1
+            name: extproc-extsvc3
+            namespace: extproc-test
+          failOpen: true
+          responseTimeout: 31s
           processingMode:
             requestBodyMode: NONE
             requestHeaderMode: SKIP
@@ -190,7 +187,6 @@ spec:
 ...
 
 ```
-
 
 ## Detailed Design
 
@@ -334,8 +330,11 @@ type ProcessingMode struct {
 	ResponseTrailerMode HeaderSendMode `json:"responseTrailerMode,omitempty"`
 }
 
-// GRPCService configure the gRPC service that the filter will communicate with.
-type GRPCService struct {
+
+// ExternalProcessor defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy external processing GRPC protocol
+// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type ExternalProcessor struct {
 	// ExtensionServiceRef specifies the extension resource that will handle the client requests.
 	//
 	// +optional
@@ -356,17 +355,6 @@ type GRPCService struct {
 	//
 	// +optional
 	FailOpen bool `json:"failOpen,omitempty"`
-}
-
-
-// ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
-// The external server must implement the v3 Envoy external processing GRPC protocol
-// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
-type ExtProc struct {
-	// GRPCService configure the gRPC service that the filter will communicate with.
-	//
-	// +optional
-	GRPCService *GRPCService `json:"grpcService,omitempty"`
 
 	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
 	// and how they are delivered.
@@ -389,36 +377,20 @@ type ExtProc struct {
 	AllowModeOverride bool `json:"allowModeOverride,omitempty"`
 }
 
-// ExternalProcessor defines a external processing filter and the policy for fine-grained at VirutalHost and/or Route level.
-type ExternalProcessor struct {
+// ExternalProcessing defines a external processing filter and the policy to act on HTTP traffic in a flexible way.
+type ExternalProcessing struct {
 	// Processor defines a external processing filter which allows an external service to act on HTTP traffic in a flexible way.
 	//
 	// +optional
-	Processor *ExtProc `json:"processor,omitempty"`
+	Processor *ExternalProcessor `json:"processor,omitempty"`
 
-	// When true, this field disables the external processor: (neither global nor virtualHost)
-	// for the scope of the policy.
+	// When true, this field disables the external processor for the scope of the policy.
+	// - for global: no external processing will be append to the filter chain
 	//
 	// if both Disabled and Processor are set. use disabled.
 	//
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
-}
-
-// ExtProcPolicy modifies how requests/responses are operated.
-type ExtProcPolicy struct {
-	// When true, this field disables the specific client request external processor
-	// for the scope of the policy.
-	//
-	// if both disabled and overrides are set. use disabled.
-	//
-	// +optional
-	Disabled bool `json:"disabled,omitempty"`
-
-	// Overrides aspects of the configuration for this route.
-	//
-	// +optional
-	Overrides *ExtProc `json:"overrides,omitempty"`
 }
 
 
@@ -431,22 +403,21 @@ type ExtProcPolicy struct {
 // to be a "root".
 type VirtualHost struct {
   ...
-	// ExtProc which allow to act on HTTP traffic in a flexible way
-	// and the policy for fine-grained at VirtualHost level.
+	// ExternalProcessing defines a external processing filter and the policy
+	// to act on HTTP traffic in a flexible way.
 	//
 	// +optional
-	ExtProc *ExternalProcessor `json:"extProc,omitempty"`
+	ExternalProcessing *ExternalProcessing `json:"externalProcessing,omitempty"`
 
 }
 
 // Route contains the set of routes for a virtual host.
 type Route struct {
   ...
-    // ExtProcPolicy updates the external processing policy that were set
-	// on the root HTTPProxy object for client requests/responses
+	// ExternalProcessing override/disable the policy to act on HTTP traffic for the specific route in a flexible way.
 	//
 	// +optional
-	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
+	ExternalProcessing *ExternalProcessing `json:"externalProcessing,omitempty"`
 
 }
 ```
@@ -458,41 +429,61 @@ This External processing configuration will be used for all HTTP & HTTPS(if not 
 
 ```go
 
-// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
-// The external server must implement the v3 Envoy
-// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+// ExternalProcessor defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy external processing GRPC protocol
+// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
 type ExternalProcessor struct {
 	// ExtensionService identifies the extension service defining the RLS,
 	// formatted as <namespace>/<name>.
 	ExtensionService string `yaml:"extensionService,omitempty"`
 
-	// ResponseTimeout configures maximum time to wait for a check response from the expProc server.
+	// ResponseTimeout sets how long the proxy should wait for responses.
 	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
 	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 	// The string "infinity" is also a valid input and specifies no timeout.
 	//
 	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	ResponseTimeout string `yaml:"responseTimeout,omitempty"`
 
 	// If FailOpen is true, the client request is forwarded to the upstream service
-	// even if the authorization server fails to respond. This field should not be
-	// set in most cases. It is intended for use only while migrating applications
-	// from internal authorization to Contour external authorization.
+	// even if the server fails to respond. This field should not be
+	// set in most cases.
 	//
 	// +optional
 	FailOpen bool `yaml:"failOpen,omitempty"`
+
+	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+	// and how they are delivered.
+	//
+	// +optional
+	ProcessingMode *contour_v1.ProcessingMode `yaml:"processingMode,omitempty"`
+
+	// MutationRules specifies what headers may be manipulated by a processing filter.
+	// This set of rules makes it possible to control which modifications a filter may make.
+	//
+	// for Overrides is must be nil
+	//
+	// +optional
+	MutationRules *contour_v1.HeaderMutationRules `yaml:"mutationRules,omitempty"`
+
+	// If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+	// If false, `mode_override` API in the response message will be ignored.
+	//
+	// +optional
+	AllowModeOverride bool `yaml:"allowModeOverride,omitempty"`
 }
 
 // The External Processing filter allows an external service to act on HTTP traffic in a flexible way
 // The external server must implement the v3 Envoy
 // external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
-type GlobalExternalProcessor struct {
+type GlobalExternalProcessing struct {
 	// Processor configures the global external processing
 	//
 	// +optional
 	Processor *ExternalProcessor `yaml:"processor,omitempty"`
 
-	// If Disabled is true, no external processing will be append to the filter chain.
+	// If Disabled is true, no external processing will be append to the filter chain
 	//
 	// +optional
 	Disabled bool `yaml:"disabled,omitempty"`
@@ -501,23 +492,23 @@ type GlobalExternalProcessor struct {
 
 type Parameters struct {
   ...
-	// GlobalExtProc optionally holds properties of the global external processing configurations.
-	GlobalExtProc *GlobalExternalProcessor `yaml:"globalExtProc,omitempty"`
+	// GlobalExternalProcessing optionally holds properties of the global external processing configurations.
+	GlobalExternalProcessing *GlobalExternalProcessing `yaml:"globalExternalProcessing,omitempty"`
   ...
 }
 
 type ContourConfigurationSpec struct {
   ...
-	// GlobalExtProc allows envoys external processing filter
+	// GlobalExternalProcessing allows envoys external processing filter
 	// to be enabled for all virtual hosts.
-	//
 	// +optional
-	GlobalExtProc *contour_v1.ExternalProcessor `json:"globalExtProc,omitempty"`
+	GlobalExternalProcessing *contour_v1.ExternalProcessing `json:"globalExternalProcessing,omitempty"`
+
   ...
 }
 ```
 
-An operator configures external processing on a root `HTTPProxy` by setting the `VirtualHost.ExtProc` field.
+An operator configures external processing on a root `HTTPProxy` by setting the `VirtualHost.ExternalProcessing` field.
 Setting this field without also setting the `TLS` field is an error.
 
 ### Progressing Flow
@@ -551,7 +542,7 @@ sequenceDiagram
 
 Please refer to `examples/external-processing`.
 
-With this proposal, contour will generate the envoy configuration snippet below for `examples/external-processing`. 
+With this proposal, contour will generate the envoy configuration snippet below for `examples/external-processing`.
 NOTE: this snippet only represents the relevant bits of the Route.
 
 ##### Envoy
