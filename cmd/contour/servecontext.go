@@ -457,23 +457,24 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		}
 	}
 
-	var globalExtProc *contour_v1.ExternalProcessor
-	if ctx.Config.GlobalExtProc != nil {
+	var globalExtProc *contour_v1.ExternalProcessing
+	if ctx.Config.GlobalExternalProcessing != nil {
 		// disabled or no processor, ignore it
-		if !ctx.Config.GlobalExtProc.Disabled && ctx.Config.GlobalExtProc.Processor != nil {
-			extProc := ctx.Config.GlobalExtProc.Processor
+		if !ctx.Config.GlobalExternalProcessing.Disabled && ctx.Config.GlobalExternalProcessing.Processor != nil {
+			extProc := ctx.Config.GlobalExternalProcessing.Processor
 
 			nsedName := k8s.NamespacedNameFrom(extProc.ExtensionService)
-			globalExtProc = &contour_v1.ExternalProcessor{
-				Processor: &contour_v1.ExtProc{
-					GRPCService: &contour_v1.GRPCService{
-						ExtensionServiceRef: contour_v1.ExtensionServiceReference{
-							Name:      nsedName.Name,
-							Namespace: nsedName.Namespace,
-						},
-						ResponseTimeout: extProc.ResponseTimeout,
-						FailOpen:        extProc.FailOpen,
+			globalExtProc = &contour_v1.ExternalProcessing{
+				Processor: &contour_v1.ExternalProcessor{
+					ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+						Name:      nsedName.Name,
+						Namespace: nsedName.Namespace,
 					},
+					ResponseTimeout:   extProc.ResponseTimeout,
+					FailOpen:          extProc.FailOpen,
+					AllowModeOverride: extProc.AllowModeOverride,
+					ProcessingMode:    extProc.ProcessingMode,
+					MutationRules:     extProc.MutationRules,
 				},
 			}
 		}
@@ -612,7 +613,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		},
 		EnableExternalNameService:   &ctx.Config.EnableExternalNameService,
 		GlobalExternalAuthorization: globalExtAuth,
-		GlobalExtProc:               globalExtProc,
+		GlobalExternalProcessing:    globalExtProc,
 		RateLimitService:            rateLimitService,
 		Policy:                      policy,
 		Metrics:                     &contourMetrics,

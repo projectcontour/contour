@@ -576,7 +576,7 @@ func (s *Server) doServe() error {
 		globalRateLimitService:             contourConfiguration.RateLimitService,
 		maxRequestsPerConnection:           contourConfiguration.Envoy.Cluster.MaxRequestsPerConnection,
 		perConnectionBufferLimitBytes:      contourConfiguration.Envoy.Cluster.PerConnectionBufferLimitBytes,
-		globalExtProc:                      contourConfiguration.GlobalExtProc,
+		globalExternalProcessing:           contourConfiguration.GlobalExternalProcessing,
 		globalCircuitBreakerDefaults:       contourConfiguration.Envoy.Cluster.GlobalCircuitBreakerDefaults,
 		upstreamTLS: &dag.UpstreamTLS{
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
@@ -890,24 +890,22 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 }
 
 func (s *Server) setupGlobalExtProc(contourCfg contour_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.GlobalExtProcConfig, error) {
-	extProc := contourCfg.GlobalExtProc
-	if extProc == nil || extProc.Disabled || extProc.Processor == nil || extProc.Processor.GRPCService == nil {
+	extProc := contourCfg.GlobalExternalProcessing
+	if extProc == nil || extProc.Disabled || extProc.Processor == nil {
 		return nil, nil
 	}
 
-	grpcSvc := extProc.Processor.GRPCService
-
 	// ensure the specified ExtensionService exists
-	extSvcCfg, err := s.getExtensionSvcConfig(grpcSvc.ExtensionServiceRef.Name, grpcSvc.ExtensionServiceRef.Namespace)
+	extSvcCfg, err := s.getExtensionSvcConfig(extProc.Processor.ExtensionServiceRef.Name, extProc.Processor.ExtensionServiceRef.Namespace)
 	if err != nil {
 		return nil, err
 	}
 	return &xdscache_v3.GlobalExtProcConfig{
 		ExtensionServiceConfig: extSvcCfg,
-		FailOpen:               grpcSvc.FailOpen,
-		ProcessingMode:         contourCfg.GlobalExtProc.Processor.ProcessingMode,
-		MutationRules:          contourCfg.GlobalExtProc.Processor.MutationRules,
-		AllowModeOverride:      contourCfg.GlobalExtProc.Processor.AllowModeOverride,
+		FailOpen:               extProc.Processor.FailOpen,
+		ProcessingMode:         contourCfg.GlobalExternalProcessing.Processor.ProcessingMode,
+		MutationRules:          contourCfg.GlobalExternalProcessing.Processor.MutationRules,
+		AllowModeOverride:      contourCfg.GlobalExternalProcessing.Processor.AllowModeOverride,
 	}, nil
 }
 
@@ -1090,7 +1088,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
-	globalExtProc                      *contour_v1.ExternalProcessor
+	globalExternalProcessing           *contour_v1.ExternalProcessing
 	globalCircuitBreakerDefaults       *contour_v1alpha1.GlobalCircuitBreakerDefaults
 	upstreamTLS                        *dag.UpstreamTLS
 }
@@ -1187,7 +1185,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			GlobalRateLimitService:        dbc.globalRateLimitService,
 			PerConnectionBufferLimitBytes: dbc.perConnectionBufferLimitBytes,
 			SetSourceMetadataOnRoutes:     true,
-			GlobalExtProc:                 dbc.globalExtProc,
+			GlobalExternalProcessing:      dbc.globalExternalProcessing,
 			GlobalCircuitBreakerDefaults:  dbc.globalCircuitBreakerDefaults,
 			UpstreamTLS:                   dbc.upstreamTLS,
 		},

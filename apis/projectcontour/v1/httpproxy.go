@@ -448,8 +448,10 @@ type ProcessingMode struct {
 	ResponseTrailerMode HeaderSendMode `json:"responseTrailerMode,omitempty"`
 }
 
-// GRPCService configure the gRPC service that the filter will communicate with.
-type GRPCService struct {
+// ExternalProcessor defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy external processing GRPC protocol
+// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type ExternalProcessor struct {
 	// ExtensionServiceRef specifies the extension resource that will handle the client requests.
 	//
 	// +optional
@@ -470,16 +472,6 @@ type GRPCService struct {
 	//
 	// +optional
 	FailOpen bool `json:"failOpen,omitempty"`
-}
-
-// ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
-// The external server must implement the v3 Envoy external processing GRPC protocol
-// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
-type ExtProc struct {
-	// GRPCService configure the gRPC service that the filter will communicate with.
-	//
-	// +optional
-	GRPCService *GRPCService `json:"grpcService,omitempty"`
 
 	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
 	// and how they are delivered.
@@ -502,36 +494,20 @@ type ExtProc struct {
 	AllowModeOverride bool `json:"allowModeOverride,omitempty"`
 }
 
-// ExternalProcessor defines a external processing filter and the policy for fine-grained at VirutalHost and/or Route level.
-type ExternalProcessor struct {
+// ExternalProcessing defines a external processing filter and the policy to act on HTTP traffic in a flexible way.
+type ExternalProcessing struct {
 	// Processor defines a external processing filter which allows an external service to act on HTTP traffic in a flexible way.
 	//
 	// +optional
-	Processor *ExtProc `json:"processor,omitempty"`
+	Processor *ExternalProcessor `json:"processor,omitempty"`
 
-	// When true, this field disables the external processor: (neither global nor virtualHost)
-	// for the scope of the policy.
+	// When true, this field disables the external processor for the scope of the policy.
+	// - for global: no external processing will be append to the filter chain
 	//
 	// if both Disabled and Processor are set. use disabled.
 	//
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
-}
-
-// ExtProcPolicy modifies how requests/responses are operated.
-type ExtProcPolicy struct {
-	// When true, this field disables the specific client request external processor
-	// for the scope of the policy.
-	//
-	// if both disabled and overrides are set. use disabled.
-	//
-	// +optional
-	Disabled bool `json:"disabled,omitempty"`
-
-	// Overrides aspects of the configuration for this route.
-	//
-	// +optional
-	Overrides *ExtProc `json:"overrides,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
@@ -582,11 +558,11 @@ type VirtualHost struct {
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// ExtProc which allow to act on HTTP traffic in a flexible way
-	// and the policy for fine-grained at VirtualHost level.
+	// ExternalProcessing defines a external processing filter and the policy
+	// to act on HTTP traffic in a flexible way.
 	//
 	// +optional
-	ExtProc *ExternalProcessor `json:"extProc,omitempty"`
+	ExternalProcessing *ExternalProcessing `json:"externalProcessing,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -855,11 +831,10 @@ type Route struct {
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 
-	// ExtProcPolicy updates the external processing policy that were set
-	// on the root HTTPProxy object for client requests/responses
+	// ExternalProcessing override/disable the policy to act on HTTP traffic for the specific route in a flexible way.
 	//
 	// +optional
-	ExtProcPolicy *ExtProcPolicy `json:"extProcPolicy,omitempty"`
+	ExternalProcessing *ExternalProcessing `json:"externalProcessing,omitempty"`
 }
 
 type JWTVerificationPolicy struct {

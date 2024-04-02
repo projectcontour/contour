@@ -53,17 +53,17 @@ func (v *VirtualHost) AuthorizationContext() map[string]string {
 // ExtProcConfigured returns whether external processing are
 // configured on this virtual host.
 func (v *VirtualHost) ExtProcConfigured() bool {
-	return v.ExtProc != nil && v.ExtProc.Processor != nil
+	return v.ExternalProcessing != nil && v.ExternalProcessing.Processor != nil
 }
 
 // ExtProcDisabled returns true if this virtual host disables
 // external processing explicit. If an external processor is present, the default
 // policy is to not disable.
 func (v *VirtualHost) ExtProcDisabled() bool {
-	if v.ExtProc == nil {
+	if v.ExternalProcessing == nil {
 		return false
 	}
-	return v.ExtProc.Disabled
+	return v.ExternalProcessing.Disabled
 }
 
 // GetPrefixReplacements returns replacement prefixes from the path

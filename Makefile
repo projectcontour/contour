@@ -232,8 +232,7 @@ format: ## Run gofumpt to format the codebase.
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-#generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-metrics-docs generate-uml generate-go
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
 
 .PHONY: generate-rbac
 generate-rbac:
