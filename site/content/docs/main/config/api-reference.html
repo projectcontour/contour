@@ -1150,212 +1150,12 @@ SkipClientCertValidation is set. Defaults to false.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.ExtProc">ExtProc
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>)
-</p>
-<p>
-<p>ExtProc defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
-The external server must implement the v3 Envoy external processing GRPC protocol
-(<a href="https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto">https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto</a>).</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>phase</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ProcessingPhase">
-ProcessingPhase
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Phase determines where in the filter chain this extProc is to be injected.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>priority</code>
-<br>
-<em>
-int32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Priority determines ordering of processing filters in the same phase. When multiple extProc are applied to the same workload in the same phase,
-they will be applied by priority, in descending order, If priority is not set or two extProc exist with the same value,
-they will follow the order in which extProc(s) are added, Defaults to 0.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>grpcService</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.GRPCService">
-GRPCService
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GRPCService configure the gRPC service that the filter will communicate with.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>processingMode</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ProcessingMode">
-ProcessingMode
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
-and how they are delivered.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>mutationRules</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.HeaderMutationRules">
-HeaderMutationRules
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>MutationRules specifies what headers may be manipulated by a processing filter.
-This set of rules makes it possible to control which modifications a filter may make.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="projectcontour.io/v1.ExtProcOverride">ExtProcOverride
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExtProcPolicy">ExtProcPolicy</a>)
-</p>
-<p>
-<p>ExtProcOverride override aspects of the configuration for this route.
-A set of overrides in a more specific configuration will override a “disabled” flag set in a less-specific one.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>grpcService</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.GRPCService">
-GRPCService
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GRPCService configure the gRPC service that the filter will communicate with.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>processingMode</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ProcessingMode">
-ProcessingMode
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
-and how they are delivered.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="projectcontour.io/v1.ExtProcPolicy">ExtProcPolicy
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>, 
-<a href="#projectcontour.io/v1.Route">Route</a>)
-</p>
-<p>
-<p>ExtProcPolicy modifies how requests/responses are operated.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>disabled</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>When true, this field disables client request external processing
-for the scope of the policy.
-Precisely one of disabled, overrides must be set.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>overrides</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ExtProcOverride">
-ExtProcOverride
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Overrides aspects of the configuration for this route.</p>
-<p>**Note: For VirtualHost, it&rsquo;s must be nil.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1.ExtensionServiceReference">ExtensionServiceReference
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
-<a href="#projectcontour.io/v1.GRPCService">GRPCService</a>)
+<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>)
 </p>
 <p>
 <p>ExtensionServiceReference names an ExtensionService resource.</p>
@@ -1412,15 +1212,16 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.ExternalProcessor">ExternalProcessor
+<h3 id="projectcontour.io/v1.ExternalProcessing">ExternalProcessing
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
 <a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>, 
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>ExternalProcessor defines a processing filter list and the policy for fine-grained at VirutalHost and/or Route level.</p>
+<p>ExternalProcessing defines a external processing filter and the policy to act on HTTP traffic in a flexible way.</p>
 </p>
 <table>
 <thead>
@@ -1432,58 +1233,46 @@ string
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>processors</code>
+<code>processor</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.ExtProc">
-[]ExtProc
+<a href="#projectcontour.io/v1.ExternalProcessor">
+ExternalProcessor
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Processors defines a processing filter list,and each filter in the list
-will be added to the corresponding processing Priority in ascending order of it&rsquo;s Priority within the same phase.
-If no phase is specified, it will be added before the Router.
-If no Priority is specified, the filters will be added in the order they appear in the list.</p>
+<p>Processor defines a external processing filter which allows an external service to act on HTTP traffic in a flexible way.</p>
 </td>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>extProcPolicy</code>
+<code>disabled</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.ExtProcPolicy">
-ExtProcPolicy
-</a>
+bool
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ExtProcPolicy sets a external processing policy.
-This policy will be used unless overridden by individual routes.</p>
-<p>**Note: for the Global External Processor, it&rsquo;s must be nil.</p>
+<p>When true, this field disables the external processor for the scope of the policy.
+- for global: no external processing will be append to the filter chain</p>
+<p>if both Disabled and Processor are set. use disabled.</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.Feature">Feature
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
-</p>
-<p>
-</p>
-<h3 id="projectcontour.io/v1.GRPCService">GRPCService
+<h3 id="projectcontour.io/v1.ExternalProcessor">ExternalProcessor
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>, 
-<a href="#projectcontour.io/v1.ExtProcOverride">ExtProcOverride</a>)
+<a href="#projectcontour.io/v1.ExternalProcessing">ExternalProcessing</a>)
 </p>
 <p>
-<p>GRPCService configure the gRPC service that the filter will communicate with.</p>
+<p>ExternalProcessor defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
+The external server must implement the v3 Envoy external processing GRPC protocol
+(<a href="https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto">https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto</a>).</p>
 </p>
 <table>
 <thead>
@@ -1539,8 +1328,63 @@ even if the server fails to respond. This field should not be
 set in most cases.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>processingMode</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ProcessingMode">
+ProcessingMode
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+and how they are delivered.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>mutationRules</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderMutationRules">
+HeaderMutationRules
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MutationRules specifies what headers may be manipulated by a processing filter.
+This set of rules makes it possible to control which modifications a filter may make.</p>
+<p>for Overrides is must be nil</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowModeOverride</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If true, the filter config processingMode can be overridden by the response message from the external processing server <code>mode_override</code><code>.
+If false,</code>mode_override` API in the response message will be ignored.</p>
+</td>
+</tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.Feature">Feature
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourSettings">ContourSettings</a>)
+</p>
+<p>
+</p>
 <h3 id="projectcontour.io/v1.GenericKeyDescriptor">GenericKeyDescriptor
 </h3>
 <p>
@@ -2413,7 +2257,7 @@ negative matches (e.g. NotContains, NotExact).</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>)
+<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>)
 </p>
 <p>
 <p>HeaderMutationRules specifies what headers may be manipulated by a processing filter.
@@ -3235,8 +3079,7 @@ No HTTP headers or body content is rewritten.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>, 
-<a href="#projectcontour.io/v1.ExtProcOverride">ExtProcOverride</a>)
+<a href="#projectcontour.io/v1.ExternalProcessor">ExternalProcessor</a>)
 </p>
 <p>
 <p>ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
@@ -3347,40 +3190,6 @@ Default is &ldquo;SKIP&rdquo;.</p>
 </td>
 </tr>
 </tbody>
-</table>
-<h3 id="projectcontour.io/v1.ProcessingPhase">ProcessingPhase
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.ExtProc">ExtProc</a>)
-</p>
-<p>
-<p>ProcessingPhase define the phase in the filter chain where the external processing filter will be injected</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr><td><p>&#34;AuthN&#34;</p></td>
-<td><p>Insert before contour authentication filter(s).</p>
-</td>
-</tr><tr><td><p>&#34;AuthZ&#34;</p></td>
-<td><p>Insert  before contour authorization filter(s) and after the authentication filter(s).</p>
-</td>
-</tr><tr><td><p>&#34;CORS&#34;</p></td>
-<td><p>Insert  before contour CORS filter(s).</p>
-</td>
-</tr><tr><td><p>&#34;DefaultPhase&#34;</p></td>
-<td><p>DefaultPhase decides insert the external processing service at the end of the filter chain, right before the Router.</p>
-<p>**NOTE: if not specify, default to DefaultPhase</p>
-</td>
-</tr><tr><td><p>&#34;RateLimit&#34;</p></td>
-<td><p>Insert  before contour RateLimit.</p>
-</td>
-</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1.QueryParameterHashOptions">QueryParameterHashOptions
 </h3>
@@ -4527,19 +4336,17 @@ The rules defined here override any rules set on the root HTTPProxy.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>extProcPolicy</code>
+<code>externalProcessing</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.ExtProcPolicy">
-ExtProcPolicy
+<a href="#projectcontour.io/v1.ExternalProcessing">
+ExternalProcessing
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ExtProcPolicy updates the external processing policy that was set
-on the root HTTPProxy object for client requests/responses that
-match this route.</p>
+<p>ExternalProcessing override/disable the policy to act on HTTP traffic for the specific route in a flexible way.</p>
 </td>
 </tr>
 </tbody>
@@ -5562,18 +5369,18 @@ The rules defined here may be overridden in a Route.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>extProc</code>
+<code>externalProcessing</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.ExternalProcessor">
-ExternalProcessor
+<a href="#projectcontour.io/v1.ExternalProcessing">
+ExternalProcessing
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ExternalProcessor contains a list of external processors which allow to act on HTTP traffic in a flexible way
-and the policy for fine-grained at VirtualHost level.</p>
+<p>ExternalProcessing defines a external processing filter and the policy
+to act on HTTP traffic in a flexible way.</p>
 </td>
 </tr>
 </tbody>
@@ -5852,22 +5659,6 @@ TracingConfig
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>globalExtProc</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ExternalProcessor">
-ExternalProcessor
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GlobalExternalProcessor allows envoys external processing filters
-to be enabled for all virtual hosts.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>featureFlags</code>
 <br>
 <em>
@@ -5882,6 +5673,22 @@ Available toggles are:
 useEndpointSlices - configures contour to fetch endpoint data
 from k8s endpoint slices. defaults to false and reading endpoint
 data from the k8s endpoints.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>globalExternalProcessing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExternalProcessing">
+ExternalProcessing
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalProcessing allows envoys external processing filter
+to be enabled for all virtual hosts.</p>
 </td>
 </tr>
 </table>
@@ -6661,22 +6468,6 @@ TracingConfig
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>globalExtProc</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ExternalProcessor">
-ExternalProcessor
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>GlobalExternalProcessor allows envoys external processing filters
-to be enabled for all virtual hosts.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>featureFlags</code>
 <br>
 <em>
@@ -6691,6 +6482,22 @@ Available toggles are:
 useEndpointSlices - configures contour to fetch endpoint data
 from k8s endpoint slices. defaults to false and reading endpoint
 data from the k8s endpoints.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>globalExternalProcessing</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExternalProcessing">
+ExternalProcessing
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GlobalExternalProcessing allows envoys external processing filter
+to be enabled for all virtual hosts.</p>
 </td>
 </tr>
 </tbody>

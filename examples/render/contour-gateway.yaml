@@ -21526,6 +21526,7 @@ status:
     plural: ""
   conditions: null
   storedVersions: null
+
 ---
 kind: GatewayClass
 apiVersion: gateway.networking.k8s.io/v1
