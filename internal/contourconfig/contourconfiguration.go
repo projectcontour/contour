@@ -81,14 +81,16 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				Name:      "envoy",
 			},
 			HTTPListener: &contour_v1alpha1.EnvoyListener{
-				Address:   "0.0.0.0",
-				Port:      8080,
-				AccessLog: "/dev/stdout",
+				Address:               "0.0.0.0",
+				Port:                  8080,
+				AccessLog:             "/dev/stdout",
+				BufferMaxRequestBytes: 0,
 			},
 			HTTPSListener: &contour_v1alpha1.EnvoyListener{
-				Address:   "0.0.0.0",
-				Port:      8443,
-				AccessLog: "/dev/stdout",
+				Address:               "0.0.0.0",
+				Port:                  8443,
+				AccessLog:             "/dev/stdout",
+				BufferMaxRequestBytes: 0,
 			},
 			Health: &contour_v1alpha1.HealthConfig{
 				Address: "0.0.0.0",

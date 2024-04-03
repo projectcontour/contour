@@ -150,6 +150,12 @@ type ListenerConfig struct {
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
 	SocketOptions *contour_v1alpha1.SocketOptions
+
+	// HTTPBufferMaxRequestBytes configures the buffer http filter.
+	HTTPBufferMaxRequestBytes uint32
+
+	// HTTPSBufferMaxRequestBytes configures the buffer http filter.
+	HTTPSBufferMaxRequestBytes uint32
 }
 
 type ExtensionServiceConfig struct {
@@ -395,6 +401,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 				DefaultFilters().
+				AddFilter(envoy_v3.BufferFilter(cfg.HTTPBufferMaxRequestBytes)).
 				RouteConfigName(httpRouteConfigName(listener)).
 				MetricsPrefix(listener.Name).
 				AccessLoggers(cfg.newInsecureAccessLog()).
@@ -468,6 +475,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
+					AddFilter(envoy_v3.BufferFilter(cfg.HTTPSBufferMaxRequestBytes)).
 					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
 					AddFilter(authzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).

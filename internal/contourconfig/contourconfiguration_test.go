@@ -75,14 +75,16 @@ func TestOverlayOnDefaults(t *testing.T) {
 				Name:      "coolname",
 			},
 			HTTPListener: &contour_v1alpha1.EnvoyListener{
-				Address:   "3.4.5.6",
-				Port:      8989,
-				AccessLog: "/dev/oops",
+				Address:               "3.4.5.6",
+				Port:                  8989,
+				AccessLog:             "/dev/oops",
+				BufferMaxRequestBytes: 10,
 			},
 			HTTPSListener: &contour_v1alpha1.EnvoyListener{
-				Address:   "4.5.6.7",
-				Port:      8445,
-				AccessLog: "/dev/oops",
+				Address:               "4.5.6.7",
+				Port:                  8445,
+				AccessLog:             "/dev/oops",
+				BufferMaxRequestBytes: 10,
 			},
 			Health: &contour_v1alpha1.HealthConfig{
 				Address: "1.1.1.1",

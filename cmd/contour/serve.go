@@ -137,7 +137,9 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
+	serve.Flag("envoy-http-buffer-max-request-bytes", "Envoy HTTP buffer max request bytes.").PlaceHolder("10485760").Uint32Var(&ctx.httpBufferMaxRequestBytes)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpsAccessLog)
+	serve.Flag("envoy-https-buffer-max-request-bytesg", "Envoy HTTPS buffer max request bytes.").PlaceHolder("10485760").Uint32Var(&ctx.httpsBufferMaxRequestBytes)
 	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests.").PlaceHolder("<ipaddr>").StringVar(&ctx.httpAddr)
 	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests.").PlaceHolder("<port>").IntVar(&ctx.httpPort)
 	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests.").PlaceHolder("<ipaddr>").StringVar(&ctx.httpsAddr)
@@ -468,6 +470,8 @@ func (s *Server) doServe() error {
 		HTTP2MaxConcurrentStreams:     contourConfiguration.Envoy.Listener.HTTP2MaxConcurrentStreams,
 		PerConnectionBufferLimitBytes: contourConfiguration.Envoy.Listener.PerConnectionBufferLimitBytes,
 		SocketOptions:                 contourConfiguration.Envoy.Listener.SocketOptions,
+		HTTPBufferMaxRequestBytes:     contourConfiguration.Envoy.HTTPListener.BufferMaxRequestBytes,
+		HTTPSBufferMaxRequestBytes:    contourConfiguration.Envoy.HTTPSListener.BufferMaxRequestBytes,
 	}
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {

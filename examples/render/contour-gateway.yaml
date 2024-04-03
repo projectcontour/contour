@@ -286,6 +286,12 @@ spec:
                         description: Defines an Envoy Listener Address.
                         minLength: 1
                         type: string
+                      bufferMaxRequestBytes:
+                        description: |-
+                          Sets the max_request_bytes value for the http.buffer filter.
+                          If the value is 0, it skips adding a Buffer filter into the filter chain.
+                        format: int32
+                        type: integer
                       port:
                         description: Defines an Envoy listener Port.
                         type: integer
@@ -303,6 +309,12 @@ spec:
                         description: Defines an Envoy Listener Address.
                         minLength: 1
                         type: string
+                      bufferMaxRequestBytes:
+                        description: |-
+                          Sets the max_request_bytes value for the http.buffer filter.
+                          If the value is 0, it skips adding a Buffer filter into the filter chain.
+                        format: int32
+                        type: integer
                       port:
                         description: Defines an Envoy listener Port.
                         type: integer
@@ -3971,6 +3983,12 @@ spec:
                             description: Defines an Envoy Listener Address.
                             minLength: 1
                             type: string
+                          bufferMaxRequestBytes:
+                            description: |-
+                              Sets the max_request_bytes value for the http.buffer filter.
+                              If the value is 0, it skips adding a Buffer filter into the filter chain.
+                            format: int32
+                            type: integer
                           port:
                             description: Defines an Envoy listener Port.
                             type: integer
@@ -3988,6 +4006,12 @@ spec:
                             description: Defines an Envoy Listener Address.
                             minLength: 1
                             type: string
+                          bufferMaxRequestBytes:
+                            description: |-
+                              Sets the max_request_bytes value for the http.buffer filter.
+                              If the value is 0, it skips adding a Buffer filter into the filter chain.
+                            format: int32
+                            type: integer
                           port:
                             description: Defines an Envoy listener Port.
                             type: integer

@@ -901,6 +901,18 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"envoy buffer filter": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.httpBufferMaxRequestBytes = 10
+				ctx.httpsBufferMaxRequestBytes = 10
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.HTTPListener.BufferMaxRequestBytes = 10
+				cfg.Envoy.HTTPSListener.BufferMaxRequestBytes = 10
+				return cfg
+			},
+		},
 	}
 
 	for name, tc := range cases {

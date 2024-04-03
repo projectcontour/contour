@@ -6765,6 +6765,20 @@ string
 <p>AccessLog defines where Envoy logs are outputted for this listener.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>bufferMaxRequestBytes</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Sets the max_request_bytes value for the http.buffer filter.
+If the value is 0, it skips adding a Buffer filter into the filter chain.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig

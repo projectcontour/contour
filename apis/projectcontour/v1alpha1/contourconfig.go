@@ -528,6 +528,11 @@ type EnvoyListener struct {
 	// AccessLog defines where Envoy logs are outputted for this listener.
 	// +optional
 	AccessLog string `json:"accessLog,omitempty"`
+
+	// Sets the max_request_bytes value for the http.buffer filter.
+	// If the value is 0, it skips adding a Buffer filter into the filter chain.
+	// +optional
+	BufferMaxRequestBytes uint32 `json:"bufferMaxRequestBytes,omitempty"`
 }
 
 // EnvoyLogging defines how Envoy's logs can be configured.
