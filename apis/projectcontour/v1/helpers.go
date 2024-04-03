@@ -35,7 +35,7 @@ func (v *VirtualHost) DisableAuthorization() bool {
 		return v.Authorization.AuthPolicy.Disabled
 	}
 
-	// No authorization, so it is not disable.
+	// No authorization, so it is not disabled.
 	return false
 }
 

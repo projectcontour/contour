@@ -26,14 +26,10 @@ gendoc::build() {
 gendoc::exec() {
     local -r confdir="${REPO}/hack/api-docs-config/refdocs"
 
-    echo  ${confdir} 
-    echo $@
-    echo  ${confdir}/config.json
     "${GOBIN}"/gen-crd-api-reference-docs \
         -template-dir "${confdir}" \
         -config "${confdir}/config.json" \
         "$@"
-    echo "1234"    
 }
 
 gendoc::build
