@@ -93,8 +93,6 @@ func testGRPCServicePlaintext(namespace string) {
 				InsecureSkipVerify: true,
 			}),
 		} {
-			dialCtx, dialCancel := context.WithTimeout(context.Background(), time.Second*30)
-			defer dialCancel()
 			retryOpts := []grpc_retry.CallOption{
 				// Retry if Envoy returns unavailable, the upstream
 				// may not be healthy yet.
@@ -106,8 +104,7 @@ func testGRPCServicePlaintext(namespace string) {
 				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
 				grpc_retry.WithMax(20),
 			}
-			conn, err := grpc.DialContext(dialCtx, addr,
-				grpc.WithBlock(),
+			conn, err := grpc.NewClient(addr,
 				grpc.WithAuthority(p.Spec.VirtualHost.Fqdn),
 				grpc.WithTransportCredentials(transportCreds),
 				grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
