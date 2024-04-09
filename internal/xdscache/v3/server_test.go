@@ -270,7 +270,7 @@ func TestGRPC(t *testing.T) {
 				cancel()
 				<-done
 			}()
-			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+			cc, err := grpc.NewClient(l.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 			require.NoError(t, err)
 			defer cc.Close()
 			fn(t, cc)

@@ -111,6 +111,7 @@ func TestTracingConfig(t *testing.T) {
 						}),
 					},
 				},
+				SpawnUpstreamSpan: wrapperspb.Bool(true),
 			},
 		},
 		"no custom tag": {
@@ -146,6 +147,7 @@ func TestTracingConfig(t *testing.T) {
 						}),
 					},
 				},
+				SpawnUpstreamSpan: wrapperspb.Bool(true),
 			},
 		},
 		"no SNI set": {
@@ -181,6 +183,7 @@ func TestTracingConfig(t *testing.T) {
 						}),
 					},
 				},
+				SpawnUpstreamSpan: wrapperspb.Bool(true),
 			},
 		},
 	}
