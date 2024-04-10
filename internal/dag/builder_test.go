@@ -3398,9 +3398,24 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				makeHTTPRouteWithTimeouts("5s", "5s"),
+				makeHTTPRouteWithTimeouts("5s", "4s"),
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(4 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
 		},
 
 		"HTTPRoute rule with backendRequest timeout only": {
@@ -3410,7 +3425,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				makeHTTPRouteWithTimeouts("", "5s"),
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
 		},
 		"HTTPRoute rule with invalid request timeout": {
 			gatewayclass: validClass,
@@ -3418,6 +3448,25 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				makeHTTPRouteWithTimeouts("invalid", ""),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with invalid backend request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithTimeouts("5s", "invalid"),
+			},
+			want: listeners(),
+		},
+
+		"HTTPRoute rule with backend request timeout greater than request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithTimeouts("5s", "6s"),
 			},
 			want: listeners(),
 		},

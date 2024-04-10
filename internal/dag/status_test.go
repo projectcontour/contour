@@ -9441,7 +9441,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		},
 	})
 
-	run(t, "route rule with timeouts.request and timeouts.backendRequest specified", testcase{
+	run(t, "route rule with timeouts.backendRequest greater than timeouts.request", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1.HTTPRoute{
@@ -9462,7 +9462,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
 								Request:        ptr.To(gatewayapi_v1.Duration("30s")),
-								BackendRequest: ptr.To(gatewayapi_v1.Duration("30s")),
+								BackendRequest: ptr.To(gatewayapi_v1.Duration("60s")),
 							},
 						},
 					},
@@ -9477,7 +9477,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest must be less than/equal to HTTPRoute.Spec.Rules.Timeouts.Request when both are specified"),
 					},
 				},
 			},
@@ -9486,7 +9486,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
-	run(t, "route rule with only timeouts.backendRequest specified", testcase{
+	run(t, "route rule with invalid timeouts.backendRequest specified", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1.HTTPRoute{
@@ -9506,7 +9506,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
-								BackendRequest: ptr.To(gatewayapi_v1.Duration("30s")),
+								BackendRequest: ptr.To(gatewayapi_v1.Duration("invalid")),
 							},
 						},
 					},
@@ -9520,7 +9520,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "invalid HTTPRoute.Spec.Rules.Timeouts.BackendRequest: unable to parse timeout string \"invalid\": time: invalid duration \"invalid\""),
 					},
 				},
 			},

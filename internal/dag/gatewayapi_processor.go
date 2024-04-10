@@ -14,7 +14,6 @@
 package dag
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -1117,28 +1116,42 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 }
 
 func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPolicy, error) {
-	if httpRouteTimeouts == nil {
+	if httpRouteTimeouts == nil || (httpRouteTimeouts.Request == nil && httpRouteTimeouts.BackendRequest == nil) {
 		return nil, nil
 	}
 
-	// Since Gateway API doesn't yet support retries, this timeout setting
-	// is functionally equivalent to httpRouteTimeouts.Request, so we're
-	// not implementing it for now. Once retries are added to Gateway API,
-	// support for backend request timeouts can be added.
+	var responseTimeout timeout.Setting
+
+	if httpRouteTimeouts.Request != nil {
+		requestTimeout, err := timeout.Parse(string(*httpRouteTimeouts.Request))
+		if err != nil {
+			return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.Request: %v", err)
+		}
+
+		responseTimeout = requestTimeout
+	}
+
+	// Note, since retries are not yet implemented in Gateway API, the backend
+	// request timeout is functionally equivalent to the request timeout for now.
+	// The API spec requires that it be less than/equal to the request timeout if
+	// both are specified. This implementation will change when retries are implemented.
 	if httpRouteTimeouts.BackendRequest != nil {
-		return nil, errors.New("HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead")
-	}
-	if httpRouteTimeouts.Request == nil {
-		return nil, nil
-	}
+		backendRequestTimeout, err := timeout.Parse(string(*httpRouteTimeouts.BackendRequest))
+		if err != nil {
+			return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.BackendRequest: %v", err)
+		}
 
-	requestTimeout, err := timeout.Parse(string(*httpRouteTimeouts.Request))
-	if err != nil {
-		return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.Request: %v", err)
+		// If Timeouts.Request was specified, then Timeouts.BackendRequest must be
+		// less than/equal to it.
+		if responseTimeout.Duration() > 0 && backendRequestTimeout.Duration() > responseTimeout.Duration() {
+			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Timeouts.BackendRequest must be less than/equal to HTTPRoute.Spec.Rules.Timeouts.Request when both are specified")
+		}
+
+		responseTimeout = backendRequestTimeout
 	}
 
 	return &RouteTimeoutPolicy{
-		ResponseTimeout: requestTimeout,
+		ResponseTimeout: responseTimeout,
 	}, nil
 }
 
