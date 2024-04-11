@@ -283,10 +283,7 @@ Now you have a tag pushed to Github, go to the release tab on github, select the
 After any release, a few communications should be sent out to notify users.
 
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
-- Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
-- Send an update to the [cncf-contour-users mailing list][4]
-- Send an update to the [cncf-contour-distributors-announce mailing list][5]
-- Post a blog entry to projectcontour.io
+- Send an update to the [Project Contour mailing list][4]
 
 # File issues
 
@@ -295,7 +292,6 @@ If you encountered any problems or areas for improvement while executing the rel
 [1]: #minor-release-process
 [2]: #patch-release-process
 [3]: #rc-release-process
-[4]: https://lists.cncf.io/g/cncf-contour-users/
-[5]: https://lists.cncf.io/g/cncf-contour-distributors-announce/
+[4]: https://groups.google.com/g/project-contour
 [6]: https://github.com/projectcontour/contour/actions/workflows/build_tag.yaml
-[7]: https://github.com/kubernetes-sigs/gateway-api/pull/2556
+[7]: https://github.com/kubernetes-sigs/gateway-api/pull/2884
