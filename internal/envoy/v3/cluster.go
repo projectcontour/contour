@@ -86,9 +86,11 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 				MaxPendingRequests: protobuf.UInt32OrNil(service.MaxPendingRequests),
 				MaxRequests:        protobuf.UInt32OrNil(service.MaxRequests),
 				MaxRetries:         protobuf.UInt32OrNil(service.MaxRetries),
+				TrackRemaining:     true,
 			}},
 			PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 				MaxConnections: protobuf.UInt32OrNil(service.PerHostMaxConnections),
+				TrackRemaining: true,
 			}},
 		}
 	}
