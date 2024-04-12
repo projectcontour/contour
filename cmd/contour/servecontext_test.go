@@ -903,8 +903,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"envoy buffer filter": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.httpBufferMaxRequestBytes = 10
-				ctx.httpsBufferMaxRequestBytes = 10
+				ctx.Config.HTTPBufferMaxRequestBytes = 10
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {

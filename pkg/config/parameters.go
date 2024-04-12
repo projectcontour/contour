@@ -700,6 +700,10 @@ type Parameters struct {
 	// GlobalExternalAuthorization optionally holds properties of the global external authorization configuration.
 	GlobalExternalAuthorization GlobalExternalAuthorization `yaml:"globalExtAuth,omitempty"`
 
+	// HTTPBufferMaxRequestBytes defines value for max_request_bytes parameter of http buffer filter.
+	// If the value is non-zero, an HTTP buffer filter will be added to the HTTP filter chain.
+	HTTPBufferMaxRequestBytes uint32 `yaml:"http-buffer-max-request-bytes,omitempty"`
+
 	// MetricsParameters holds configurable parameters for Contour and Envoy metrics.
 	Metrics MetricsParameters `yaml:"metrics,omitempty"`
 
@@ -1058,9 +1062,10 @@ func Defaults() Parameters {
 			ResponseHeadersPolicy: HeadersPolicy{},
 			ApplyToIngress:        false,
 		},
-		EnvoyServiceName:      "envoy",
-		EnvoyServiceNamespace: contourNamespace,
-		DefaultHTTPVersions:   []HTTPVersionType{},
+		EnvoyServiceName:          "envoy",
+		EnvoyServiceNamespace:     contourNamespace,
+		DefaultHTTPVersions:       []HTTPVersionType{},
+		HTTPBufferMaxRequestBytes: 0,
 		Cluster: ClusterParameters{
 			DNSLookupFamily: AutoClusterDNSFamily,
 		},

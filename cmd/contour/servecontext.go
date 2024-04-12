@@ -77,16 +77,14 @@ type serveContext struct {
 	useProxyProto bool
 
 	// envoy's http listener parameters
-	httpAddr                  string
-	httpPort                  int
-	httpAccessLog             string
-	httpBufferMaxRequestBytes uint32
+	httpAddr      string
+	httpPort      int
+	httpAccessLog string
 
 	// envoy's https listener parameters
-	httpsAddr                  string
-	httpsPort                  int
-	httpsAccessLog             string
-	httpsBufferMaxRequestBytes uint32
+	httpsAddr      string
+	httpsPort      int
+	httpsAccessLog string
 
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
 	PermitInsecureGRPC bool
@@ -118,24 +116,22 @@ type LeaderElection struct {
 func newServeContext() *serveContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &serveContext{
-		Config:                     config.Defaults(),
-		statsAddr:                  "0.0.0.0",
-		statsPort:                  8002,
-		debugAddr:                  "127.0.0.1",
-		debugPort:                  6060,
-		healthAddr:                 "0.0.0.0",
-		healthPort:                 8000,
-		metricsAddr:                "0.0.0.0",
-		metricsPort:                8000,
-		httpAccessLog:              xdscache_v3.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:             xdscache_v3.DEFAULT_HTTPS_ACCESS_LOG,
-		httpAddr:                   "0.0.0.0",
-		httpsAddr:                  "0.0.0.0",
-		httpBufferMaxRequestBytes:  0,
-		httpsBufferMaxRequestBytes: 0,
-		httpPort:                   8080,
-		httpsPort:                  8443,
-		PermitInsecureGRPC:         false,
+		Config:             config.Defaults(),
+		statsAddr:          "0.0.0.0",
+		statsPort:          8002,
+		debugAddr:          "127.0.0.1",
+		debugPort:          6060,
+		healthAddr:         "0.0.0.0",
+		healthPort:         8000,
+		metricsAddr:        "0.0.0.0",
+		metricsPort:        8000,
+		httpAccessLog:      xdscache_v3.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:     xdscache_v3.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAddr:           "0.0.0.0",
+		httpsAddr:          "0.0.0.0",
+		httpPort:           8080,
+		httpsPort:          8443,
+		PermitInsecureGRPC: false,
 		ServerConfig: ServerConfig{
 			xdsAddr:     "127.0.0.1",
 			xdsPort:     8001,
@@ -550,13 +546,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Address:               ctx.httpAddr,
 				Port:                  ctx.httpPort,
 				AccessLog:             ctx.httpAccessLog,
-				BufferMaxRequestBytes: ctx.httpBufferMaxRequestBytes,
+				BufferMaxRequestBytes: ctx.Config.HTTPBufferMaxRequestBytes,
 			},
 			HTTPSListener: &contour_v1alpha1.EnvoyListener{
 				Address:               ctx.httpsAddr,
 				Port:                  ctx.httpsPort,
 				AccessLog:             ctx.httpsAccessLog,
-				BufferMaxRequestBytes: ctx.httpsBufferMaxRequestBytes,
+				BufferMaxRequestBytes: ctx.Config.HTTPBufferMaxRequestBytes,
 			},
 			Metrics: &envoyMetrics,
 			Health: &contour_v1alpha1.HealthConfig{
