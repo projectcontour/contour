@@ -127,7 +127,7 @@ jobs:
         steps: ${{ toJson(steps) }}
         channel: '#contour-ci-notifications'
       if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  e2e-endpoint-slices:
+  e2e-endpoints:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -154,7 +154,7 @@ jobs:
     - name: e2e tests
       env:
         CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
-        CONTOUR_E2E_USE_ENDPOINT_SLICES: true
+        CONTOUR_E2E_USE_ENDPOINTS: true
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
     - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
