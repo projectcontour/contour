@@ -18,6 +18,7 @@ package httpproxy
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -100,7 +101,8 @@ func testPathPrefixRewrite(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		cases := []struct {
 			path            string

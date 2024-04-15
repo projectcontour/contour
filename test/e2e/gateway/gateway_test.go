@@ -134,8 +134,11 @@ var _ = Describe("Gateway API", func() {
 		// or become valid.
 		gatewayClassCond := func(*gatewayapi_v1.GatewayClass) bool { return true }
 
-		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
-		f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed)
+		_, ok := f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
+		require.True(f.T(), ok)
+
+		_, ok = f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed)
+		require.True(f.T(), ok)
 	})
 
 	AfterEach(func() {

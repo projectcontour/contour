@@ -135,7 +135,8 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		_, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		require.True(f.T(), ok)
 
 		backendTLSPolicy := &gatewayapi_v1alpha2.BackendTLSPolicy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -163,7 +164,7 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 			},
 		}
 
-		_, ok := f.CreateBackendTLSPolicyAndWaitFor(backendTLSPolicy, e2e.BackendTLSPolicyAccepted)
+		_, ok = f.CreateBackendTLSPolicyAndWaitFor(backendTLSPolicy, e2e.BackendTLSPolicyAccepted)
 		assert.Truef(t, ok, "expected policy condition accepted on backend tls policy")
 
 		type responseTLSDetails struct {

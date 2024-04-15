@@ -56,7 +56,8 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 429 from the proxy confirming
 		// that we've exceeded the rate limit.
@@ -104,7 +105,8 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -176,7 +178,8 @@ func testDefaultGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Make requests against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
@@ -220,7 +223,8 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 429 from the proxy confirming
 		// that we've exceeded the rate limit.
@@ -272,7 +276,8 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -349,7 +354,8 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Make requests against the proxy, confirm a 429 response
 		// is now gotten since we've exceeded the rate limit.
@@ -399,7 +405,8 @@ func testDefaultGlobalRateLimitingWithVhRateLimitsIgnore(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 429 from the proxy confirming
 		// that we've exceeded the rate limit.

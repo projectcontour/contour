@@ -80,7 +80,8 @@ func testRequestHeaderModifierBackendRef(namespace string, gateway types.Namespa
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		_, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		require.True(f.T(), ok)
 
 		// Check the route with the RequestHeaderModifier filter.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

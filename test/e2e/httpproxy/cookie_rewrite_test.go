@@ -347,7 +347,8 @@ func testAppCookieRewrite(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// No rewrite rule on route, nothing should change.
 		headers := requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/no-rewrite", "no-rewrite=foo; Path=/nrw; Domain=nrw.com; SameSite=Strict; Secure")
@@ -469,7 +470,8 @@ func testHeaderGlobalRewriteCookieRewrite(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Path:      "/global",
@@ -608,7 +610,8 @@ func testHeaderRewriteCookieRewrite(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Path:      "/cookie-lb",
@@ -695,7 +698,8 @@ func testCookieRewriteTLS(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		headers := requestSetCookieHeader(true, p.Spec.VirtualHost.Fqdn, "/", "a-cookie=bar; Domain=cookie-rewrite-tls.projectcontour.io; Path=/; SameSite=Strict; Secure")
 		checkReturnedSetCookieHeader(headers, "a-cookie", "bar", "/", "cookie-rewrite-tls.projectcontour.io", "Strict", true, nil)

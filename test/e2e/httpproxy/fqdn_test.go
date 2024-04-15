@@ -122,9 +122,14 @@ func testWildcardSubdomainFQDN(namespace string) {
 				}},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(proxyWildcard, e2e.HTTPProxyValid)
-		f.CreateHTTPProxyAndWaitFor(proxyFullFQDN, e2e.HTTPProxyValid)
-		f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(proxyWildcard, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
+
+		_, ok = f.CreateHTTPProxyAndWaitFor(proxyFullFQDN, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
+
+		_, ok = f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		cases := map[string]struct {
 			ServiceName   string
@@ -240,7 +245,8 @@ func testIngressWildcardSubdomainFQDN(namespace string) {
 				}},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(proxySubdomain, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(proxySubdomain, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      "www.wildcard-override.projectcontour.io",

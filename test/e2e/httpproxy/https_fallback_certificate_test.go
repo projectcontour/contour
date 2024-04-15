@@ -59,7 +59,8 @@ func testHTTPSFallbackCertificate(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Send a request that includes a valid SNI, confirm a 200 is
 		// returned.

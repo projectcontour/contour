@@ -204,7 +204,7 @@ var _ = Describe("When upgrading", func() {
 
 				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 
-				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1.HTTPRoute{
+				_, ok = f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "echo",
@@ -244,6 +244,7 @@ var _ = Describe("When upgrading", func() {
 						},
 					},
 				}, e2e.HTTPRouteAccepted)
+				require.True(f.T(), ok)
 
 				By("ensuring it is routable")
 				checkRoutability(appHost)

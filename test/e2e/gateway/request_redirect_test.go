@@ -66,7 +66,8 @@ func testRequestRedirectRule(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		_, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		require.True(f.T(), ok)
 
 		// /complex-redirect specifies a host name,
 		// scheme, port and response code for the

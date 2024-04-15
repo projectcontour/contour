@@ -55,7 +55,8 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -151,7 +152,8 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -249,7 +251,8 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -349,7 +352,8 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -447,7 +451,8 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -549,7 +554,8 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.

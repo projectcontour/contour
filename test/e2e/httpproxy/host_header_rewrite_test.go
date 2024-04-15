@@ -64,7 +64,8 @@ func testHostRewriteLiteral(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
@@ -118,7 +119,8 @@ func testHostRewriteHeaderHTTPService(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:        p.Spec.VirtualHost.Fqdn,
@@ -177,7 +179,8 @@ func testHostRewriteHeaderHTTPSService(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:        p.Spec.VirtualHost.Fqdn,
@@ -251,7 +254,8 @@ func testHostRewriteHeaderExternalNameService(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:        p.Spec.VirtualHost.Fqdn,

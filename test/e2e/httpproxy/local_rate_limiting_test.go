@@ -55,7 +55,8 @@ func testLocalRateLimitingVirtualHost(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -142,7 +143,8 @@ func testLocalRateLimitingRoute(namespace string) {
 				},
 			},
 		}
-		p, _ = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), ok)
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.

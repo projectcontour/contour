@@ -35,7 +35,8 @@ func testWatchNamespaces(namespaces []string) e2e.NamespacedTestBody {
 			for _, ns := range namespaces {
 				deployEchoServer(f.T(), f.Client, ns, "echo")
 				p := newEchoProxy("proxy", ns)
-				f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				require.True(f.T(), ok)
 
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:      p.Spec.VirtualHost.Fqdn,
@@ -68,7 +69,8 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 			for _, ns := range rootNamespaces {
 				deployEchoServer(f.T(), f.Client, ns, "echo")
 				p := newEchoProxy("root-proxy", ns)
-				f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				require.True(f.T(), ok)
 
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:      p.Spec.VirtualHost.Fqdn,
@@ -123,7 +125,8 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 			}
 			err := f.CreateHTTPProxy(lp)
 			require.NoError(f.T(), err, "could not create leaf httpproxy")
-			f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+			_, ok = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+			require.True(f.T(), ok)
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 				Host:      p.Spec.VirtualHost.Fqdn,
 				Condition: e2e.HasStatusCode(200),
@@ -154,7 +157,8 @@ func testRootNamespaces(namespaces []string) e2e.NamespacedTestBody {
 			for _, ns := range namespaces {
 				deployEchoServer(f.T(), f.Client, ns, "echo")
 				p := newEchoProxy("root-proxy", ns)
-				f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				require.True(f.T(), ok)
 
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:      p.Spec.VirtualHost.Fqdn,
