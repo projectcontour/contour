@@ -46,7 +46,7 @@ jobs:
         CONTOUR_E2E_XDS_SERVER_TYPE: contour
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -82,7 +82,7 @@ jobs:
         CONTOUR_E2E_ENVOY_DEPLOYMENT_MODE: deployment
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -121,7 +121,7 @@ jobs:
         make setup-kind-cluster
         export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep global | head -n1 | awk '{print $2}')
         make run-e2e cleanup-kind
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -157,7 +157,7 @@ jobs:
         CONTOUR_E2E_USE_ENDPOINTS: true
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}

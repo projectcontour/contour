@@ -33,7 +33,7 @@ jobs:
         # TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
         # is resolved
         args: --build-tags=e2e,conformance,gcp,oidc,none --out-format=colored-line-number
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -54,7 +54,7 @@ jobs:
         ignore_words_file: './.codespell.ignorewords'
         check_filenames: true
         check_hidden: true
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -88,7 +88,7 @@ jobs:
       run: |
         make generate lint-yamllint lint-flags
         ./hack/actions/check-uncommitted-codegen.sh
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -118,7 +118,7 @@ jobs:
       with:
         name: image
         path: image/contour-*.tar
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -185,7 +185,7 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make e2e
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -249,7 +249,7 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make upgrade
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -296,7 +296,7 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: coverage.out
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -337,7 +337,7 @@ jobs:
       run: |
         make install
         make check-coverage
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -379,7 +379,7 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make gateway-conformance
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
