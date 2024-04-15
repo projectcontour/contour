@@ -55,8 +55,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -152,8 +151,7 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -251,8 +249,7 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -352,8 +349,7 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -451,8 +447,7 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -554,8 +549,7 @@ func testDisableVirtualHostGlobalRateLimitingOnRoute(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.

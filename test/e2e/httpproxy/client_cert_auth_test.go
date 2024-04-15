@@ -289,8 +289,7 @@ func testClientCertAuth(namespace string) {
 		}
 		// Wait for the Cert to be ready since we'll directly download
 		// the secret contents for use as a client cert later on.
-		_, ok := f.Certs.CreateCertAndWaitFor(clientCert, certIsReady)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.Certs.CreateCertAndWaitFor(clientCert, certIsReady))
 
 		// Get another client certificate.
 		clientCertInvalid := &certmanagerv1.Certificate{
@@ -314,8 +313,7 @@ func testClientCertAuth(namespace string) {
 		}
 		// Wait for the Cert to be ready since we'll directly download
 		// the secret contents for use as a client cert later on.
-		_, ok = f.Certs.CreateCertAndWaitFor(clientCertInvalid, certIsReady)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.Certs.CreateCertAndWaitFor(clientCertInvalid, certIsReady))
 
 		// This proxy does not require client certificate auth.
 		noAuthProxy := &contour_v1.HTTPProxy{
@@ -342,8 +340,7 @@ func testClientCertAuth(namespace string) {
 				},
 			},
 		}
-		_, ok = f.CreateHTTPProxyAndWaitFor(noAuthProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(noAuthProxy, e2e.HTTPProxyValid))
 
 		// This proxy requires client certificate auth.
 		authProxy := &contour_v1.HTTPProxy{
@@ -373,8 +370,7 @@ func testClientCertAuth(namespace string) {
 				},
 			},
 		}
-		_, ok = f.CreateHTTPProxyAndWaitFor(authProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(authProxy, e2e.HTTPProxyValid))
 
 		// This proxy does not verify client certs.
 		authSkipVerifyProxy := &contour_v1.HTTPProxy{
@@ -404,8 +400,7 @@ func testClientCertAuth(namespace string) {
 				},
 			},
 		}
-		_, ok = f.CreateHTTPProxyAndWaitFor(authSkipVerifyProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(authSkipVerifyProxy, e2e.HTTPProxyValid))
 
 		// This proxy requires a client certificate but does not verify it.
 		authSkipVerifyWithCAProxy := &contour_v1.HTTPProxy{
@@ -436,8 +431,7 @@ func testClientCertAuth(namespace string) {
 				},
 			},
 		}
-		_, ok = f.CreateHTTPProxyAndWaitFor(authSkipVerifyWithCAProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(authSkipVerifyWithCAProxy, e2e.HTTPProxyValid))
 
 		// This proxy requests a client certificate but only verifies it if sent.
 		optionalAuthProxy := &contour_v1.HTTPProxy{
@@ -468,8 +462,7 @@ func testClientCertAuth(namespace string) {
 				},
 			},
 		}
-		_, ok = f.CreateHTTPProxyAndWaitFor(optionalAuthProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(optionalAuthProxy, e2e.HTTPProxyValid))
 
 		// This proxy requests a client certificate but doesn't verify it if sent.
 		optionalAuthNoCAProxy := &contour_v1.HTTPProxy{
@@ -500,8 +493,7 @@ func testClientCertAuth(namespace string) {
 				},
 			},
 		}
-		_, ok = f.CreateHTTPProxyAndWaitFor(optionalAuthNoCAProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(optionalAuthNoCAProxy, e2e.HTTPProxyValid))
 
 		// get the valid & invalid client certs
 		validClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCert.Spec.SecretName)

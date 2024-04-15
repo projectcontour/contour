@@ -89,8 +89,7 @@ func testHeaderMatchIncludesMemoryUsage(namespace string) {
 		}
 
 		// Wait for root to be valid.
-		_, valid := f.CreateHTTPProxyAndWaitFor(root, e2e.HTTPProxyValid)
-		require.True(f.T(), valid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(root, e2e.HTTPProxyValid))
 
 		// Ensure there are no container restarts.
 		require.Never(f.T(), func() bool {

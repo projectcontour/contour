@@ -59,8 +59,7 @@ func testIPFilterPolicy(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -172,8 +171,7 @@ func testIPFilterPolicy(namespace string) {
 				},
 			},
 		}
-		p, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.
@@ -282,8 +280,7 @@ func testIPFilterPolicy(namespace string) {
 			},
 		}
 		// root will be missing an include when created
-		r, ok := f.CreateHTTPProxyAndWaitFor(r, e2e.HTTPProxyInvalid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(r, e2e.HTTPProxyInvalid))
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -303,8 +300,7 @@ func testIPFilterPolicy(namespace string) {
 				},
 			},
 		}
-		p, ok = f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// Wait until we get a 200 from the proxy confirming
 		// the pods are up and serving traffic.

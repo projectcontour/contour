@@ -58,8 +58,7 @@ func testTCPRouteHTTPSTermination(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		certSecret := &core_v1.Secret{}
 		key := client.ObjectKey{Namespace: namespace, Name: "echo-cert"}

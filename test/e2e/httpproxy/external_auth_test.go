@@ -223,8 +223,7 @@ func testExternalAuth(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// By default requests to /first should not be authorized.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{

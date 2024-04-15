@@ -81,8 +81,7 @@ func testBackendTLS(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		type responseTLSDetails struct {
 			TLS struct {

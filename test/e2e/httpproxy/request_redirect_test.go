@@ -47,16 +47,14 @@ func testRequestRedirectRuleInvalid(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 		proxy := getRedirectHTTPProxyInvalid(namespace)
 
-		_, ok := f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyInvalid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyInvalid))
 	})
 }
 
 func doRedirectTest(namespace string, proxy *contour_v1.HTTPProxy, t GinkgoTInterface) {
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
-	_, ok := f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
-	require.True(f.T(), ok)
+	require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid))
 
 	// /basic-redirect only specifies a host name to redirect to.
 	assertRequest(t, proxy.Spec.VirtualHost.Fqdn, "/basic-redirect",

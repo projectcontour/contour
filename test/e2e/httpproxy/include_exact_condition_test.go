@@ -186,10 +186,8 @@ func testIncludeExactCondition(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(baseProxy, e2e.HTTPProxyValid)
-		require.True(f.T(), ok)
-		_, ok = f.CreateHTTPProxyAndWaitFor(invalidRootProxy, e2e.HTTPProxyInvalid)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(baseProxy, e2e.HTTPProxyValid))
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(invalidRootProxy, e2e.HTTPProxyInvalid))
 
 		cases := map[string]string{
 			"/app/foo":      "echo-app",   // Condition matched: "Prefix: /app"   +  "Exact:  /foo"    = "Exact:  /app/foo"
