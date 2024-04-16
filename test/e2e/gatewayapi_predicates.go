@@ -131,24 +131,24 @@ func HTTPRouteNotAcceptedDueToConflict(route *gatewayapi_v1.HTTPRoute) bool {
 
 	for _, gw := range route.Status.Parents {
 		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteRuleMatchConflict), status.MessageRouteRuleMatchConflict) {
-			return false
+			return true
 		}
 	}
 
 	return false
 }
 
-// HTTPRoutePartiallyAccepted returns true if the route has a .status.conditions
+// HTTPRoutePartiallyInvalid returns true if the route has a .status.conditions
 // entry of "PartiallyInvalid: true" && "Reason: RuleMatchPartiallyConflict" && "Message:
 // HTTPRoute's Match has partial conflict with other HTTPRoute's Match".
-func HTTPRoutePartiallyAccepted(route *gatewayapi_v1.HTTPRoute) bool {
+func HTTPRoutePartiallyInvalid(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
 		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionPartiallyInvalid), meta_v1.ConditionTrue, string(status.ReasonRouteRuleMatchPartiallyConflict), status.MessageRouteRuleMatchPartiallyConflict) {
-			return false
+			return true
 		}
 	}
 

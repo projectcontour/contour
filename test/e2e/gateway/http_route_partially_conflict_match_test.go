@@ -16,14 +16,10 @@
 package gateway
 
 import (
-	"context"
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -61,7 +57,8 @@ func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route1, e2e.HTTPRouteAccepted)
+		_, ok := f.CreateHTTPRouteAndWaitFor(route1, e2e.HTTPRouteAccepted)
+		require.True(f.T(), ok)
 
 		By("create httproute-2 with only partially conflicted matches")
 		route2 := &gatewayapi_v1.HTTPRoute{
@@ -93,13 +90,8 @@ func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 			},
 		}
 		// Partially accepted
-		f.CreateHTTPRouteAndWaitFor(route2, e2e.HTTPRoutePartiallyAccepted)
-		// Still has Accepted: true
-		require.Eventually(f.T(), func() bool {
-			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route2), route2); err != nil {
-				return false
-			}
-			return e2e.HTTPRouteAccepted(route2)
-		}, time.Minute*2, f.RetryInterval)
+		f.CreateHTTPRouteAndWaitFor(route2, func(*gatewayapi_v1.HTTPRoute) bool {
+			return e2e.HTTPRoutePartiallyInvalid(route2) && e2e.HTTPRouteAccepted(route2)
+		})
 	})
 }
