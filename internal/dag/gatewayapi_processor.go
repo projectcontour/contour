@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -153,8 +154,10 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
 
+	// sort httproutes based on age/name first
+	sortedHTTPRoutes := sortRoutes(p.source.httproutes)
 	// Process HTTPRoutes.
-	for _, httpRoute := range p.source.httproutes {
+	for _, httpRoute := range sortedHTTPRoutes {
 		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1.HTTPRoute{})
 	}
 
@@ -1162,6 +1165,8 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 	listener *listenerInfo,
 	hosts sets.Set[string],
 ) {
+	// Count number of rules under this Route that are invalid.
+	invalidRuleCnt := 0
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
@@ -1438,21 +1443,66 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				timeoutPolicy)
 		}
 
-		// Add each route to the relevant vhost(s)/svhosts(s).
-		for host := range hosts {
-			for _, route := range routes {
-				switch {
-				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
-					svhost.Secret = listener.tlsSecret
-					svhost.AddRoute(route)
-				default:
-					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
-					vhost.AddRoute(route)
+		// check all the routes whether there is conflict against previous rules
+		if !p.hasConflictRoute(listener, hosts, routes) {
+			// add the route if there is conflict
+			// Add each route to the relevant vhost(s)/svhosts(s).
+			for host := range hosts {
+				for _, route := range routes {
+					switch {
+					case listener.tlsSecret != nil:
+						svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+						svhost.Secret = listener.tlsSecret
+						svhost.AddRoute(route)
+					default:
+						vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+						vhost.AddRoute(route)
+					}
+				}
+			}
+		} else {
+			// Skip adding the routes under this rule.
+			invalidRuleCnt++
+		}
+	}
+
+	if invalidRuleCnt == len(route.Spec.Rules) {
+		// No rules under the route is valid, mark it as not accepted.
+		routeAccessor.AddCondition(
+			gatewayapi_v1.RouteConditionAccepted,
+			meta_v1.ConditionFalse,
+			status.ReasonRouteRuleMatchConflict,
+			status.MessageRouteRuleMatchConflict,
+		)
+	} else if invalidRuleCnt > 0 {
+		routeAccessor.AddCondition(
+			gatewayapi_v1.RouteConditionPartiallyInvalid,
+			meta_v1.ConditionTrue,
+			status.ReasonRouteRuleMatchPartiallyConflict,
+			status.MessageRouteRuleMatchPartiallyConflict,
+		)
+	}
+}
+
+func (p *GatewayAPIProcessor) hasConflictRoute(listener *listenerInfo, hosts sets.Set[string], routes []*Route) bool {
+	// check if there is conflict match first
+	for host := range hosts {
+		for _, route := range routes {
+			switch {
+			case listener.tlsSecret != nil:
+				svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+				if svhost.HasConflictRoute(route) {
+					return true
+				}
+			default:
+				vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+				if vhost.HasConflictRoute(route) {
+					return true
 				}
 			}
 		}
 	}
+	return false
 }
 
 func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1alpha2.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
@@ -2409,4 +2459,23 @@ func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *
 	}
 
 	return p
+}
+
+// sort routes based on creationTimestamp in ascending order
+// if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphetical ascending order
+func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewayapi_v1.HTTPRoute {
+	routes := []*gatewayapi_v1.HTTPRoute{}
+	for _, r := range m {
+		routes = append(routes, r)
+	}
+	sort.SliceStable(routes, func(i, j int) bool {
+		// if the creation time is the same, compare the route name
+		if routes[i].CreationTimestamp.Equal(&routes[j].CreationTimestamp) {
+			return k8s.NamespacedNameOf(routes[i]).String() <
+				k8s.NamespacedNameOf(routes[j]).String()
+		}
+		return routes[i].CreationTimestamp.Before(&routes[j].CreationTimestamp)
+	})
+
+	return routes
 }
