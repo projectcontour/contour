@@ -57,8 +57,7 @@ func testHTTPRouteConflictMatch(namespace string, gateway types.NamespacedName) 
 				},
 			},
 		}
-		_, ok := f.CreateHTTPRouteAndWaitFor(route1, e2e.HTTPRouteAccepted)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route1, e2e.HTTPRouteAccepted))
 
 		By("create httproute-2 with conflicted matches")
 		route2 := &gatewayapi_v1.HTTPRoute{
@@ -83,7 +82,6 @@ func testHTTPRouteConflictMatch(namespace string, gateway types.NamespacedName) 
 				},
 			},
 		}
-		_, ok = f.CreateHTTPRouteAndWaitFor(route2, e2e.HTTPRouteNotAcceptedDueToConflict)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route2, e2e.HTTPRouteNotAcceptedDueToConflict))
 	})
 }
