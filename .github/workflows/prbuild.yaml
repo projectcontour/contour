@@ -30,9 +30,7 @@ jobs:
       uses: golangci/golangci-lint-action@3cfe3a4abbb849e10058ce4af15d205b6da42804 # v4.0.0
       with:
         version: v1.56.2
-        # TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
-        # is resolved
-        args: --build-tags=e2e,conformance,gcp,oidc,none --out-format=colored-line-number
+        args: --build-tags=e2e,conformance,tools,gcp,oidc,none --out-format=colored-line-number
     - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
