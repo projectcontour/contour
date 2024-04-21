@@ -422,35 +422,24 @@ func ingressRetryPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) 
 
 func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) RouteTimeoutPolicy {
 	response := annotation.ContourAnnotation(ingress, "response-timeout")
-	if len(response) == 0 {
-		// Note: due to a misunderstanding the name of the annotation is
-		// request timeout, but it is actually applied as a timeout on
-		// the response body.
-		response = annotation.ContourAnnotation(ingress, "request-timeout")
-		if len(response) == 0 {
-			return RouteTimeoutPolicy{
-				ResponseTimeout:   timeout.DefaultSetting(),
-				IdleStreamTimeout: timeout.DefaultSetting(),
-			}
-		}
-	}
+	request := annotation.ContourAnnotation(ingress, "request-timeout")
+
 	// if the request timeout annotation is present on this ingress
 	// construct and use the HTTPProxy timeout policy logic.
-	tp, _, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
-		Response: response,
-	}, 0)
+	rtp, _, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{Response: response, Request: request}, 0)
 	if err != nil {
 		log.WithError(err).Error("Error parsing response-timeout annotation, using the default value")
 		return RouteTimeoutPolicy{}
 	}
 
-	return tp
+	return rtp
 }
 
 func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duration) (RouteTimeoutPolicy, ClusterTimeoutPolicy, error) {
 	if tp == nil {
 		return RouteTimeoutPolicy{
 				ResponseTimeout:   timeout.DefaultSetting(),
+				RequestTimeout:    timeout.DefaultSetting(),
 				IdleStreamTimeout: timeout.DefaultSetting(),
 			}, ClusterTimeoutPolicy{
 				IdleConnectionTimeout: timeout.DefaultSetting(),
@@ -459,23 +448,41 @@ func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duratio
 			nil
 	}
 
-	responseTimeout, err := timeout.Parse(tp.Response)
-	if err != nil {
-		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
+	var responseTimeout, requestTimeout, idleStreamTimeout, idleConnectionTimeout timeout.Setting
+	var err error
+
+	if len(tp.Response) == 0 {
+		responseTimeout = timeout.DefaultSetting()
+		idleStreamTimeout = timeout.DefaultSetting()
+	} else {
+		responseTimeout, err = timeout.Parse(tp.Response)
+		if err != nil {
+			return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
+		}
 	}
 
-	idleStreamTimeout, err := timeout.Parse(tp.Idle)
+	if len(tp.Request) == 0 {
+		requestTimeout = timeout.DefaultSetting()
+	} else {
+		requestTimeout, err = timeout.Parse(tp.Request)
+		if err != nil {
+			return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing request timeout: %w", err)
+		}
+	}
+
+	idleStreamTimeout, err = timeout.Parse(tp.Idle)
 	if err != nil {
 		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
 	}
 
-	idleConnectionTimeout, err := timeout.Parse(tp.IdleConnection)
+	idleConnectionTimeout, err = timeout.Parse(tp.IdleConnection)
 	if err != nil {
 		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle connection timeout: %w", err)
 	}
 
 	return RouteTimeoutPolicy{
 			ResponseTimeout:   responseTimeout,
+			RequestTimeout:    requestTimeout,
 			IdleStreamTimeout: idleStreamTimeout,
 		}, ClusterTimeoutPolicy{
 			IdleConnectionTimeout: idleConnectionTimeout,

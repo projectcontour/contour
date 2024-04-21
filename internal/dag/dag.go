@@ -403,6 +403,8 @@ type RouteTimeoutPolicy struct {
 	// from the backend server.
 	ResponseTimeout timeout.Setting
 
+	RequestTimeout timeout.Setting
+
 	// IdleStreamTimeout is the timeout applied to idle connection during single request-response.
 	// Stream is HTTP/2 and HTTP/3 concept, for HTTP/1 it refers to single request-response within connection.
 	IdleStreamTimeout timeout.Setting

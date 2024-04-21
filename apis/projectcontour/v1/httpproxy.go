@@ -1104,6 +1104,12 @@ type TCPHealthCheckPolicy struct {
 //
 // Example input values: "300ms", "5s", "1m".
 type TimeoutPolicy struct {
+	// Timeout for receiving a request from the client before processing it.
+	// If not supplied, Envoy's default value of 15s applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	Request string `json:"request,omitempty"`
+
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied, Envoy's default value of 15s applies.
 	// +optional
