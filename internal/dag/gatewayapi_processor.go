@@ -1131,6 +1131,11 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 			return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.Request: %v", err)
 		}
 
+		// For Gateway API a zero-valued timeout means disable the timeout.
+		if requestTimeout.Duration() == 0 {
+			requestTimeout = timeout.DisabledSetting()
+		}
+
 		responseTimeout = requestTimeout
 	}
 
@@ -1142,6 +1147,11 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 		backendRequestTimeout, err := timeout.Parse(string(*httpRouteTimeouts.BackendRequest))
 		if err != nil {
 			return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.BackendRequest: %v", err)
+		}
+
+		// For Gateway API a zero-valued timeout means disable the timeout.
+		if backendRequestTimeout.Duration() == 0 {
+			backendRequestTimeout = timeout.DisabledSetting()
 		}
 
 		// If Timeouts.Request was specified, then Timeouts.BackendRequest must be
