@@ -58,7 +58,7 @@ GO_MOD_GATEWAY_API_VERSION=$(grep "sigs.k8s.io/gateway-api" go.mod | awk '{print
 
 if [ "$GATEWAY_API_VERSION" = "$GO_MOD_GATEWAY_API_VERSION" ]; then
   go test -timeout=40m -tags conformance ./test/conformance/gatewayapi --gateway-class=contour
-else 
+else
   cd $(mktemp -d)
   git clone https://github.com/kubernetes-sigs/gateway-api
   cd gateway-api
@@ -67,5 +67,5 @@ else
   # test/conformance/gatewayapi/gateway_conformance_test.go.
   go test -timeout=40m ./conformance -run TestConformance -gateway-class=contour -all-features \
     -exempt-features=Mesh \
-    -skip-tests=HTTPRouteRedirectPortAndScheme,HTTPRouteTimeoutBackendRequest,GatewayStaticAddresses
+    -skip-tests=HTTPRouteRedirectPortAndScheme,GatewayStaticAddresses
 fi

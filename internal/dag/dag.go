@@ -773,11 +773,23 @@ type VirtualHost struct {
 	Routes map[string]*Route
 }
 
+// Add route to VirtualHosts.Routes map.
 func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
 		v.Routes = make(map[string]*Route)
 	}
+
 	v.Routes[conditionsToString(route)] = route
+}
+
+// HasConflictRoute returns true if there is existing Path + Headers
+// + QueryParams combination match this route candidate and also they are same kind of Route.
+func (v *VirtualHost) HasConflictRoute(route *Route) bool {
+	// If match exist and kind is the same kind, return true.
+	if r, ok := v.Routes[conditionsToString(route)]; ok && r.Kind == route.Kind {
+		return true
+	}
+	return false
 }
 
 func conditionsToString(r *Route) string {

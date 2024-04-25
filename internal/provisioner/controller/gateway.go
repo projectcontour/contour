@@ -68,9 +68,9 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	}
 
 	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &gatewayapi_v1.Gateway{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.NewPredicateFuncs(r.forReconcilableGatewayClass),
+		source.Kind(mgr.GetCache(), &gatewayapi_v1.Gateway{},
+			&handler.TypedEnqueueRequestForObject[*gatewayapi_v1.Gateway]{},
+			predicate.NewTypedPredicateFuncs(r.forReconcilableGatewayClass)),
 	); err != nil {
 		return nil, err
 	}
@@ -79,9 +79,9 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	// Gateways when a provisioner-controlled GatewayClass becomes
 	// "Accepted: true".
 	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &gatewayapi_v1.GatewayClass{}),
-		handler.EnqueueRequestsFromMapFunc(r.getGatewayClassGateways),
-		predicate.NewPredicateFuncs(r.isGatewayClassReconcilable),
+		source.Kind(mgr.GetCache(), &gatewayapi_v1.GatewayClass{},
+			handler.TypedEnqueueRequestsFromMapFunc(r.getGatewayClassGateways),
+			predicate.NewTypedPredicateFuncs(r.isGatewayClassReconcilable)),
 	); err != nil {
 		return nil, err
 	}
@@ -92,14 +92,9 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 // forReconcilableGatewayClass returns true if the provided Gateway uses a GatewayClass
 // controlled by the provisioner, and that GatewayClass has a condition of
 // "Accepted: true".
-func (r *gatewayReconciler) forReconcilableGatewayClass(obj client.Object) bool {
-	gw, ok := obj.(*gatewayapi_v1.Gateway)
-	if !ok {
-		return false
-	}
-
+func (r *gatewayReconciler) forReconcilableGatewayClass(gateway *gatewayapi_v1.Gateway) bool {
 	gatewayClass := &gatewayapi_v1.GatewayClass{}
-	if err := r.client.Get(context.Background(), client.ObjectKey{Name: string(gw.Spec.GatewayClassName)}, gatewayClass); err != nil {
+	if err := r.client.Get(context.Background(), client.ObjectKey{Name: string(gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
 		return false
 	}
 
@@ -109,12 +104,7 @@ func (r *gatewayReconciler) forReconcilableGatewayClass(obj client.Object) bool 
 // isGatewayClassReconcilable returns true if the provided object is a
 // GatewayClass controlled by the provisioner that has an "Accepted: true"
 // condition.
-func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
-	gatewayClass, ok := obj.(*gatewayapi_v1.GatewayClass)
-	if !ok {
-		return false
-	}
-
+func (r *gatewayReconciler) isGatewayClassReconcilable(gatewayClass *gatewayapi_v1.GatewayClass) bool {
 	if gatewayClass.Spec.ControllerName != r.gatewayController {
 		return false
 	}
@@ -132,7 +122,7 @@ func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
 	return accepted
 }
 
-func (r *gatewayReconciler) getGatewayClassGateways(ctx context.Context, gatewayClass client.Object) []reconcile.Request {
+func (r *gatewayReconciler) getGatewayClassGateways(ctx context.Context, gatewayClass *gatewayapi_v1.GatewayClass) []reconcile.Request {
 	var gateways gatewayapi_v1.GatewayList
 	if err := r.client.List(ctx, &gateways); err != nil {
 		r.log.Error(err, "error listing gateways")

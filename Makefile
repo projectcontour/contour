@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.29.3
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.30.1
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -195,12 +195,10 @@ lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
 lint-codespell:
 	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
-# TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
-# is resolved
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
+	@./hack/golangci-lint run --build-tags=e2e,conformance,tools,gcp,oidc,none
 
 .PHONY: lint-yamllint
 lint-yamllint:

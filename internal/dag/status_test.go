@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -5510,7 +5511,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1.HTTPRouteRule{{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+						// changed to different matches in case there is conflict with above HTTPRoute
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchExact, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
@@ -5543,6 +5545,193 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			},
 		},
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 2),
+	})
+
+	run(t, "3 httproutes, but duplicate match condition between these 3. The 2 rank lower gets Conflict condition ", testcase{
+		objs: []any{
+			kuardService,
+			// first HTTPRoute with oldest creationTimestamp
+			&gatewayapi_v1.HTTPRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindHTTPRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-1",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{
+							{
+								Path: &gatewayapi_v1.HTTPPathMatch{
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
+								},
+								Headers: []gatewayapi_v1.HTTPHeaderMatch{
+									{
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
+										Name:  gatewayapi_v1.HTTPHeaderName("foo"),
+										Value: "bar",
+									},
+								},
+								QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
+									{
+										Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+										Name:  "param-1",
+										Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
+									},
+								},
+							},
+							{
+								Path: &gatewayapi_v1.HTTPPathMatch{
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
+								},
+								Headers: []gatewayapi_v1.HTTPHeaderMatch{
+									{
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
+										Name:  gatewayapi_v1.HTTPHeaderName("a"),
+										Value: "b",
+									},
+								},
+							},
+						},
+
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			// second HTTPRoute with 2nd oldest creationTimestamp, conflict with 1st HTTPRoute
+			&gatewayapi_v1.HTTPRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindHTTPRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-2",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{
+							{
+								Path: &gatewayapi_v1.HTTPPathMatch{
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
+								},
+								Headers: []gatewayapi_v1.HTTPHeaderMatch{
+									{
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
+										Name:  gatewayapi_v1.HTTPHeaderName("a"),
+										Value: "b",
+									},
+								},
+							},
+						},
+
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			// 3rd HTTPRoute with newest creationTimestamp, conflict with 1st HTTPRoute
+			&gatewayapi_v1.HTTPRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindHTTPRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-3",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1.HTTPRouteMatch{
+							{
+								Path: &gatewayapi_v1.HTTPPathMatch{
+									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+									Value: ptr.To("/"),
+								},
+								Headers: []gatewayapi_v1.HTTPHeaderMatch{
+									{
+										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
+										Name:  gatewayapi_v1.HTTPHeaderName("foo"),
+										Value: "bar",
+									},
+								},
+								QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
+									{
+										Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+										Name:  "param-1",
+										Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
+									},
+								},
+							},
+						},
+
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-1"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeResolvedRefsCondition(),
+							routeAcceptedHTTPRouteCondition(),
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-2"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
+							routeResolvedRefsCondition(),
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-3"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
+							routeResolvedRefsCondition(),
+						},
+					},
+				},
+			},
+		},
+		// is it ok to show the listeners are attached, just it's not accepted because of the conflict
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 3),
 	})
 
 	run(t, "prefix path match not starting with '/' for httproute", testcase{
@@ -9441,7 +9630,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		},
 	})
 
-	run(t, "route rule with timeouts.request and timeouts.backendRequest specified", testcase{
+	run(t, "route rule with timeouts.backendRequest greater than timeouts.request", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1.HTTPRoute{
@@ -9462,7 +9651,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
 								Request:        ptr.To(gatewayapi_v1.Duration("30s")),
-								BackendRequest: ptr.To(gatewayapi_v1.Duration("30s")),
+								BackendRequest: ptr.To(gatewayapi_v1.Duration("60s")),
 							},
 						},
 					},
@@ -9477,7 +9666,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest must be less than/equal to HTTPRoute.Spec.Rules.Timeouts.Request when both are specified"),
 					},
 				},
 			},
@@ -9486,7 +9675,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
 
-	run(t, "route rule with only timeouts.backendRequest specified", testcase{
+	run(t, "route rule with invalid timeouts.backendRequest specified", testcase{
 		objs: []any{
 			kuardService,
 			&gatewayapi_v1.HTTPRoute{
@@ -9506,7 +9695,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
 							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 							Timeouts: &gatewayapi_v1.HTTPRouteTimeouts{
-								BackendRequest: ptr.To(gatewayapi_v1.Duration("30s")),
+								BackendRequest: ptr.To(gatewayapi_v1.Duration("invalid")),
 							},
 						},
 					},
@@ -9520,7 +9709,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						routeResolvedRefsCondition(),
-						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Timeouts.BackendRequest is not supported, use HTTPRoute.Spec.Rules.Timeouts.Request instead"),
+						routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "invalid HTTPRoute.Spec.Rules.Timeouts.BackendRequest: unable to parse timeout string \"invalid\": time: invalid duration \"invalid\""),
 					},
 				},
 			},

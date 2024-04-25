@@ -23,17 +23,15 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: false
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - name: golangci-lint
       uses: golangci/golangci-lint-action@3cfe3a4abbb849e10058ce4af15d205b6da42804 # v4.0.0
       with:
         version: v1.56.2
-        # TODO: re-enable linting tools package once https://github.com/projectcontour/contour/issues/5077
-        # is resolved
-        args: --build-tags=e2e,conformance,gcp,oidc,none --out-format=colored-line-number
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+        args: --build-tags=e2e,conformance,tools,gcp,oidc,none --out-format=colored-line-number
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -44,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - name: Codespell
@@ -54,7 +52,7 @@ jobs:
         ignore_words_file: './.codespell.ignorewords'
         check_filenames: true
         check_hidden: true
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -63,7 +61,7 @@ jobs:
   codegen:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
@@ -88,7 +86,7 @@ jobs:
       run: |
         make generate lint-yamllint lint-flags
         ./hack/actions/check-uncommitted-codegen.sh
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -101,11 +99,11 @@ jobs:
     - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3.2.0
+      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
       with:
         version: latest
     - name: Build image
@@ -114,11 +112,11 @@ jobs:
       run: |
         make multiarch-build
     - name: Upload image
-      uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       with:
         name: image
         path: image/contour-*.tar
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -151,11 +149,11 @@ jobs:
           use_config_crd: "true"
 
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - name: Download image
-      uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         name: image
         path: image
@@ -185,7 +183,7 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make e2e
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -211,14 +209,14 @@ jobs:
         - kubernetes_version: "kubernetes:n-2"
           node_image: "docker.io/kindest/node:v1.27.11@sha256:681253009e68069b8e01aad36a1e0fa8cf18bb0ab3e5c4069b2e65cafdd70843"
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
         # Fetch history for all tags and branches so we can figure out most
         # recent release tag.
         fetch-depth: 0
     - name: Download image
-      uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         name: image
         path: image
@@ -249,7 +247,7 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make upgrade
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -262,7 +260,7 @@ jobs:
     - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
@@ -292,11 +290,11 @@ jobs:
         make check-coverage
     - name: codeCoverage
       if: ${{ success() }}
-      uses: codecov/codecov-action@7afa10ed9b269c561c2336fd862446844e0cbf71 # v4.2.0
+      uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: coverage.out
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -309,7 +307,7 @@ jobs:
     - codegen
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
@@ -337,7 +335,7 @@ jobs:
       run: |
         make install
         make check-coverage
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
@@ -347,11 +345,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-image]
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       with:
         persist-credentials: false
     - name: Download image
-      uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       with:
         name: image
         path: image
@@ -379,7 +377,7 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make gateway-conformance
-    - uses: act10ns/slack@ed1309ab9862e57e9e583e51c7889486b9a00b0f # v2.0.0
+    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
