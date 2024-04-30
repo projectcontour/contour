@@ -1139,6 +1139,11 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 		return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Timeouts.Request: %v", err)
 	}
 
+	// For Gateway API a zero-valued timeout means disable the timeout.
+	if requestTimeout.Duration() == 0 {
+		requestTimeout = timeout.DisabledSetting()
+	}
+
 	return &RouteTimeoutPolicy{
 		ResponseTimeout: requestTimeout,
 	}, nil
