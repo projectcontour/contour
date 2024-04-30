@@ -1,0 +1,1 @@
+Gateway API: a timeout value of `0s` disables the timeout.

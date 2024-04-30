@@ -3393,6 +3393,30 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"HTTPRoute rule with 0s (disabled) request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithTimeouts("0s", ""),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DisabledSetting(),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
 		"HTTPRoute rule with request and backendRequest timeout": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -3435,6 +3459,30 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Clusters:           clustersWeight(service(kuardService)),
 								TimeoutPolicy: RouteTimeoutPolicy{
 									ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with 0s (disabled) backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithTimeouts("", "0s"),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DisabledSetting(),
 								},
 							},
 						),
