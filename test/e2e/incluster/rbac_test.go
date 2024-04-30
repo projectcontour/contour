@@ -80,8 +80,7 @@ func testProjectcontourResourcesRBAC(namespace string) {
 				},
 			},
 		}
-		_, success := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyInvalid)
-		assert.True(f.T(), success)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyInvalid))
 
 		// Update HTTPProxy to valid service.
 		require.NoError(f.T(), retry.RetryOnConflict(retry.DefaultBackoff, func() error {

@@ -58,8 +58,8 @@ func testMultipleHTTPSListeners(namespace string) {
 					},
 				},
 			}
-			_, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
-			require.True(t, ok, "expected HTTPRoute to be accepted")
+			require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted))
+
 		}
 
 		// Make requests to each listener hostname and validate the response

@@ -36,8 +36,7 @@ func testDirectResponseRule(namespace string) {
 func doDirectTest(namespace string, proxy *contour_v1.HTTPProxy, t GinkgoTInterface) {
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
-	_, ok := f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
-	require.True(f.T(), ok)
+	require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid))
 
 	assertDirectResponseRequest(t, proxy.Spec.VirtualHost.Fqdn, "/directresponse-nobody",
 		"", 200)

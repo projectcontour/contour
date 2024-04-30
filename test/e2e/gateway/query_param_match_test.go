@@ -64,7 +64,7 @@ func testGatewayMultipleQueryParamMatch(namespace string, gateway types.Namespac
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted))
 
 		cases := map[string]string{
 			// These test cases are for documenting Envoy's behavior when

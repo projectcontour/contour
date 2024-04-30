@@ -78,7 +78,7 @@ func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		type responseTLSDetails struct {
 			TLS struct {
