@@ -203,7 +203,7 @@ lint-golint:
 .PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint examples/ site/content/examples/ ./versions.yaml
+	@./hack/yamllint
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingpin Flags() and Command() APIs where the 2nd
