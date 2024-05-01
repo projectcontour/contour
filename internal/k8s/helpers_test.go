@@ -208,6 +208,6 @@ func TestIsEqualForGeneration(t *testing.T) {
 	run(t, &gatewayapi_v1.HTTPRoute{})
 	run(t, &gatewayapi_v1alpha2.TLSRoute{})
 	run(t, &gatewayapi_v1beta1.ReferenceGrant{})
-	run(t, &gatewayapi_v1alpha2.GRPCRoute{})
+	run(t, &gatewayapi_v1.GRPCRoute{})
 	run(t, &gatewayapi_v1alpha2.TCPRoute{})
 }

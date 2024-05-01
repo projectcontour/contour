@@ -183,7 +183,7 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 		route.Status.Parents = newRouteParentStatuses
 
 		return route
-	case *gatewayapi_v1alpha2.GRPCRoute:
+	case *gatewayapi_v1.GRPCRoute:
 		route := o.DeepCopy()
 
 		// Get all the RouteParentStatuses that are for other Gateways.

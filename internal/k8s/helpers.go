@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -117,9 +118,9 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 		*gatewayapi_v1beta1.ReferenceGrant,
 		*gatewayapi_v1.HTTPRoute,
 		*gatewayapi_v1alpha2.TLSRoute,
-		*gatewayapi_v1alpha2.GRPCRoute,
+		*gatewayapi_v1.GRPCRoute,
 		*gatewayapi_v1alpha2.TCPRoute,
-		*gatewayapi_v1alpha2.BackendTLSPolicy:
+		*gatewayapi_v1alpha3.BackendTLSPolicy:
 		return isGenerationEqual(oldObj, newObj), nil
 
 	// Slow path: compare the content of the objects.

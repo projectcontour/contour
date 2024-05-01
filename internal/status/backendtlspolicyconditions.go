@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 )
@@ -117,7 +118,7 @@ func (b *BackendTLSPolicyStatusUpdate) ConditionsForAncestorRef(ancestorRef gate
 }
 
 func (b *BackendTLSPolicyStatusUpdate) Mutate(obj client.Object) client.Object {
-	o, ok := obj.(*gatewayapi_v1alpha2.BackendTLSPolicy)
+	o, ok := obj.(*gatewayapi_v1alpha3.BackendTLSPolicy)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator",
 			obj, b.FullName.Namespace, b.FullName.Name,

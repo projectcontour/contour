@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -104,8 +105,9 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contour_v1.AddToScheme(scheme))
 	require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
-	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(scheme))
-	require.NoError(t, gatewayapi_v1.AddToScheme(scheme))
+	require.NoError(t, gatewayapi_v1alpha2.Install(scheme))
+	require.NoError(t, gatewayapi_v1alpha3.Install(scheme))
+	require.NoError(t, gatewayapi_v1.Install(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
@@ -389,7 +391,7 @@ func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute
 
 // CreateBackendTLSPolicy creates the provided BackendTLSPolicy in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha2.BackendTLSPolicy, condition func(*gatewayapi_v1alpha2.BackendTLSPolicy) bool) bool {
+func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha3.BackendTLSPolicy, condition func(*gatewayapi_v1alpha3.BackendTLSPolicy) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 

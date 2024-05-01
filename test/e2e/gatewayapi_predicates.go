@@ -19,6 +19,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"github.com/projectcontour/contour/internal/status"
 )
@@ -207,7 +208,7 @@ func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 
 // BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
 // entry of "Accepted: true".
-func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
+func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha3.BackendTLSPolicy) bool {
 	if btp == nil {
 		return false
 	}

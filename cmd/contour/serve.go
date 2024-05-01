@@ -44,6 +44,7 @@ import (
 	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -1018,9 +1019,9 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourCo
 			"referencegrants":    &gatewayapi_v1beta1.ReferenceGrant{},
 			"namespaces":         &core_v1.Namespace{},
 			"tlsroutes":          &gatewayapi_v1alpha2.TLSRoute{},
-			"grpcroutes":         &gatewayapi_v1alpha2.GRPCRoute{},
+			"grpcroutes":         &gatewayapi_v1.GRPCRoute{},
 			"tcproutes":          &gatewayapi_v1alpha2.TCPRoute{},
-			"backendtlspolicies": &gatewayapi_v1alpha2.BackendTLSPolicy{},
+			"backendtlspolicies": &gatewayapi_v1alpha3.BackendTLSPolicy{},
 			"configmaps":         &core_v1.ConfigMap{},
 		}
 
