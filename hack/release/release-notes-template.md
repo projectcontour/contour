@@ -49,14 +49,19 @@ Feedback and bug reports are welcome!
 {{ if .Prerelease}}
 The simplest way to install {{ .Version }} is to apply one of the example configurations:
 
-With Gateway API:
-```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway.yaml
-```
-
-Without Gateway API:
+Standalone Contour:
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour.yaml
+```
+
+Contour Gateway Provisioner:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway-provisioner.yaml
+```
+
+Statically provisioned Contour with Gateway API:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway.yaml
 ```
 {{ else }}
 For a fresh install of Contour, consult the [getting started documentation](https://projectcontour.io/getting-started/).
