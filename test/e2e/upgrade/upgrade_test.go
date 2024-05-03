@@ -144,7 +144,6 @@ var _ = Describe("When upgrading", func() {
 			cmd := exec.Command("../../scripts/install-provisioner-release.sh", contourUpgradeFromVersion)
 			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			require.NoError(f.T(), err)
-
 			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
 			require.True(f.T(), f.CreateGatewayClassAndWaitFor(&gatewayapi_v1.GatewayClass{
@@ -249,6 +248,20 @@ var _ = Describe("When upgrading", func() {
 
 				poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
 				require.NoError(f.T(), err)
+
+				By("updating gateway-api CRDs to latest")
+				// Delete existing BackendTLSPolicy CRD.
+				// TODO: remove this hack once BackendTLSPolicy v1alpha3 or
+				// above is available in multiple consecutive releases.
+				cmd := exec.Command("kubectl", "delete", "crd", "backendtlspolicies.gateway.networking.k8s.io")
+				sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				require.NoError(f.T(), err)
+				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
+
+				cmd = exec.Command("kubectl", "apply", "-f", "../../../examples/gateway/00-crds.yaml")
+				sess, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				require.NoError(f.T(), err)
+				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
 				By("deploying updated provisioner")
 				require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())
