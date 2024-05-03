@@ -96,6 +96,12 @@ func TestGatewayConformance(t *testing.T) {
 			// sends a request for an unknown (to Contour/Envoy) host which fails
 			// instead of returning a 404.
 			tests.HTTPRouteHTTPSListener.ShortName,
+
+			// The cases in this test that fail involve Listener/HTTPRoute hostname
+			// intersection and ensuring requests are only routed to the most
+			// specific Listeners/Routes that match them.
+			// See: https://github.com/projectcontour/contour/pull/6162
+			tests.GatewayHTTPListenerIsolation.ShortName,
 		},
 		ExemptFeatures: sets.New(
 			features.SupportMesh,
