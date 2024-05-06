@@ -29,7 +29,7 @@ require (
 	github.com/tsaarni/certyaml v0.9.3
 	github.com/vektra/mockery/v2 v2.43.0
 	go.uber.org/automaxprocs v1.5.3
-	golang.org/x/oauth2 v0.19.0
+	golang.org/x/oauth2 v0.20.0
 	gonum.org/v1/plot v0.14.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de
 	google.golang.org/grpc v1.63.2
