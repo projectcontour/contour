@@ -111,7 +111,9 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 	}
 
 	if contour.Spec.DisabledFeatures != nil && len(contour.Spec.DisabledFeatures) > 0 {
-		args = append(args, fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(contour.Spec.DisabledFeatures), ",")))
+		for _, f := range contour.Spec.DisabledFeatures {
+			args = append(args, fmt.Sprintf("--disable-feature=%s", string(f)))
+		}
 	}
 
 	// Pass the insecure/secure flags to Contour if using non-default ports.

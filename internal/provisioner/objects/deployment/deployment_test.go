@@ -297,8 +297,10 @@ func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
 			// Change the Contour watch namespaces flag
 			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
 			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
-			arg := fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(tc.disabledFeatures), ","))
-			checkContainerHasArg(t, container, arg)
+			for _, f := range tc.disabledFeatures {
+				arg := fmt.Sprintf("--disable-feature=%s", string(f))
+				checkContainerHasArg(t, container, arg)
+			}
 		})
 	}
 }
