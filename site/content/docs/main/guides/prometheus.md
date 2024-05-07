@@ -40,12 +40,10 @@ $ kubectl apply -f examples/grafana/httpproxy.yaml
 
 ### Scrape Contour and Envoy metrics
 
-To enable Prometheus to scrape metrics from the Contour and Envoy pods, some small customizations are needed to the sample deployment:
-
-Update `ClusterRole` to enable the installed Prometheus instance to monitor `Pods` and other resources in all namespaces:
+To enable Prometheus to scrape metrics from the Contour and Envoy pods, we can add some RBAC customizations with a `Role` and `RoleBinding` in the `projectcontour` namespace:
 
 ```sh
-$ kubectl patch clusterrole prometheus-k8s --type=json --patch-file examples/prometheus/clusterrole-patch.json
+kubectl apply -f examples/prometheus/rbac.yaml
 ```
 
 Now add [`PodMonitor`][6] resources for scraping metrics from Contour and Envoy pods in the `projectcontour` namespace:
