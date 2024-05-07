@@ -4,10 +4,6 @@ title: Collecting Metrics with Prometheus
 
 <div id="toc" class="navigation"></div>
 
-Contour and Envoy expose metrics that can be scraped with Prometheus. By
-default, annotations to gather them are in all the `deployment` yamls and they
-should work out of the box with most configurations.
-
 ## Envoy Metrics
 
 Envoy typically [exposes metrics](https://www.envoyproxy.io/docs/envoy/v1.15.0/configuration/http/http_conn_man/stats#config-http-conn-man-stats) through an endpoint on its admin interface. To
