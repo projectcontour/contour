@@ -88,6 +88,7 @@ func TestGatewayConformance(t *testing.T) {
 			// Skip this test as it uses a Gateway with a name that is too long,
 			// adding the name in a label value prevents resources to be
 			// created.
+			// See: https://github.com/kubernetes-sigs/gateway-api/issues/2592
 			tests.HTTPRouteInvalidParentRefSectionNameNotMatchingPort.ShortName,
 
 			// This test currently fails since we do not program any filter chain
