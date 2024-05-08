@@ -993,6 +993,81 @@ func TestRouteDirectResponse(t *testing.T) {
 	}
 }
 
+func TestBuildRouteWithDirectResponse(t *testing.T) {
+	tests := map[string]struct {
+		dagRoute  *dag.Route
+		vhostName string
+		secure    bool
+		want      *envoy_config_route_v3.Route
+	}{
+		"direct-response-with-auth": {
+			dagRoute: &dag.Route{
+				DirectResponse: &dag.DirectResponse{
+					StatusCode: 500,
+					Body:       "Internal Server Error",
+				},
+				AuthContext: map[string]string{
+					"PrincipalName": "user",
+				},
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchString,
+				},
+			},
+			vhostName: "example",
+			secure:    true,
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					"envoy.filters.http.ext_authz": routeAuthzContext(map[string]string{
+						"PrincipalName": "user",
+					}),
+				},
+				Action: routeDirectResponse(&dag.DirectResponse{
+					StatusCode: 500,
+					Body:       "Internal Server Error",
+				}),
+				Match: &envoy_config_route_v3.RouteMatch{
+					PathSpecifier: &envoy_config_route_v3.RouteMatch_Prefix{
+						Prefix: "/foo",
+					},
+				},
+			},
+		},
+		"direct-response-auth-disabled": {
+			dagRoute: &dag.Route{
+				DirectResponse: &dag.DirectResponse{
+					StatusCode: 403,
+				},
+				AuthDisabled: true,
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchString,
+				},
+			},
+			vhostName: "example",
+			secure:    false,
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					"envoy.filters.http.ext_authz": routeAuthzDisabled(),
+				},
+				Action: routeDirectResponse(&dag.DirectResponse{StatusCode: 403}),
+				Match: &envoy_config_route_v3.RouteMatch{
+					PathSpecifier: &envoy_config_route_v3.RouteMatch_Prefix{
+						Prefix: "/foo",
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := buildRoute(tc.dagRoute, tc.vhostName, tc.secure)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
 func TestWeightedClusters(t *testing.T) {
 	tests := map[string]struct {
 		route *dag.Route
