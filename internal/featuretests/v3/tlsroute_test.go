@@ -84,12 +84,12 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	route1 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRef("correct-backend", 80, nil),
 			}},
@@ -128,8 +128,8 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	route2 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
@@ -170,12 +170,12 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	route3 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRef("correct-backend", 80, nil),
 			}},
@@ -185,8 +185,8 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	route4 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic-wildcard"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},

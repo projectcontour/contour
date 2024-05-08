@@ -9892,12 +9892,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: []gatewayapi_v1.BackendRef{
 							{
@@ -9940,12 +9940,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
 						{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-one", 8080, nil)},
 						{BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-two", 8080, nil)},
@@ -9985,12 +9985,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: []gatewayapi_v1.BackendRef{
 							{
@@ -10034,15 +10034,15 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{
 						{}, // rule with no backend refs
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 				},
 			},
 		},
@@ -10076,12 +10076,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"*.*.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"*.*.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
@@ -10120,12 +10120,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"#projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"#projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
@@ -10164,12 +10164,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"1.2.3.4"},
+					Hostnames: []gatewayapi_v1.Hostname{"1.2.3.4"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
@@ -10206,12 +10206,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef(gw.Namespace, gw.Name),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, ptr.To(int32(0))),
 					}},
@@ -10254,13 +10254,13 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							// Wrong port.
 							gatewayapi.GatewayListenerParentRef(gw.Namespace, gw.Name, "tls-passthrough", 444),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: gatewayapi.TLSRouteBackendRef("invalid-one", 8080, nil),
 					}},
@@ -10322,12 +10322,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayListenerParentRef(gw.Namespace, gw.Name, "tls", 443),
 						},
 					},
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 					Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 						BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 					}},
@@ -11121,7 +11121,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 				},
 				Spec: gatewayapi_v1.GRPCRouteSpec{
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							// Wrong port.
 							gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http", 900),
 						},
@@ -11725,7 +11725,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 						}},
@@ -11772,7 +11772,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 						}},
@@ -11804,7 +11804,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "Invalid",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 						}},
@@ -11850,7 +11850,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName("missing"),
 						}},
@@ -11896,7 +11896,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "Secret",
 							Name: gatewayapi_v1.ObjectName("missing"),
 						}},
@@ -11943,7 +11943,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 							{
 								Kind: "Invalid",
 								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12044,7 +12044,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 						}},
@@ -12091,7 +12091,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 						}},
@@ -12138,7 +12138,7 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 						},
 					},
 					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 						}},

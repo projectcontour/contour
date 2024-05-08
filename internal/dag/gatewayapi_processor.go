@@ -2136,7 +2136,7 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 	var upstreamValidation *PeerValidationContext
 	var upstreamTLS *UpstreamTLS
 
-	var backendRefGroup gatewayapi_v1alpha2.Group
+	var backendRefGroup gatewayapi_v1.Group
 	if backendRef.Group != nil {
 		backendRefGroup = *backendRef.Group
 	}

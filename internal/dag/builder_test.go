@@ -498,10 +498,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 			}},
@@ -514,10 +514,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Namespace: "projectcontour",
 		},
 		Spec: gatewayapi_v1.GRPCRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1.GRPCRouteRule{{
 				Matches: []gatewayapi_v1.GRPCRouteMatch{{
 					Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
@@ -693,10 +693,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -730,10 +730,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: gatewayTLSPassthroughSameNamespace.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -767,10 +767,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -796,10 +796,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -839,10 +839,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -873,10 +873,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: kuardService.Namespace,
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("some-other-namespace", "some-other-gateway-name")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("some-other-namespace", "some-other-gateway-name")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -3546,7 +3546,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "ConfigMap",
 								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
 							}},
@@ -3615,7 +3615,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Secret",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
 							}},
@@ -3685,7 +3685,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
 									Name: gatewayapi_v1.ObjectName(cert1.Name),
@@ -3779,7 +3779,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Secret",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
 							}},
@@ -3869,7 +3869,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Secret",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
 							}},
@@ -3926,7 +3926,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "ConfigMap",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
 							}},
@@ -3983,7 +3983,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							},
 						},
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Invalid",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
 							}},
@@ -4158,10 +4158,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -4195,10 +4195,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -4218,17 +4218,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: []gatewayapi_v1.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
 										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -4281,17 +4281,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: []gatewayapi_v1.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
 										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -4345,17 +4345,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: []gatewayapi_v1.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
 										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -4394,17 +4394,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: []gatewayapi_v1.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
 										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -4443,17 +4443,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: []gatewayapi_v1.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
 										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -4492,17 +4492,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: []gatewayapi_v1.BackendRef{
 								{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1.Kind("Service")),
 										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -4542,10 +4542,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"tcp.projectcontour.io",
 							"another.projectcontour.io",
 							"thing.projectcontour.io",
@@ -4599,10 +4599,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"tcp.projectcontour.io",
 							"*.*.another.projectcontour.io",
 							"thing.projectcontour.io",
@@ -4648,10 +4648,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"tcp.*.projectcontour.io",
 							"*.*.another.projectcontour.io",
 							"!!thing.projectcontour.io",
@@ -4675,8 +4675,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
@@ -4710,10 +4710,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
@@ -4735,10 +4735,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
 								gatewayapi.TLSRouteBackendRef("kuard", 8080, ptr.To(int32(1))),
@@ -4782,10 +4782,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
 								gatewayapi.TLSRouteBackendRef("kuard", 8080, ptr.To(int32(1))),
@@ -4829,10 +4829,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							BackendRefs: gatewayapi.TLSRouteBackendRefs(
 								gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
@@ -4924,10 +4924,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "different-ns-than-gateway",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -4952,12 +4952,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "some-other-gateway"),
 							},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -4984,12 +4984,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "http-listener", 0),
 							},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5006,12 +5006,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "https-listener", 0),
 							},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5055,10 +5055,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5097,10 +5097,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5139,10 +5139,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5180,10 +5180,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5216,10 +5216,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5293,10 +5293,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5370,10 +5370,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{
@@ -5427,8 +5427,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
 						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
@@ -5487,10 +5487,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5529,10 +5529,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
+						Hostnames: []gatewayapi_v1.Hostname{
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
@@ -5578,8 +5578,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
@@ -5589,8 +5589,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								BackendRef: gatewayapi_v1.BackendRef{
 									BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 										Kind:      ptr.To(gatewayapi_v1alpha2.Kind("Service")),
-										Namespace: ptr.To(gatewayapi_v1alpha2.Namespace(kuardService.Namespace)),
-										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Namespace: ptr.To(gatewayapi_v1.Namespace(kuardService.Namespace)),
+										Name:      gatewayapi_v1.ObjectName(kuardService.Name),
 										Port:      ptr.To(gatewayapi_v1alpha2.PortNumber(8080)),
 									},
 									Weight: ptr.To(int32(1)),
@@ -5606,7 +5606,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha2.ReferenceGrantSpec{
 						From: []gatewayapi_v1alpha2.ReferenceGrantFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
+							Group:     gatewayapi_v1.GroupName,
 							Kind:      "GRPCRoute",
 							Namespace: "default",
 						}},

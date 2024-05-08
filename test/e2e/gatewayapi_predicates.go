@@ -198,7 +198,7 @@ func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), meta_v1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}

@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func CertificateRef(name, namespace string) gatewayapi_v1.SecretObjectReference {
@@ -141,7 +140,7 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 			BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 				Group: ptr.To(gatewayapi_v1.Group("")),
 				Kind:  ptr.To(gatewayapi_v1.Kind("Service")),
-				Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
+				Name:  gatewayapi_v1.ObjectName(serviceName),
 				Port:  ptr.To(gatewayapi_v1.PortNumber(port)),
 			},
 			Weight: weight,
@@ -156,7 +155,7 @@ func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayap
 				BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 					Group: ptr.To(gatewayapi_v1.Group("")),
 					Kind:  ptr.To(gatewayapi_v1.Kind("Service")),
-					Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
+					Name:  gatewayapi_v1.ObjectName(serviceName),
 					Port:  ptr.To(gatewayapi_v1.PortNumber(port)),
 				},
 				Weight: &weight,

@@ -464,7 +464,7 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							{
 								Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
 								Name:      gatewayapi_v1.ObjectName(gateway.Name),
@@ -763,12 +763,12 @@ var _ = Describe("Gateway provisioner", func() {
 					Name:      "tlsroute-1",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"provisioner.projectcontour.io"},
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							{
-								Namespace: ptr.To(gatewayapi_v1alpha2.Namespace(gateway.Namespace)),
-								Name:      gatewayapi_v1alpha2.ObjectName(gateway.Name),
+								Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+								Name:      gatewayapi_v1.ObjectName(gateway.Name),
 							},
 						},
 					},

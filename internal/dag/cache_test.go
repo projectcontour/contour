@@ -373,7 +373,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
 									Name: "ca",
@@ -428,7 +428,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
 						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-							CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "ConfigMap",
 									Name: "ca",
@@ -811,8 +811,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -840,8 +840,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "tlsroute",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -869,8 +869,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1022,8 +1022,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
 						},
 					},
@@ -1055,8 +1055,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
 						},
 					},
@@ -1088,8 +1088,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
 						},
 					},
@@ -1131,8 +1131,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1375,8 +1375,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1410,8 +1410,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1653,8 +1653,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("default", "gateway"),
 							},
 						},
@@ -1667,8 +1667,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),
 						},
 					},
@@ -1710,8 +1710,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("default", "gateway"),
 							},
 						},
@@ -1724,8 +1724,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),
 						},
 					},
@@ -1767,8 +1767,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("default", "gateway"),
 							},
 						},
@@ -1781,8 +1781,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),
 						},
 					},
@@ -2236,8 +2236,8 @@ func TestServiceTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					},
 				},
@@ -2255,8 +2255,8 @@ func TestServiceTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					},
 				},
@@ -2774,8 +2774,8 @@ func TestRouteTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef(parentRefNamespace, parentRefName),
 					},
 				},
@@ -3004,9 +3004,9 @@ func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
 		}
 		return gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
 			LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
-				Group: gatewayapi_v1alpha2.Group(group),
+				Group: gatewayapi_v1.Group(group),
 				Kind:  gatewayapi_v1alpha2.Kind(kind),
-				Name:  gatewayapi_v1alpha2.ObjectName(name),
+				Name:  gatewayapi_v1.ObjectName(name),
 			},
 			SectionName: sn,
 		}

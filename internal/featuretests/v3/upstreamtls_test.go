@@ -318,7 +318,7 @@ func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
 				},
 			},
 			Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-				CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+				CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 					Kind: "Secret",
 					Name: gatewayapi_v1.ObjectName(sec2.Name),
 				}},
@@ -434,7 +434,7 @@ func TestBackendTLSPolicyPrecedenceOverUpstreamProtocolAnnotationWithHTTPRoute(t
 				},
 			},
 			Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-				CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+				CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 					Kind: "Secret",
 					Name: gatewayapi_v1.ObjectName(sec1.Name),
 				}},
@@ -579,7 +579,7 @@ func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
 				},
 			},
 			Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-				CACertificateRefs: []gatewayapi_v1alpha2.LocalObjectReference{{
+				CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 					Kind: "Secret",
 					Name: gatewayapi_v1.ObjectName(sec1.Name),
 				}},
