@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -72,7 +73,7 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 		},
 	}
 
-	btp := &gatewayapi_v1alpha2.BackendTLSPolicy{
+	btp := &gatewayapi_v1alpha3.BackendTLSPolicy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
@@ -94,7 +95,7 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 		},
 	}
 
-	wantBackendTLSPolicy := &gatewayapi_v1alpha2.BackendTLSPolicy{
+	wantBackendTLSPolicy := &gatewayapi_v1alpha3.BackendTLSPolicy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
@@ -129,7 +130,7 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 		},
 	}
 
-	btp, ok := bsu.Mutate(btp).(*gatewayapi_v1alpha2.BackendTLSPolicy)
+	btp, ok := bsu.Mutate(btp).(*gatewayapi_v1alpha3.BackendTLSPolicy)
 	require.True(t, ok)
 	assert.Equal(t, wantBackendTLSPolicy, btp, 1)
 }

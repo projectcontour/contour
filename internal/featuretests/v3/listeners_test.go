@@ -1370,12 +1370,12 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "tls", 0),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"tcp.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 80, nil),
 			}},

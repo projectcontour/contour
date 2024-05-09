@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func CertificateRef(name, namespace string) gatewayapi_v1.SecretObjectReference {
@@ -126,8 +125,8 @@ func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1.
 	}
 }
 
-func TLSRouteBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.BackendRef) []gatewayapi_v1alpha2.BackendRef {
-	var res []gatewayapi_v1alpha2.BackendRef
+func TLSRouteBackendRefs(backendRefs ...[]gatewayapi_v1.BackendRef) []gatewayapi_v1.BackendRef {
+	var res []gatewayapi_v1.BackendRef
 
 	for _, ref := range backendRefs {
 		res = append(res, ref...)
@@ -135,13 +134,13 @@ func TLSRouteBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.BackendRef) []gate
 	return res
 }
 
-func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayapi_v1alpha2.BackendRef {
-	return []gatewayapi_v1alpha2.BackendRef{
+func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayapi_v1.BackendRef {
+	return []gatewayapi_v1.BackendRef{
 		{
-			BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+			BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 				Group: ptr.To(gatewayapi_v1.Group("")),
 				Kind:  ptr.To(gatewayapi_v1.Kind("Service")),
-				Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
+				Name:  gatewayapi_v1.ObjectName(serviceName),
 				Port:  ptr.To(gatewayapi_v1.PortNumber(port)),
 			},
 			Weight: weight,
@@ -149,36 +148,36 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	}
 }
 
-func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1alpha2.GRPCBackendRef {
-	return []gatewayapi_v1alpha2.GRPCBackendRef{
+func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1.GRPCBackendRef {
+	return []gatewayapi_v1.GRPCBackendRef{
 		{
-			BackendRef: gatewayapi_v1alpha2.BackendRef{
-				BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+			BackendRef: gatewayapi_v1.BackendRef{
+				BackendObjectReference: gatewayapi_v1.BackendObjectReference{
 					Group: ptr.To(gatewayapi_v1.Group("")),
 					Kind:  ptr.To(gatewayapi_v1.Kind("Service")),
-					Name:  gatewayapi_v1alpha2.ObjectName(serviceName),
+					Name:  gatewayapi_v1.ObjectName(serviceName),
 					Port:  ptr.To(gatewayapi_v1.PortNumber(port)),
 				},
 				Weight: &weight,
 			},
-			Filters: []gatewayapi_v1alpha2.GRPCRouteFilter{},
+			Filters: []gatewayapi_v1.GRPCRouteFilter{},
 		},
 	}
 }
 
-func GRPCMethodMatch(matchType gatewayapi_v1alpha2.GRPCMethodMatchType, service, method string) *gatewayapi_v1alpha2.GRPCMethodMatch {
-	return &gatewayapi_v1alpha2.GRPCMethodMatch{
+func GRPCMethodMatch(matchType gatewayapi_v1.GRPCMethodMatchType, service, method string) *gatewayapi_v1.GRPCMethodMatch {
+	return &gatewayapi_v1.GRPCMethodMatch{
 		Type:    ptr.To(matchType),
 		Service: ptr.To(service),
 		Method:  ptr.To(method),
 	}
 }
 
-func GRPCHeaderMatch(matchType gatewayapi_v1.HeaderMatchType, name, value string) []gatewayapi_v1alpha2.GRPCHeaderMatch {
-	return []gatewayapi_v1alpha2.GRPCHeaderMatch{
+func GRPCHeaderMatch(matchType gatewayapi_v1.HeaderMatchType, name, value string) []gatewayapi_v1.GRPCHeaderMatch {
+	return []gatewayapi_v1.GRPCHeaderMatch{
 		{
 			Type:  ptr.To(matchType),
-			Name:  gatewayapi_v1alpha2.GRPCHeaderName(name),
+			Name:  gatewayapi_v1.GRPCHeaderName(name),
 			Value: value,
 		},
 	}

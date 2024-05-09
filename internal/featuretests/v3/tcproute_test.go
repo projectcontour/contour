@@ -132,8 +132,8 @@ func TestTCPRoute(t *testing.T) {
 	route2 := &gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: fixture.ObjectMeta("tcproute-2"),
 		Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					{
 						Namespace:   ptr.To(gatewayapi_v1.Namespace("projectcontour")),
 						Name:        gatewayapi_v1.ObjectName("contour"),

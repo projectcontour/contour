@@ -20,7 +20,7 @@ import (
 	discovery_v1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -64,8 +64,8 @@ func NamespacedResourcePolicyRules(resourcesToSkip []contour_v1.Feature) []rbac_
 
 		// Gateway API resources.
 		// Note, ReferenceGrant does not currently have a .status field so it's omitted from the status rule.
-		PolicyRuleFor(gatewayapi_v1alpha2.GroupName, getListWatch, filterResources(resourcesToSkip, GatewayGroupNamespacedResource...)...),
-		PolicyRuleFor(gatewayapi_v1alpha2.GroupName, update, filterResources(resourcesToSkip, GatewayGroupNamespacedResourceStatus...)...),
+		PolicyRuleFor(gatewayapi_v1.GroupName, getListWatch, filterResources(resourcesToSkip, GatewayGroupNamespacedResource...)...),
+		PolicyRuleFor(gatewayapi_v1.GroupName, update, filterResources(resourcesToSkip, GatewayGroupNamespacedResourceStatus...)...),
 
 		// Ingress resources.
 		PolicyRuleFor(networking_v1.GroupName, getListWatch, "ingresses"),
@@ -82,8 +82,8 @@ func NamespacedResourcePolicyRules(resourcesToSkip []contour_v1.Feature) []rbac_
 func ClusterScopedResourcePolicyRules() []rbac_v1.PolicyRule {
 	return []rbac_v1.PolicyRule{
 		// GatewayClass.
-		PolicyRuleFor(gatewayapi_v1alpha2.GroupName, getListWatch, "gatewayclasses"),
-		PolicyRuleFor(gatewayapi_v1alpha2.GroupName, update, "gatewayclasses/status"),
+		PolicyRuleFor(gatewayapi_v1.GroupName, getListWatch, "gatewayclasses"),
+		PolicyRuleFor(gatewayapi_v1.GroupName, update, "gatewayclasses/status"),
 
 		// Namespaces
 		PolicyRuleFor(core_v1.GroupName, getListWatch, "namespaces"),

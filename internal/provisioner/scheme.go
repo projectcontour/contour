@@ -32,9 +32,9 @@ func CreateScheme() (*runtime.Scheme, error) {
 	b := runtime.SchemeBuilder{
 		clientgoscheme.AddToScheme,
 		apiextensions_v1.AddToScheme,
-		gatewayapi_v1alpha2.AddToScheme,
-		gatewayapi_v1beta1.AddToScheme,
-		gatewayapi_v1.AddToScheme,
+		gatewayapi_v1alpha2.Install,
+		gatewayapi_v1beta1.Install,
+		gatewayapi_v1.Install,
 		contour_v1alpha1.AddToScheme,
 	}
 

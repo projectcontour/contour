@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -254,7 +253,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1.HTTPHeaderFilter, headerPolicyTyp
 				continue
 			}
 			if key == "Host" && (headerPolicyType == string(gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier) ||
-				headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
+				headerPolicyType == string(gatewayapi_v1.GRPCRouteFilterRequestHeaderModifier)) {
 				hostRewrite = header.Value
 				continue
 			}

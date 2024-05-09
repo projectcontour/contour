@@ -44,7 +44,7 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 			},
 			Spec: gatewayapi_v1alpha2.TCPRouteSpec{
 				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						{
 							Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
 							Name:      gatewayapi_v1.ObjectName(gateway.Name),

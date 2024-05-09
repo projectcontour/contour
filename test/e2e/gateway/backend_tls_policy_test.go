@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
@@ -137,21 +138,23 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 		}
 		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted))
 
-		backendTLSPolicy := &gatewayapi_v1alpha2.BackendTLSPolicy{
+		backendTLSPolicy := &gatewayapi_v1alpha3.BackendTLSPolicy{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "echo-secure-backend-tls-policy",
 				Namespace: namespace,
 			},
-			Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-				TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
-					PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
-						Group: "",
-						Kind:  "Service",
-						Name:  "echo-secure",
+			Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+				TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					{
+						LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							Group: "",
+							Kind:  "Service",
+							Name:  "echo-secure",
+						},
 					},
 				},
-				TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
-					CACertRefs: []gatewayapi_v1.LocalObjectReference{
+				Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 						{
 							Group: "",
 							Kind:  "Secret",
