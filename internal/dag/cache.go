@@ -857,7 +857,7 @@ func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.
 	return nil, core_v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
 }
 
-// LookupBackendTLSPolicyByTargetRef returns the Kubernetes BackendTLSPoliciy that matches the provided targetRef with
+// LookupBackendTLSPolicyByTargetRef returns the Kubernetes BackendTLSPolicy that matches the provided targetRef with
 // a SectionName, if possible. A BackendTLSPolicy may be returned if there is a BackendTLSPolicy matching the targetRef
 // but has no SectionName.
 //
