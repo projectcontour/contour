@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -26,7 +27,6 @@ import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/stretchr/testify/require"
 )
 
 func checkDeploymentHasEnvVar(t *testing.T, deploy *apps_v1.Deployment, name string) {

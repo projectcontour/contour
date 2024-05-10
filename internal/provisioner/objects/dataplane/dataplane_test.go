@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -25,7 +26,6 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	"github.com/stretchr/testify/require"
 )
 
 func checkDaemonSetHasEnvVar(t *testing.T, ds *apps_v1.DaemonSet, container, name string) {
