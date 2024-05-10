@@ -69,7 +69,7 @@ metadata:
   name: my-grpc-service
 spec:
   virtualhost:
-    fqdn: my-grpc-service.foo.com 
+    fqdn: my-grpc-service.foo.com
   routes:
   - conditions:
     - prefix: /yages.Echo/Ping # Matches a specific gRPC method.
@@ -77,7 +77,7 @@ spec:
     - name: grpc-echo
       port: 9000
       protocol: h2c
-  - conditions: 
+  - conditions:
     - prefix: / # Matches everything else.
     services:
     - name: grpc-echo
@@ -144,12 +144,12 @@ spec:
 
 ## Gateway API Configuration
 
-Gateway API now supports a specific resource [GRPCRoute][6] for routing gRPC requests.
+Gateway API supports a specific resource [GRPCRoute][6] for routing gRPC requests.
 
 Configuring GRPCRoute for routing gRPC requests needs to specify parentRefs, hostnames, and routing rules with specific backendRefs. In the below example, route path matching is conducted via method matching rule for declared services and their methods.
 
 ```yaml
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
   name: yages
@@ -220,6 +220,6 @@ Piping the output to `base64 -d | od -c` we can see the raw text gRPC response:
 [3]: https://github.com/grpc/grpc/blob/master/doc/health-checking.md
 [4]: https://github.com/grpc-ecosystem/grpc-health-probe
 [5]: https://github.com/fullstorydev/grpcurl
-[6]: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1alpha2.GRPCRoute
+[6]: https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.GRPCRoute
 [7]: https://github.com/grpc/grpc-web
 [8]: https://github.com/projectcontour/contour/issues/4290

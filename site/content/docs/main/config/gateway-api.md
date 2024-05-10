@@ -198,7 +198,8 @@ containers:
   - --contour-key-file=/certs/tls.key
   - --config-path=/config/contour.yaml
   - --disable-feature=tlsroutes
-  - --disable-feature=grpcroutes
+  - --disable-feature=tcproutes
+  ...
 ```
 
 [1]: https://gateway-api.sigs.k8s.io/
