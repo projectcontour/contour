@@ -4,7 +4,6 @@ title: "Contour"
 theme: "contour"
 outputs:
   home: ["HTML", "REDIRECTS"]
-  posts: ["HTML", "RSS"]
 pygmentsCodefences: true
 pygmentsStyle: "pygments"
 markup:
@@ -62,5 +61,3 @@ outputFormats:
 collections:
   guides:
     output: true
-permalinks:
-  posts: /:slug
