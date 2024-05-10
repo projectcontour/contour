@@ -351,8 +351,6 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 			UpdateStrategy: contour.Spec.EnvoyDaemonSetUpdateStrategy,
 			Template: core_v1.PodTemplateSpec{
 				ObjectMeta: meta_v1.ObjectMeta{
-					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
-					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
 					Annotations: envoyPodAnnotations(contour),
 					Labels:      envoyPodLabels(contour),
 				},
@@ -425,8 +423,6 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 			Strategy: contour.Spec.EnvoyDeploymentStrategy,
 			Template: core_v1.PodTemplateSpec{
 				ObjectMeta: meta_v1.ObjectMeta{
-					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
-					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
 					Annotations: envoyPodAnnotations(contour),
 					Labels:      envoyPodLabels(contour),
 				},
@@ -549,18 +545,6 @@ func envoyPodAnnotations(contour *model.Contour) map[string]string {
 	for k, v := range contour.Spec.EnvoyPodAnnotations {
 		annotations[k] = v
 	}
-
-	metricsPort := objects.EnvoyMetricsPort
-	if contour.Spec.RuntimeSettings != nil &&
-		contour.Spec.RuntimeSettings.Envoy != nil &&
-		contour.Spec.RuntimeSettings.Envoy.Metrics != nil &&
-		contour.Spec.RuntimeSettings.Envoy.Metrics.Port > 0 {
-		metricsPort = int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port)
-	}
-
-	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = fmt.Sprint(metricsPort)
-	annotations["prometheus.io/path"] = "/stats/prometheus"
 
 	// Annotations specified on the Gateway take precedence
 	// over annotations specified on the GatewayClass/its parameters.

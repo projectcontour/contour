@@ -223,11 +223,9 @@ type ContourSpec struct {
 	EnvoyExtraVolumeMounts []core_v1.VolumeMount
 
 	// EnvoyPodAnnotations holds the annotations that will be add to the envoy‘s pod.
-	// the annotations: "prometheus.io/scrape", "prometheus.io/port", "prometheus.io/path" will be overwritten with predefined value.
 	EnvoyPodAnnotations map[string]string
 
 	// ContourPodAnnotations holds the annotations that will be add to the contour's pod.
-	// the annotations: "prometheus.io/scrape", "prometheus.io/port" will be overwritten with predefined value.
 	ContourPodAnnotations map[string]string
 
 	// Compute Resources required by envoy container.
