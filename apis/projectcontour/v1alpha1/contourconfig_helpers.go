@@ -97,6 +97,15 @@ func (t *TracingConfig) Validate() error {
 		}
 		customTagNames = append(customTagNames, customTag.TagName)
 	}
+
+	if t.System != nil {
+		switch *t.System {
+		case TracingSystemOpenTelemetry, TracingSystemZipkin:
+		default:
+			return fmt.Errorf("invalid tracing system %q", *t.System)
+		}
+	}
+
 	return nil
 }
 
