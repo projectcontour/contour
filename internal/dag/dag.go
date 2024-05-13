@@ -24,11 +24,10 @@ import (
 	"strings"
 	"time"
 
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
