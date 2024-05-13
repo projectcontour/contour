@@ -1119,7 +1119,7 @@ func TestClustername(t *testing.T) {
 				},
 			},
 		},
-		want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
+		want: "it-is-a-truth-universal-dea8b0/must-be-in-want-of-a-wife/9999/da39a3ee5e",
 	})
 
 	run(t, "various healthcheck params", testcase{

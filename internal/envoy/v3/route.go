@@ -114,6 +114,16 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		Metadata: getRouteMetadata(dagRoute),
 	}
 
+	if dagRoute.Name != "" {
+		route.Decorator = &envoy_config_route_v3.Decorator{
+			Operation: dagRoute.Name,
+		}
+	}
+
+	if dagRoute.StatPrefix != nil {
+		route.StatPrefix = *dagRoute.StatPrefix
+	}
+
 	switch {
 	case dagRoute.HTTPSUpgrade && !secure:
 		// TODO(dfc) if we ensure the builder never returns a dag.Route connected
@@ -682,7 +692,7 @@ func weightedClusters(route *dag.Route) *envoy_config_route_v3.WeightedCluster {
 // VirtualHost creates a new route.VirtualHost.
 func VirtualHost(hostname string, routes ...*envoy_config_route_v3.Route) *envoy_config_route_v3.VirtualHost {
 	return &envoy_config_route_v3.VirtualHost{
-		Name:    envoy.Hashname(60, hostname),
+		Name:    envoy.Hashname(120, hostname),
 		Domains: []string{hostname},
 		Routes:  routes,
 	}

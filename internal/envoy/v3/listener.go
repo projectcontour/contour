@@ -16,6 +16,8 @@ package v3
 import (
 	"errors"
 	"fmt"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"sort"
 	"strings"
 	"time"
@@ -61,7 +63,7 @@ const (
 	HTTPVersion3    HTTPVersionType = envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_HTTP3
 )
 
-// ProtoNamesForVersions returns the slice of ALPN protocol names for the give HTTP versions.
+// ProtoNamesForVersions returns the slice of ALPN protocol names for the given HTTP versions.
 func ProtoNamesForVersions(versions ...HTTPVersionType) []string {
 	protocols := map[HTTPVersionType]string{
 		HTTPVersion1: "http/1.1",
@@ -789,13 +791,61 @@ end
 	}
 }
 
+// ExternalAuthzAllowedHeaders returns the slice of StringMatcher for a given slice of HttpAuthorizationServerAllowedHeaders.
+func ExternalAuthzAllowedHeaders(allowedHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders) []*envoy_matcher_v3.StringMatcher {
+	var allowedHeaderPatterns []*envoy_matcher_v3.StringMatcher
+
+	for _, allowedHeader := range allowedHeaders {
+		switch {
+		case allowedHeader.Exact != "":
+			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
+				MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+					Exact: allowedHeader.Exact,
+				},
+				IgnoreCase: allowedHeader.IgnoreCase,
+			})
+		case allowedHeader.Prefix != "":
+			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
+				MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{
+					Prefix: allowedHeader.Prefix,
+				},
+				IgnoreCase: allowedHeader.IgnoreCase,
+			})
+		case allowedHeader.Suffix != "":
+			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
+				MatchPattern: &envoy_matcher_v3.StringMatcher_Suffix{
+					Suffix: allowedHeader.Suffix,
+				},
+				IgnoreCase: allowedHeader.IgnoreCase,
+			})
+		// To streamline user experience and mitigate potential issues, we do not support regex.
+		// Additionally, it's essential to ensure that any regex patterns adhere to the configured runtime key, re2.max_program_size.error_level
+		// by verifying that the program size is smaller than the specified value.
+		// This necessitates thorough validation of user input.
+		//
+		// case allowedHeader.Regex != "":
+		// 	allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher.StringMatcher{
+		// 		MatchPattern: &envoy_matcher.StringMatcher_SafeRegex{
+		// 			SafeRegex: SafeRegexMatch(allowedHeader.Regex),
+		// 		},
+		// 	})
+		case allowedHeader.Contains != "":
+			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
+				MatchPattern: &envoy_matcher_v3.StringMatcher_Contains{
+					Contains: allowedHeader.Contains,
+				},
+				IgnoreCase: allowedHeader.IgnoreCase,
+			})
+		}
+	}
+
+	return allowedHeaderPatterns
+}
+
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
 func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	authConfig := envoy_filter_http_ext_authz_v3.ExtAuthz{
-		Services: &envoy_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: GrpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
-		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
 		// routing decisions?
@@ -804,11 +854,52 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envo
 		StatusOnError: &envoy_type_v3.HttpStatus{
 			Code: envoy_type_v3.StatusCode_Forbidden,
 		},
-		MetadataContextNamespaces: []string{},
-		IncludePeerCertificate:    true,
 		// TODO(jpeach): When we move to the Envoy v4 API, propagate the
 		// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
-		TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+		TransportApiVersion:    envoy_config_core_v3.ApiVersion_V3,
+		IncludePeerCertificate: true,
+	}
+
+	switch externalAuthorization.ServiceAPIType {
+	case contour_v1.AuthorizationGRPCService:
+		authConfig.Services = &envoy_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
+			GrpcService: GrpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
+		}
+		authConfig.MetadataContextNamespaces = []string{}
+
+	case contour_v1.AuthorizationHTTPService:
+		extAuthzService := &envoy_filter_http_ext_authz_v3.ExtAuthz_HttpService{
+			HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+				ServerUri: &envoy_config_core_v3.HttpUri{
+					// Uri: externalAuthorization.HttpServerURI,
+					Uri: "http://dummy/",
+					HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+						Cluster: externalAuthorization.AuthorizationService.Name,
+					},
+					Timeout: envoy.Timeout(externalAuthorization.AuthorizationResponseTimeout),
+				},
+			},
+		}
+
+		if externalAuthorization.HTTPPathPrefix != "" {
+			extAuthzService.HttpService.PathPrefix = externalAuthorization.HTTPPathPrefix
+		}
+
+		if len(externalAuthorization.HTTPAllowedAuthorizationHeaders) > 0 {
+			authConfig.AllowedHeaders = &envoy_matcher_v3.ListStringMatcher{
+				Patterns: ExternalAuthzAllowedHeaders(externalAuthorization.HTTPAllowedAuthorizationHeaders),
+			}
+		}
+
+		if len(externalAuthorization.HTTPAllowedUpstreamHeaders) > 0 {
+			extAuthzService.HttpService.AuthorizationResponse = &envoy_filter_http_ext_authz_v3.AuthorizationResponse{
+				AllowedUpstreamHeaders: &envoy_matcher_v3.ListStringMatcher{
+					Patterns: ExternalAuthzAllowedHeaders(externalAuthorization.HTTPAllowedUpstreamHeaders),
+				},
+			}
+		}
+
+		authConfig.Services = extAuthzService
 	}
 
 	if externalAuthorization.AuthorizationServerWithRequestBody != nil {

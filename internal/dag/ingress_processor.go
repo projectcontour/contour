@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -66,6 +67,9 @@ type IngressProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
+
+	// Whether to set StatPrefix on envoy routes or not
+	EnableStatPrefix bool
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
 	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers
@@ -311,6 +315,10 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host, path stri
 		r.Kind = "Ingress"
 		r.Namespace = ingress.Namespace
 		r.Name = ingress.Name
+	}
+
+	if p.EnableStatPrefix {
+		r.StatPrefix = ptr.To(fmt.Sprintf("%s_%s", ingress.Namespace, ingress.Name))
 	}
 
 	switch pathType {

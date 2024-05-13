@@ -106,7 +106,7 @@ func TestSecretname(t *testing.T) {
 					},
 				},
 			},
-			want: "it-is-a-truth-7e164b/must-be-in-wa-7e164b/cd1b506996",
+			want: "it-is-a-truth-universally-acknowl-7e164b/must-be-in-want-of-a-wife/cd1b506996",
 		},
 	}
 

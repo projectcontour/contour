@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"k8s.io/utils/ptr"
 	"net"
 	"net/http"
 	"net/url"
@@ -112,6 +113,9 @@ type HTTPProxyProcessor struct {
 	// configurable and off by default in order to support the feature
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
+
+	// Whether to set StatPrefix on envoy routes or not
+	EnableStatPrefix bool
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
 	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers
@@ -270,6 +274,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 			svhost.Secret = sec
 			svhost.MinTLSVersion = minTLSVer
 			svhost.MaxTLSVersion = maxTLSVer
+			svhost.HTTPVersions = p.getSortedHTTPVersions(proxy)
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
@@ -643,6 +648,10 @@ func (p *HTTPProxyProcessor) addStatusBadGatewayRoute(routes []*Route, conds []c
 			route.Name = proxy.Name
 		}
 
+		if p.EnableStatPrefix {
+			route.StatPrefix = ptr.To(fmt.Sprintf("%s_%s", proxy.Namespace, proxy.Name))
+		}
+
 		routes = append(routes, route)
 	}
 	return routes
@@ -846,6 +855,14 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.Kind = "HTTPProxy"
 			r.Namespace = proxy.Namespace
 			r.Name = proxy.Name
+		}
+
+		if p.EnableStatPrefix {
+			path := "_"
+			if len(route.Conditions) > 0 && route.Conditions[0].Prefix != "" {
+				path = strings.TrimPrefix(route.Conditions[0].Prefix, "/")
+			}
+			r.StatPrefix = ptr.To(fmt.Sprintf("%s_httpproxy_%s_path_%s", proxy.Namespace, proxy.Name, path))
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -1403,6 +1420,41 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 		AuthorizationResponseTimeout: *respTimeout,
 	}
 
+	switch auth.ServiceAPIType {
+	case contour_v1.AuthorizationGRPCService:
+		globalExternalAuthorization.ServiceAPIType = contour_v1.AuthorizationGRPCService
+	case contour_v1.AuthorizationHTTPService:
+		globalExternalAuthorization.ServiceAPIType = contour_v1.AuthorizationHTTPService
+
+		if auth.HTTPServerSettings != nil {
+			globalExternalAuthorization.HTTPPathPrefix = auth.HTTPServerSettings.PathPrefix
+
+			// globalExternalAuthorization.HttpServerURI = auth.HttpServerSettings.ServerURI
+
+			if len(auth.HTTPServerSettings.AllowedAuthorizationHeaders) > 0 {
+				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+						err.Error())
+
+					return nil
+				}
+
+				globalExternalAuthorization.HTTPAllowedAuthorizationHeaders = auth.HTTPServerSettings.AllowedAuthorizationHeaders
+			}
+
+			if len(auth.HTTPServerSettings.AllowedUpstreamHeaders) > 0 {
+				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+						err.Error())
+
+					return nil
+				}
+
+				globalExternalAuthorization.HTTPAllowedUpstreamHeaders = auth.HTTPServerSettings.AllowedUpstreamHeaders
+			}
+		}
+	}
+
 	if auth.WithRequestBody != nil {
 		maxRequestBytes := defaultMaxRequestBytes
 		if auth.WithRequestBody.MaxRequestBytes != 0 {
@@ -1537,6 +1589,21 @@ func (p *HTTPProxyProcessor) peerValidationContext(validCond *contour_v1.Detaile
 		return nil
 	}
 	return uv
+}
+
+// getSortedHTTPVersions returns and empty slice or ["h2", "http/1.1"] or ["http/1.1"].
+// This is done to conform with how envoy expects AlpnProtocols in tlsv3.CommonTlsContext.
+func (p *HTTPProxyProcessor) getSortedHTTPVersions(proxy *contour_v1.HTTPProxy) []string {
+	proxyHTTPVersions := proxy.Spec.HTTPVersions
+	if len(proxyHTTPVersions) == 0 {
+		return nil
+	}
+	for _, httpVersion := range proxyHTTPVersions {
+		if httpVersion == "h2" {
+			return []string{"h2", "http/1.1"}
+		}
+	}
+	return []string{"http/1.1"}
 }
 
 // expandPrefixMatches adds new Routes to account for the difference

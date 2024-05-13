@@ -18,6 +18,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"net"
 	"regexp"
 	"strconv"
@@ -374,6 +375,9 @@ type Route struct {
 	Kind      string
 	Namespace string
 	Name      string
+
+	// The stat_prefix to set on envoy route
+	StatPrefix *string
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -814,6 +818,9 @@ type SecureVirtualHost struct {
 
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
+
+	// AlpnProtos specify the HTTP version to offer for this vhost
+	HTTPVersions []string
 }
 
 type JWTProvider struct {
@@ -865,6 +872,29 @@ type ExternalAuthorization struct {
 	// requests are forwarded to for authorization. If nil, no
 	// authorization is enabled for this host.
 	AuthorizationService *ExtensionCluster
+
+	// ServiceAPIType defines the external authorization service API type.
+	// It indicates the protocol implemented by the external server, specifying whether it's a raw HTTP authorization server
+	// or a gRPC authorization server.
+	ServiceAPIType contour_v1.AuthorizationServiceAPIType
+
+	// HTTPAllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+	// Note that in addition to the the user’s supplied matchers, Host, Method, Path, Content-Length, and Authorization are additionally included in the list.
+	HTTPAllowedAuthorizationHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders
+
+	// HTTPAllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
+	// Note that coexistent headers will be overridden.
+	HTTPAllowedUpstreamHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders
+
+	// HTTPPathPrefix Sets a prefix to the value of authorization request header Path.
+	HTTPPathPrefix string
+
+	// Note: This field is not used by Envoy
+	// https://github.com/envoyproxy/envoy/issues/5357
+	//
+	// HttpServerURI sets the URI of the external HTTP authorization server to which authorization requests must be sent.
+	// Only required for http services.
+	// HttpServerURI string
 
 	// AuthorizationResponseTimeout sets how long the proxy should wait
 	// for authorization server responses.

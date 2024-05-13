@@ -392,13 +392,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 			})
 		}
 
-		var tracingSystem *contour_api_v1alpha1.TracingSystem
+		var tracingSystem *contour_v1alpha1.TracingSystem
 		if ctx.Config.Tracing.System != nil {
 			switch *ctx.Config.Tracing.System {
 			case config.TracingSystemOpenTelemetry:
-				tracingSystem = ref.To(contour_api_v1alpha1.TracingSystemOpenTelemetry)
+				tracingSystem = ptr.To(contour_v1alpha1.TracingSystemOpenTelemetry)
 			case config.TracingSystemZipkin:
-				tracingSystem = ref.To(contour_api_v1alpha1.TracingSystemZipkin)
+				tracingSystem = ptr.To(contour_v1alpha1.TracingSystemZipkin)
 			}
 		}
 

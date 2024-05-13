@@ -95,6 +95,9 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 							},
 						},
 					},
+					Decorator: &envoy_config_route_v3.Decorator{
+						Operation: "ingress-kuard",
+					},
 				}),
 			),
 		),
@@ -139,6 +142,9 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 								},
 							},
 						},
+					},
+					Decorator: &envoy_config_route_v3.Decorator{
+						Operation: "httpproxy-kuard",
 					},
 				}),
 			),
@@ -191,6 +197,9 @@ func TestRouteSourceMetadataIsSet(t *testing.T) {
 								},
 							},
 						},
+					},
+					Decorator: &envoy_config_route_v3.Decorator{
+						Operation: "httproute-kuard",
 					},
 				}),
 			),

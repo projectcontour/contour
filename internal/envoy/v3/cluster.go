@@ -162,10 +162,10 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 
 	// TODO(jpeach): Externalname service support in https://github.com/projectcontour/contour/issues/2875
 
-	http2Version := HTTPVersionAuto
+	httpVersion := HTTPVersionAuto
 	switch ext.Protocol {
 	case "h2":
-		http2Version = HTTPVersion2
+		httpVersion = HTTPVersion2
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				ext.UpstreamValidation,
@@ -176,13 +176,15 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 			),
 		)
 	case "h2c":
-		http2Version = HTTPVersion2
+		httpVersion = HTTPVersion2
+	case "http/1.1":
+		httpVersion = HTTPVersion1
 	}
 
 	if ext.ClusterTimeoutPolicy.ConnectTimeout > time.Duration(0) {
 		cluster.ConnectTimeout = durationpb.New(ext.ClusterTimeoutPolicy.ConnectTimeout)
 	}
-	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout, nil)
+	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, ext.ClusterTimeoutPolicy.IdleConnectionTimeout, nil)
 
 	applyCircuitBreakers(cluster, ext.CircuitBreakers)
 

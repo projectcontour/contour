@@ -306,7 +306,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&envoy_config_cluster_v3.Cluster{
-					Name:                 "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
+					Name:                 "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/443/da39a3ee5e",
 					AltStatName:          "beurocratic-company-test-domain-1_tiny-cog-department-test-instance_443",
 					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 					EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{

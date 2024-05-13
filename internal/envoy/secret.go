@@ -26,5 +26,5 @@ func Secretname(s *dag.Secret) string {
 	hash := sha1.Sum(s.Cert()) // nolint:gosec
 	ns := s.Namespace()
 	name := s.Name()
-	return Hashname(60, ns, name, fmt.Sprintf("%x", hash[:5]))
+	return Hashname(120, ns, name, fmt.Sprintf("%x", hash[:5]))
 }

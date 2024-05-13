@@ -51,7 +51,8 @@ func FileAccessLogEnvoy(path, format string, extensions []string, level contour_
 						},
 					},
 				},
-				Formatters: extensionConfig(extensions),
+				OmitEmptyValues: true,
+				Formatters:      extensionConfig(extensions),
 			},
 		}
 	}

@@ -67,7 +67,7 @@ func Clustername(cluster *dag.Cluster) string {
 
 	ns := service.Weighted.ServiceNamespace
 	name := service.Weighted.ServiceName
-	return Hashname(60, ns, name, strconv.Itoa(int(service.Weighted.ServicePort.Port)), fmt.Sprintf("%x", hash[:5]))
+	return Hashname(120, ns, name, strconv.Itoa(int(service.Weighted.ServicePort.Port)), fmt.Sprintf("%x", hash[:5]))
 }
 
 // AltStatName generates an alternative stat name for the service
