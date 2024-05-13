@@ -14,11 +14,12 @@
 package v3
 
 import (
-	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"

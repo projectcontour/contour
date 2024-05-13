@@ -14,9 +14,10 @@
 package v3
 
 import (
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"sort"
 	"sync"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"

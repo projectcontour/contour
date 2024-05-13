@@ -16,11 +16,12 @@ package v3
 import (
 	"errors"
 	"fmt"
-	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"sort"
 	"strings"
 	"time"
+
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"

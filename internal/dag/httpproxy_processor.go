@@ -16,7 +16,6 @@ package dag
 import (
 	"errors"
 	"fmt"
-	"k8s.io/utils/ptr"
 	"net"
 	"net/http"
 	"net/url"
@@ -25,6 +24,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"

@@ -18,12 +18,13 @@ package dag
 import (
 	"errors"
 	"fmt"
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
