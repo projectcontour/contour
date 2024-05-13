@@ -24,7 +24,7 @@ import (
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
 	core_v1 "k8s.io/api/core/v1"
@@ -843,10 +843,10 @@ func AuthzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEvent
 							fqdn,
 							&envoy_filter_http_ext_authz_v3.ExtAuthz{
 								Services: httpCluster("extension/auth/extension"),
-								AllowedHeaders: &matcherv3.ListStringMatcher{
-									Patterns: []*matcherv3.StringMatcher{
-										{MatchPattern: &matcherv3.StringMatcher_Prefix{Prefix: "test1"}, IgnoreCase: false},
-										{MatchPattern: &matcherv3.StringMatcher_Exact{Exact: "test2"}, IgnoreCase: true},
+								AllowedHeaders: &envoy_matcher_v3.ListStringMatcher{
+									Patterns: []*envoy_matcher_v3.StringMatcher{
+										{MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{Prefix: "test1"}, IgnoreCase: false},
+										{MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: "test2"}, IgnoreCase: true},
 									},
 								},
 								ClearRouteCache:        true,
@@ -928,10 +928,10 @@ func AuthzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandl
 
 	cluster := httpCluster("extension/auth/extension")
 	cluster.HttpService.AuthorizationResponse = &envoy_filter_http_ext_authz_v3.AuthorizationResponse{
-		AllowedUpstreamHeaders: &matcherv3.ListStringMatcher{
-			Patterns: []*matcherv3.StringMatcher{
-				{MatchPattern: &matcherv3.StringMatcher_Prefix{Prefix: "test1"}, IgnoreCase: false},
-				{MatchPattern: &matcherv3.StringMatcher_Exact{Exact: "test2"}, IgnoreCase: true},
+		AllowedUpstreamHeaders: &envoy_matcher_v3.ListStringMatcher{
+			Patterns: []*envoy_matcher_v3.StringMatcher{
+				{MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{Prefix: "test1"}, IgnoreCase: false},
+				{MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: "test2"}, IgnoreCase: true},
 			},
 		},
 	}
