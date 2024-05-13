@@ -113,7 +113,6 @@ func extCleartext(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 			),
 		),
 	})
-
 }
 
 func extUpstreamValidation(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {

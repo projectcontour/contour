@@ -899,7 +899,6 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 
 			if len(contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedUpstreamHeaders) > 0 {
 				if err := dag.ExternalAuthAllowedHeadersValid(contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
-
 					return nil, err
 				}
 

@@ -255,8 +255,10 @@ const (
 // TracingSystem is the tracing system used in Envoy
 type TracingSystem string
 
-const TracingSystemOpenTelemetry TracingSystem = "opentelemetry"
-const TracingSystemZipkin TracingSystem = "zipkin"
+const (
+	TracingSystemOpenTelemetry TracingSystem = "opentelemetry"
+	TracingSystemZipkin        TracingSystem = "zipkin"
+)
 
 // EnvoyConfig defines how Envoy is to be Configured from Contour.
 type EnvoyConfig struct {
