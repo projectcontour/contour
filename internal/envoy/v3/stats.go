@@ -20,6 +20,7 @@ import (
 	envoy_filter_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -133,8 +134,8 @@ func filterChain(statsPrefix string, transportSocket *envoy_config_core_v3.Trans
 	}}
 }
 
-// routeForAdminInterface creates static RouteConfig that forwards requested prefixes to Envoy admin interface.
-func routeForAdminInterface(prefixes ...string) *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig {
+// routeForAdminInterface creates static RouteConfig that forwards requested paths to Envoy admin interface.
+func routeForAdminInterface(paths ...string) *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig {
 	config := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig{
 		RouteConfig: &envoy_config_route_v3.RouteConfiguration{
 			VirtualHosts: []*envoy_config_route_v3.VirtualHost{{
@@ -144,12 +145,25 @@ func routeForAdminInterface(prefixes ...string) *envoy_filter_network_http_conne
 		},
 	}
 
-	for _, prefix := range prefixes {
+	for _, p := range paths {
 		config.RouteConfig.VirtualHosts[0].Routes = append(config.RouteConfig.VirtualHosts[0].Routes,
 			&envoy_config_route_v3.Route{
 				Match: &envoy_config_route_v3.RouteMatch{
-					PathSpecifier: &envoy_config_route_v3.RouteMatch_Prefix{
-						Prefix: prefix,
+					PathSpecifier: &envoy_config_route_v3.RouteMatch_Path{
+						Path: p,
+					},
+					Headers: []*envoy_config_route_v3.HeaderMatcher{
+						{
+							Name: ":method",
+							HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+								StringMatch: &envoy_matcher_v3.StringMatcher{
+									IgnoreCase: true,
+									MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+										Exact: "GET",
+									},
+								},
+							},
+						},
 					},
 				},
 				Action: &envoy_config_route_v3.Route_Route{
