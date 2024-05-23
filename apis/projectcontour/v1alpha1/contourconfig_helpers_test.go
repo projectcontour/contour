@@ -141,8 +141,10 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Envoy.Listener.TLS.CipherSuites = []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
+			"ECDHE-ECDSA-CHACHA20-POLY1305",
 			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
 			"ECDHE-RSA-AES128-GCM-SHA256",
+			"ECDHE-RSA-CHACHA20-POLY1305",
 			"ECDHE-ECDSA-AES128-SHA",
 			"AES128-GCM-SHA256",
 			"AES128-SHA",
@@ -159,6 +161,20 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
 			"NOTAVALIDCIPHER",
 			"AES128-GCM-SHA256",
+		}
+		require.Error(t, c.Validate())
+
+		// Equal-preference group with invalid cipher.
+		c.Envoy.Listener.TLS.CipherSuites = []string{
+			"[ECDHE-ECDSA-AES128-GCM-SHA256|NOTAVALIDCIPHER]",
+			"ECDHE-ECDSA-AES128-GCM-SHA256",
+		}
+		require.Error(t, c.Validate())
+
+		// Unmatched brackets.
+		c.Envoy.Listener.TLS.CipherSuites = []string{
+			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305",
+			"ECDHE-ECDSA-AES128-GCM-SHA256",
 		}
 		require.Error(t, c.Validate())
 	})
