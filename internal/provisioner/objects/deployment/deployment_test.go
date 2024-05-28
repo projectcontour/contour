@@ -278,7 +278,7 @@ func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
 		disabledFeatures []contour_v1.Feature
 	}{
 		{
-			description:      "disable 2 featuers",
+			description:      "disable 2 features",
 			disabledFeatures: []contour_v1.Feature{"tlsroutes", "grpcroutes"},
 		},
 		{
