@@ -13,7 +13,7 @@ if command -v docker >/dev/null; then
 		--volume $(pwd):/workdir \
 		--workdir=/workdir \
 		--entrypoint=/usr/local/bin/codespell \
-		ghcr.io/codespell-project/actions-codespell/stable:v2.0 "$@"
+		ghcr.io/codespell-project/actions-codespell/stable:v2.0@sha256:9e7b6311f8126aa7c314b47bcb788f4930acedcc0da9dd00ef715b75b38cff1d "$@"
 fi
 
 cat <<EOF

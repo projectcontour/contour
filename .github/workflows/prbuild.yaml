@@ -46,12 +46,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Codespell
-      uses: codespell-project/actions-codespell@94259cd8be02ad2903ba34a22d9c13de21a74461 # v2.0
-      with:
-        skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
-        ignore_words_file: './.codespell.ignorewords'
-        check_filenames: true
-        check_hidden: true
+      uses: ./.github/actions/codespell
     - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}

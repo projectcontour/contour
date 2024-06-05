@@ -1,0 +1,18 @@
+# This action runs codespell by using pre-built codespell container, unlike codespell-project/actions-codespell.
+# It ensures the same version of codespell is used in CI as in local development.
+name: codespell
+description: 'Run codespell'
+inputs:
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Run codespell
+      run: |
+        echo "::add-matcher::${{ inputs.working-directory }}/.github/actions/codespell/matcher.json"
+        make lint-codespell
+        echo "::remove-matcher owner=codespell::"
+      shell: bash
