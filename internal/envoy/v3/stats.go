@@ -50,7 +50,7 @@ func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alp
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains: filterChain("stats",
 				DownstreamTLSTransportSocket(
-					downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats")),
+					downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats", "/stats/prometheus")),
 		}, {
 			Name:          "health",
 			Address:       SocketAddress(health.Address, health.Port),
@@ -65,7 +65,11 @@ func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alp
 			Name:          "stats-health",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready", "/stats")),
+			FilterChains: filterChain("stats", nil, routeForAdminInterface(
+				"/ready",
+				"/stats",
+				"/stats/prometheus",
+			)),
 		}}
 
 	// Create separate HTTP listeners for metrics and health.
@@ -74,7 +78,7 @@ func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alp
 			Name:          "stats",
 			Address:       SocketAddress(metrics.Address, metrics.Port),
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/stats")),
+			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/stats", "/stats/prometheus")),
 		}, {
 			Name:          "health",
 			Address:       SocketAddress(health.Address, health.Port),
