@@ -87,6 +87,34 @@ func TestStatsListeners(t *testing.T) {
 		},
 	}
 
+	prometheusStatsRoute := &envoy_config_route_v3.Route{
+		Match: &envoy_config_route_v3.RouteMatch{
+			PathSpecifier: &envoy_config_route_v3.RouteMatch_Path{
+				Path: "/stats/prometheus",
+			},
+			Headers: []*envoy_config_route_v3.HeaderMatcher{
+				{
+					Name: ":method",
+					HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &envoy_matcher_v3.StringMatcher{
+							IgnoreCase: true,
+							MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+								Exact: "GET",
+							},
+						},
+					},
+				},
+			},
+		},
+		Action: &envoy_config_route_v3.Route_Route{
+			Route: &envoy_config_route_v3.RouteAction{
+				ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
+					Cluster: "envoy-admin",
+				},
+			},
+		},
+	}
+
 	type testcase struct {
 		metrics contour_v1alpha1.MetricsConfig
 		health  contour_v1alpha1.HealthConfig
@@ -119,7 +147,7 @@ func TestStatsListeners(t *testing.T) {
 									VirtualHosts: []*envoy_config_route_v3.VirtualHost{{
 										Name:    "backend",
 										Domains: []string{"*"},
-										Routes:  []*envoy_config_route_v3.Route{readyRoute, statsRoute},
+										Routes:  []*envoy_config_route_v3.Route{readyRoute, statsRoute, prometheusStatsRoute},
 									}},
 								},
 							},
@@ -165,7 +193,7 @@ func TestStatsListeners(t *testing.T) {
 									VirtualHosts: []*envoy_config_route_v3.VirtualHost{{
 										Name:    "backend",
 										Domains: []string{"*"},
-										Routes:  []*envoy_config_route_v3.Route{statsRoute},
+										Routes:  []*envoy_config_route_v3.Route{statsRoute, prometheusStatsRoute},
 									}},
 								},
 							},
@@ -256,7 +284,7 @@ func TestStatsListeners(t *testing.T) {
 									VirtualHosts: []*envoy_config_route_v3.VirtualHost{{
 										Name:    "backend",
 										Domains: []string{"*"},
-										Routes:  []*envoy_config_route_v3.Route{statsRoute},
+										Routes:  []*envoy_config_route_v3.Route{statsRoute, prometheusStatsRoute},
 									}},
 								},
 							},
@@ -349,7 +377,7 @@ func TestStatsListeners(t *testing.T) {
 									VirtualHosts: []*envoy_config_route_v3.VirtualHost{{
 										Name:    "backend",
 										Domains: []string{"*"},
-										Routes:  []*envoy_config_route_v3.Route{statsRoute},
+										Routes:  []*envoy_config_route_v3.Route{statsRoute, prometheusStatsRoute},
 									}},
 								},
 							},
