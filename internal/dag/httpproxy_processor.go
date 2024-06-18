@@ -113,6 +113,9 @@ type HTTPProxyProcessor struct {
 	// without requiring all existing test cases to change.
 	SetSourceMetadataOnRoutes bool
 
+	// GlobalOutlierDetection defines route-service's Global Outlier Detection configuration.
+	GlobalOutlierDetection *contour_v1.OutlierDetection
+
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
 	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults
 
@@ -992,6 +995,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 
+			outlierDetection, err := outlierDetectionPolicy(p.GlobalOutlierDetection, service.OutlierDetection)
+			if err != nil {
+				validCond.AddErrorf(contour_v1.ConditionTypeOutlierDetectionError, "OutlierDetectionInvalid",
+					"%s on outlier detection", err)
+				return nil
+			}
+
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
 				// Since the client certificate is configured by admin, explicit delegation is not required.
@@ -1038,6 +1048,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 				PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
 				UpstreamTLS:                   p.UpstreamTLS,
+				OutlierDetectionPolicy:        outlierDetection,
 			}
 			if service.Mirror && len(r.MirrorPolicies) > 0 {
 				validCond.AddError(contour_v1.ConditionTypeServiceError, "OnlyOneMirror",
