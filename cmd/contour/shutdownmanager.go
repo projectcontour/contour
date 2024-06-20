@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	prometheusURL      = "http://unix/stats/prometheus"
+	prometheusURL      = "http://unix/stats/prometheus?filter=http\\..*\\.downstream_cx_active"
 	healthcheckFailURL = "http://unix/healthcheck/fail"
 	prometheusStat     = "envoy_http_downstream_cx_active"
 )
