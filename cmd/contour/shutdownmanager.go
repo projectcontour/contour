@@ -33,7 +33,7 @@ import (
 const (
 	// The prometheusURL is used to fetch the envoy metrics. Note that the filter
 	// value matches Envoy's raw stat names (i.e. those on the `/stats/` endpoint).
-	prometheusURL      = "http://unix/stats/prometheus?filter=http\\..*\\.downstream_cx_active"
+	prometheusURL      = "http://unix/stats/prometheus?filter=^http\\..*\\.downstream_cx_active$"
 	healthcheckFailURL = "http://unix/healthcheck/fail"
 	prometheusStat     = "envoy_http_downstream_cx_active"
 )
