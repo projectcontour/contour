@@ -1,1 +1,1 @@
-- Improve response time by utilizing a query param (`filter=http\..*\.downstream_cx_active`) when querying `/stats/prometheus` for `envoy_http_downstream_cx_active` 
+Improve response time by utilizing a query param (`filter=http\..*\.downstream_cx_active`) when querying `/stats/prometheus` for `envoy_http_downstream_cx_active` in the shutdown-manager.
