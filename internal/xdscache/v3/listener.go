@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/types"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
@@ -140,9 +141,13 @@ type ListenerConfig struct {
 	// used.
 	RateLimitConfig *RateLimitConfig
 
-	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
+	// GlobalExternalAuthConfig optionally configures the global external authz Services to be
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
+
+	// GlobalExtProcConfig optionally configures the global external processing service to be
+	// used.
+	GlobalExtProcConfig *GlobalExtProcConfig
 
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
@@ -199,6 +204,15 @@ type GlobalExternalAuthConfig struct {
 	FailOpen        bool
 	Context         map[string]string
 	WithRequestBody *dag.AuthorizationServerBufferSettings
+}
+
+type GlobalExtProcConfig struct {
+	ExtensionServiceConfig
+	FailOpen bool
+
+	AllowModeOverride bool
+	ProcessingMode    *contour_v1.ProcessingMode
+	MutationRules     *contour_v1.HeaderMutationRules
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -414,6 +428,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				EnableWebsockets(listener.EnableWebsockets).
+				AddFilter(envoy_v3.FilterExtProc(toExtProc(cfg.GlobalExtProcConfig))).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
@@ -489,6 +504,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
+					AddFilter(envoy_v3.FilterExtProc(vh.ExtProc)).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -564,6 +580,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
+					AddFilter(envoy_v3.FilterExtProc(toExtProc(cfg.GlobalExtProcConfig))).
 					Get()
 
 				// Default filter chain
@@ -613,6 +630,24 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
+}
+
+func toExtProc(p *GlobalExtProcConfig) *dag.ExtProc {
+	if p == nil {
+		return nil
+	}
+
+	return &dag.ExtProc{
+		ExtProcService: &dag.ExtensionCluster{
+			Name: dag.ExtensionClusterName(p.ExtensionServiceConfig.ExtensionService),
+			SNI:  p.ExtensionServiceConfig.SNI,
+		},
+		FailOpen:          p.FailOpen,
+		ResponseTimeout:   p.ExtensionServiceConfig.Timeout,
+		ProcessingMode:    p.ProcessingMode,
+		MutationRules:     p.MutationRules,
+		AllowModeOverride: p.AllowModeOverride,
+	}
 }
 
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
