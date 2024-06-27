@@ -752,7 +752,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		"CONTOUR_NAMESPACE": proxy.Namespace,
 	}
 
-	for _, route := range proxy.Spec.Routes {
+	for routeIndex, route := range proxy.Spec.Routes {
 		if err := routeActionCountValid(route); err != nil {
 			validCond.AddError(contour_v1.ConditionTypeRouteError, "RouteActionCountNotValid", err.Error())
 			return nil
@@ -857,7 +857,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		}
 
 		if p.EnableStatPrefix {
-			r.StatPrefix = ptr.To(fmt.Sprintf("%s_%s", proxy.Namespace, proxy.Name))
+			if route.RouteTag != "" {
+				r.StatPrefix = ptr.To(fmt.Sprintf("%s_%s_%s", proxy.Namespace, proxy.Name, route.RouteTag))
+			} else {
+				r.StatPrefix = ptr.To(fmt.Sprintf("%s_%s_route%d", proxy.Namespace, proxy.Name, routeIndex))
+			}
 		}
 
 		// If the enclosing root proxy enabled authorization,

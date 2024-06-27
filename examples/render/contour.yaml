@@ -6461,6 +6461,11 @@ spec:
                             is used.
                           type: string
                       type: object
+                    metricsTag:
+                      description: |-
+                        RouteTag specifies a human readable tag for the route. This is used when
+                        per-route metrics are enabled.
+                      type: string
                     pathRewritePolicy:
                       description: |-
                         The policy for rewriting the path of the request URL
