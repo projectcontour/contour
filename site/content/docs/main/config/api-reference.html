@@ -3809,6 +3809,20 @@ HTTPRequestRedirectPolicy
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>metricsTag</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RouteTag specifies a human readable tag for the route. This is used when
+per-route metrics are enabled.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>directResponsePolicy</code>
 <br>
 <em>
@@ -6705,6 +6719,19 @@ NetworkParameters
 <td>
 <em>(Optional)</em>
 <p>Network holds various configurable Envoy network values.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableStatPrefix</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Set StatPrefix on envoy routes</p>
 </td>
 </tr>
 </tbody>
