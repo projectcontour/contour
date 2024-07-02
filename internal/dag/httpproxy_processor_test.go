@@ -20,11 +20,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
@@ -1525,6 +1528,147 @@ func TestDetermineUpstreamTLS(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := (*UpstreamTLS)(tc.envoyTLS)
 			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func createHTTPProxyProcessor() *HTTPProxyProcessor {
+	return &HTTPProxyProcessor{
+		dag: &DAG{
+			StatusCache: status.NewCache(
+				types.NamespacedName{"test", "ingress"},
+				"example.com/",
+			),
+			Listeners:         make(map[string]*Listener),
+			ExtensionClusters: []*ExtensionCluster{},
+		},
+		source:   &KubernetesCache{},
+		orphaned: make(map[types.NamespacedName]bool),
+	}
+}
+
+func createHTTPProxy(namespace, name, domain string) *contour_v1.HTTPProxy {
+	return &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: domain,
+			},
+		},
+	}
+}
+
+func createServiceObjects(namespace, name, portname string, port int32) (*v1.Service, contour_v1.Service) {
+	return &v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      name,
+			},
+			Spec: v1.ServiceSpec{
+				Ports: []v1.ServicePort{
+					{
+						Name: portname,
+						Port: port,
+					},
+				},
+			},
+		},
+		contour_v1.Service{
+			Name: name,
+			Port: int(port),
+		}
+}
+
+func TestHTTPProxyProcessorRouteStatsConfig(t *testing.T) {
+	processor := createHTTPProxyProcessor()
+	processor.EnableStatPrefix = true
+	k8sService1, service1 := createServiceObjects("test", "service1", "http", 80)
+	k8sService2, service2 := createServiceObjects("test", "service2", "http", 80)
+	processor.source.Insert(k8sService1)
+	processor.source.Insert(k8sService2)
+
+	httpProxy1 := createHTTPProxy("test", "proxy1", "example.com")
+	httpProxy1.Spec.Routes = append(httpProxy1.Spec.Routes, contour_v1.Route{
+		Services: []contour_v1.Service{service1},
+		Conditions: []contour_v1.MatchCondition{
+			{
+				Prefix: "/ping",
+			},
+		},
+	})
+	httpProxy2 := createHTTPProxy("test", "proxy2", "example.com")
+	httpProxy2.Spec.Routes = append(httpProxy2.Spec.Routes, contour_v1.Route{
+		RouteTag: "auth",
+		Services: []contour_v1.Service{service2},
+		Conditions: []contour_v1.MatchCondition{
+			{
+				Prefix: "/auth",
+			},
+		},
+	})
+	httpProxy2.Spec.Routes = append(httpProxy2.Spec.Routes, contour_v1.Route{
+		Services: []contour_v1.Service{service2},
+		Conditions: []contour_v1.MatchCondition{
+			{
+				Prefix: "/login",
+			},
+		},
+	})
+
+	tests := map[string]struct {
+		httpproxy  *contour_v1.HTTPProxy
+		statPrefix bool
+		want       []*string
+	}{
+		"route with no route tag": {
+			httpproxy:  httpProxy1,
+			statPrefix: true,
+			want:       []*string{ptr.To("test_proxy1_route0")},
+		},
+		"route with route tag": {
+			httpproxy:  httpProxy2,
+			statPrefix: true,
+			want:       []*string{ptr.To("test_proxy2_auth"), ptr.To("test_proxy2_route1")},
+		},
+		"stat prefix disabled": {
+			httpproxy:  httpProxy2,
+			statPrefix: false,
+			want:       []*string{nil, nil},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			processor.EnableStatPrefix = tc.statPrefix
+			routes := processor.computeRoutes(
+				nil,
+				tc.httpproxy,
+				tc.httpproxy,
+				make([]contour_v1.MatchCondition, 0),
+				make([]*contour_v1.HTTPProxy, 0),
+				false,
+				"",
+			)
+			if len(routes) != len(tc.want) {
+				t.Fatalf("expected %d routes, got %d", len(tc.want), len(routes))
+			}
+			for i, route := range routes {
+				if tc.want[i] == nil {
+					if route.StatPrefix != nil {
+						t.Fatalf("expected route %d to have nil stats name, got %s", i, *route.StatPrefix)
+					}
+					continue
+				}
+				if route.StatPrefix == nil {
+					t.Fatalf("expected route %d to have stats name %s, got nil", i, *tc.want[i])
+				}
+				if *route.StatPrefix != *tc.want[i] {
+					t.Fatalf("expected route %d to have stats name %s, got %s", i, *tc.want[i], *route.StatPrefix)
+				}
+			}
 		})
 	}
 }
