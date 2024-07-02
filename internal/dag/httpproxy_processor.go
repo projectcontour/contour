@@ -648,7 +648,7 @@ func (p *HTTPProxyProcessor) addStatusBadGatewayRoute(routes []*Route, conds []c
 		}
 
 		if p.EnableStatPrefix {
-			route.StatPrefix = ptr.To(fmt.Sprintf("%s_%s", proxy.Namespace, proxy.Name))
+			route.StatPrefix = ptr.To(fmt.Sprintf("%s_%s_bad-include-502", proxy.Namespace, proxy.Name))
 		}
 
 		routes = append(routes, route)
