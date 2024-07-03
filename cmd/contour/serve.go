@@ -1064,7 +1064,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
-	globalCircuitBreakerDefaults       *contour_v1alpha1.GlobalCircuitBreakerDefaults
+	globalCircuitBreakerDefaults       *contour_v1alpha1.CircuitBreaker
 	upstreamTLS                        *dag.UpstreamTLS
 }
 
@@ -1141,10 +1141,10 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
 			// need to bring EnableExternalNameService in here too.
-			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
-			ClientCertificate: dbc.clientCert,
-			ConnectTimeout:    dbc.connectTimeout,
-			UpstreamTLS:       dbc.upstreamTLS,
+			FieldLogger:                  s.log.WithField("context", "ExtensionServiceProcessor"),
+			ClientCertificate:            dbc.clientCert,
+			ConnectTimeout:               dbc.connectTimeout,
+			GlobalCircuitBreakerDefaults: dbc.globalCircuitBreakerDefaults,
 		},
 		&dag.HTTPProxyProcessor{
 			EnableExternalNameService:     dbc.enableExternalNameService,

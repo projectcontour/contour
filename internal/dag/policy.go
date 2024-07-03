@@ -808,25 +808,25 @@ func loadBalancerRequestHashPolicies(lbp *contour_v1.LoadBalancerPolicy, validCo
 	}
 }
 
-func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.GlobalCircuitBreakerDefaults) *Service {
+func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.CircuitBreaker) *Service {
 	if s == nil {
 		return nil
 	}
 
-	if s.MaxConnections == 0 && cb != nil {
-		s.MaxConnections = cb.MaxConnections
+	if s.CircuitBreakersSettings.MaxConnections == 0 && cb != nil {
+		s.CircuitBreakersSettings.MaxConnections = cb.MaxConnections
 	}
 
-	if s.MaxPendingRequests == 0 && cb != nil {
-		s.MaxPendingRequests = cb.MaxPendingRequests
+	if s.CircuitBreakersSettings.MaxPendingRequests == 0 && cb != nil {
+		s.CircuitBreakersSettings.MaxPendingRequests = cb.MaxPendingRequests
 	}
 
-	if s.MaxRequests == 0 && cb != nil {
-		s.MaxRequests = cb.MaxRequests
+	if s.CircuitBreakersSettings.MaxRequests == 0 && cb != nil {
+		s.CircuitBreakersSettings.MaxRequests = cb.MaxRequests
 	}
 
-	if s.MaxRetries == 0 && cb != nil {
-		s.MaxRetries = cb.MaxRetries
+	if s.CircuitBreakersSettings.MaxRetries == 0 && cb != nil {
+		s.CircuitBreakersSettings.MaxRetries = cb.MaxRetries
 	}
 
 	return s

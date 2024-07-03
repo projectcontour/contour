@@ -76,7 +76,7 @@ type GatewayAPIProcessor struct {
 	SetSourceMetadataOnRoutes bool
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
-	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreaker
 
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.

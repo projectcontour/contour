@@ -1276,7 +1276,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 func TestServiceCircuitBreakerPolicy(t *testing.T) {
 	tests := map[string]struct {
 		in            *Service
-		globalDefault *contour_v1alpha1.GlobalCircuitBreakerDefaults
+		globalDefault *contour_v1alpha1.CircuitBreaker
 		want          *Service
 	}{
 		"service is nil and globalDefault is nil": {
@@ -1286,51 +1286,59 @@ func TestServiceCircuitBreakerPolicy(t *testing.T) {
 		},
 		"service is nil and globalDefault is not nil": {
 			in:            nil,
-			globalDefault: &contour_v1alpha1.GlobalCircuitBreakerDefaults{},
+			globalDefault: &contour_v1alpha1.CircuitBreaker{},
 			want:          nil,
 		},
 		"service is not nil and globalDefault is nil": {
 			in: &Service{
-				MaxConnections:     42,
-				MaxPendingRequests: 73,
-				MaxRequests:        89,
-				MaxRetries:         13,
+				CircuitBreakersSettings: CircuitBreakersSettings{
+					MaxConnections:     42,
+					MaxPendingRequests: 73,
+					MaxRequests:        89,
+					MaxRetries:         13,
+				},
 			},
 			globalDefault: nil,
 			want: &Service{
-				MaxConnections:     42,
-				MaxPendingRequests: 73,
-				MaxRequests:        89,
-				MaxRetries:         13,
+				CircuitBreakersSettings: CircuitBreakersSettings{
+					MaxConnections:     42,
+					MaxPendingRequests: 73,
+					MaxRequests:        89,
+					MaxRetries:         13,
+				},
 			},
 		},
 		"service is not set but global is": {
 			in: &Service{},
-			globalDefault: &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+			globalDefault: &contour_v1alpha1.CircuitBreaker{
 				MaxConnections:     42,
 				MaxPendingRequests: 73,
 				MaxRequests:        89,
 				MaxRetries:         13,
 			},
 			want: &Service{
-				MaxConnections:     42,
-				MaxPendingRequests: 73,
-				MaxRequests:        89,
-				MaxRetries:         13,
+				CircuitBreakersSettings: CircuitBreakersSettings{
+					MaxConnections:     42,
+					MaxPendingRequests: 73,
+					MaxRequests:        89,
+					MaxRetries:         13,
+				},
 			},
 		},
 		"service is not set but global is partial": {
 			in: &Service{},
-			globalDefault: &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+			globalDefault: &contour_v1alpha1.CircuitBreaker{
 				MaxConnections:     42,
 				MaxPendingRequests: 73,
 				MaxRequests:        89,
 			},
 			want: &Service{
-				MaxConnections:     42,
-				MaxPendingRequests: 73,
-				MaxRequests:        89,
-				MaxRetries:         0,
+				CircuitBreakersSettings: CircuitBreakersSettings{
+					MaxConnections:     42,
+					MaxPendingRequests: 73,
+					MaxRequests:        89,
+					MaxRetries:         0,
+				},
 			},
 		},
 	}

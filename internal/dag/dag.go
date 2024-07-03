@@ -971,26 +971,7 @@ type Service struct {
 	Protocol string
 
 	// Circuit breaking limits
-
-	// Max connections is maximum number of connections
-	// that Envoy will make to the upstream cluster.
-	MaxConnections uint32
-
-	// MaxPendingRequests is maximum number of pending
-	// requests that Envoy will allow to the upstream cluster.
-	MaxPendingRequests uint32
-
-	// MaxRequests is the maximum number of parallel requests that
-	// Envoy will make to the upstream cluster.
-	MaxRequests uint32
-
-	// MaxRetries is the maximum number of parallel retries that
-	// Envoy will allow to the upstream cluster.
-	MaxRetries uint32
-
-	// PerHostMaxConnections is the maximum number of connections
-	// that Envoy will allow to each individual host in a cluster.
-	PerHostMaxConnections uint32
+	CircuitBreakersSettings CircuitBreakersSettings
 
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
@@ -1261,6 +1242,9 @@ type ExtensionCluster struct {
 
 	// UpstreamTLS contains the TLS version and cipher suite configurations for upstream connections
 	UpstreamTLS *UpstreamTLS
+
+	// Circuit breaking limits
+	CircuitBreakersSettings CircuitBreakersSettings
 }
 
 const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
@@ -1298,4 +1282,27 @@ type UpstreamTLS struct {
 	MinimumProtocolVersion string
 	MaximumProtocolVersion string
 	CipherSuites           []string
+}
+
+// CircuitBreakersSettings holds configuration for circuit breakers.
+type CircuitBreakersSettings struct {
+	// Max connections is maximum number of connections
+	// that Envoy will make to the upstream cluster.
+	MaxConnections uint32
+
+	// MaxPendingRequests is maximum number of pending
+	// requests that Envoy will allow to the upstream cluster.
+	MaxPendingRequests uint32
+
+	// MaxRequests is the maximum number of parallel requests that
+	// Envoy will make to the upstream cluster.
+	MaxRequests uint32
+
+	// MaxRetries is the maximum number of parallel retries that
+	// Envoy will allow to the upstream cluster.
+	MaxRetries uint32
+
+	// PerHostMaxConnections is the maximum number of connections
+	// that Envoy will allow to each individual host in a cluster.
+	PerHostMaxConnections uint32
 }
