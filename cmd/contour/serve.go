@@ -447,6 +447,7 @@ func (s *Server) doServe() error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
+		DisableCompression:            contourConfiguration.Envoy.Listener.DisableCompression,
 		UseProxyProto:                 *contourConfiguration.Envoy.Listener.UseProxyProto,
 		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,

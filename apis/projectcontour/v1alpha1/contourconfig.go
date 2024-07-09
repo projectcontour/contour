@@ -341,6 +341,12 @@ type EnvoyListenerConfig struct {
 	// +optional
 	UseProxyProto *bool `json:"useProxyProtocol,omitempty"`
 
+	// DisableCompression disables GZIP compression HTTP filter from the default Listener filters
+	// Setting this true will enable Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// Contour's default is false.
+	// +optional
+	DisableCompression bool `json:"disableCompression,omitempty"`
+
 	// DisableAllowChunkedLength disables the RFC-compliant Envoy behavior to
 	// strip the "Content-Length" header if "Transfer-Encoding: chunked" is
 	// also set. This is an emergency off-switch to revert back to Envoy's

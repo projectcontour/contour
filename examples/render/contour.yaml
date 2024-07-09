@@ -513,6 +513,12 @@ spec:
                           See: https://github.com/projectcontour/contour/issues/3221
                           Contour's default is false.
                         type: boolean
+                      disableCompression:
+                        description: |-
+                          DisableCompression disables GZIP compression HTTP filter from the default Listener filters
+                          Setting this true will enable Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+                          Contour's default is false.
+                        type: boolean
                       disableMergeSlashes:
                         description: |-
                           DisableMergeSlashes disables Envoy's non-standard merge_slashes path transformation option
@@ -4285,6 +4291,12 @@ spec:
                               default behavior in case of failures. Please file an issue if failures
                               are encountered.
                               See: https://github.com/projectcontour/contour/issues/3221
+                              Contour's default is false.
+                            type: boolean
+                          disableCompression:
+                            description: |-
+                              DisableCompression disables GZIP compression HTTP filter from the default Listener filters
+                              Setting this true will enable Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
                               Contour's default is false.
                             type: boolean
                           disableMergeSlashes:

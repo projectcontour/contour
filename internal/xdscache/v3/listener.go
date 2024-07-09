@@ -66,6 +66,11 @@ type ListenerConfig struct {
 	// If not set, defaults to false.
 	UseProxyProto bool
 
+	// DisableCompression  configures listener to ignore adding compression filter as part of the defaultFilters
+	// Setting this true will enable Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// If not set, defaults to false.
+	DisableCompression bool
+
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
 	MinimumTLSVersion string
 
@@ -393,6 +398,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		// order for the HTTPS virtualhosts.
 		if len(listener.VirtualHosts) > 0 {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
+				DisableCompression(cfg.DisableCompression).
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 				DefaultFilters().
 				RouteConfigName(httpRouteConfigName(listener)).
@@ -465,6 +471,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// Contour versions since the metrics prefix will be
 				// coded into monitoring dashboards.
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
+					DisableCompression(cfg.DisableCompression).
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
@@ -544,6 +551,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				)
 
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
+					DisableCompression(cfg.DisableCompression).
 					DefaultFilters().
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
 					MetricsPrefix(listener.Name).

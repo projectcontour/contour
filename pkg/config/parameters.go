@@ -649,6 +649,11 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
+	// DisableCompression disables GZIP compression HTTP filter
+	// Setting this true will enable Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// If not set, defaults to false.
+	DisableCompression bool `yaml:"disableCompression,omitempty"`
+
 	// Defines the action to be applied to the Server header on the response path.
 	// When configured as overwrite, overwrites any Server header with "envoy".
 	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".

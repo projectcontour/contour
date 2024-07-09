@@ -892,12 +892,14 @@ func TestConvertServeContext(t *testing.T) {
 				ctx.Config.Listener.MaxRequestsPerIOCycle = ptr.To(uint32(10))
 				ctx.Config.Listener.HTTP2MaxConcurrentStreams = ptr.To(uint32(30))
 				ctx.Config.Listener.MaxConnectionsPerListener = ptr.To(uint32(50))
+				ctx.Config.DisableCompression = true
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ptr.To(uint32(10))
 				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ptr.To(uint32(30))
 				cfg.Envoy.Listener.MaxConnectionsPerListener = ptr.To(uint32(50))
+				cfg.Envoy.Listener.DisableCompression = true
 				return cfg
 			},
 		},

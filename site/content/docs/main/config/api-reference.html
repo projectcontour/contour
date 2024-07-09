@@ -6800,6 +6800,21 @@ bool
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>disableCompression</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DisableCompression disables GZIP compression HTTP filter from the default Listener filters
+Setting this true will enable Envoy skip &ldquo;Accept-Encoding: gzip,deflate&rdquo; request header and always return uncompressed response
+Contour&rsquo;s default is false.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>disableAllowChunkedLength</code>
 <br>
 <em>
