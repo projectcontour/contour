@@ -56,7 +56,7 @@ func testGRPCRouteConflictMatch(namespace string, gateway types.NamespacedName) 
 				}},
 			},
 		}
-		_, ok := f.CreateGRPCRouteAndWaitFor(route1, e2e.GRPCRouteAccepted)
+		ok := f.CreateGRPCRouteAndWaitFor(route1, e2e.GRPCRouteAccepted)
 		require.True(f.T(), ok)
 
 		By("create grpcroute-2 with conflicted matches")
@@ -87,7 +87,7 @@ func testGRPCRouteConflictMatch(namespace string, gateway types.NamespacedName) 
 				},
 			},
 		}
-		_, ok = f.CreateGRPCRouteAndWaitFor(route2, e2e.GRPCRouteNotAcceptedDueToConflict)
+		ok = f.CreateGRPCRouteAndWaitFor(route2, e2e.GRPCRouteNotAcceptedDueToConflict)
 		require.True(f.T(), ok)
 
 		cleanup()

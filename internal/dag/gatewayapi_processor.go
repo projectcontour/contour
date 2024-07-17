@@ -2545,8 +2545,8 @@ func addRouteNotAcceptedConditionDueToMatchConflict(routeAccessor *status.RouteP
 		status.ReasonRouteRuleMatchConflict,
 		fmt.Sprintf(status.MessageRouteRuleMatchConflict, routeKind, routeKind),
 	)
-
 }
+
 func addRoutePartiallyInvalidConditionDueToMatchPartiallyConflict(routeAccessor *status.RouteParentStatusUpdate, routeKind string) {
 	routeAccessor.AddCondition(
 		gatewayapi_v1.RouteConditionPartiallyInvalid,

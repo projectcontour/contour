@@ -56,7 +56,7 @@ func testGRPCRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 				}},
 			},
 		}
-		_, ok := f.CreateGRPCRouteAndWaitFor(route1, e2e.GRPCRouteAccepted)
+		ok := f.CreateGRPCRouteAndWaitFor(route1, e2e.GRPCRouteAccepted)
 		require.True(f.T(), ok)
 
 		By("create grpcroute-2 with only partially conflicted matches")

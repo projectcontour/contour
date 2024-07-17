@@ -1133,7 +1133,6 @@ func TestSortRoutes(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			res := sortHTTPRoutes(tc.m)
 			assert.Equal(t, tc.expected, res)
 		})
@@ -1428,7 +1427,6 @@ func TestSortGRPCRoutes(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			res := sortGRPCRoutes(tc.m)
 			assert.Equal(t, tc.expected, res)
 		})
