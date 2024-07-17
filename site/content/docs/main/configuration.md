@@ -206,7 +206,7 @@ The server configuration block can be used to configure various settings for the
 
 | Field Name      | Type   | Default | Description                                                                   |
 | --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
-| xds-server-type | string | envoy   | This field specifies the xDS Server to use. Options are `envoy` or `contour` (deprecated). |
+| xds-server-type | string | envoy   | This field specifies the xDS Server to use. Options are `envoy` or `contour` (deprecated). **This field is deprecated** and will be removed in a future release when the `contour` xDS server implementation is removed. |
 
 ### Gateway Configuration
 

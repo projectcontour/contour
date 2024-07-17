@@ -129,6 +129,9 @@ type XDSServerConfig struct {
 	// Values: `envoy` (default), `contour (deprecated)`.
 	//
 	// Other values will produce an error.
+	//
+	// Deprecated: this field will be removed in a future release when
+	// the `contour` xDS server implementation is removed.
 	// +optional
 	Type XDSServerType `json:"type,omitempty"`
 

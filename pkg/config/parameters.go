@@ -242,6 +242,8 @@ func (t ProtocolParameters) Validate() error {
 type ServerParameters struct {
 	// Defines the XDSServer to use for `contour serve`.
 	// Defaults to "envoy"
+	// Deprecated: this field will be removed in a future release when
+	// the `contour` xDS server implementation is removed.
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
 }
 
