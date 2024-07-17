@@ -1480,9 +1480,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				timeoutPolicy)
 		}
 
-		// check all the routes whether there is conflict against previous rules
+		// Check all the routes whether there is conflict against previous rules.
 		if !p.hasConflictRoute(listener, hosts, routes) {
-			// add the route if there is conflict
+			// Add the route if there is no conflict at the same rule level.
 			// Add each route to the relevant vhost(s)/svhosts(s).
 			for host := range hosts {
 				for _, route := range routes {
@@ -1507,6 +1507,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 		// No rules under the route is valid, mark it as not accepted.
 		addRouteNotAcceptedConditionDueToMatchConflict(routeAccessor, KindHTTPRoute)
 	} else if invalidRuleCnt > 0 {
+		// Some of the rules are conflicted, mark it as partially invalid.
 		addRoutePartiallyInvalidConditionDueToMatchPartiallyConflict(routeAccessor, KindHTTPRoute)
 	}
 }
@@ -1657,9 +1658,9 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 			nil,
 		)
 
-		// check all the routes whether there is conflict against previous rules
+		// Check all the routes whether there is conflict against previous rules.
 		if !p.hasConflictRoute(listener, hosts, routes) {
-			// add the route if there is conflict
+			// Add the route if there is no conflict at the same rule level.
 			// Add each route to the relevant vhost(s)/svhosts(s).
 			for host := range hosts {
 				for _, route := range routes {
@@ -1684,6 +1685,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 		// No rules under the route is valid, mark it as not accepted.
 		addRouteNotAcceptedConditionDueToMatchConflict(routeAccessor, KindGRPCRoute)
 	} else if invalidRuleCnt > 0 {
+		// Some of the rules are conflicted, mark it as partially invalid.
 		addRoutePartiallyInvalidConditionDueToMatchPartiallyConflict(routeAccessor, KindGRPCRoute)
 	}
 

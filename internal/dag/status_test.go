@@ -5647,7 +5647,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			},
-			// 3rd HTTPRoute with newest creationTimestamp, conflict with 1st HTTPRoute
+			// 3rd HTTPRoute with newest creationTimestamp, partially conflict with 1st HTTPRoute
 			&gatewayapi_v1.HTTPRoute{
 				TypeMeta: meta_v1.TypeMeta{
 					Kind: KindHTTPRoute,
@@ -5664,32 +5664,53 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Hostnames: []gatewayapi_v1.Hostname{
 						"test.projectcontour.io",
 					},
-					Rules: []gatewayapi_v1.HTTPRouteRule{{
-						Matches: []gatewayapi_v1.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1.HTTPPathMatch{
-									Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
-									Value: ptr.To("/"),
-								},
-								Headers: []gatewayapi_v1.HTTPHeaderMatch{
-									{
-										Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
-										Name:  gatewayapi_v1.HTTPHeaderName("foo"),
-										Value: "bar",
+					Rules: []gatewayapi_v1.HTTPRouteRule{
+						{
+							Matches: []gatewayapi_v1.HTTPRouteMatch{
+								{
+									Path: &gatewayapi_v1.HTTPPathMatch{
+										Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+										Value: ptr.To("/"),
 									},
-								},
-								QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
-									{
-										Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
-										Name:  "param-1",
-										Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
+									Headers: []gatewayapi_v1.HTTPHeaderMatch{
+										{
+											Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
+											Name:  gatewayapi_v1.HTTPHeaderName("foo"),
+											Value: "bar",
+										},
+									},
+									QueryParams: []gatewayapi_v1.HTTPQueryParamMatch{
+										{
+											Type:  ptr.To(gatewayapi_v1.QueryParamMatchRegularExpression),
+											Name:  "param-1",
+											Value: "valid-[a-z]?-[A-Za-z]+-[0=9]+-\\d+",
+										},
 									},
 								},
 							},
-						},
 
-						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-					}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						},
+						{
+							Matches: []gatewayapi_v1.HTTPRouteMatch{
+								{
+									Path: &gatewayapi_v1.HTTPPathMatch{
+										Type:  ptr.To(gatewayapi_v1.PathMatchPathPrefix),
+										Value: ptr.To("/random"),
+									},
+									Headers: []gatewayapi_v1.HTTPHeaderMatch{
+										{
+											Type:  ptr.To(gatewayapi_v1.HeaderMatchExact),
+											Name:  gatewayapi_v1.HTTPHeaderName("random"),
+											Value: "b",
+										},
+									},
+								},
+							},
+
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						},
+					},
 				},
 			},
 		},
@@ -5724,144 +5745,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindHTTPRoute, KindHTTPRoute)),
-							routeResolvedRefsCondition(),
-						},
-					},
-				},
-			},
-		},
-		// is it ok to show the listeners are attached, just it's not accepted because of the conflict
-		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 3),
-	})
-
-	run(t, "3 grpcroutes, but duplicate match condition between these 3. The 2 rank lower gets Conflict condition ", testcase{
-		objs: []any{
-			kuardService,
-			// first GRPCRoute with oldest creationTimestamp
-			&gatewayapi_v1.GRPCRoute{
-				TypeMeta: meta_v1.TypeMeta{
-					Kind: KindGRPCRoute,
-				},
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name:              "basic-1",
-					Namespace:         "default",
-					CreationTimestamp: meta_v1.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
-				},
-				Spec: gatewayapi_v1.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-					},
-					Hostnames: []gatewayapi_v1.Hostname{
-						"test.projectcontour.io",
-					},
-					Rules: []gatewayapi_v1.GRPCRouteRule{{
-						Matches: []gatewayapi_v1.GRPCRouteMatch{
-							{
-								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "com.example.service", "Login"),
-							},
-							{
-								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.com.example.service", "Login"),
-							},
-						},
-						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
-					}},
-				},
-			},
-			// second GRPCRoute with 2nd oldest creationTimestamp, conflict with 1st GRPCRoute
-			&gatewayapi_v1.GRPCRoute{
-				TypeMeta: meta_v1.TypeMeta{
-					Kind: KindGRPCRoute,
-				},
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name:              "basic-2",
-					Namespace:         "default",
-					CreationTimestamp: meta_v1.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
-				},
-				Spec: gatewayapi_v1.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-					},
-					Hostnames: []gatewayapi_v1.Hostname{
-						"test.projectcontour.io",
-					},
-					Rules: []gatewayapi_v1.GRPCRouteRule{{
-						Matches: []gatewayapi_v1.GRPCRouteMatch{
-							{
-								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "com.example.service", "Login"),
-							},
-							{
-								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.com.example.service", "Login"),
-							},
-						},
-						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
-					}},
-				},
-			},
-			// 3rd GRPCRoute with newest creationTimestamp, conflict with 1st GRPCRoute
-			&gatewayapi_v1.GRPCRoute{
-				TypeMeta: meta_v1.TypeMeta{
-					Kind: KindGRPCRoute,
-				},
-				ObjectMeta: meta_v1.ObjectMeta{
-					Name:              "basic-3",
-					Namespace:         "default",
-					CreationTimestamp: meta_v1.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
-				},
-				Spec: gatewayapi_v1.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-					},
-					Hostnames: []gatewayapi_v1.Hostname{
-						"test.projectcontour.io",
-					},
-					Rules: []gatewayapi_v1.GRPCRouteRule{{
-						Matches: []gatewayapi_v1.GRPCRouteMatch{
-							{
-								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "com.example.service", "Login"),
-							},
-							{
-								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.com.example.service", "Login"),
-							},
-						},
-						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
-					}},
-				},
-			},
-		},
-
-		wantRouteConditions: []*status.RouteStatusUpdate{
-			{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic-1"},
-				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []meta_v1.Condition{
-							routeResolvedRefsCondition(),
-							routeAcceptedGRPCRouteCondition(),
-						},
-					},
-				},
-			},
-			{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic-2"},
-				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindGRPCRoute, KindGRPCRoute)),
-							routeResolvedRefsCondition(),
-						},
-					},
-				},
-			},
-			{
-				FullName: types.NamespacedName{Namespace: "default", Name: "basic-3"},
-				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
-					{
-						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
-						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindGRPCRoute, KindGRPCRoute)),
+							routeAcceptedHTTPRouteCondition(),
+							routePartialMatchConflict(status.ReasonRouteRuleMatchPartiallyConflict, fmt.Sprintf(status.MessageRouteRuleMatchPartiallyConflict, KindHTTPRoute, KindHTTPRoute)),
 							routeResolvedRefsCondition(),
 						},
 					},
@@ -11412,6 +11297,148 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 		// Invalid filters still result in an attached route.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
+
+	run(t, "grpcroute: 3 grpcroutes, but duplicate match condition between these 3. The 2 out of 3 rank lower gets Conflict condition ", testcase{
+		objs: []any{
+			kuardService,
+			// first GRPCRoute with oldest creationTimestamp
+			&gatewayapi_v1.GRPCRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindGRPCRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-1",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.GRPCRouteRule{{
+						Matches: []gatewayapi_v1.GRPCRouteMatch{
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "ok.service", "Login"),
+							},
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.ok.service", "Login"),
+							},
+						},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			// second GRPCRoute with 2nd oldest creationTimestamp, conflict with 1st GRPCRoute
+			&gatewayapi_v1.GRPCRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindGRPCRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-2",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.GRPCRouteRule{{
+						Matches: []gatewayapi_v1.GRPCRouteMatch{
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "ok.service", "Login"),
+							},
+						},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			// 3rd GRPCRoute with newest creationTimestamp, partially conflict with 1st GRPCRoute
+			&gatewayapi_v1.GRPCRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindGRPCRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-3",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.GRPCRouteRule{
+						{
+							Matches: []gatewayapi_v1.GRPCRouteMatch{
+								{
+									Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.ok.service", "Login"),
+								},
+							},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						},
+						{
+							Matches: []gatewayapi_v1.GRPCRouteMatch{
+								{
+									Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "bar.ok.service", "Logout"),
+								},
+							},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+						},
+					},
+				},
+			},
+		},
+
+		wantRouteConditions: []*status.RouteStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-1"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeResolvedRefsCondition(),
+							routeAcceptedGRPCRouteCondition(),
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-2"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindGRPCRoute, KindGRPCRoute)),
+							routeResolvedRefsCondition(),
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-3"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeAcceptedGRPCRouteCondition(),
+							routePartialMatchConflict(status.ReasonRouteRuleMatchPartiallyConflict, fmt.Sprintf(status.MessageRouteRuleMatchPartiallyConflict, KindGRPCRoute, KindGRPCRoute)),
+							routeResolvedRefsCondition(),
+						},
+					},
+				},
+			},
+		},
+		// is it ok to show the listeners are attached, just it's not accepted because of the conflict
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 3),
+	})
 }
 
 func TestGatewayAPITCPRouteDAGStatus(t *testing.T) {
@@ -12327,6 +12354,15 @@ func routeAcceptedHTTPRouteCondition() meta_v1.Condition {
 		Status:  contour_v1.ConditionTrue,
 		Reason:  string(gatewayapi_v1.RouteReasonAccepted),
 		Message: "Accepted HTTPRoute",
+	}
+}
+
+func routePartialMatchConflict(reason gatewayapi_v1.RouteConditionReason, message string) meta_v1.Condition {
+	return meta_v1.Condition{
+		Type:    string(gatewayapi_v1.RouteConditionPartiallyInvalid),
+		Status:  contour_v1.ConditionTrue,
+		Reason:  string(reason),
+		Message: message,
 	}
 }
 

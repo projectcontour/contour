@@ -41,7 +41,7 @@ const (
 	ReasonRouteRuleMatchPartiallyConflict gatewayapi_v1.RouteConditionReason = "RuleMatchPartiallyConflict"
 
 	MessageRouteRuleMatchConflict          string = "%s's Match has conflict with other %s's Match"
-	MessageRouteRuleMatchPartiallyConflict string = "Dropped Rule: %s's rule(s) has(ve) been dropped because of conflict against other %s's rule(s)"
+	MessageRouteRuleMatchPartiallyConflict string = "Dropped Rule: some of %s's rule(s) has(ve) been dropped because of conflict against other %s's rule(s)"
 )
 
 // RouteStatusUpdate represents an atomic update to a

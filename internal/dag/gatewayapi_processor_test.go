@@ -1475,7 +1475,7 @@ func TestHasConflictRoute(t *testing.T) {
 		expectedConflict bool
 	}{
 		{
-			name: "There are 2 existing route, the 3rd route to add doesn't have conflict, listen doesn't have tls, no conflict expected",
+			name: "There are 2 existing httproute, the 3rd route to add doesn't have conflict, listen doesn't have tls, no conflict expected",
 			existingRoutes: []*Route{
 				{
 					Name:               "route1",
@@ -1501,6 +1501,43 @@ func TestHasConflictRoute(t *testing.T) {
 			routes: []*Route{
 				{
 					Kind:               KindHTTPRoute,
+					Name:               "route3",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
+					},
+				},
+			},
+			listener: listener,
+		},
+		{
+			name: "There are 2 existing grpcroute, the 3rd route to add doesn't have conflict, listen doesn't have tls, no conflict expected",
+			existingRoutes: []*Route{
+				{
+					Name:               "route1",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path1"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: ":authority", MatchType: HeaderMatchTypeRegex, Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com(:[0-9]+)?"},
+					},
+					QueryParamMatchConditions: []QueryParamMatchCondition{
+						{Name: "param-1", Value: "value-1", MatchType: QueryParamMatchTypeExact},
+					},
+				},
+				{
+					Kind:               KindGRPCRoute,
+					Name:               "route2",
+					Namespace:          "default",
+					PathMatchCondition: prefixSegment("/path2"),
+					HeaderMatchConditions: []HeaderMatchCondition{
+						{Name: "version", Value: "2", MatchType: "exact", Invert: false},
+					},
+				},
+			},
+			routes: []*Route{
+				{
+					Kind:               KindGRPCRoute,
 					Name:               "route3",
 					Namespace:          "default",
 					PathMatchCondition: prefixSegment("/path2"),
