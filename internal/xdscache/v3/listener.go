@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -283,7 +282,6 @@ type ListenerCache struct {
 
 	envoyGen *envoy_v3.EnvoyGen
 	Config   ListenerConfig
-	contour.Cond
 }
 
 // NewListenerCache returns an instance of a ListenerCache
@@ -320,7 +318,6 @@ func (c *ListenerCache) Update(v map[string]*envoy_config_listener_v3.Listener) 
 	defer c.mu.Unlock()
 
 	c.values = v
-	c.Cond.Notify()
 }
 
 // Contents returns a copy of the cache's contents.
@@ -332,31 +329,6 @@ func (c *ListenerCache) Contents() []proto.Message {
 		values = append(values, v)
 	}
 	for _, v := range c.staticValues {
-		values = append(values, v)
-	}
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-// Query returns the proto.Messages in the ListenerCache that match
-// a slice of strings
-func (c *ListenerCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	var values []*envoy_config_listener_v3.Listener
-	for _, n := range names {
-		v, ok := c.values[n]
-		if !ok {
-			v, ok = c.staticValues[n]
-			if !ok {
-				// if the listener is not registered in
-				// dynamic or static values then skip it
-				// as there is no way to return a blank
-				// listener because the listener address
-				// field is required.
-				continue
-			}
-		}
 		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))

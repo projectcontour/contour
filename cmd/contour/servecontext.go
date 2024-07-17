@@ -599,13 +599,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		FeatureFlags:                ctx.Config.FeatureFlags,
 	}
 
-	xdsServerType := contour_v1alpha1.ContourServerType
-	if ctx.Config.Server.XDSServerType == config.EnvoyServerType {
-		xdsServerType = contour_v1alpha1.EnvoyServerType
-	}
-
 	contourConfiguration.XDSServer = &contour_v1alpha1.XDSServerConfig{
-		Type:    xdsServerType,
 		Address: ctx.xdsAddr,
 		Port:    ctx.xdsPort,
 		TLS: &contour_v1alpha1.TLS{

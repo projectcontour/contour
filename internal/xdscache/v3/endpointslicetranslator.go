@@ -271,7 +271,6 @@ func (c *EndpointSliceCache) DeleteEndpointSlice(endpointSlice *discovery_v1.End
 // NewEndpointSliceTranslator allocates a new endpointsSlice translator.
 func NewEndpointSliceTranslator(log logrus.FieldLogger) *EndpointSliceTranslator {
 	return &EndpointSliceTranslator{
-		Cond:        contour.Cond{},
 		FieldLogger: log,
 		entries:     map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
 		cache: EndpointSliceCache{
@@ -288,7 +287,6 @@ type EndpointSliceTranslator struct {
 	// Observer notifies when the endpointSlice cache has been updated.
 	Observer contour.Observer
 
-	contour.Cond
 	logrus.FieldLogger
 
 	cache EndpointSliceCache
@@ -350,7 +348,6 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 
 	if changed {
 		e.Debug("cluster load assignments changed, notifying waiters")
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -368,7 +365,6 @@ func (e *EndpointSliceTranslator) OnAdd(obj any, _ bool) {
 
 		e.WithField("endpointSlice", k8s.NamespacedNameOf(obj)).Debug("EndpointSlice is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -405,7 +401,6 @@ func (e *EndpointSliceTranslator) OnUpdate(oldObj, newObj any) {
 
 		e.WithField("endpointSlice", k8s.NamespacedNameOf(newObj)).Debug("EndpointSlice is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -423,7 +418,6 @@ func (e *EndpointSliceTranslator) OnDelete(obj any) {
 
 		e.WithField("endpointSlice", k8s.NamespacedNameOf(obj)).Debug("EndpointSlice was in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -441,26 +435,6 @@ func (e *EndpointSliceTranslator) Contents() []proto.Message {
 
 	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(e.entries))
 	for _, v := range e.entries {
-		values = append(values, v)
-	}
-
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-func (e *EndpointSliceTranslator) Query(names []string) []proto.Message {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(names))
-	for _, n := range names {
-		v, ok := e.entries[n]
-		if !ok {
-			e.Debugf("no cache entry for %q", n)
-			v = &envoy_config_endpoint_v3.ClusterLoadAssignment{
-				ClusterName: n,
-			}
-		}
 		values = append(values, v)
 	}
 

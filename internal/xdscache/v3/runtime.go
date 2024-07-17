@@ -21,7 +21,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -34,7 +33,6 @@ type ConfigurableRuntimeSettings struct {
 
 // RuntimeCache manages the contents of the gRPC RTDS cache.
 type RuntimeCache struct {
-	contour.Cond
 	runtimeKV map[string]*structpb.Value
 
 	dynamicRuntimeKV map[string]*structpb.Value
@@ -76,16 +74,6 @@ func (c *RuntimeCache) Contents() []proto.Message {
 	return c.buildDynamicLayer()
 }
 
-// Query returns only the "dynamic" layer if requested, otherwise empty.
-func (c *RuntimeCache) Query(names []string) []proto.Message {
-	for _, name := range names {
-		if name == envoy_v3.DynamicRuntimeLayerName {
-			return c.buildDynamicLayer()
-		}
-	}
-	return []proto.Message{}
-}
-
 func (*RuntimeCache) TypeURL() string { return resource.RuntimeType }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -94,7 +82,6 @@ func (c *RuntimeCache) Update(v map[string]*structpb.Value) {
 	defer c.mu.Unlock()
 
 	c.dynamicRuntimeKV = v
-	c.Cond.Notify()
 }
 
 func (c *RuntimeCache) OnChange(root *dag.DAG) {

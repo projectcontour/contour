@@ -1189,14 +1189,6 @@ spec:
                         description: Client key filename.
                         type: string
                     type: object
-                  type:
-                    description: |-
-                      Defines the XDSServer to use for `contour serve`.
-                      Values: `envoy` (default), `contour (deprecated)`.
-                      Other values will produce an error.
-                      Deprecated: this field will be removed in a future release when
-                      the `contour` xDS server implementation is removed.
-                    type: string
                 type: object
             type: object
           status:
@@ -5015,14 +5007,6 @@ spec:
                             description: Client key filename.
                             type: string
                         type: object
-                      type:
-                        description: |-
-                          Defines the XDSServer to use for `contour serve`.
-                          Values: `envoy` (default), `contour (deprecated)`.
-                          Other values will produce an error.
-                          Deprecated: this field will be removed in a future release when
-                          the `contour` xDS server implementation is removed.
-                        type: string
                     type: object
                 type: object
             type: object
