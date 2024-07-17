@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.30.2
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.30.4
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -44,7 +44,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.22.4@sha256:969349b8121a56d51c74f4c273ab974c15b3a8ae246a5cffc1df7d28b66cf978
+BUILD_BASE_IMAGE ?= golang:1.22.5@sha256:829eff99a4b2abffe68f6a3847337bf6455d69d17e49ec1a97dac78834754bd6
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
