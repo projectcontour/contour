@@ -30,7 +30,6 @@ import (
 func TestOverlayOnDefaults(t *testing.T) {
 	allFieldsSpecified := contour_v1alpha1.ContourConfigurationSpec{
 		XDSServer: &contour_v1alpha1.XDSServerConfig{
-			Type:    contour_v1alpha1.EnvoyServerType,
 			Address: "7.7.7.7",
 			Port:    7777,
 			TLS: &contour_v1alpha1.TLS{
