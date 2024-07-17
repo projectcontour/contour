@@ -5712,7 +5712,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindHTTPRoute, KindHTTPRoute)),
 							routeResolvedRefsCondition(),
 						},
 					},
@@ -5724,7 +5724,144 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					{
 						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 						Conditions: []meta_v1.Condition{
-							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, "HTTPRoute's Match has conflict with other HTTPRoute's Match"),
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindHTTPRoute, KindHTTPRoute)),
+							routeResolvedRefsCondition(),
+						},
+					},
+				},
+			},
+		},
+		// is it ok to show the listeners are attached, just it's not accepted because of the conflict
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 3),
+	})
+
+	run(t, "3 grpcroutes, but duplicate match condition between these 3. The 2 rank lower gets Conflict condition ", testcase{
+		objs: []any{
+			kuardService,
+			// first GRPCRoute with oldest creationTimestamp
+			&gatewayapi_v1.GRPCRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindGRPCRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-1",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2020, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.GRPCRouteRule{{
+						Matches: []gatewayapi_v1.GRPCRouteMatch{
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "com.example.service", "Login"),
+							},
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.com.example.service", "Login"),
+							},
+						},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			// second GRPCRoute with 2nd oldest creationTimestamp, conflict with 1st GRPCRoute
+			&gatewayapi_v1.GRPCRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindGRPCRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-2",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.GRPCRouteRule{{
+						Matches: []gatewayapi_v1.GRPCRouteMatch{
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "com.example.service", "Login"),
+							},
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.com.example.service", "Login"),
+							},
+						},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+			// 3rd GRPCRoute with newest creationTimestamp, conflict with 1st GRPCRoute
+			&gatewayapi_v1.GRPCRoute{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind: KindGRPCRoute,
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:              "basic-3",
+					Namespace:         "default",
+					CreationTimestamp: meta_v1.Date(2022, time.Month(2), 21, 1, 10, 30, 0, time.UTC),
+				},
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.GRPCRouteRule{{
+						Matches: []gatewayapi_v1.GRPCRouteMatch{
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "com.example.service", "Login"),
+							},
+							{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "foo.com.example.service", "Login"),
+							},
+						},
+						BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+					}},
+				},
+			},
+		},
+
+		wantRouteConditions: []*status.RouteStatusUpdate{
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-1"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeResolvedRefsCondition(),
+							routeAcceptedGRPCRouteCondition(),
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-2"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindGRPCRoute, KindGRPCRoute)),
+							routeResolvedRefsCondition(),
+						},
+					},
+				},
+			},
+			{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic-3"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeAcceptedFalse(status.ReasonRouteRuleMatchConflict, fmt.Sprintf(status.MessageRouteRuleMatchConflict, KindGRPCRoute, KindGRPCRoute)),
 							routeResolvedRefsCondition(),
 						},
 					},

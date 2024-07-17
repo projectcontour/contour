@@ -154,10 +154,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	// to each Listener so we can set status properly.
 	listenerAttachedRoutes := map[string]int{}
 
-	// sort httproutes based on age/name first
-	sortedHTTPRoutes := sortRoutes(p.source.httproutes)
-	// Process HTTPRoutes.
-	for _, httpRoute := range sortedHTTPRoutes {
+	// Process sorted HTTPRoutes.
+	for _, httpRoute := range sortHTTPRoutes(p.source.httproutes) {
 		p.processRoute(KindHTTPRoute, httpRoute, httpRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1.HTTPRoute{})
 	}
 
@@ -166,8 +164,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		p.processRoute(KindTLSRoute, tlsRoute, tlsRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1alpha2.TLSRoute{})
 	}
 
-	// Process GRPCRoutes.
-	for _, grpcRoute := range p.source.grpcroutes {
+	// Process sorted GRPCRoutes.
+	for _, grpcRoute := range sortGRPCRoutes(p.source.grpcroutes) {
 		p.processRoute(KindGRPCRoute, grpcRoute, grpcRoute.Spec.ParentRefs, gatewayNotProgrammedCondition, listenerInfos, listenerAttachedRoutes, &gatewayapi_v1.GRPCRoute{})
 	}
 
@@ -1507,19 +1505,9 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 
 	if invalidRuleCnt == len(route.Spec.Rules) {
 		// No rules under the route is valid, mark it as not accepted.
-		routeAccessor.AddCondition(
-			gatewayapi_v1.RouteConditionAccepted,
-			meta_v1.ConditionFalse,
-			status.ReasonRouteRuleMatchConflict,
-			status.MessageRouteRuleMatchConflict,
-		)
+		addRouteNotAcceptedConditionDueToMatchConflict(routeAccessor, KindHTTPRoute)
 	} else if invalidRuleCnt > 0 {
-		routeAccessor.AddCondition(
-			gatewayapi_v1.RouteConditionPartiallyInvalid,
-			meta_v1.ConditionTrue,
-			status.ReasonRouteRuleMatchPartiallyConflict,
-			status.MessageRouteRuleMatchPartiallyConflict,
-		)
+		addRoutePartiallyInvalidConditionDueToMatchPartiallyConflict(routeAccessor, KindHTTPRoute)
 	}
 }
 
@@ -1546,6 +1534,7 @@ func (p *GatewayAPIProcessor) hasConflictRoute(listener *listenerInfo, hosts set
 
 func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
 	var programmed bool
+	invalidRuleCnt := 0
 	for ruleIndex, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
@@ -1668,22 +1657,34 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 			nil,
 		)
 
-		// Add each route to the relevant vhost(s)/svhosts(s).
-		for host := range hosts {
-			for _, route := range routes {
-				switch {
-				case listener.tlsSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
-					svhost.Secret = listener.tlsSecret
-					svhost.AddRoute(route)
-				default:
-					vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
-					vhost.AddRoute(route)
+		// check all the routes whether there is conflict against previous rules
+		if !p.hasConflictRoute(listener, hosts, routes) {
+			// add the route if there is conflict
+			// Add each route to the relevant vhost(s)/svhosts(s).
+			for host := range hosts {
+				for _, route := range routes {
+					switch {
+					case listener.tlsSecret != nil:
+						svhost := p.dag.EnsureSecureVirtualHost(listener.dagListenerName, host)
+						svhost.Secret = listener.tlsSecret
+						svhost.AddRoute(route)
+					default:
+						vhost := p.dag.EnsureVirtualHost(listener.dagListenerName, host)
+						vhost.AddRoute(route)
+					}
 				}
-
-				programmed = true
 			}
+		} else {
+			// Skip adding the routes under this rule.
+			invalidRuleCnt++
 		}
+	}
+
+	if invalidRuleCnt == len(route.Spec.Rules) {
+		// No rules under the route is valid, mark it as not accepted.
+		addRouteNotAcceptedConditionDueToMatchConflict(routeAccessor, KindGRPCRoute)
+	} else if invalidRuleCnt > 0 {
+		addRoutePartiallyInvalidConditionDueToMatchPartiallyConflict(routeAccessor, KindGRPCRoute)
 	}
 
 	return programmed
@@ -2499,9 +2500,9 @@ func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *
 	return p
 }
 
-// sort routes based on creationTimestamp in ascending order
+// sortHTTPRoutes sorts httproutes based on creationTimestamp in ascending order
 // if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphetical ascending order
-func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewayapi_v1.HTTPRoute {
+func sortHTTPRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewayapi_v1.HTTPRoute {
 	routes := []*gatewayapi_v1.HTTPRoute{}
 	for _, r := range m {
 		routes = append(routes, r)
@@ -2516,4 +2517,41 @@ func sortRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewaya
 	})
 
 	return routes
+}
+
+// sortGRPCRoutes sorts grpcroutes based on creationTimestamp in ascending order
+// if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphetical ascending order
+func sortGRPCRoutes(m map[types.NamespacedName]*gatewayapi_v1.GRPCRoute) []*gatewayapi_v1.GRPCRoute {
+	routes := []*gatewayapi_v1.GRPCRoute{}
+	for _, r := range m {
+		routes = append(routes, r)
+	}
+	sort.SliceStable(routes, func(i, j int) bool {
+		// if the creation time is the same, compare the route name
+		if routes[i].CreationTimestamp.Equal(&routes[j].CreationTimestamp) {
+			return k8s.NamespacedNameOf(routes[i]).String() <
+				k8s.NamespacedNameOf(routes[j]).String()
+		}
+		return routes[i].CreationTimestamp.Before(&routes[j].CreationTimestamp)
+	})
+
+	return routes
+}
+
+func addRouteNotAcceptedConditionDueToMatchConflict(routeAccessor *status.RouteParentStatusUpdate, routeKind string) {
+	routeAccessor.AddCondition(
+		gatewayapi_v1.RouteConditionAccepted,
+		meta_v1.ConditionFalse,
+		status.ReasonRouteRuleMatchConflict,
+		fmt.Sprintf(status.MessageRouteRuleMatchConflict, routeKind, routeKind),
+	)
+
+}
+func addRoutePartiallyInvalidConditionDueToMatchPartiallyConflict(routeAccessor *status.RouteParentStatusUpdate, routeKind string) {
+	routeAccessor.AddCondition(
+		gatewayapi_v1.RouteConditionPartiallyInvalid,
+		meta_v1.ConditionTrue,
+		status.ReasonRouteRuleMatchPartiallyConflict,
+		fmt.Sprintf(status.MessageRouteRuleMatchPartiallyConflict, routeKind, routeKind),
+	)
 }
