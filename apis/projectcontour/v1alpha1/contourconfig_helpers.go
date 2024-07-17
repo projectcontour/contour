@@ -37,9 +37,6 @@ func (c *ContourConfigurationSpec) Validate() error {
 	// Validation of nested configuration structs.
 	var validateFuncs []func() error
 
-	if c.XDSServer != nil {
-		validateFuncs = append(validateFuncs, c.XDSServer.Type.Validate)
-	}
 	if c.Envoy != nil {
 		validateFuncs = append(validateFuncs, c.Envoy.Validate)
 	}
@@ -98,15 +95,6 @@ func (t *TracingConfig) Validate() error {
 		customTagNames = append(customTagNames, customTag.TagName)
 	}
 	return nil
-}
-
-func (x XDSServerType) Validate() error {
-	switch x {
-	case ContourServerType, EnvoyServerType:
-		return nil
-	default:
-		return fmt.Errorf("invalid xDS server type %q", x)
-	}
 }
 
 func (d ClusterDNSFamilyType) Validate() error {
