@@ -590,19 +590,123 @@ func extGlobalCircuitBreakers(t *testing.T, rh ResourceEventHandlerWrapper, c *C
 	})
 }
 
+func overrideExtGlobalCircuitBreakers(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	ext := &contour_v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: contour_v1alpha1.ExtensionServiceSpec{
+			Services: []contour_v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+				{Name: "svc2", Port: 8082},
+			},
+			LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "Cookie",
+			},
+			CircuitBreakerPolicy: &contour_v1alpha1.CircuitBreaker{
+				MaxConnections:        30000,
+				MaxPendingRequests:    3048,
+				MaxRequests:           394,
+				MaxRetries:            30,
+				PerHostMaxConnections: 30,
+			},
+		},
+	}
+
+	rh.OnAdd(ext)
+
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				// Default load balancer policy should be set as we were passed
+				// an invalid value, we can assert we get a basic cluster.
+				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
+				&envoy_config_cluster_v3.Cluster{
+					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
+						&envoy_transport_socket_tls_v3.UpstreamTlsContext{
+							CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+								AlpnProtocols: []string{"h2"},
+							},
+						},
+					),
+					CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+						Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+							MaxConnections:     wrapperspb.UInt32(30000),
+							MaxPendingRequests: wrapperspb.UInt32(3048),
+							MaxRequests:        wrapperspb.UInt32(394),
+							MaxRetries:         wrapperspb.UInt32(30),
+							TrackRemaining:     true,
+						}},
+						PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+							MaxConnections: wrapperspb.UInt32(30),
+							TrackRemaining: true,
+						}},
+					},
+				},
+			),
+		),
+	})
+
+	rh.OnUpdate(ext, &contour_v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: contour_v1alpha1.ExtensionServiceSpec{
+			Services: []contour_v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+				{Name: "svc2", Port: 8082},
+			},
+			LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "RequestHash",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				// Default load balancer policy should be set as we were passed
+				// an invalid value, we can assert we get a basic cluster.
+				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
+				&envoy_config_cluster_v3.Cluster{
+					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
+						&envoy_transport_socket_tls_v3.UpstreamTlsContext{
+							CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
+								AlpnProtocols: []string{"h2"},
+							},
+						},
+					),
+					CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
+						Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+							MaxConnections:     wrapperspb.UInt32(20000),
+							MaxPendingRequests: wrapperspb.UInt32(2048),
+							MaxRequests:        wrapperspb.UInt32(294),
+							MaxRetries:         wrapperspb.UInt32(20),
+							TrackRemaining:     true,
+						}},
+						PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+							MaxConnections: wrapperspb.UInt32(10),
+							TrackRemaining: true,
+						}},
+					},
+				},
+			),
+		),
+	})
+}
+
 func TestExtensionService(t *testing.T) {
 	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
-		"Basic":                     extBasic,
-		"Cleartext":                 extCleartext,
-		"UpstreamValidation":        extUpstreamValidation,
-		"ExternalName":              extExternalName,
-		"IdleConnectionTimeout":     extIdleConnectionTimeout,
-		"MissingService":            extMissingService,
-		"InconsistentProto":         extInconsistentProto,
-		"InvalidTimeout":            extInvalidTimeout,
-		"InvalidLoadBalancerPolicy": extInvalidLoadBalancerPolicy,
-		"CircuitBreakers":           extCircuitBreakers,
-		"GlobalCircuitBreakers":     extGlobalCircuitBreakers,
+		"Basic":                         extBasic,
+		"Cleartext":                     extCleartext,
+		"UpstreamValidation":            extUpstreamValidation,
+		"ExternalName":                  extExternalName,
+		"IdleConnectionTimeout":         extIdleConnectionTimeout,
+		"MissingService":                extMissingService,
+		"InconsistentProto":             extInconsistentProto,
+		"InvalidTimeout":                extInvalidTimeout,
+		"InvalidLoadBalancerPolicy":     extInvalidLoadBalancerPolicy,
+		"CircuitBreakers":               extCircuitBreakers,
+		"GlobalCircuitBreakers":         extGlobalCircuitBreakers,
+		"OverrideGlobalCircuitBreakers": overrideExtGlobalCircuitBreakers,
 	}
 
 	for n, f := range subtests {
@@ -615,7 +719,7 @@ func TestExtensionService(t *testing.T) {
 			)
 
 			switch n {
-			case "GlobalCircuitBreakers":
+			case "GlobalCircuitBreakers", "OverrideGlobalCircuitBreakers":
 				rh, c, done = setup(t,
 					func(b *dag.Builder) {
 						for _, processor := range b.Processors {

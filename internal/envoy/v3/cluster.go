@@ -79,21 +79,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		cluster.IgnoreHealthOnHostRemoval = true
 	}
 
-	if envoy.AnyPositive(service.CircuitBreakersSettings.MaxConnections, service.CircuitBreakersSettings.MaxPendingRequests, service.CircuitBreakersSettings.MaxRequests, service.CircuitBreakersSettings.MaxRetries, service.CircuitBreakersSettings.PerHostMaxConnections) {
-		cluster.CircuitBreakers = &envoy_config_cluster_v3.CircuitBreakers{
-			Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-				MaxConnections:     protobuf.UInt32OrNil(service.CircuitBreakersSettings.MaxConnections),
-				MaxPendingRequests: protobuf.UInt32OrNil(service.CircuitBreakersSettings.MaxPendingRequests),
-				MaxRequests:        protobuf.UInt32OrNil(service.CircuitBreakersSettings.MaxRequests),
-				MaxRetries:         protobuf.UInt32OrNil(service.CircuitBreakersSettings.MaxRetries),
-				TrackRemaining:     true,
-			}},
-			PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-				MaxConnections: protobuf.UInt32OrNil(service.CircuitBreakersSettings.PerHostMaxConnections),
-				TrackRemaining: true,
-			}},
-		}
-	}
+	applyCircuitBreakerSettings(cluster, &service.CircuitBreakersSettings)
 
 	httpVersion := HTTPVersionAuto
 	switch c.Protocol {
@@ -198,23 +184,27 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 	}
 	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout, nil)
 
-	if envoy.AnyPositive(ext.CircuitBreakersSettings.MaxConnections, ext.CircuitBreakersSettings.MaxPendingRequests, ext.CircuitBreakersSettings.MaxRequests, ext.CircuitBreakersSettings.MaxRetries, ext.CircuitBreakersSettings.PerHostMaxConnections) {
+	applyCircuitBreakerSettings(cluster, &ext.CircuitBreakersSettings)
+
+	return cluster
+}
+
+func applyCircuitBreakerSettings(cluster *envoy_config_cluster_v3.Cluster, settings *dag.CircuitBreakersSettings) {
+	if envoy.AnyPositive(settings.MaxConnections, settings.MaxPendingRequests, settings.MaxRequests, settings.MaxRetries, settings.PerHostMaxConnections) {
 		cluster.CircuitBreakers = &envoy_config_cluster_v3.CircuitBreakers{
 			Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-				MaxConnections:     protobuf.UInt32OrNil(ext.CircuitBreakersSettings.MaxConnections),
-				MaxPendingRequests: protobuf.UInt32OrNil(ext.CircuitBreakersSettings.MaxPendingRequests),
-				MaxRequests:        protobuf.UInt32OrNil(ext.CircuitBreakersSettings.MaxRequests),
-				MaxRetries:         protobuf.UInt32OrNil(ext.CircuitBreakersSettings.MaxRetries),
+				MaxConnections:     protobuf.UInt32OrNil(settings.MaxConnections),
+				MaxPendingRequests: protobuf.UInt32OrNil(settings.MaxPendingRequests),
+				MaxRequests:        protobuf.UInt32OrNil(settings.MaxRequests),
+				MaxRetries:         protobuf.UInt32OrNil(settings.MaxRetries),
 				TrackRemaining:     true,
 			}},
 			PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-				MaxConnections: protobuf.UInt32OrNil(ext.CircuitBreakersSettings.PerHostMaxConnections),
+				MaxConnections: protobuf.UInt32OrNil(settings.PerHostMaxConnections),
 				TrackRemaining: true,
 			}},
 		}
 	}
-
-	return cluster
 }
 
 // DNSNameCluster builds a envoy_config_cluster_v3.Cluster for the given *dag.DNSNameCluster.
