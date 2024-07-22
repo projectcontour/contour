@@ -1,1 +1,0 @@
-Updates Envoy to v1.30.4 for CVE and bug fixes. See the [v1.30.2](https://www.envoyproxy.io/docs/envoy/v1.30.2/version_history/v1.30/v1.30.2), [v1.30.3](https://www.envoyproxy.io/docs/envoy/v1.30.3/version_history/v1.30/v1.30.3), and [v1.30.4](https://www.envoyproxy.io/docs/envoy/v1.30.4/version_history/v1.30/v1.30.4) release notes.
