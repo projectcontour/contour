@@ -79,7 +79,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		cluster.IgnoreHealthOnHostRemoval = true
 	}
 
-	applyCircuitBreakerSettings(cluster, &service.CircuitBreakersSettings)
+	applyCircuitBreakerSettings(cluster, service.CircuitBreakersSettings)
 
 	httpVersion := HTTPVersionAuto
 	switch c.Protocol {
@@ -184,12 +184,12 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 	}
 	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.ClusterTimeoutPolicy.IdleConnectionTimeout, nil)
 
-	applyCircuitBreakerSettings(cluster, &ext.CircuitBreakersSettings)
+	applyCircuitBreakerSettings(cluster, ext.CircuitBreakersSettings)
 
 	return cluster
 }
 
-func applyCircuitBreakerSettings(cluster *envoy_config_cluster_v3.Cluster, settings *dag.CircuitBreakersSettings) {
+func applyCircuitBreakerSettings(cluster *envoy_config_cluster_v3.Cluster, settings dag.CircuitBreakersSettings) {
 	if envoy.AnyPositive(settings.MaxConnections, settings.MaxPendingRequests, settings.MaxRequests, settings.MaxRetries, settings.PerHostMaxConnections) {
 		cluster.CircuitBreakers = &envoy_config_cluster_v3.CircuitBreakers{
 			Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
