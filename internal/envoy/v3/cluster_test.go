@@ -850,6 +850,81 @@ func TestCluster(t *testing.T) {
 				},
 			},
 		},
+		"outlier detection ConsecutiveServerErrors is 0": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				OutlierDetectionPolicy: &dag.OutlierDetectionPolicy{
+					ConsecutiveServerErrors:        0,
+					Interval:                       10 * time.Second,
+					BaseEjectionTime:               30 * time.Second,
+					MaxEjectionTime:                300 * time.Second,
+					SplitExternalLocalOriginErrors: false,
+					ConsecutiveLocalOriginFailure:  5,
+					MaxEjectionPercent:             10,
+					MaxEjectionTimeJitter:          0,
+				},
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/e08d8f1af7",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				OutlierDetection: &envoy_config_cluster_v3.OutlierDetection{
+					EnforcingConsecutive_5Xx:           protobuf.UInt32Zero(),
+					EnforcingSuccessRate:               protobuf.UInt32Zero(),
+					EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),
+					EnforcingLocalOriginSuccessRate:    protobuf.UInt32Zero(),
+					Interval:                           durationpb.New(10 * time.Second),
+					BaseEjectionTime:                   durationpb.New(30 * time.Second),
+					MaxEjectionTime:                    durationpb.New(300 * time.Second),
+					MaxEjectionPercent:                 protobuf.UInt32OrNil(10),
+					SplitExternalLocalOriginErrors:     false,
+					ConsecutiveLocalOriginFailure:      protobuf.UInt32OrNil(5),
+					MaxEjectionTimeJitter:              durationpb.New(0),
+				},
+			},
+		},
+		"outlier detection ConsecutiveServerErrors greater than 0": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				OutlierDetectionPolicy: &dag.OutlierDetectionPolicy{
+					ConsecutiveServerErrors:        5,
+					Interval:                       10 * time.Second,
+					BaseEjectionTime:               30 * time.Second,
+					MaxEjectionTime:                300 * time.Second,
+					SplitExternalLocalOriginErrors: false,
+					ConsecutiveLocalOriginFailure:  5,
+					MaxEjectionPercent:             10,
+					MaxEjectionTimeJitter:          0,
+				},
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/447b5c0802",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				OutlierDetection: &envoy_config_cluster_v3.OutlierDetection{
+					EnforcingConsecutive_5Xx:           protobuf.UInt32OrNil(100),
+					EnforcingSuccessRate:               protobuf.UInt32Zero(),
+					EnforcingConsecutiveGatewayFailure: protobuf.UInt32Zero(),
+					EnforcingLocalOriginSuccessRate:    protobuf.UInt32Zero(),
+					Consecutive_5Xx:                    protobuf.UInt32OrNil(5),
+					Interval:                           durationpb.New(10 * time.Second),
+					BaseEjectionTime:                   durationpb.New(30 * time.Second),
+					MaxEjectionTime:                    durationpb.New(300 * time.Second),
+					MaxEjectionPercent:                 protobuf.UInt32OrNil(10),
+					SplitExternalLocalOriginErrors:     false,
+					ConsecutiveLocalOriginFailure:      protobuf.UInt32OrNil(5),
+					MaxEjectionTimeJitter:              durationpb.New(0),
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

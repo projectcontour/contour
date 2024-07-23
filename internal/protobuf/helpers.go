@@ -40,6 +40,12 @@ func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 	}
 }
 
+// UInt32Zero returns a wrapped UInt32Value with a value of 0.
+func UInt32Zero() *wrapperspb.UInt32Value {
+	return wrapperspb.UInt32(0)
+}
+
+// AsMessages casts the given slice of values (that implement the proto.Message
 // AsMessages converts the given slice of values (that implement the proto.Message
 // interface) to a slice of proto.Message. If the length of the slice is 0, it
 // returns nil.
