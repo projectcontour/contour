@@ -1149,7 +1149,7 @@ func TestSortGRPCRoutes(t *testing.T) {
 		expected []*gatewayapi_v1.GRPCRoute
 	}{
 		{
-			name: "3 httproutes, with different timestamp, earlier one should be first ",
+			name: "3 grpcroutes, with different timestamp, earlier one should be first ",
 			m: map[types.NamespacedName]*gatewayapi_v1.GRPCRoute{
 				{
 					Namespace: "ns", Name: "name1",
@@ -1204,7 +1204,7 @@ func TestSortGRPCRoutes(t *testing.T) {
 			},
 		},
 		{
-			name: "3 httproutes with same creation timestamps, same namespaces, smaller name comes first",
+			name: "3 grpcroutes with same creation timestamps, same namespaces, smaller name comes first",
 			m: map[types.NamespacedName]*gatewayapi_v1.GRPCRoute{
 				{
 					Namespace: "ns", Name: "name3",
@@ -1259,7 +1259,7 @@ func TestSortGRPCRoutes(t *testing.T) {
 			},
 		},
 		{
-			name: "3 httproutes with same creation timestamp, smaller namespaces comes first",
+			name: "3 grpcroutes with same creation timestamp, smaller namespaces comes first",
 			m: map[types.NamespacedName]*gatewayapi_v1.GRPCRoute{
 				{
 					Namespace: "ns3", Name: "name1",
