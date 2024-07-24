@@ -406,7 +406,7 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					CircuitBreakersSettings: dag.CircuitBreakersSettings{
+					CircuitBreakers: dag.CircuitBreakers{
 						MaxConnections: 9000,
 					},
 					Weighted: dag.WeightedService{
@@ -440,7 +440,7 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-pending-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					CircuitBreakersSettings: dag.CircuitBreakersSettings{
+					CircuitBreakers: dag.CircuitBreakers{
 						MaxPendingRequests: 4096,
 					},
 					Weighted: dag.WeightedService{
@@ -474,7 +474,7 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					CircuitBreakersSettings: dag.CircuitBreakersSettings{
+					CircuitBreakers: dag.CircuitBreakers{
 						MaxRequests: 404,
 					},
 					Weighted: dag.WeightedService{
@@ -508,7 +508,7 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-retries": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					CircuitBreakersSettings: dag.CircuitBreakersSettings{
+					CircuitBreakers: dag.CircuitBreakers{
 						MaxRetries: 7,
 					},
 					Weighted: dag.WeightedService{
@@ -542,7 +542,7 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/per-host-max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					CircuitBreakersSettings: dag.CircuitBreakersSettings{
+					CircuitBreakers: dag.CircuitBreakers{
 						PerHostMaxConnections: 45,
 					},
 					Weighted: dag.WeightedService{

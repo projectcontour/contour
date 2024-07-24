@@ -64,7 +64,7 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port, healthPort int, cac
 			Weight:           1,
 		},
 		Protocol: upstreamProtocol(svc, svcPort),
-		CircuitBreakersSettings: CircuitBreakersSettings{
+		CircuitBreakers: CircuitBreakers{
 			MaxConnections:        annotation.MaxConnections(svc),
 			MaxPendingRequests:    annotation.MaxPendingRequests(svc),
 			MaxRequests:           annotation.MaxRequests(svc),

@@ -441,7 +441,7 @@ type ClusterParameters struct {
 	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
 	//
 	// +optional
-	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreaker `yaml:"circuit-breakers,omitempty"`
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers `yaml:"circuit-breakers,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	UpstreamTLS ProtocolParameters `yaml:"upstream-tls,omitempty"`

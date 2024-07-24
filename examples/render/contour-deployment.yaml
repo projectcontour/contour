@@ -5291,8 +5291,7 @@ spec:
             properties:
               circuitBreakerPolicy:
                 description: |-
-                  CircuitBreaker specifies the circuit breaker budget across the extension service.
-                  This overrides the global circuite breaker budget if defined.
+                  CircuitBreakerPolicy specifies the circuit breaker budget across the extension service.
                   If defined this overrides the global circuit breaker budget.
                 properties:
                   maxConnections:

@@ -10640,7 +10640,7 @@ func TestDAGInsert(t *testing.T) {
 									ServicePort:      s1b.Spec.Ports[0],
 									HealthPort:       s1b.Spec.Ports[0],
 								},
-								CircuitBreakersSettings: CircuitBreakersSettings{
+								CircuitBreakers: CircuitBreakers{
 									MaxConnections:        9000,
 									MaxPendingRequests:    4096,
 									MaxRequests:           404,

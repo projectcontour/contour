@@ -107,7 +107,7 @@ const (
 	EnvoyServerType XDSServerType = "envoy"
 )
 
-type CircuitBreaker struct {
+type CircuitBreakers struct {
 	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
 	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"max-connections,omitempty"`
@@ -708,7 +708,7 @@ type ClusterParameters struct {
 	// If defined, this will be used as the default for all services.
 	//
 	// +optional
-	GlobalCircuitBreakerDefaults *CircuitBreaker `json:"circuitBreakers,omitempty"`
+	GlobalCircuitBreakerDefaults *CircuitBreakers `json:"circuitBreakers,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	//

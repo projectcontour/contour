@@ -46,7 +46,7 @@ type ExtensionServiceProcessor struct {
 	UpstreamTLS *UpstreamTLS
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
-	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreaker
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -126,7 +126,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 
 	if p.GlobalCircuitBreakerDefaults != nil {
-		extension.CircuitBreakersSettings = CircuitBreakersSettings{
+		extension.CircuitBreakers = CircuitBreakers{
 			MaxConnections:        p.GlobalCircuitBreakerDefaults.MaxConnections,
 			MaxPendingRequests:    p.GlobalCircuitBreakerDefaults.MaxPendingRequests,
 			MaxRequests:           p.GlobalCircuitBreakerDefaults.MaxRequests,
@@ -136,7 +136,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 
 	if ext.Spec.CircuitBreakerPolicy != nil {
-		extension.CircuitBreakersSettings = CircuitBreakersSettings{
+		extension.CircuitBreakers = CircuitBreakers{
 			MaxConnections:        ext.Spec.CircuitBreakerPolicy.MaxConnections,
 			MaxPendingRequests:    ext.Spec.CircuitBreakerPolicy.MaxPendingRequests,
 			MaxRequests:           ext.Spec.CircuitBreakerPolicy.MaxRequests,

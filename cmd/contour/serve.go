@@ -1064,7 +1064,7 @@ type dagBuilderConfig struct {
 	maxRequestsPerConnection           *uint32
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
-	globalCircuitBreakerDefaults       *contour_v1alpha1.CircuitBreaker
+	globalCircuitBreakerDefaults       *contour_v1alpha1.CircuitBreakers
 	upstreamTLS                        *dag.UpstreamTLS
 }
 

@@ -415,7 +415,7 @@ func extCircuitBreakers(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour
 			LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 				Strategy: "Cookie",
 			},
-			CircuitBreakerPolicy: &contour_v1alpha1.CircuitBreaker{
+			CircuitBreakerPolicy: &contour_v1alpha1.CircuitBreakers{
 				MaxConnections:        10000,
 				MaxPendingRequests:    1048,
 				MaxRequests:           494,
@@ -601,7 +601,7 @@ func overrideExtGlobalCircuitBreakers(t *testing.T, rh ResourceEventHandlerWrapp
 			LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
 				Strategy: "Cookie",
 			},
-			CircuitBreakerPolicy: &contour_v1alpha1.CircuitBreaker{
+			CircuitBreakerPolicy: &contour_v1alpha1.CircuitBreakers{
 				MaxConnections:        30000,
 				MaxPendingRequests:    3048,
 				MaxRequests:           394,
@@ -724,7 +724,7 @@ func TestExtensionService(t *testing.T) {
 					func(b *dag.Builder) {
 						for _, processor := range b.Processors {
 							if extensionProcessor, ok := processor.(*dag.ExtensionServiceProcessor); ok {
-								extensionProcessor.GlobalCircuitBreakerDefaults = &contour_v1alpha1.CircuitBreaker{
+								extensionProcessor.GlobalCircuitBreakerDefaults = &contour_v1alpha1.CircuitBreakers{
 									MaxConnections:        20000,
 									MaxPendingRequests:    2048,
 									MaxRequests:           294,

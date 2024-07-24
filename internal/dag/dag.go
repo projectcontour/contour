@@ -971,7 +971,7 @@ type Service struct {
 	Protocol string
 
 	// Circuit breaking limits
-	CircuitBreakersSettings CircuitBreakersSettings
+	CircuitBreakers CircuitBreakers
 
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
@@ -1244,7 +1244,7 @@ type ExtensionCluster struct {
 	UpstreamTLS *UpstreamTLS
 
 	// Circuit breaking limits
-	CircuitBreakersSettings CircuitBreakersSettings
+	CircuitBreakers CircuitBreakers
 }
 
 const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
@@ -1284,8 +1284,8 @@ type UpstreamTLS struct {
 	CipherSuites           []string
 }
 
-// CircuitBreakersSettings holds configuration for circuit breakers.
-type CircuitBreakersSettings struct {
+// CircuitBreakers holds configuration for circuit breakers.
+type CircuitBreakers struct {
 	// Max connections is maximum number of connections
 	// that Envoy will make to the upstream cluster.
 	MaxConnections uint32

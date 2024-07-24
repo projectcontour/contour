@@ -105,11 +105,10 @@ type ExtensionServiceSpec struct {
 	// +kubebuilder:validation:Enum=v3
 	ProtocolVersion ExtensionProtocolVersion `json:"protocolVersion,omitempty"`
 
-	// CircuitBreaker specifies the circuit breaker budget across the extension service.
-	// This overrides the global circuite breaker budget if defined.
+	// CircuitBreakerPolicy specifies the circuit breaker budget across the extension service.
 	// If defined this overrides the global circuit breaker budget.
 	// +optional
-	CircuitBreakerPolicy *CircuitBreaker `json:"circuitBreakerPolicy,omitempty"`
+	CircuitBreakerPolicy *CircuitBreakers `json:"circuitBreakerPolicy,omitempty"`
 }
 
 // ExtensionServiceStatus defines the observed state of an

@@ -68,7 +68,7 @@ type IngressProcessor struct {
 	SetSourceMetadataOnRoutes bool
 
 	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
-	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreaker
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers
 
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
