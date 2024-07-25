@@ -829,5 +829,9 @@ func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.CircuitBreaker
 		s.CircuitBreakers.MaxRetries = cb.MaxRetries
 	}
 
+	if s.CircuitBreakers.PerHostMaxConnections == 0 && cb != nil {
+		s.CircuitBreakers.PerHostMaxConnections = cb.PerHostMaxConnections
+	}
+
 	return s
 }
