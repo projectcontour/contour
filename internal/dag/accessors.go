@@ -63,13 +63,15 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port, healthPort int, cac
 			HealthPort:       healthSvcPort,
 			Weight:           1,
 		},
-		Protocol:              upstreamProtocol(svc, svcPort),
-		MaxConnections:        annotation.MaxConnections(svc),
-		MaxPendingRequests:    annotation.MaxPendingRequests(svc),
-		MaxRequests:           annotation.MaxRequests(svc),
-		MaxRetries:            annotation.MaxRetries(svc),
-		PerHostMaxConnections: annotation.PerHostMaxConnections(svc),
-		ExternalName:          externalName(svc),
+		Protocol: upstreamProtocol(svc, svcPort),
+		CircuitBreakers: CircuitBreakers{
+			MaxConnections:        annotation.MaxConnections(svc),
+			MaxPendingRequests:    annotation.MaxPendingRequests(svc),
+			MaxRequests:           annotation.MaxRequests(svc),
+			PerHostMaxConnections: annotation.PerHostMaxConnections(svc),
+			MaxRetries:            annotation.MaxRetries(svc),
+		},
+		ExternalName: externalName(svc),
 	}, nil
 }
 
