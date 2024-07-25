@@ -460,6 +460,34 @@ func filterchaintlsfallback(fallbackSecret *core_v1.Secret, peerValidationContex
 	)
 }
 
+// filterchaintlsfallbackauthz does same thing as filterchaintlsfallback but inserts a
+// `ext_authz` filter with the specified configuration into the filter chain.
+func filterchaintlsfallbackauthz(fallbackSecret *core_v1.Secret, authz *envoy_filter_http_ext_authz_v3.ExtAuthz, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_config_listener_v3.FilterChain {
+	return envoy_v3.FilterChainTLSFallback(
+		envoy_v3.DownstreamTLSContext(
+			&dag.Secret{Object: fallbackSecret},
+			envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+			envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+			nil,
+			peerValidationContext,
+			alpn...),
+		envoy_v3.Filters(
+			envoy_v3.HTTPConnectionManagerBuilder().
+				DefaultFilters().
+				AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+					Name: envoy_v3.ExtAuthzFilterName,
+					ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(authz),
+					},
+				}).
+				RouteConfigName(xdscache_v3.ENVOY_FALLBACK_ROUTECONFIG).
+				MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+				AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
+				Get(),
+		),
+	)
+}
+
 func httpsFilterFor(vhost string) *envoy_config_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
