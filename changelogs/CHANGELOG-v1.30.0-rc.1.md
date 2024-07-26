@@ -5,17 +5,12 @@ A big thank you to everyone who contributed to the release.
 **Please note that this is pre-release software**, and as such we do not recommend installing it in production environments.
 Feedback and bug reports are welcome!
 
-
-- [Major Changes](#major-changes)
 - [Minor Changes](#minor-changes)
 - [Other Changes](#other-changes)
-- [Docs Changes](#docs-changes)
 - [Deprecations/Removals](#deprecation-and-removal-notices)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 - [Community Thanks!](#community-thanks)
-
-# Major Changes
 
 
 # Minor Changes
@@ -84,9 +79,6 @@ With above ordering, any GRPCRoute that ranks lower, will be marked with below c
 - Improve shutdown manager query to the Envoy stats endpoint for active connections by utilizing a regex filter query param. (#6523, @therealak12)
 - Updates to Go 1.22.5. See the [Go release notes](https://go.dev/doc/devel/release#go1.22.minor) for more information. (#6563, @sunjayBhatia)
 - Updates Envoy to v1.31.0. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.31.0/version_history/v1.31/v1.31.0) for more information about the content of the release. (#6569, @skriss)
-
-
-# Docs Changes
 
 
 # Deprecation and Removal Notices
