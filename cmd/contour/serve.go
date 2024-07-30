@@ -44,6 +44,7 @@ import (
 	controller_runtime_metrics_server "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -512,6 +513,7 @@ func (s *Server) doServe() error {
 	// the contents of the Contour xDS caches after the DAG is built.
 	var snapshotHandler *xdscache_v3.SnapshotHandler
 
+	// nolint:staticcheck
 	if contourConfiguration.XDSServer.Type == contour_v1alpha1.EnvoyServerType {
 		snapshotHandler = xdscache_v3.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
 
@@ -947,6 +949,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 
 	grpcServer := xds.NewServer(x.registry, grpcOptions(log, x.config.TLS)...)
 
+	// nolint:staticcheck
 	switch x.config.Type {
 	case contour_v1alpha1.EnvoyServerType:
 		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.GetCache(), contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
@@ -954,6 +957,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
 	default:
 		// This can't happen due to config validation.
+		// nolint:staticcheck
 		log.Fatalf("invalid xDS server type %q", x.config.Type)
 	}
 
@@ -968,6 +972,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 		log = log.WithField("insecure", true)
 	}
 
+	// nolint:staticcheck
 	log.Infof("started xDS server type: %q", x.config.Type)
 	defer log.Info("stopped xDS server")
 
@@ -1043,9 +1048,9 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourCo
 			"referencegrants":    &gatewayapi_v1beta1.ReferenceGrant{},
 			"namespaces":         &core_v1.Namespace{},
 			"tlsroutes":          &gatewayapi_v1alpha2.TLSRoute{},
-			"grpcroutes":         &gatewayapi_v1alpha2.GRPCRoute{},
+			"grpcroutes":         &gatewayapi_v1.GRPCRoute{},
 			"tcproutes":          &gatewayapi_v1alpha2.TCPRoute{},
-			"backendtlspolicies": &gatewayapi_v1alpha2.BackendTLSPolicy{},
+			"backendtlspolicies": &gatewayapi_v1alpha3.BackendTLSPolicy{},
 			"configmaps":         &core_v1.ConfigMap{},
 		}
 
@@ -1089,7 +1094,7 @@ type dagBuilderConfig struct {
 	perConnectionBufferLimitBytes      *uint32
 	globalRateLimitService             *contour_v1alpha1.RateLimitServiceConfig
 	globalExternalProcessing           *contour_v1.ExternalProcessing
-	globalCircuitBreakerDefaults       *contour_v1alpha1.GlobalCircuitBreakerDefaults
+	globalCircuitBreakerDefaults       *contour_v1alpha1.CircuitBreakers
 	upstreamTLS                        *dag.UpstreamTLS
 }
 
@@ -1166,10 +1171,10 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
 			// need to bring EnableExternalNameService in here too.
-			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
-			ClientCertificate: dbc.clientCert,
-			ConnectTimeout:    dbc.connectTimeout,
-			UpstreamTLS:       dbc.upstreamTLS,
+			FieldLogger:                  s.log.WithField("context", "ExtensionServiceProcessor"),
+			ClientCertificate:            dbc.clientCert,
+			ConnectTimeout:               dbc.connectTimeout,
+			GlobalCircuitBreakerDefaults: dbc.globalCircuitBreakerDefaults,
 		},
 		&dag.HTTPProxyProcessor{
 			EnableExternalNameService:     dbc.enableExternalNameService,

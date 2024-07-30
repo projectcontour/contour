@@ -406,7 +406,9 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxConnections: 9000,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxConnections: 9000,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -438,7 +440,9 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-pending-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxPendingRequests: 4096,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxPendingRequests: 4096,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -470,7 +474,9 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxRequests: 404,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxRequests: 404,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -502,7 +508,9 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-retries": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxRetries: 7,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxRetries: 7,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -534,7 +542,9 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/per-host-max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					PerHostMaxConnections: 45,
+					CircuitBreakers: dag.CircuitBreakers{
+						PerHostMaxConnections: 45,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,

@@ -4,7 +4,6 @@ title: "Contour"
 theme: "contour"
 outputs:
   home: ["HTML", "REDIRECTS"]
-  posts: ["HTML", "RSS"]
 pygmentsCodefences: true
 pygmentsStyle: "pygments"
 markup:
@@ -29,7 +28,7 @@ params:
   github_url: "https://github.com/projectcontour/contour"
   github_raw_url: "https://raw.githubusercontent.com/projectcontour/contour"
   slack_url: "https://kubernetes.slack.com/messages/contour"
-  latest_version: "1.28"
+  latest_version: "1.29"
   use_advanced_docs: true
   docs_right_sidebar: true
   docs_search: true
@@ -39,6 +38,7 @@ params:
   docs_versioning: true
   docs_versions:
   - main
+  - "1.29"
   - "1.28"
   - "1.27"
   - "1.26"
@@ -61,5 +61,3 @@ outputFormats:
 collections:
   guides:
     output: true
-permalinks:
-  posts: /:slug

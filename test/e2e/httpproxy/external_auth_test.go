@@ -17,6 +17,7 @@ package httpproxy
 
 import (
 	"context"
+	"net/http"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
@@ -206,6 +207,25 @@ func testExternalAuth(namespace string) {
 							},
 						},
 					},
+					{
+						Conditions: []contour_v1.MatchCondition{
+							{Prefix: "/direct-response-auth-enabled"},
+						},
+						DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
+							StatusCode: http.StatusTeapot,
+						},
+					},
+					{
+						Conditions: []contour_v1.MatchCondition{
+							{Prefix: "/direct-response-auth-disabled"},
+						},
+						DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
+							StatusCode: http.StatusTeapot,
+						},
+						AuthPolicy: &contour_v1.AuthorizationPolicy{
+							Disabled: true,
+						},
+					},
 
 					{
 						AuthPolicy: &contour_v1.AuthorizationPolicy{
@@ -223,7 +243,7 @@ func testExternalAuth(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// By default requests to /first should not be authorized.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
@@ -283,5 +303,33 @@ func testExternalAuth(namespace string) {
 		body = f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "default", body.RequestHeaders.Get("Auth-Context-Target"))
 		assert.Equal(t, "externalauth.projectcontour.io", body.RequestHeaders.Get("Auth-Context-Hostname"))
+
+		// Direct response with external auth enabled should get a 401.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/direct-response-auth-enabled",
+			Condition: e2e.HasStatusCode(401),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 401 response code, got %d", res.StatusCode)
+
+		// Direct response with external auth enabled with "allow" in the path
+		// should succeed.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/direct-response-auth-enabled/allow",
+			Condition: e2e.HasStatusCode(http.StatusTeapot),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 418 response code, got %d", res.StatusCode)
+
+		// Direct response with external auth disabled should succeed.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/direct-response-auth-disabled",
+			Condition: e2e.HasStatusCode(http.StatusTeapot),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 418 response code, got %d", res.StatusCode)
 	})
 }

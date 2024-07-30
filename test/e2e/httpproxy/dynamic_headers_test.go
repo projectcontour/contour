@@ -144,7 +144,7 @@ func testDynamicHeaders(namespace string) {
 			p.Spec.Routes[0].Services[0].ResponseHeadersPolicy.Set = append(p.Spec.Routes[0].Services[0].ResponseHeadersPolicy.Set, hv)
 		}
 
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,

@@ -57,8 +57,7 @@ func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 				},
 			},
 		}
-		_, ok := f.CreateHTTPRouteAndWaitFor(route1, e2e.HTTPRouteAccepted)
-		require.True(f.T(), ok)
+		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route1, e2e.HTTPRouteAccepted))
 
 		By("create httproute-2 with only partially conflicted matches")
 		route2 := &gatewayapi_v1.HTTPRoute{
@@ -90,8 +89,8 @@ func testHTTPRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 			},
 		}
 		// Partially accepted
-		f.CreateHTTPRouteAndWaitFor(route2, func(*gatewayapi_v1.HTTPRoute) bool {
+		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route2, func(*gatewayapi_v1.HTTPRoute) bool {
 			return e2e.HTTPRoutePartiallyInvalid(route2) && e2e.HTTPRouteAccepted(route2)
-		})
+		}))
 	})
 }

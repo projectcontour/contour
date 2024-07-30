@@ -84,8 +84,7 @@ func testDisableMergeSlashes(disableMergeSlashes bool) e2e.NamespacedTestBody {
 					},
 				},
 			}
-			_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-			require.True(t, ok)
+			require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 			var testCases map[string]string
 			if disableMergeSlashes {

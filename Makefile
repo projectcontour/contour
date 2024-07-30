@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.30.1
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.30.4
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
@@ -44,7 +44,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.22.2@sha256:c4fb952e712efd8f787bcd8e53fd66d1d83b7dc26adabc218e9eac1dbf776bdf
+BUILD_BASE_IMAGE ?= golang:1.22.5@sha256:829eff99a4b2abffe68f6a3847337bf6455d69d17e49ec1a97dac78834754bd6
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -203,7 +203,7 @@ lint-golint:
 .PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint examples/ site/content/examples/ ./versions.yaml
+	@./hack/yamllint
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingpin Flags() and Command() APIs where the 2nd

@@ -4,10 +4,6 @@ title: Collecting Metrics with Prometheus
 
 <div id="toc" class="navigation"></div>
 
-Contour and Envoy expose metrics that can be scraped with Prometheus. By
-default, annotations to gather them are in all the `deployment` yamls and they
-should work out of the box with most configurations.
-
 ## Envoy Metrics
 
 Envoy typically [exposes metrics](https://www.envoyproxy.io/docs/envoy/v1.15.0/configuration/http/http_conn_man/stats#config-http-conn-man-stats) through an endpoint on its admin interface. To
@@ -28,67 +24,58 @@ Contour exposes a Prometheus-compatible `/metrics` endpoint that defaults to lis
 
 {{% metrics-table %}}
 
-## Sample Deployment
+## Deploy Sample Monitoring Stack
 
-In the `/examples` directory there are example deployment files that can be used to spin up an example environment.
-All deployments there are configured with annotations for prometheus to scrape by default, so it should be possible to utilize any of them with the following quickstart example instructions.
+Follow the instructions [here][0] to install a monitoring stack to your cluster using the [kube-prometheus][1] project sample manifests.
+These instructions install the [Prometheus Operator][2], a [Prometheus][3] instance, a [Grafana][4] `Deployment`, and other components.
+Note that this is a quickstart installation, see documentation [here][5] for more details on customizing the installation for production usage.
 
-### Deploy Prometheus
-
-A sample deployment of Prometheus and Alertmanager is provided that uses temporary storage. This deployment can be used for testing and development, but might not be suitable for all environments.
-
-#### Stateful Deployment
-
- A stateful deployment of Prometheus should use persistent storage with [Persistent Volumes and Persistent Volume Claims][1] to maintain a correlation between a data volume and the Prometheus Pod.
- Persistent volumes can be static or dynamic and depends on the backend storage implementation utilized in environment in which the cluster is deployed. For more information, see the [Kubernetes documentation on types of persistent volumes][2].
-
-#### Quick start
+The instructions above show how to access the Prometheus and Grafana web interfaces using `kubectl port-forward`.
+Sample `HTTPProxy` resources in the `examples/` directory can also be used to access these through your Contour installation:
 
 ```sh
-# Deploy 
-$ kubectl apply -f examples/prometheus
+$ kubectl apply -f examples/prometheus/httpproxy.yaml
+$ kubectl apply -f examples/grafana/httpproxy.yaml
 ```
 
-#### Access the Prometheus web UI
+### Scrape Contour and Envoy metrics
+
+To enable Prometheus to scrape metrics from the Contour and Envoy pods, we can add some RBAC customizations with a `Role` and `RoleBinding` in the `projectcontour` namespace:
 
 ```sh
-$ kubectl -n projectcontour-monitoring port-forward $(kubectl -n projectcontour-monitoring get pods -l app=prometheus -l component=server -o jsonpath='{.items[0].metadata.name}') 9090:9090
+kubectl apply -f examples/prometheus/rbac.yaml
 ```
 
-then go to `http://localhost:9090` in your browser.
-
-#### Access the Alertmanager web UI
+Now add [`PodMonitor`][6] resources for scraping metrics from Contour and Envoy pods in the `projectcontour` namespace:
 
 ```sh
-$ kubectl -n projectcontour-monitoring port-forward $(kubectl -n projectcontour-monitoring get pods -l app=prometheus -l component=alertmanager -o jsonpath='{.items[0].metadata.name}') 9093:9093
+kubectl apply -f examples/prometheus/podmonitors.yaml
 ```
 
-then go to `http://localhost:9093` in your browser.
+You should now be able to browse Contour and Envoy Prometheus metrics in the Prometheus and Grafana web interfaces to create dashboards and alerts.
 
-### Deploy Grafana
+### Apply Contour and Envoy Grafana Dashboards
 
-A sample deployment of Grafana is provided that uses temporary storage.
-
-#### Quick start
+Some sample Grafana dashboards are provided as `ConfigMap` resources in the `examples/grafana` directory.
+To use them with your Grafana installation, apply the resources:
 
 ```sh
-# Deploy
-$ kubectl apply -f examples/grafana/
-
-# Create secret with grafana credentials
-$ kubectl create secret generic grafana -n projectcontour-monitoring \
-    --from-literal=grafana-admin-password=admin \
-    --from-literal=grafana-admin-user=admin
+$ kubectl apply -f examples/grafana/dashboards.yaml
 ```
 
-#### Access the Grafana UI
+And update the Grafana `Deployment`:
 
 ```sh
-$ kubectl port-forward $(kubectl get pods -l app=grafana -n projectcontour-monitoring -o jsonpath='{.items[0].metadata.name}') 3000 -n projectcontour-monitoring
+$ kubectl -n monitoring patch deployment grafana --type=json --patch-file examples/grafana/deployment-patch.json
 ```
 
-then go to `http://localhost:3000` in your browser.
-The username and password are from when you defined the Grafana secret in the previous step.
+You should now see dashboards for Contour and Envoy metrics available in the Grafana web interface.
 
-[1]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
-[2]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes
+
+[0]: https://prometheus-operator.dev/docs/prologue/quick-start/
+[1]: https://github.com/prometheus-operator/kube-prometheus
+[2]: https://github.com/prometheus-operator/prometheus-operator
+[3]: https://prometheus.io/
+[4]: https://grafana.com/
+[5]: https://github.com/prometheus-operator/kube-prometheus?tab=readme-ov-file#getting-started
+[6]: https://prometheus-operator.dev/docs/operator/design/#podmonitor

@@ -40,8 +40,8 @@ const (
 	ReasonRouteRuleMatchConflict          gatewayapi_v1.RouteConditionReason = "RuleMatchConflict"
 	ReasonRouteRuleMatchPartiallyConflict gatewayapi_v1.RouteConditionReason = "RuleMatchPartiallyConflict"
 
-	MessageRouteRuleMatchConflict          string = "HTTPRoute's Match has conflict with other HTTPRoute's Match"
-	MessageRouteRuleMatchPartiallyConflict string = "Dropped Rule: HTTPRoute's rule(s) has(ve) been dropped because of conflict against other HTTPRoute's rule(s)"
+	MessageRouteRuleMatchConflict          string = "%s's Match has conflict with other %s's Match"
+	MessageRouteRuleMatchPartiallyConflict string = "Dropped Rule: some of %s's rule(s) has(ve) been dropped because of conflict against other %s's rule(s)"
 )
 
 // RouteStatusUpdate represents an atomic update to a
@@ -183,7 +183,7 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 		route.Status.Parents = newRouteParentStatuses
 
 		return route
-	case *gatewayapi_v1alpha2.GRPCRoute:
+	case *gatewayapi_v1.GRPCRoute:
 		route := o.DeepCopy()
 
 		// Get all the RouteParentStatuses that are for other Gateways.

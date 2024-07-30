@@ -391,7 +391,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 	})
 }
 
-func circuitBreakerGlobalOpt(t *testing.T, g *contour_v1alpha1.GlobalCircuitBreakerDefaults) func(*dag.Builder) {
+func circuitBreakerGlobalOpt(t *testing.T, g *contour_v1alpha1.CircuitBreakers) func(*dag.Builder) {
 	return func(b *dag.Builder) {
 		log := fixture.NewTestLogger(t)
 		log.SetLevel(logrus.DebugLevel)
@@ -414,7 +414,7 @@ func circuitBreakerGlobalOpt(t *testing.T, g *contour_v1alpha1.GlobalCircuitBrea
 }
 
 func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
-	g := &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+	g := &contour_v1alpha1.CircuitBreakers{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
 		MaxRequests:        15,
@@ -549,7 +549,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 }
 
 func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
-	g := &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+	g := &contour_v1alpha1.CircuitBreakers{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
 		MaxRequests:        15,
@@ -692,7 +692,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 }
 
 func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
-	g := &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+	g := &contour_v1alpha1.CircuitBreakers{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
 		MaxRequests:        15,

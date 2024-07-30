@@ -724,7 +724,7 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"circuitbreaker annotations": {
+		"CircuitBreakers annotations": {
 			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: meta_v1.ObjectMeta{

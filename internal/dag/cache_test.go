@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -365,14 +366,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert certificate secret referenced by BackendTLSPolicy": {
 			pre: []any{
-				&gatewayapi_v1alpha2.BackendTLSPolicy{
+				&gatewayapi_v1alpha3.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "example-btp",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
-							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
 									Name: "ca",
@@ -420,14 +421,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert certificate configmap referenced by BackendTLSPolicy": {
 			pre: []any{
-				&gatewayapi_v1alpha2.BackendTLSPolicy{
+				&gatewayapi_v1alpha3.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "example-btp",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
-							CACertRefs: []gatewayapi_v1alpha2.LocalObjectReference{
+					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "ConfigMap",
 									Name: "ca",
@@ -810,8 +811,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -839,8 +840,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "tlsroute",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -868,8 +869,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1021,8 +1022,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
 						},
 					},
@@ -1031,7 +1032,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert gateway-api GRPCRoute, no reference to Gateway": {
-			obj: &gatewayapi_v1alpha2.GRPCRoute{
+			obj: &gatewayapi_v1.GRPCRoute{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "grpcroute",
 					Namespace: "default",
@@ -1048,14 +1049,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.GRPCRoute{
+			obj: &gatewayapi_v1.GRPCRoute{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "grpcroute",
 					Namespace: "default",
 				},
-				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
 						},
 					},
@@ -1087,8 +1088,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("gateway-namespace", "gateway-name"),
 						},
 					},
@@ -1130,8 +1131,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1147,19 +1148,21 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &gatewayapi_v1alpha2.BackendTLSPolicy{
+			obj: &gatewayapi_v1alpha3.BackendTLSPolicy{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "backendtlspolicy",
 					Namespace: "default",
 				},
-				Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-					TargetRef: gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
-						PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
-							Kind: "Service",
-							Name: "service",
+				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+						{
+							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								Kind: "Service",
+								Name: "service",
+							},
 						},
 					},
-					TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{},
+					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{},
 				},
 			},
 			want: true,
@@ -1372,8 +1375,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1407,8 +1410,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("projectcontour", "contour"),
 							},
 						},
@@ -1650,8 +1653,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("default", "gateway"),
 							},
 						},
@@ -1664,8 +1667,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),
 						},
 					},
@@ -1680,13 +1683,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-				&gatewayapi_v1alpha2.GRPCRoute{
+				&gatewayapi_v1.GRPCRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "grpcroute",
 						Namespace: "default",
 					},
 				}),
-			obj: &gatewayapi_v1alpha2.GRPCRoute{
+			obj: &gatewayapi_v1.GRPCRoute{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "grpcroute",
 					Namespace: "default",
@@ -1701,28 +1704,28 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-				&gatewayapi_v1alpha2.GRPCRoute{
+				&gatewayapi_v1.GRPCRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "grpcroute",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					Spec: gatewayapi_v1.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("default", "gateway"),
 							},
 						},
 					},
 				},
 			),
-			obj: &gatewayapi_v1alpha2.GRPCRoute{
+			obj: &gatewayapi_v1.GRPCRoute{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "grpcroute",
 					Namespace: "default",
 				},
-				Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				Spec: gatewayapi_v1.GRPCRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),
 						},
 					},
@@ -1764,8 +1767,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Namespace: "default",
 					},
 					Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{
 								gatewayapi.GatewayParentRef("default", "gateway"),
 							},
 						},
@@ -1778,8 +1781,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							gatewayapi.GatewayParentRef("default", "gateway"),
 						},
 					},
@@ -1803,13 +1806,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove gateway-api BackendTLSPolicy": {
-			cache: cache(&gatewayapi_v1alpha2.BackendTLSPolicy{
+			cache: cache(&gatewayapi_v1alpha3.BackendTLSPolicy{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "backendtlspolicy",
 					Namespace: "default",
 				},
 			}),
-			obj: &gatewayapi_v1alpha2.BackendTLSPolicy{
+			obj: &gatewayapi_v1alpha3.BackendTLSPolicy{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "backendtlspolicy",
 					Namespace: "default",
@@ -1819,14 +1822,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove secret that is referenced by gateway-api BackendTLSPolicy": {
 			cache: cache(
-				&gatewayapi_v1alpha2.BackendTLSPolicy{
+				&gatewayapi_v1alpha3.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtlspolicy",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
-							CACertRefs: []gatewayapi_v1.LocalObjectReference{
+					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
 									Name: "ca",
@@ -1860,14 +1863,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove configmap that is referenced by gateway-api BackendTLSPolicy": {
 			cache: cache(
-				&gatewayapi_v1alpha2.BackendTLSPolicy{
+				&gatewayapi_v1alpha3.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtlspolicy",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-						TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
-							CACertRefs: []gatewayapi_v1.LocalObjectReference{
+					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "ConfigMap",
 									Name: "configmap",
@@ -2198,14 +2201,14 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
-	grpcRoute := func(namespace, name string) *gatewayapi_v1alpha2.GRPCRoute {
-		return &gatewayapi_v1alpha2.GRPCRoute{
+	grpcRoute := func(namespace, name string) *gatewayapi_v1.GRPCRoute {
+		return &gatewayapi_v1.GRPCRoute{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
-			Spec: gatewayapi_v1alpha2.GRPCRouteSpec{
-				Rules: []gatewayapi_v1alpha2.GRPCRouteRule{{
+			Spec: gatewayapi_v1.GRPCRouteSpec{
+				Rules: []gatewayapi_v1.GRPCRouteRule{{
 					BackendRefs: gatewayapi.GRPCRouteBackendRef(name, 80, 1),
 				}},
 			},
@@ -2233,8 +2236,8 @@ func TestServiceTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					},
 				},
@@ -2252,8 +2255,8 @@ func TestServiceTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TCPRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					},
 				},
@@ -2771,8 +2774,8 @@ func TestRouteTriggersRebuild(t *testing.T) {
 				Namespace: namespace,
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-					ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+				CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1.ParentReference{
 						gatewayapi.GatewayParentRef(parentRefNamespace, parentRefName),
 					},
 				},
@@ -2994,36 +2997,35 @@ func TestLookupUpstreamValidation(t *testing.T) {
 }
 
 func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
-	targetRef := func(group, kind, name string, namespace, sectionName *string) gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName {
-		var ns *gatewayapi_v1alpha2.Namespace
-		if namespace != nil {
-			ns = ptr.To(gatewayapi_v1alpha2.Namespace(*namespace))
-		}
+	targetRef := func(group, kind, name string, sectionName *string) gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName {
 		var sn *gatewayapi_v1alpha2.SectionName
 		if sectionName != nil {
 			sn = ptr.To(gatewayapi_v1alpha2.SectionName(*sectionName))
 		}
-		return gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName{
-			PolicyTargetReference: gatewayapi_v1alpha2.PolicyTargetReference{
-				Group:     gatewayapi_v1alpha2.Group(group),
-				Kind:      gatewayapi_v1alpha2.Kind(kind),
-				Name:      gatewayapi_v1alpha2.ObjectName(name),
-				Namespace: ns,
+		return gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+			LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+				Group: gatewayapi_v1.Group(group),
+				Kind:  gatewayapi_v1alpha2.Kind(kind),
+				Name:  gatewayapi_v1.ObjectName(name),
 			},
 			SectionName: sn,
 		}
 	}
 
-	backendTLSPolicy := func(name, namespace, serviceName string, targetNamespace, sectionName *string) *gatewayapi_v1alpha2.BackendTLSPolicy {
-		return &gatewayapi_v1alpha2.BackendTLSPolicy{
+	serviceTargetRef := func(name string, sectionName *string) gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName {
+		return targetRef("", "Service", name, sectionName)
+	}
+
+	backendTLSPolicy := func(name, namespace string, targetRefs ...gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName) *gatewayapi_v1alpha3.BackendTLSPolicy {
+		return &gatewayapi_v1alpha3.BackendTLSPolicy{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
-			Spec: gatewayapi_v1alpha2.BackendTLSPolicySpec{
-				TargetRef: targetRef("", "Service", serviceName, targetNamespace, sectionName),
-				TLS: gatewayapi_v1alpha2.BackendTLSPolicyConfig{
-					CACertRefs: []gatewayapi_v1.LocalObjectReference{
+			Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+				TargetRefs: targetRefs,
+				Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 						{
 							Group: "",
 							Kind:  "Secret",
@@ -3037,113 +3039,96 @@ func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		targetRef          gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName
-		backendTLSPolicies []*gatewayapi_v1alpha2.BackendTLSPolicy
-		want               *gatewayapi_v1alpha2.BackendTLSPolicy
+		targetRef          gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName
+		namespace          string
+		backendTLSPolicies []*gatewayapi_v1alpha3.BackendTLSPolicy
+		want               *gatewayapi_v1alpha3.BackendTLSPolicy
 		wantFound          bool
 	}{
 		"finds the BackendTLSPolicy with the matching targetRef": {
-			targetRef: targetRef("", "Service", "backend-service", nil, nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "", "backend-service-with-section-name", nil, ptr.To("https")),
-				backendTLSPolicy("btp2", "", "backend-service-with-section-name", nil, ptr.To("https2")),
+			targetRef: serviceTargetRef("backend-service", ptr.To("https")),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
+				backendTLSPolicy("btp1", "ns1", serviceTargetRef("backend-service-with-section-name", ptr.To("https"))),
+				backendTLSPolicy("btp2", "ns1", serviceTargetRef("backend-service-with-section-name", ptr.To("https2"))),
 			},
-			want:      backendTLSPolicy("btp", "", "backend-service", nil, nil),
+			want:      backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
 			wantFound: true,
 		},
 		"finds the BackendTLSPolicy matching targetRef with section name": {
-			targetRef: targetRef("", "Service", "backend-service-with-section-name", nil, ptr.To("https2")),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "", "backend-service-with-section-name", nil, ptr.To("https")),
-				backendTLSPolicy("btp2", "", "backend-service-with-section-name", nil, ptr.To("https2")),
+			targetRef: serviceTargetRef("backend-service-with-section-name", ptr.To("https2")),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
+				backendTLSPolicy("btp1", "ns1", serviceTargetRef("backend-service-with-section-name", ptr.To("https"))),
+				backendTLSPolicy("btp2", "ns1", serviceTargetRef("backend-service-with-section-name", ptr.To("https2"))),
 			},
-			want:      backendTLSPolicy("btp2", "", "backend-service-with-section-name", nil, ptr.To("https2")),
+			want:      backendTLSPolicy("btp2", "ns1", serviceTargetRef("backend-service-with-section-name", ptr.To("https2"))),
 			wantFound: true,
 		},
 		"finds the fallback BackendTLSPolicy matching targetRef but not section name": {
-			targetRef: targetRef("", "Service", "backend-service-with-fallback", nil, ptr.To("https2")),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "", "backend-service-with-fallback", nil, nil),
-				backendTLSPolicy("btp2", "", "backend-service-with-fallback", nil, ptr.To("https")),
+			targetRef: serviceTargetRef("backend-service-with-fallback", ptr.To("https2")),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
+				backendTLSPolicy("btp1", "ns1", serviceTargetRef("backend-service-with-fallback", nil)),
+				backendTLSPolicy("btp2", "ns1", serviceTargetRef("backend-service-with-fallback", ptr.To("https"))),
 			},
-			want:      backendTLSPolicy("btp1", "", "backend-service-with-fallback", nil, nil),
+			want:      backendTLSPolicy("btp1", "ns1", serviceTargetRef("backend-service-with-fallback", nil)),
 			wantFound: true,
 		},
 		"finds the fallback BackendTLSPolicy matching targetRef with section name": {
-			targetRef: targetRef("", "Service", "backend-service-with-fallback", nil, ptr.To("https")),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "", "backend-service-with-fallback", nil, nil),
-				backendTLSPolicy("btp2", "", "backend-service-with-fallback", nil, ptr.To("https")),
+			targetRef: serviceTargetRef("backend-service-with-fallback", ptr.To("https")),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
+				backendTLSPolicy("btp1", "ns1", serviceTargetRef("backend-service-with-fallback", nil)),
+				backendTLSPolicy("btp2", "ns1", serviceTargetRef("backend-service-with-fallback", ptr.To("https"))),
 			},
-			want:      backendTLSPolicy("btp2", "", "backend-service-with-fallback", nil, ptr.To("https")),
+			want:      backendTLSPolicy("btp2", "ns1", serviceTargetRef("backend-service-with-fallback", ptr.To("https"))),
 			wantFound: true,
 		},
 		"finds the BackendTLSPolicy matching namespace": {
-			targetRef: targetRef("", "Service", "backend-service-with-ns", ptr.To("some-ns"), nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "other-ns", "backend-service-with-other-ns", ptr.To("other-ns"), nil),
-				backendTLSPolicy("btp2", "some-ns", "backend-service-with-ns", ptr.To("some-ns"), nil),
+			targetRef: serviceTargetRef("backend-service-with-ns", ptr.To("https")),
+			namespace: "some-ns",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
+				backendTLSPolicy("btp1", "other-ns", serviceTargetRef("backend-service-with-other-ns", nil)),
+				backendTLSPolicy("btp2", "some-ns", serviceTargetRef("backend-service-with-ns", nil)),
 			},
-			want:      backendTLSPolicy("btp2", "some-ns", "backend-service-with-ns", ptr.To("some-ns"), nil),
+			want:      backendTLSPolicy("btp2", "some-ns", serviceTargetRef("backend-service-with-ns", nil)),
 			wantFound: true,
-		},
-		"finds the BackendTLSPolicy matching namespace even if backendtlspolicy targetRef namespace is empty": {
-			targetRef: targetRef("", "Service", "backend-service-with-ns", ptr.To("some-ns"), nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "other-ns", "backend-service-with-other-ns", nil, nil),
-				backendTLSPolicy("btp2", "some-ns", "backend-service-with-ns", nil, nil),
-			},
-			want:      backendTLSPolicy("btp2", "some-ns", "backend-service-with-ns", nil, nil),
-			wantFound: true,
-		},
-		"finds the BackendTLSPolicy in default namespace": {
-			targetRef: targetRef("", "Service", "backend-service", nil, nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "default", "backend-service", nil, nil),
-			},
-			want:      backendTLSPolicy("btp", "default", "backend-service", nil, nil),
-			wantFound: true,
-		},
-		"does not find the BackendTLSPolicy if the target namespace doesn't match the policy namespace": {
-			targetRef: targetRef("", "Service", "backend-service-with-ns", ptr.To("some-ns"), nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
-				backendTLSPolicy("btp1", "some-ns", "backend-service-with-ns", ptr.To("wrong-ns"), nil),
-				backendTLSPolicy("btp2", "wrong-ns", "backend-service-with-ns", ptr.To("some-ns"), nil),
-			},
-			wantFound: false,
 		},
 		"does not find the BackendTLSPolicy if the namespace does not match": {
-			targetRef: targetRef("", "Service", "backend-service", ptr.To("not-default"), nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
+			targetRef: serviceTargetRef("backend-service", nil),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "other-ns", serviceTargetRef("backend-service", nil)),
 			},
 			wantFound: false,
 		},
 		"does not find the BackendTLSPolicy if the service name does not match": {
-			targetRef: targetRef("", "Service", "other-service", nil, nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
+			targetRef: serviceTargetRef("other-service", nil),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
 			},
 			wantFound: false,
 		},
 		"does not find the BackendTLSPolicy if the GroupKind does not match": {
-			targetRef: targetRef("example.api", "ExampleService", "backend-service", nil, nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
+			targetRef: targetRef("example.api", "ExampleService", "backend-service", nil),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
 			},
 			wantFound: false,
 		},
 		"does not find the BackendTLSPolicy if the group does not match": {
-			targetRef: targetRef("core", "Service", "backend-service", ptr.To("not-default"), nil),
-			backendTLSPolicies: []*gatewayapi_v1alpha2.BackendTLSPolicy{
-				backendTLSPolicy("btp", "", "backend-service", nil, nil),
+			targetRef: targetRef("core", "Service", "backend-service", nil),
+			namespace: "ns1",
+			backendTLSPolicies: []*gatewayapi_v1alpha3.BackendTLSPolicy{
+				backendTLSPolicy("btp", "ns1", serviceTargetRef("backend-service", nil)),
 			},
 			wantFound: false,
 		},
@@ -3159,7 +3144,7 @@ func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
 				cache.Insert(backendTLSPolicy)
 			}
 
-			gotBTP, gotFound := cache.LookupBackendTLSPolicyByTargetRef(tc.targetRef)
+			gotBTP, gotFound := cache.LookupBackendTLSPolicyByTargetRef(tc.targetRef, tc.namespace)
 
 			if tc.wantFound {
 				assert.True(t, gotFound)

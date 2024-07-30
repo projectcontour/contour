@@ -82,10 +82,7 @@ func testExternalNameServiceInsecure(namespace string) {
 				},
 			},
 		}
-		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		if !ok {
-			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", e2e.HTTPProxyErrors(proxy))
-		}
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
@@ -153,10 +150,7 @@ func testExternalNameServiceTLS(namespace string) {
 				},
 			},
 		}
-		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		if !ok {
-			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", e2e.HTTPProxyErrors(proxy))
-		}
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
@@ -225,7 +219,7 @@ func testExternalNameServiceLocalhostInvalid(namespace string) {
 
 		// The HTTPProxy should be marked invalid due to the service
 		// using localhost.localdomain.
-		_, invalid := f.CreateHTTPProxyAndWaitFor(p, func(proxy *contour_v1.HTTPProxy) bool {
+		require.Truef(f.T(), f.CreateHTTPProxyAndWaitFor(p, func(proxy *contour_v1.HTTPProxy) bool {
 			validCond := proxy.Status.GetConditionFor(contour_v1.ValidConditionType)
 			if validCond == nil {
 				return false
@@ -243,7 +237,6 @@ func testExternalNameServiceLocalhostInvalid(namespace string) {
 			}
 
 			return false
-		})
-		require.Truef(t, invalid, "ExternalName with hostname %s was accepted by Contour.", externalNameService.Spec.ExternalName)
+		}), "ExternalName with hostname %s was accepted by Contour.", externalNameService.Spec.ExternalName)
 	})
 }

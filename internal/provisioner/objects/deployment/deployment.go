@@ -111,7 +111,9 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 	}
 
 	if contour.Spec.DisabledFeatures != nil && len(contour.Spec.DisabledFeatures) > 0 {
-		args = append(args, fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(contour.Spec.DisabledFeatures), ",")))
+		for _, f := range contour.Spec.DisabledFeatures {
+			args = append(args, fmt.Sprintf("--disable-feature=%s", string(f)))
+		}
 	}
 
 	// Pass the insecure/secure flags to Contour if using non-default ports.
@@ -222,8 +224,6 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 			Strategy: contour.Spec.ContourDeploymentStrategy,
 			Template: core_v1.PodTemplateSpec{
 				ObjectMeta: meta_v1.ObjectMeta{
-					// TODO [danehans]: Remove the prometheus annotations when Contour is updated to
-					// show how the Prometheus Operator is used to scrape Contour/Envoy metrics.
 					Annotations: contourPodAnnotations(contour),
 					Labels:      contourPodLabels(contour),
 				},
@@ -319,16 +319,6 @@ func contourPodAnnotations(contour *model.Contour) map[string]string {
 	for k, v := range contour.Spec.ContourPodAnnotations {
 		annotations[k] = v
 	}
-
-	port := metricsPort
-	if contour.Spec.RuntimeSettings != nil &&
-		contour.Spec.RuntimeSettings.Metrics != nil &&
-		contour.Spec.RuntimeSettings.Metrics.Port > 0 {
-		port = contour.Spec.RuntimeSettings.Metrics.Port
-	}
-
-	annotations["prometheus.io/scrape"] = "true"
-	annotations["prometheus.io/port"] = fmt.Sprint(port)
 
 	// Annotations specified on the Gateway take precedence
 	// over annotations specified on the GatewayClass/its parameters.

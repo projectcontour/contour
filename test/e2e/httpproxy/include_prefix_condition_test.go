@@ -118,7 +118,7 @@ func testIncludePrefixCondition(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(baseProxy, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(baseProxy, e2e.HTTPProxyValid))
 
 		cases := map[string]string{
 			"/":          "echo-app",

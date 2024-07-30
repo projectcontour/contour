@@ -27,6 +27,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -470,6 +471,99 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 	}).Status(p).IsValid()
 }
 
+func globalExternalAuthorizationFilterTLSWithFallbackCertificate(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	p := fixture.NewProxy("TLSProxy").
+		WithFQDN("foo.com").
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &contour_v1.TLS{
+					SecretName:                "certificate",
+					EnableFallbackCertificate: true,
+				},
+			},
+			Routes: []contour_v1.Route{
+				{
+					Services: []contour_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+				},
+			},
+		})
+
+	rh.OnAdd(p)
+
+	// Add Fallback Certificate Secret
+	fallbackSecret := featuretests.TLSSecret(t, "admin/fallbacksecret", &featuretests.ServerCertificate)
+	rh.OnAdd(fallbackSecret)
+
+	// Add Fallback Cert Delegation
+	certDelegationAll := &contour_v1.TLSCertificateDelegation{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "fallbackcertdelegation",
+			Namespace: "admin",
+		},
+		Spec: contour_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_v1.CertificateDelegation{{
+				SecretName:       "fallbacksecret",
+				TargetNamespaces: []string{"*"},
+			}},
+		},
+	}
+
+	rh.OnAdd(certDelegationAll)
+
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+
+	httpsListener := &envoy_config_listener_v3.Listener{
+		Name:    "ingress_https",
+		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v3.ListenerFilters(
+			envoy_v3.TLSInspector(),
+		),
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
+			filterchaintls("foo.com",
+				featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+				authzFilterFor(
+					"foo.com",
+					&envoy_filter_http_ext_authz_v3.ExtAuthz{
+						Services:               grpcCluster("extension/auth/extension"),
+						ClearRouteCache:        true,
+						IncludePeerCertificate: true,
+						StatusOnError: &envoy_type_v3.HttpStatus{
+							Code: envoy_type_v3.StatusCode_Forbidden,
+						},
+						TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+					},
+				),
+				nil, "h2", "http/1.1"),
+			filterchaintlsfallbackauthz(fallbackSecret,
+				&envoy_filter_http_ext_authz_v3.ExtAuthz{
+					Services:               grpcCluster("extension/auth/extension"),
+					ClearRouteCache:        true,
+					IncludePeerCertificate: true,
+					StatusOnError: &envoy_type_v3.HttpStatus{
+						Code: envoy_type_v3.StatusCode_Forbidden,
+					},
+					TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+				}, nil, "h2", "http/1.1"),
+		},
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+	}
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			httpListener,
+			httpsListener,
+			statsListener()),
+	}).Status(p).IsValid()
+}
+
 func TestGlobalAuthorization(t *testing.T) {
 	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		// Default extAuthz on non TLS host.
@@ -484,6 +578,8 @@ func TestGlobalAuthorization(t *testing.T) {
 		"GlobalExternalAuthorizationWithMergedAuthPolicy": globalExternalAuthorizationWithMergedAuthPolicy,
 		// extAuthz authpolicy merge for TLS hosts.
 		"GlobalExternalAuthorizationWithMergedAuthPolicyTLS": globalExternalAuthorizationWithMergedAuthPolicyTLS,
+		// extAuthz on TLS host with Fallback Certificate enabled.
+		"GlobalExternalAuthorizationFilterTLSWithFallbackCertificate": globalExternalAuthorizationFilterTLSWithFallbackCertificate,
 	}
 
 	for n, f := range subtests {
@@ -519,6 +615,10 @@ func TestGlobalAuthorization(t *testing.T) {
 										"header_1":    "message_1",
 									},
 								},
+							}
+							httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
+								Namespace: "admin",
+								Name:      "fallbacksecret",
 							}
 						}
 					}

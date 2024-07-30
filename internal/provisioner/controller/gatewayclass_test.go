@@ -556,7 +556,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					// contrived way to cause this scenario.
 					Name: "gatewayclasses-wrong.gateway.networking.k8s.io",
 					Annotations: map[string]string{
-						"gateway.networking.k8s.io/bundle-version": "v1.0.0",
+						"gateway.networking.k8s.io/bundle-version": "v1.1.0",
 					},
 				},
 			},
@@ -589,7 +589,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "gatewayclasses.gateway.networking.k8s.io",
 					Annotations: map[string]string{
-						"gateway.networking.k8s.io/bundle-version-wrong": "v1.0.0",
+						"gateway.networking.k8s.io/bundle-version-wrong": "v1.1.0",
 					},
 				},
 			},
@@ -676,7 +676,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name: "gatewayclasses.gateway.networking.k8s.io",
 						Annotations: map[string]string{
-							"gateway.networking.k8s.io/bundle-version": "v1.0.0",
+							"gateway.networking.k8s.io/bundle-version": "v1.1.0",
 						},
 					},
 				})

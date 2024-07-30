@@ -243,7 +243,7 @@ func testHeaderConditionMatch(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		type scenario struct {
 			headers        map[string]string

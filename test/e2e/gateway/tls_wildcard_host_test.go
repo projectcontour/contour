@@ -60,7 +60,7 @@ func testTLSWildcardHost(namespace string, gateway types.NamespacedName) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
+		require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted))
 
 		cases := []struct {
 			hostname   string

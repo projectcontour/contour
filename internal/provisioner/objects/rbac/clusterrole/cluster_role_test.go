@@ -21,7 +21,7 @@ import (
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/utils/diff"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
@@ -101,7 +101,7 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 		for _, rule := range policyRules {
 			for _, apigroup := range rule.APIGroups {
 				// gatewayclass is in isolate rule
-				if apigroup == gatewayapi_v1alpha2.GroupName && rule.Resources[0] != "gatewayclasses" && rule.Resources[0] != "gatewayclasses/status" {
+				if apigroup == gatewayapi_v1.GroupName && rule.Resources[0] != "gatewayclasses" && rule.Resources[0] != "gatewayclasses/status" {
 					gatewayResources = append(gatewayResources, rule.Resources)
 					break
 				}

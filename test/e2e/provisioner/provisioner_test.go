@@ -85,8 +85,7 @@ var _ = BeforeSuite(func() {
 		}
 	}
 
-	_, ok := f.CreateGatewayClassAndWaitFor(gc, e2e.GatewayClassAccepted)
-	require.True(f.T(), ok)
+	require.True(f.T(), f.CreateGatewayClassAndWaitFor(gc, e2e.GatewayClassAccepted))
 
 	paramsEnvoyDeployment := &contour_v1alpha1.ContourDeployment{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -116,8 +115,7 @@ var _ = BeforeSuite(func() {
 			},
 		},
 	}
-	_, ok = f.CreateGatewayClassAndWaitFor(gcWithEnvoyDeployment, e2e.GatewayClassAccepted)
-	require.True(f.T(), ok)
+	require.True(f.T(), f.CreateGatewayClassAndWaitFor(gcWithEnvoyDeployment, e2e.GatewayClassAccepted))
 })
 
 var _ = AfterSuite(func() {
@@ -180,8 +178,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted)
-			require.True(f.T(), ok)
+			require.True(f.T(), f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted))
 
 			// Create a Gateway using that GatewayClass, it should not be accepted
 			// since the GatewayClass is not accepted.
@@ -277,10 +274,9 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
+			require.True(f.T(), f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
 				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
-			})
-			require.True(f.T(), ok)
+			}))
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
 
@@ -304,8 +300,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok = f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
-			require.True(f.T(), ok)
+			require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted))
 
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 				OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
@@ -385,7 +380,7 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
+			require.True(f.T(), f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
 				if !(e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)) {
 					return false
 				}
@@ -397,8 +392,7 @@ var _ = Describe("Gateway provisioner", func() {
 				}
 
 				return true
-			})
-			require.True(f.T(), ok)
+			}))
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
 
@@ -422,8 +416,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok = f.CreateHTTPRouteAndWaitFor(httpRoute, e2e.HTTPRouteAccepted)
-			require.True(f.T(), ok)
+			require.True(f.T(), f.CreateHTTPRouteAndWaitFor(httpRoute, e2e.HTTPRouteAccepted))
 
 			for _, tc := range []struct {
 				name   string
@@ -471,7 +464,7 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 				Spec: gatewayapi_v1alpha2.TCPRouteSpec{
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							{
 								Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
 								Name:      gatewayapi_v1.ObjectName(gateway.Name),
@@ -485,8 +478,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok = f.CreateTCPRouteAndWaitFor(tcpRoute, e2e.TCPRouteAccepted)
-			require.True(f.T(), ok)
+			require.True(f.T(), f.CreateTCPRouteAndWaitFor(tcpRoute, e2e.TCPRouteAccepted))
 
 			for _, tc := range []struct {
 				name string
@@ -533,8 +525,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted)
-			require.True(f.T(), ok)
+			require.True(f.T(), f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted))
 
 			// Now create the ContourDeployment to match the parametersRef.
 			params := &contour_v1alpha1.ContourDeployment{
@@ -595,10 +586,10 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
+			require.True(f.T(), f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
 				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
-			})
-			require.True(f.T(), ok, fmt.Sprintf("gateway is %v", gateway))
+			}))
+
 			type testObj struct {
 				expectReconcile bool
 				namespace       string
@@ -650,9 +641,8 @@ var _ = Describe("Gateway provisioner", func() {
 					route.Spec.Hostnames = []gatewayapi_v1.Hostname{gatewayapi_v1.Hostname("provisioner.projectcontour.io." + t.namespace)}
 
 					By(fmt.Sprintf("Expect namespace %s to be watched by contour", t.namespace))
-					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted)
-					By(fmt.Sprintf("Expect httproute under namespace %s is accepted", t.namespace))
-					require.True(f.T(), ok, fmt.Sprintf("httproute is %v", hr))
+					require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteAccepted))
+
 					res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 						OverrideURL: "http://" + net.JoinHostPort(gateway.Status.Addresses[0].Value, "80"),
 						Host:        string(route.Spec.Hostnames[0]),
@@ -668,17 +658,16 @@ var _ = Describe("Gateway provisioner", func() {
 				} else {
 					// Root proxy in non-watched namespace should fail
 					By(fmt.Sprintf("Expect namespace %s not to be watched by contour", t.namespace))
-					hr, ok := f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIgnoredByContour)
-					require.True(f.T(), ok, fmt.Sprintf("httproute's is %v", hr))
+					require.True(f.T(), f.CreateHTTPRouteAndWaitFor(route, e2e.HTTPRouteIgnoredByContour))
 
 					By(fmt.Sprintf("Expect httproute under namespace %s is not accepted for a period of time", t.namespace))
 					require.Never(f.T(), func() bool {
-						hr = &gatewayapi_v1.HTTPRoute{}
-						if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(hr), hr); err != nil {
+						hr := &gatewayapi_v1.HTTPRoute{}
+						if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(route), hr); err != nil {
 							return false
 						}
 						return e2e.HTTPRouteAccepted(hr)
-					}, 20*time.Second, time.Second, hr)
+					}, 20*time.Second, time.Second)
 				}
 			}
 		})
@@ -701,8 +690,7 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			_, ok := f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted)
-			require.True(f.T(), ok)
+			require.True(f.T(), f.CreateGatewayClassAndWaitFor(gatewayClass, e2e.GatewayClassNotAccepted))
 
 			// Now create the ContourDeployment to match the parametersRef.
 			params := &contour_v1alpha1.ContourDeployment{
@@ -763,10 +751,9 @@ var _ = Describe("Gateway provisioner", func() {
 				},
 			}
 
-			gateway, ok := f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
+			require.True(f.T(), f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
 				return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
-			})
-			require.True(f.T(), ok, fmt.Sprintf("gateway is %v", gateway))
+			}))
 
 			By("Skip reconciling the TLSRoute if disabledFeatures includes it")
 			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
@@ -776,12 +763,12 @@ var _ = Describe("Gateway provisioner", func() {
 					Name:      "tlsroute-1",
 				},
 				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-					Hostnames: []gatewayapi_v1alpha2.Hostname{"provisioner.projectcontour.io"},
+					Hostnames: []gatewayapi_v1.Hostname{"provisioner.projectcontour.io"},
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
-						ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+						ParentRefs: []gatewayapi_v1.ParentReference{
 							{
-								Namespace: ptr.To(gatewayapi_v1alpha2.Namespace(gateway.Namespace)),
-								Name:      gatewayapi_v1alpha2.ObjectName(gateway.Name),
+								Namespace: ptr.To(gatewayapi_v1.Namespace(gateway.Namespace)),
+								Name:      gatewayapi_v1.ObjectName(gateway.Name),
 							},
 						},
 					},
@@ -792,16 +779,16 @@ var _ = Describe("Gateway provisioner", func() {
 					},
 				},
 			}
-			tr, ok := f.CreateTLSRouteAndWaitFor(route, e2e.TLSRouteIgnoredByContour)
-			require.True(f.T(), ok, fmt.Sprintf("tlsroute's is %v", tr))
+			require.True(f.T(), f.CreateTLSRouteAndWaitFor(route, e2e.TLSRouteIgnoredByContour))
+
 			By("Expect tlsroute not to be accepted")
 			require.Never(f.T(), func() bool {
-				tr = &gatewayapi_v1alpha2.TLSRoute{}
-				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(tr), tr); err != nil {
+				tr := &gatewayapi_v1alpha2.TLSRoute{}
+				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(route), tr); err != nil {
 					return false
 				}
 				return e2e.TLSRouteAccepted(tr)
-			}, 20*time.Second, time.Second, tr)
+			}, 20*time.Second, time.Second)
 		})
 	})
 })

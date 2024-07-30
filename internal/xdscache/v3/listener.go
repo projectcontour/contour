@@ -559,8 +559,14 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					alpnProtos...,
 				)
 
+				var authzFilter *envoy_filter_network_http_connection_manager_v3.HttpFilter
+				if vh.ExternalAuthorization != nil {
+					authzFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
+				}
+
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
 					DefaultFilters().
+					AddFilter(authzFilter).
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).

@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -254,7 +253,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1.HTTPHeaderFilter, headerPolicyTyp
 				continue
 			}
 			if key == "Host" && (headerPolicyType == string(gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier) ||
-				headerPolicyType == string(gatewayapi_v1alpha2.GRPCRouteFilterRequestHeaderModifier)) {
+				headerPolicyType == string(gatewayapi_v1.GRPCRouteFilterRequestHeaderModifier)) {
 				hostRewrite = header.Value
 				continue
 			}
@@ -809,25 +808,29 @@ func loadBalancerRequestHashPolicies(lbp *contour_v1.LoadBalancerPolicy, validCo
 	}
 }
 
-func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.GlobalCircuitBreakerDefaults) *Service {
+func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.CircuitBreakers) *Service {
 	if s == nil {
 		return nil
 	}
 
-	if s.MaxConnections == 0 && cb != nil {
-		s.MaxConnections = cb.MaxConnections
+	if s.CircuitBreakers.MaxConnections == 0 && cb != nil {
+		s.CircuitBreakers.MaxConnections = cb.MaxConnections
 	}
 
-	if s.MaxPendingRequests == 0 && cb != nil {
-		s.MaxPendingRequests = cb.MaxPendingRequests
+	if s.CircuitBreakers.MaxPendingRequests == 0 && cb != nil {
+		s.CircuitBreakers.MaxPendingRequests = cb.MaxPendingRequests
 	}
 
-	if s.MaxRequests == 0 && cb != nil {
-		s.MaxRequests = cb.MaxRequests
+	if s.CircuitBreakers.MaxRequests == 0 && cb != nil {
+		s.CircuitBreakers.MaxRequests = cb.MaxRequests
 	}
 
-	if s.MaxRetries == 0 && cb != nil {
-		s.MaxRetries = cb.MaxRetries
+	if s.CircuitBreakers.MaxRetries == 0 && cb != nil {
+		s.CircuitBreakers.MaxRetries = cb.MaxRetries
+	}
+
+	if s.CircuitBreakers.PerHostMaxConnections == 0 && cb != nil {
+		s.CircuitBreakers.PerHostMaxConnections = cb.PerHostMaxConnections
 	}
 
 	return s

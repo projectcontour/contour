@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -70,14 +71,11 @@ func checkDeploymentHasLabels(t *testing.T, deploy *apps_v1.Deployment, expected
 	t.Errorf("deployment has unexpected %q labels", deploy.Labels)
 }
 
-func checkPodHasAnnotations(t *testing.T, tmpl *core_v1.PodTemplateSpec, annotations map[string]string) {
+func checkPodHasAnnotation(t *testing.T, tmpl core_v1.PodTemplateSpec, key, value string) {
 	t.Helper()
 
-	for k, v := range annotations {
-		if val, ok := tmpl.Annotations[k]; !ok || val != v {
-			t.Errorf("pod template has unexpected %q annotations", tmpl.Annotations)
-		}
-	}
+	require.Contains(t, tmpl.Annotations, key)
+	require.Equal(t, value, tmpl.Annotations[key])
 }
 
 func checkContainerHasArg(t *testing.T, container *core_v1.Container, arg string) {
@@ -153,10 +151,6 @@ func TestDesiredDeployment(t *testing.T) {
 		},
 	}
 
-	annotations := map[string]string{
-		"key":                  "value",
-		"prometheus.io/scrape": "false",
-	}
 	cntr.Spec.ContourResources = resQutoa
 
 	// Change the Kubernetes log level to test --kubernetes-debug.
@@ -168,7 +162,13 @@ func TestDesiredDeployment(t *testing.T) {
 	cntr.Spec.ResourceLabels = map[string]string{
 		"key": "value",
 	}
-	cntr.Spec.ContourPodAnnotations = annotations
+	cntr.Spec.ContourPodAnnotations = map[string]string{
+		"key":                  "value",
+		"prometheus.io/scrape": "false",
+	}
+	cntr.Spec.ResourceAnnotations = map[string]string{
+		"other-annotation": "other-val",
+	}
 
 	// Use non-default container ports to test that --envoy-service-http(s)-port
 	// flags are added.
@@ -185,7 +185,9 @@ func TestDesiredDeployment(t *testing.T) {
 	checkDeploymentHasEnvVar(t, deploy, contourNsEnvVar)
 	checkDeploymentHasEnvVar(t, deploy, contourPodEnvVar)
 	checkDeploymentHasLabels(t, deploy, cntr.WorkloadLabels())
-	checkPodHasAnnotations(t, &deploy.Spec.Template, contourPodAnnotations(cntr))
+	checkPodHasAnnotation(t, deploy.Spec.Template, "key", "value")
+	checkPodHasAnnotation(t, deploy.Spec.Template, "prometheus.io/scrape", "false")
+	checkPodHasAnnotation(t, deploy.Spec.Template, "other-annotation", "other-val")
 
 	for _, port := range cntr.Spec.NetworkPublishing.Envoy.Ports {
 		switch port.Name {
@@ -278,7 +280,7 @@ func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
 		disabledFeatures []contour_v1.Feature
 	}{
 		{
-			description:      "disable 2 featuers",
+			description:      "disable 2 features",
 			disabledFeatures: []contour_v1.Feature{"tlsroutes", "grpcroutes"},
 		},
 		{
@@ -297,8 +299,10 @@ func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
 			// Change the Contour watch namespaces flag
 			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
 			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
-			arg := fmt.Sprintf("--disable-feature=%s", strings.Join(model.FeaturesToStrings(tc.disabledFeatures), ","))
-			checkContainerHasArg(t, container, arg)
+			for _, f := range tc.disabledFeatures {
+				arg := fmt.Sprintf("--disable-feature=%s", string(f))
+				checkContainerHasArg(t, container, arg)
+			}
 		})
 	}
 }

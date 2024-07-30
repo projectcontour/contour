@@ -340,6 +340,12 @@ spec:
                               defaults to 3.
                             format: int32
                             type: integer
+                          perHostMaxConnections:
+                            description: |-
+                              PerHostMaxConnections is the maximum number of connections
+                              that Envoy will allow to each individual host in a cluster.
+                            format: int32
+                            type: integer
                         type: object
                       dnsLookupFamily:
                         description: |-
@@ -1536,6 +1542,8 @@ spec:
                       Defines the XDSServer to use for `contour serve`.
                       Values: `envoy` (default), `contour (deprecated)`.
                       Other values will produce an error.
+                      Deprecated: this field will be removed in a future release when
+                      the `contour` xDS server implementation is removed.
                     type: string
                 type: object
             type: object
@@ -2382,10 +2390,15 @@ spec:
                                 More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -2421,10 +2434,15 @@ spec:
                                 to OpenStack.
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -2491,10 +2509,15 @@ spec:
                               type: array
                               x-kubernetes-list-type: atomic
                             name:
+                              default: ""
                               description: |-
                                 Name of the referent.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
                                 TODO: Add other useful fields. apiVersion, kind, uid?
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                               type: string
                             optional:
                               description: optional specify whether the ConfigMap
@@ -2527,10 +2550,15 @@ spec:
                                 secret object contains more than one secret, all secret references are passed.
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -2994,10 +3022,15 @@ spec:
                                 scripts.
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -3189,10 +3222,15 @@ spec:
                                 target and initiator authentication
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -3450,10 +3488,15 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       name:
+                                        default: ""
                                         description: |-
                                           Name of the referent.
-                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
                                           TODO: Add other useful fields. apiVersion, kind, uid?
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional specify whether the
@@ -3586,10 +3629,15 @@ spec:
                                         type: array
                                         x-kubernetes-list-type: atomic
                                       name:
+                                        default: ""
                                         description: |-
                                           Name of the referent.
-                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
                                           TODO: Add other useful fields. apiVersion, kind, uid?
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                         type: string
                                       optional:
                                         description: optional field specify whether
@@ -3720,10 +3768,15 @@ spec:
                                 More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -3767,10 +3820,15 @@ spec:
                                 sensitive information. If this is not provided, Login operation will fail.
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -3887,10 +3945,15 @@ spec:
                                 credentials.  If not specified, default values will be attempted.
                               properties:
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
-                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     TODO: Add other useful fields. apiVersion, kind, uid?
+                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                               type: object
                               x-kubernetes-map-type: atomic
@@ -4230,6 +4293,12 @@ spec:
                                 description: The maximum number of parallel retries
                                   a single Envoy instance allows to the Kubernetes
                                   Service; defaults to 3.
+                                format: int32
+                                type: integer
+                              perHostMaxConnections:
+                                description: |-
+                                  PerHostMaxConnections is the maximum number of connections
+                                  that Envoy will allow to each individual host in a cluster.
                                 format: int32
                                 type: integer
                             type: object
@@ -5430,6 +5499,8 @@ spec:
                           Defines the XDSServer to use for `contour serve`.
                           Values: `envoy` (default), `contour (deprecated)`.
                           Other values will produce an error.
+                          Deprecated: this field will be removed in a future release when
+                          the `contour` xDS server implementation is removed.
                         type: string
                     type: object
                 type: object
@@ -5568,6 +5639,39 @@ spec:
             description: ExtensionServiceSpec defines the desired state of an ExtensionService
               resource.
             properties:
+              circuitBreakerPolicy:
+                description: |-
+                  CircuitBreakerPolicy specifies the circuit breaker budget across the extension service.
+                  If defined this overrides the global circuit breaker budget.
+                properties:
+                  maxConnections:
+                    description: The maximum number of connections that a single Envoy
+                      instance allows to the Kubernetes Service; defaults to 1024.
+                    format: int32
+                    type: integer
+                  maxPendingRequests:
+                    description: The maximum number of pending requests that a single
+                      Envoy instance allows to the Kubernetes Service; defaults to
+                      1024.
+                    format: int32
+                    type: integer
+                  maxRequests:
+                    description: The maximum parallel requests a single Envoy instance
+                      allows to the Kubernetes Service; defaults to 1024
+                    format: int32
+                    type: integer
+                  maxRetries:
+                    description: The maximum number of parallel retries a single Envoy
+                      instance allows to the Kubernetes Service; defaults to 3.
+                    format: int32
+                    type: integer
+                  perHostMaxConnections:
+                    description: |-
+                      PerHostMaxConnections is the maximum number of connections
+                      that Envoy will allow to each individual host in a cluster.
+                    format: int32
+                    type: integer
+                type: object
               loadBalancerPolicy:
                 description: |-
                   The policy for load balancing GRPC service requests. Note that the
@@ -9758,9 +9862,6 @@ spec:
       app: contour
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
       labels:
         app: contour
     spec:
@@ -9859,10 +9960,6 @@ spec:
       app: envoy
   template:
     metadata:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8002"
-        prometheus.io/path: "/stats/prometheus"
       labels:
         app: envoy
     spec:
@@ -9893,7 +9990,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.30.1
+        image: docker.io/envoyproxy/envoy:v1.31.0
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
@@ -9915,6 +10012,10 @@ spec:
         - containerPort: 8443
           hostPort: 443
           name: https
+          protocol: TCP
+        - containerPort: 8002
+          hostPort: 8002
+          name: metrics
           protocol: TCP
         readinessProbe:
           httpGet:

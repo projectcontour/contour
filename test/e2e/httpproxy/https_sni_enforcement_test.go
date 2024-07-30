@@ -58,7 +58,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(echoOneProxy, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(echoOneProxy, e2e.HTTPProxyValid))
 
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      echoOneProxy.Spec.VirtualHost.Fqdn,
@@ -98,7 +98,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(echoTwoProxy, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(echoTwoProxy, e2e.HTTPProxyValid))
 
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      echoTwoProxy.Spec.VirtualHost.Fqdn,

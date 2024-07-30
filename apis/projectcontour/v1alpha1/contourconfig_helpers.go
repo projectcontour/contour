@@ -185,6 +185,27 @@ func ValidateTLSProtocolVersions(min, max string) error {
 	return nil
 }
 
+// isValidTLSCipher parses a cipher string and returns true if it is valid.
+// We do not support the full syntax defined in the BoringSSL documentation,
+// see https://commondatastorage.googleapis.com/chromium-boringssl-docs/ssl.h.html#Cipher-suite-configuration
+func isValidTLSCipher(cipherSpec string) bool {
+	// Equal-preference group: [cipher1|cipher2|...]
+	if strings.HasPrefix(cipherSpec, "[") && strings.HasSuffix(cipherSpec, "]") {
+		for _, cipher := range strings.Split(strings.Trim(cipherSpec, "[]"), "|") {
+			if _, ok := ValidTLSCiphers[cipher]; !ok {
+				return false
+			}
+		}
+		return true
+	}
+
+	if _, ok := ValidTLSCiphers[cipherSpec]; !ok {
+		return false
+	}
+
+	return true
+}
+
 // Validate ensures EnvoyTLS configuration is valid.
 func (e *EnvoyTLS) Validate() error {
 	if err := ValidateTLSProtocolVersions(e.MinimumProtocolVersion, e.MaximumProtocolVersion); err != nil {
@@ -193,7 +214,7 @@ func (e *EnvoyTLS) Validate() error {
 
 	var invalidCipherSuites []string
 	for _, c := range e.CipherSuites {
-		if _, ok := ValidTLSCiphers[c]; !ok {
+		if !isValidTLSCipher(c) {
 			invalidCipherSuites = append(invalidCipherSuites, c)
 		}
 	}
