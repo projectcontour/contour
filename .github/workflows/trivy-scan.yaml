@@ -16,9 +16,9 @@ jobs:
       matrix:
         branch:
         - main
+        - release-1.30
         - release-1.29
         - release-1.28
-        - release-1.27
     runs-on: ubuntu-latest
     permissions:
       security-events: write
