@@ -1,1 +1,0 @@
-Fixes bug where external authorization policy was ignored on HTTPProxy direct response routes.
