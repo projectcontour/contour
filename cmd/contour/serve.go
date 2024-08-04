@@ -831,7 +831,6 @@ func (s *Server) setupTracingService(tracingConfig *contour_v1alpha1.TracingConf
 		OverallSampling:        overallSampling,
 		MaxPathTagLength:       ptr.Deref(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:             customTags,
-		System:                 ptr.Deref(tracingConfig.System, contour_v1alpha1.TracingSystemOpenTelemetry),
 	}, nil
 }
 

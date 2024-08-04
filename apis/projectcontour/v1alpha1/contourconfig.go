@@ -82,7 +82,7 @@ type ContourConfigurationSpec struct {
 	// +optional
 	Metrics *MetricsConfig `json:"metrics,omitempty"`
 
-	// Tracing defines properties for exporting trace data to the tracing system.
+	// Tracing defines properties for exporting trace data to the OpenTelemetry.
 	Tracing *TracingConfig `json:"tracing,omitempty"`
 
 	// FeatureFlags defines toggle to enable new contour features.
@@ -250,14 +250,6 @@ const (
 
 	// HTTPVersion2 is the name of the HTTP/2 version.
 	HTTPVersion2 HTTPVersionType = "HTTP/2"
-)
-
-// TracingSystem is the tracing system used in Envoy
-type TracingSystem string
-
-const (
-	TracingSystemOpenTelemetry TracingSystem = "opentelemetry"
-	TracingSystemZipkin        TracingSystem = "zipkin"
 )
 
 // EnvoyConfig defines how Envoy is to be Configured from Contour.
@@ -808,7 +800,7 @@ type RateLimitServiceConfig struct {
 	DefaultGlobalRateLimitPolicy *contour_v1.GlobalRateLimitPolicy `json:"defaultGlobalRateLimitPolicy,omitempty"`
 }
 
-// TracingConfig defines properties for exporting trace data to the tracing system.
+// TracingConfig defines properties for exporting trace data to OpenTelemetry.
 type TracingConfig struct {
 	// IncludePodDetail defines a flag.
 	// If it is true, contour will add the pod name and namespace to the span of the trace.
@@ -838,12 +830,6 @@ type TracingConfig struct {
 
 	// ExtensionService identifies the extension service defining the otel-collector.
 	ExtensionService *NamespacedName `json:"extensionService"`
-
-	// System specifies the tracing system used in Evnoy.
-	// Supported systems are "opentelemetry" and "zipkin".
-	// Defaults to "opentelemetry".
-	// +optional
-	System *TracingSystem `json:"system"`
 }
 
 // CustomTag defines custom tags with unique tag name

@@ -5426,7 +5426,7 @@ TracingConfig
 </em>
 </td>
 <td>
-<p>Tracing defines properties for exporting trace data to the tracing system.</p>
+<p>Tracing defines properties for exporting trace data to the OpenTelemetry.</p>
 </td>
 </tr>
 <tr>
@@ -6319,7 +6319,7 @@ TracingConfig
 </em>
 </td>
 <td>
-<p>Tracing defines properties for exporting trace data to the tracing system.</p>
+<p>Tracing defines properties for exporting trace data to the OpenTelemetry.</p>
 </td>
 </tr>
 <tr>
@@ -9201,7 +9201,7 @@ for more information.</p>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>TracingConfig defines properties for exporting trace data to the tracing system.</p>
+<p>TracingConfig defines properties for exporting trace data to OpenTelemetry.</p>
 </p>
 <table>
 <thead>
@@ -9298,46 +9298,7 @@ NamespacedName
 <p>ExtensionService identifies the extension service defining the otel-collector.</p>
 </td>
 </tr>
-<tr>
-<td style="white-space:nowrap">
-<code>system</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.TracingSystem">
-TracingSystem
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>System specifies the tracing system used in Evnoy.
-Supported systems are &ldquo;opentelemetry&rdquo; and &ldquo;zipkin&rdquo;.
-Defaults to &ldquo;opentelemetry&rdquo;.</p>
-</td>
-</tr>
 </tbody>
-</table>
-<h3 id="projectcontour.io/v1alpha1.TracingSystem">TracingSystem
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.TracingConfig">TracingConfig</a>)
-</p>
-<p>
-<p>TracingSystem is the tracing system used in Envoy</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr><td><p>&#34;opentelemetry&#34;</p></td>
-<td></td>
-</tr><tr><td><p>&#34;zipkin&#34;</p></td>
-<td></td>
-</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.WorkloadType">WorkloadType
 (<code>string</code> alias)</p></h3>

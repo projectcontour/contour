@@ -392,16 +392,6 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 			})
 		}
 
-		var tracingSystem *contour_v1alpha1.TracingSystem
-		if ctx.Config.Tracing.System != nil {
-			switch *ctx.Config.Tracing.System {
-			case config.TracingSystemOpenTelemetry:
-				tracingSystem = ptr.To(contour_v1alpha1.TracingSystemOpenTelemetry)
-			case config.TracingSystemZipkin:
-				tracingSystem = ptr.To(contour_v1alpha1.TracingSystemZipkin)
-			}
-		}
-
 		tracingConfig = &contour_v1alpha1.TracingConfig{
 			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
 			ServiceName:      ctx.Config.Tracing.ServiceName,
@@ -412,7 +402,6 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Name:      namespacedName.Name,
 				Namespace: namespacedName.Namespace,
 			},
-			System: tracingSystem,
 		}
 	}
 

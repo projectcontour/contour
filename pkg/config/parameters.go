@@ -155,23 +155,9 @@ func (h HTTPVersionType) Validate() error {
 }
 
 const (
-	HTTPVersion1               HTTPVersionType = "http/1.1"
-	HTTPVersion2               HTTPVersionType = "http/2"
-	TracingSystemOpenTelemetry TracingSystem   = "opentelemetry"
-	TracingSystemZipkin        TracingSystem   = "zipkin"
+	HTTPVersion1 HTTPVersionType = "http/1.1"
+	HTTPVersion2 HTTPVersionType = "http/2"
 )
-
-// TracingSystem is the tracing system used in Envoy
-type TracingSystem string
-
-func (h TracingSystem) Validate() error {
-	switch h {
-	case TracingSystemOpenTelemetry, TracingSystemZipkin:
-		return nil
-	default:
-		return fmt.Errorf("invalid tracing system %q", h)
-	}
-}
 
 // NamespacedName defines the namespace/name of the Kubernetes resource referred from the configuration file.
 // Used for Contour configuration YAML file parsing, otherwise we could use K8s types.NamespacedName.
@@ -719,7 +705,7 @@ type Parameters struct {
 	// MetricsParameters holds configurable parameters for Contour and Envoy metrics.
 	Metrics MetricsParameters `yaml:"metrics,omitempty"`
 
-	// Tracing holds the relevant configuration for exporting trace data to the tracing system.
+	// Tracing holds the relevant configuration for exporting trace data to OpenTelemetry.
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
 	// FeatureFlags defines toggle to enable new contour features.
@@ -730,7 +716,7 @@ type Parameters struct {
 	FeatureFlags []string `yaml:"featureFlags,omitempty"`
 }
 
-// Tracing defines properties for exporting trace data to the tracing system.
+// Tracing defines properties for exporting trace data to OpenTelemetry.
 type Tracing struct {
 	// IncludePodDetail defines a flag.
 	// If it is true, contour will add the pod name and namespace to the span of the trace.
@@ -757,10 +743,6 @@ type Tracing struct {
 	// ExtensionService identifies the extension service defining the otel-collector,
 	// formatted as <namespace>/<name>.
 	ExtensionService string `yaml:"extensionService"`
-
-	// System Specifies the tracing system to use. Supported systems are
-	// "zipkin" and "opentelemetry".
-	System *TracingSystem `yaml:"system"`
 }
 
 // CustomTag defines custom tags with unique tag name
