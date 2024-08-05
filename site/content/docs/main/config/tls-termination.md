@@ -265,7 +265,11 @@ spec:
 
 ## Client Certificate Details Forwarding
 
-HTTPProxy supports passing certificate data through the `x-forwarded-client-cert` header to let applications use details from client certificates (e.g. Subject, SAN...). Since the certificate (or the certificate chain) could exceed the web server header size limit, you have the ability to select what specific part of the certificate to expose in the header through the `forwardClientCertificate` field. Read more about the supported values in the [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#x-forwarded-client-cert).
+HTTPProxy supports passing certificate data through the `x-forwarded-client-cert` (XFCC) header to let applications use details from client certificates (e.g. Subject, SAN...).
+
+Contour will never forward or append to an existing XFCC header from a client, regardless of whether forwarding client certificate details is enabled. It will always sanitize the request, first dropping the header if present, and then if configured to pass client certificate details, and a client certificate has been presented, then it will add a new XFCC header.
+
+Since the certificate (or the certificate chain) could exceed the web server header size limit, you have the ability to select what specific part of the certificate to expose in the header through the `forwardClientCertificate` field. Read more about the supported values in the [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#x-forwarded-client-cert).
 
 ```yaml
 apiVersion: projectcontour.io/v1
