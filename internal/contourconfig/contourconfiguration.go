@@ -131,6 +131,7 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				XffNumTrustedHops: ptr.To(uint32(0)),
 				EnvoyAdminPort:    ptr.To(9001),
 			},
+			EnableStatPrefix: ptr.To(false),
 		},
 		Gateway: nil,
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{

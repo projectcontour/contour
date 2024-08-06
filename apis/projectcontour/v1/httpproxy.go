@@ -603,6 +603,11 @@ type Route struct {
 	// +optional
 	RequestRedirectPolicy *HTTPRequestRedirectPolicy `json:"requestRedirectPolicy,omitempty"`
 
+	// RouteTag specifies a human readable tag for the route. This is used when
+	// per-route metrics are enabled.
+	// +optional
+	RouteTag string `json:"metricsTag,omitempty"`
+
 	// DirectResponsePolicy returns an arbitrary HTTP response directly.
 	// +optional
 	DirectResponsePolicy *HTTPDirectResponsePolicy `json:"directResponsePolicy,omitempty"`
