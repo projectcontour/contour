@@ -188,6 +188,7 @@ type httpConnectionManagerBuilder struct {
 	maxRequestsPerConnection      *uint32
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
+	disableCompression            bool
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -271,6 +272,11 @@ func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectio
 	return b
 }
 
+func (b *httpConnectionManagerBuilder) DisableCompression(disabled bool) *httpConnectionManagerBuilder {
+	b.disableCompression = disabled
+	return b
+}
+
 func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value contour_v1alpha1.ServerHeaderTransformationType) *httpConnectionManagerBuilder {
 	switch value {
 	case contour_v1alpha1.OverwriteServerHeader:
@@ -308,34 +314,38 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	// Add a default set of ordered http filters.
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
-	b.filters = append(b.filters,
-		&envoy_filter_network_http_connection_manager_v3.HttpFilter{
-			Name: CompressorFilterName,
-			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_compressor_v3.Compressor{
-					CompressorLibrary: &envoy_config_core_v3.TypedExtensionConfig{
-						Name: "gzip",
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_compression_gzip_compressor_v3.Gzip{},
-						),
-					},
-					ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
-						CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-							ContentType: []string{
-								// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
-								"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
-								"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
-								"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
-								"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
-								// Additional content-types for grpc-web https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
-								"application/grpc-web", "application/grpc-web+proto", "application/grpc-web+json", "application/grpc-web+thrift",
-								"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
+	if !b.disableCompression {
+		// If compression is enabled add compressor filter
+		b.filters = append(b.filters,
+			&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				Name: CompressorFilterName,
+				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_compressor_v3.Compressor{
+						CompressorLibrary: &envoy_config_core_v3.TypedExtensionConfig{
+							Name: "gzip",
+							TypedConfig: protobuf.MustMarshalAny(
+								&envoy_compression_gzip_compressor_v3.Gzip{},
+							),
+						},
+						ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
+							CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
+								ContentType: []string{
+									// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
+									"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
+									"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
+									"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
+									"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
+									// Additional content-types for grpc-web https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
+									"application/grpc-web", "application/grpc-web+proto", "application/grpc-web+json", "application/grpc-web+thrift",
+									"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
+								},
 							},
 						},
-					},
-				}),
-			},
-		},
+					}),
+				},
+			})
+	}
+	b.filters = append(b.filters,
 		&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 			Name: GRPCWebFilterName,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{

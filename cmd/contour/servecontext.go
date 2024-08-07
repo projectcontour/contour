@@ -519,6 +519,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:                 &ctx.useProxyProto,
+				DisableCompression:            ctx.Config.DisableCompression,
 				DisableAllowChunkedLength:     &ctx.Config.DisableAllowChunkedLength,
 				DisableMergeSlashes:           &ctx.Config.DisableMergeSlashes,
 				ServerHeaderTransformation:    serverHeaderTransformation,

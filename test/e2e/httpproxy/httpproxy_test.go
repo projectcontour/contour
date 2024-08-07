@@ -388,6 +388,19 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	f.NamespacedTest("httpproxy-default-compression", func(namespace string) {
+		testEnvoyDisableCompression(namespace, false)
+	})
+
+	f.NamespacedTest("httpproxy-disable-compression", func(namespace string) {
+		Context("with compression disabled", func() {
+			BeforeEach(func() {
+				contourConfig.DisableCompression = true
+			})
+			testEnvoyDisableCompression(namespace, true)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
 
 	f.NamespacedTest("httpproxy-http-health-checks", testHTTPHealthChecks)
