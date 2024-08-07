@@ -767,7 +767,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"global circuit breaker defaults": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.Cluster.GlobalCircuitBreakerDefaults = &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+				ctx.Config.Cluster.GlobalCircuitBreakerDefaults = &contour_v1alpha1.CircuitBreakers{
 					MaxConnections:     4,
 					MaxPendingRequests: 5,
 					MaxRequests:        6,
@@ -776,7 +776,7 @@ func TestConvertServeContext(t *testing.T) {
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Cluster.GlobalCircuitBreakerDefaults = &contour_v1alpha1.GlobalCircuitBreakerDefaults{
+				cfg.Envoy.Cluster.GlobalCircuitBreakerDefaults = &contour_v1alpha1.CircuitBreakers{
 					MaxConnections:     4,
 					MaxPendingRequests: 5,
 					MaxRequests:        6,

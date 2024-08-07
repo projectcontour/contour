@@ -206,12 +206,12 @@ func TestOverlayOnDefaults(t *testing.T) {
 		"ContourConfig with single non-default field is overlaid correctly": {
 			contourConfig: contour_v1alpha1.ContourConfigurationSpec{
 				XDSServer: &contour_v1alpha1.XDSServerConfig{
-					Type: contour_v1alpha1.EnvoyServerType,
+					Port: 7777,
 				},
 			},
 			want: func() contour_v1alpha1.ContourConfigurationSpec {
 				res := contourconfig.Defaults()
-				res.XDSServer.Type = contour_v1alpha1.EnvoyServerType
+				res.XDSServer.Port = 7777
 				return res
 			},
 		},

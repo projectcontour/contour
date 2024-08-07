@@ -44,6 +44,9 @@ type ExtensionServiceProcessor struct {
 	// UpstreamTLS defines the TLS settings like min/max version
 	// and cipher suites for upstream connections.
 	UpstreamTLS *UpstreamTLS
+
+	// GlobalCircuitBreakerDefaults defines global circuit breaker defaults.
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -120,6 +123,26 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		SNI:                  "",
 		ClientCertificate:    clientCertSecret,
 		UpstreamTLS:          p.UpstreamTLS,
+	}
+
+	if p.GlobalCircuitBreakerDefaults != nil {
+		extension.CircuitBreakers = CircuitBreakers{
+			MaxConnections:        p.GlobalCircuitBreakerDefaults.MaxConnections,
+			MaxPendingRequests:    p.GlobalCircuitBreakerDefaults.MaxPendingRequests,
+			MaxRequests:           p.GlobalCircuitBreakerDefaults.MaxRequests,
+			MaxRetries:            p.GlobalCircuitBreakerDefaults.MaxRetries,
+			PerHostMaxConnections: p.GlobalCircuitBreakerDefaults.PerHostMaxConnections,
+		}
+	}
+
+	if ext.Spec.CircuitBreakerPolicy != nil {
+		extension.CircuitBreakers = CircuitBreakers{
+			MaxConnections:        ext.Spec.CircuitBreakerPolicy.MaxConnections,
+			MaxPendingRequests:    ext.Spec.CircuitBreakerPolicy.MaxPendingRequests,
+			MaxRequests:           ext.Spec.CircuitBreakerPolicy.MaxRequests,
+			MaxRetries:            ext.Spec.CircuitBreakerPolicy.MaxRetries,
+			PerHostMaxConnections: ext.Spec.CircuitBreakerPolicy.PerHostMaxConnections,
+		}
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

@@ -242,6 +242,8 @@ func (t ProtocolParameters) Validate() error {
 type ServerParameters struct {
 	// Defines the XDSServer to use for `contour serve`.
 	// Defaults to "envoy"
+	// Deprecated: this field will be removed in a future release when
+	// the `contour` xDS server implementation is removed.
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
 }
 
@@ -441,7 +443,7 @@ type ClusterParameters struct {
 	// GlobalCircuitBreakerDefaults holds configurable global defaults for the circuit breakers.
 	//
 	// +optional
-	GlobalCircuitBreakerDefaults *contour_v1alpha1.GlobalCircuitBreakerDefaults `yaml:"circuit-breakers,omitempty"`
+	GlobalCircuitBreakerDefaults *contour_v1alpha1.CircuitBreakers `yaml:"circuit-breakers,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	UpstreamTLS ProtocolParameters `yaml:"upstream-tls,omitempty"`

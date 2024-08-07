@@ -107,7 +107,7 @@ const (
 	EnvoyServerType XDSServerType = "envoy"
 )
 
-type GlobalCircuitBreakerDefaults struct {
+type CircuitBreakers struct {
 	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
 	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"max-connections,omitempty"`
@@ -120,6 +120,10 @@ type GlobalCircuitBreakerDefaults struct {
 	// The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.
 	// +optional
 	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"max-retries,omitempty"`
+
+	// PerHostMaxConnections is the maximum number of connections
+	// that Envoy will allow to each individual host in a cluster.
+	PerHostMaxConnections uint32 `json:"perHostMaxConnections,omitempty" yaml:"per-host-max-connections,omitempty"`
 }
 
 // XDSServerConfig holds the config for the Contour xDS server.
@@ -129,6 +133,9 @@ type XDSServerConfig struct {
 	// Values: `envoy` (default), `contour (deprecated)`.
 	//
 	// Other values will produce an error.
+	//
+	// Deprecated: this field will be removed in a future release when
+	// the `contour` xDS server implementation is removed.
 	// +optional
 	Type XDSServerType `json:"type,omitempty"`
 
@@ -710,7 +717,7 @@ type ClusterParameters struct {
 	// If defined, this will be used as the default for all services.
 	//
 	// +optional
-	GlobalCircuitBreakerDefaults *GlobalCircuitBreakerDefaults `json:"circuitBreakers,omitempty"`
+	GlobalCircuitBreakerDefaults *CircuitBreakers `json:"circuitBreakers,omitempty"`
 
 	// UpstreamTLS contains the TLS policy parameters for upstream connections
 	//

@@ -5522,6 +5522,22 @@ v3 Envoy API, this is currently fixed at &ldquo;v3&rdquo;. However, other
 protocol options will be available in future.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>circuitBreakerPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.CircuitBreakers">
+CircuitBreakers
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CircuitBreakerPolicy specifies the circuit breaker budget across the extension service.
+If defined this overrides the global circuit breaker budget.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -5609,6 +5625,90 @@ Can be customized using <code>accessLogFormatString</code>.</p>
 Can be customized using <code>jsonFields</code>.</p>
 </td>
 </tr></tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.CircuitBreakers">CircuitBreakers
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>, 
+<a href="#projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>maxConnections</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxPendingRequests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRetries</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>perHostMaxConnections</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<p>PerHostMaxConnections is the maximum number of connections
+that Envoy will allow to each individual host in a cluster.</p>
+</td>
+</tr>
+</tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ClusterDNSFamilyType">ClusterDNSFamilyType
 (<code>string</code> alias)</p></h3>
@@ -5723,8 +5823,8 @@ for more information.</p>
 <code>circuitBreakers</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">
-GlobalCircuitBreakerDefaults
+<a href="#projectcontour.io/v1alpha1.CircuitBreakers">
+CircuitBreakers
 </a>
 </em>
 </td>
@@ -7544,6 +7644,22 @@ v3 Envoy API, this is currently fixed at &ldquo;v3&rdquo;. However, other
 protocol options will be available in future.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>circuitBreakerPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.CircuitBreakers">
+CircuitBreakers
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CircuitBreakerPolicy specifies the circuit breaker budget across the extension service.
+If defined this overrides the global circuit breaker budget.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ExtensionServiceStatus">ExtensionServiceStatus
@@ -7682,76 +7798,6 @@ NamespacedName
 <td>
 <p>GatewayRef defines the specific Gateway that this Contour
 instance corresponds to.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="projectcontour.io/v1alpha1.GlobalCircuitBreakerDefaults">GlobalCircuitBreakerDefaults
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>)
-</p>
-<p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>maxConnections</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>maxPendingRequests</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>maxRequests</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>maxRetries</code>
-<br>
-<em>
-uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.</p>
 </td>
 </tr>
 </tbody>
@@ -9046,6 +9092,8 @@ XDSServerType
 <p>Defines the XDSServer to use for <code>contour serve</code>.</p>
 <p>Values: <code>envoy</code> (default), <code>contour (deprecated)</code>.</p>
 <p>Other values will produce an error.</p>
+<p>Deprecated: this field will be removed in a future release when
+the <code>contour</code> xDS server implementation is removed.</p>
 </td>
 </tr>
 <tr>

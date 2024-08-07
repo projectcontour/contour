@@ -125,7 +125,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	t.Run("GlobalCircuitBreakerDefaults specified for all processors", func(t *testing.T) {
-		g := contour_v1alpha1.GlobalCircuitBreakerDefaults{
+		g := contour_v1alpha1.CircuitBreakers{
 			MaxConnections: 100,
 		}
 

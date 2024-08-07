@@ -185,6 +185,10 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-httproute-conflict-match", testWithHTTPGateway(testHTTPRouteConflictMatch))
 
 		f.NamespacedTest("gateway-httproute-partially-conflict-match", testWithHTTPGateway(testHTTPRoutePartiallyConflictMatch))
+
+		f.NamespacedTest("gateway-grpcroute-conflict-match", testWithHTTPGateway(testGRPCRouteConflictMatch))
+
+		f.NamespacedTest("gateway-grpcroute-partially-conflict-match", testWithHTTPGateway(testGRPCRoutePartiallyConflictMatch))
 	})
 
 	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
