@@ -60,50 +60,6 @@ func TestSecretCacheContents(t *testing.T) {
 	}
 }
 
-func TestSecretCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*envoy_transport_socket_tls_v3.Secret
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: secretmap(
-				secret("default/secret/0567f551af", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			),
-			query: []string{"default/secret/0567f551af"},
-			want: []proto.Message{
-				secret("default/secret/0567f551af", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			},
-		},
-		"partial match": {
-			contents: secretmap(
-				secret("default/secret-a/0567f551af", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-				secret("default/secret-b/5397c67313", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
-			),
-			query: []string{"default/secret/0567f551af", "default/secret-b/5397c67313"},
-			want: []proto.Message{
-				secret("default/secret-b/5397c67313", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
-			},
-		},
-		"no match": {
-			contents: secretmap(
-				secret("default/secret/0567f551af", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
-			),
-			query: []string{"default/secret-b/5397c67313"},
-			want:  nil,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var sc SecretCache
-			sc.Update(tc.contents)
-			got := sc.Query(tc.query)
-			protobuf.ExpectEqual(t, tc.want, got)
-		})
-	}
-}
-
 func TestSecretVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs []any

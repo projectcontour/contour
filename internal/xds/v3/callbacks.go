@@ -61,9 +61,8 @@ func logStreamClosedDetails(l logrus.FieldLogger, streamID int64, node *envoy_co
 }
 
 // Helper function for use in the Envoy xDS server callbacks and the Contour
-// xDS server to log request details. Returns logger with fields added for any
-// subsequent error handling and logging.
-func logDiscoveryRequestDetails(l logrus.FieldLogger, req *envoy_service_discovery_v3.DiscoveryRequest) *logrus.Entry {
+// xDS server to log request details.
+func logDiscoveryRequestDetails(l logrus.FieldLogger, req *envoy_service_discovery_v3.DiscoveryRequest) {
 	log := l.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
 	if req.Node != nil {
 		log = log.WithField("node_id", req.Node.Id)
@@ -82,6 +81,4 @@ func logDiscoveryRequestDetails(l logrus.FieldLogger, req *envoy_service_discove
 	log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.GetTypeUrl())
 
 	log.Debug("handling v3 xDS resource request")
-
-	return log
 }
