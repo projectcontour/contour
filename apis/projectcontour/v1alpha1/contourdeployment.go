@@ -140,6 +140,13 @@ type ContourSettings struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=42
 	DisabledFeatures []contour_v1.Feature `json:"disabledFeatures,omitempty"`
+
+	// CertLifetime is the number of days for which certificates will be valid.
+	// defaults to 365.
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	CertLifetime uint32 `json:"certLifetime,omitempty" yaml:"certLifetime,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.

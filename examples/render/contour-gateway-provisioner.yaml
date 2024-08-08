@@ -1427,6 +1427,13 @@ spec:
                   and associated resources, including things like replica count
                   for the Deployment, and node placement constraints for the pods.
                 properties:
+                  certLifetime:
+                    description: |-
+                      CertLifetime is the number of days for which certificates will be valid.
+                      defaults to 365.
+                    format: int32
+                    minimum: 0
+                    type: integer
                   deployment:
                     description: Deployment describes the settings for running contour
                       as a `Deployment`.
