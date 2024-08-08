@@ -1484,13 +1484,19 @@ func assertEnvoyServiceLoadBalancerIP(t *testing.T, gateway *gatewayapi_v1.Gatew
 func verifyCert(t *testing.T, certPEM []byte, day int) {
 	block, _ := pem.Decode(certPEM)
 	if block == nil {
-		require.FailNow(t, "decode certificate from PEM form is failed")
+		require.FailNow(t, "decode the certificate from PEM form is failed")
+		return
+	}
+
+	if block.Bytes == nil {
+		require.FailNow(t, "the certificate is empty")
+		return
 	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)
-	require.NoError(t, err, "parse certificate is failed")
+	require.NoError(t, err, "parse the certificate is failed")
 
 	if cert.NotAfter.After(time.Now().AddDate(0, 0, day)) {
-		require.FailNow(t, "certificate is not valid")
+		require.FailNow(t, "the certificate is not valid")
 	}
 }
