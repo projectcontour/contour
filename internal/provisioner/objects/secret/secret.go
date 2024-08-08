@@ -44,7 +44,7 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 
 	certs, err := certs.GenerateCerts(
 		&certs.Configuration{
-			Lifetime:  365,
+			Lifetime:  uint(contour.Spec.CertLifetime),
 			Namespace: contour.Namespace,
 		},
 	)
