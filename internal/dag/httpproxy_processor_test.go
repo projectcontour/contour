@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -1536,7 +1536,7 @@ func createHTTPProxyProcessor() *HTTPProxyProcessor {
 	return &HTTPProxyProcessor{
 		dag: &DAG{
 			StatusCache: status.NewCache(
-				types.NamespacedName{"test", "ingress"},
+				types.NamespacedName{Namespace: "test", Name: "ingress"},
 				"example.com/",
 			),
 			Listeners:         make(map[string]*Listener),
@@ -1561,14 +1561,14 @@ func createHTTPProxy(namespace, name, domain string) *contour_v1.HTTPProxy {
 	}
 }
 
-func createServiceObjects(namespace, name, portname string, port int32) (*v1.Service, contour_v1.Service) {
-	return &v1.Service{
+func createServiceObjects(namespace, name, portname string, port int32) (*core_v1.Service, contour_v1.Service) {
+	return &core_v1.Service{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      name,
 			},
-			Spec: v1.ServiceSpec{
-				Ports: []v1.ServicePort{
+			Spec: core_v1.ServiceSpec{
+				Ports: []core_v1.ServicePort{
 					{
 						Name: portname,
 						Port: port,
