@@ -111,7 +111,7 @@ const (
 	protoK8sH2C  = "kubernetes.io/h2c"
 	protoK8sWS   = "kubernetes.io/ws"
 	protoHttps   = "https"
-	protoWebHttp = "http"
+	protoHttp = "http"
 )
 
 func toContourProtocol(appProtocol string) (string, bool) {
