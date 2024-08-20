@@ -110,8 +110,8 @@ func validateExternalName(svc *core_v1.Service, enableExternalNameSvc bool) erro
 const (
 	protoK8sH2C  = "kubernetes.io/h2c"
 	protoK8sWS   = "kubernetes.io/ws"
-	protoHttps   = "https"
-	protoHttp = "http"
+	protoHTTPS   = "https"
+	protoHTTP = "http"
 )
 
 func toContourProtocol(appProtocol string) (string, bool) {
@@ -119,8 +119,8 @@ func toContourProtocol(appProtocol string) (string, bool) {
 		// *NOTE: for gateway-api: the websocket is enabled by default
 		protoK8sWS:   "",
 		protoK8sH2C:  "h2c",
-		protoHttp:    "",
-		protoHttps:   "tls",
+		protoHTTP:    "",
+		protoHTTPS:   "tls",
 	}[appProtocol]
 	return proto, ok
 }
