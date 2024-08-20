@@ -146,7 +146,7 @@ type ContourSettings struct {
 	//
 	// +kubebuilder:validation:Minimum=0
 	// +optional
-	CertLifetime uint32 `json:"certLifetime,omitempty" yaml:"certLifetime,omitempty"`
+	CertLifetime uint32 `json:"certLifetime,omitempty"`
 }
 
 // DeploymentSettings contains settings for Deployment resources.
