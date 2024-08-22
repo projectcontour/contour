@@ -51,7 +51,8 @@ func testEnvoyDisableCompression(namespace string, enabled bool) {
 							StatusCode: 200,
 							Body:       resp,
 						},
-					}},
+					},
+				},
 			},
 		}
 		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
