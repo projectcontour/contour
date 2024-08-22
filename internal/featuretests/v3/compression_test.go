@@ -27,10 +27,7 @@ import (
 )
 
 func TestDefaultCompression(t *testing.T) {
-	withDefaultListenerConfig := func(conf *xdscache_v3.ListenerConfig) {
-	}
-
-	rh, c, done := setup(t, withDefaultListenerConfig)
+	rh, c, done := setup(t)
 	defer done()
 
 	s1 := fixture.NewService("backend").
