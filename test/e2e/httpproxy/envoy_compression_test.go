@@ -17,10 +17,11 @@ package httpproxy
 
 import (
 	"fmt"
+	"net/http"
+
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
