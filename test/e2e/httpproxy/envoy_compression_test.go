@@ -76,6 +76,5 @@ func testEnvoyDisableCompression(namespace string, enabled bool) {
 			return
 		}
 		require.Contains(f.T(), res.Headers["Content-Encoding"], "gzip", "expected plain text")
-
 	})
 }
