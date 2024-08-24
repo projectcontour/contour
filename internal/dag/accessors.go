@@ -108,19 +108,19 @@ func validateExternalName(svc *core_v1.Service, enableExternalNameSvc bool) erro
 
 // the ServicePort's AppProtocol must be one of the these.
 const (
-	protoK8sH2C  = "kubernetes.io/h2c"
-	protoK8sWS   = "kubernetes.io/ws"
-	protoHTTPS   = "https"
-	protoHTTP = "http"
+	protoK8sH2C = "kubernetes.io/h2c"
+	protoK8sWS  = "kubernetes.io/ws"
+	protoHTTPS  = "https"
+	protoHTTP   = "http"
 )
 
 func toContourProtocol(appProtocol string) (string, bool) {
 	proto, ok := map[string]string{
 		// *NOTE: for gateway-api: the websocket is enabled by default
-		protoK8sWS:   "",
-		protoK8sH2C:  "h2c",
-		protoHTTP:    "",
-		protoHTTPS:   "tls",
+		protoK8sWS:  "",
+		protoK8sH2C: "h2c",
+		protoHTTP:   "",
+		protoHTTPS:  "tls",
 	}[appProtocol]
 	return proto, ok
 }
