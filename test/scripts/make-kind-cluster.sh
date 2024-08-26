@@ -27,7 +27,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly IPV6_CLUSTER=${IPV6_CLUSTER:-"false"}
 readonly SKIP_GATEWAY_API_INSTALL=${SKIP_GATEWAY_API_INSTALL:-"false"}
-readonly NODEIMAGE=${NODEIMAGE:-"kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e"}
+readonly NODEIMAGE=${NODEIMAGE:-"kindest/node:v1.31.0@sha256:53df588e04085fd41ae12de0c3fe4c72f7013bba32a20e7325357a1ac94ba865"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
