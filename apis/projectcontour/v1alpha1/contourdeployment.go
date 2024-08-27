@@ -141,7 +141,7 @@ type ContourSettings struct {
 	// +kubebuilder:validation:MaxItems=42
 	DisabledFeatures []contour_v1.Feature `json:"disabledFeatures,omitempty"`
 
-	// CertLifetime is the number of days for which certificates will be valid.
+	// CertLifetime is the number of days for which certificates for Contour and Envoy will be valid.
 	// defaults to 365.
 	//
 	// +kubebuilder:validation:Minimum=0

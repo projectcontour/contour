@@ -1638,7 +1638,7 @@ spec:
                 properties:
                   certLifetime:
                     description: |-
-                      CertLifetime is the number of days for which certificates will be valid.
+                      CertLifetime is the number of days for which certificates for Contour and Envoy will be valid.
                       defaults to 365.
                     format: int32
                     minimum: 0
