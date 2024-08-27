@@ -143,7 +143,7 @@ func (s *StatusAddressUpdater) OnAdd(obj any, _ bool) {
 			}
 		}
 
-		s.StatusUpdater.Send(NewStatusUpdate(
+		s.StatusUpdater.中end(NewStatusUpdate(
 			o.Name,
 			o.Namespace,
 			&gatewayapi_v1.Gateway{},

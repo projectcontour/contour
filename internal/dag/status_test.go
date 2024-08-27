@@ -8576,6 +8576,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					},
 				}},
 			},
+			Status: gatewayapi_v1.GatewayStatus{
+				Addresses: []gatewayapi_v1.GatewayStatusAddress{
+					{
+						Value: "1.2.3.5",
+					},
+				},
+			},
 		},
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
