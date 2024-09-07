@@ -389,15 +389,36 @@ var _ = Describe("HTTPProxy", func() {
 	})
 
 	f.NamespacedTest("httpproxy-default-compression", func(namespace string) {
-		testEnvoyDisableCompression(namespace, false)
+		testEnvoyDisableCompression(namespace, "gzip", "gzip", false)
 	})
 
 	f.NamespacedTest("httpproxy-disable-compression", func(namespace string) {
 		Context("with compression disabled", func() {
 			BeforeEach(func() {
-				contourConfig.DisableCompression = true
+				contourConfig.Compression = "disabled"
+				contourConfiguration.Spec.Envoy.Listener.Compression = "disabled"
 			})
-			testEnvoyDisableCompression(namespace, true)
+			testEnvoyDisableCompression(namespace, "gzip", "gzip", true)
+		})
+	})
+
+	f.NamespacedTest("httpproxy-brotli-compression", func(namespace string) {
+		Context("with brotli compression", func() {
+			BeforeEach(func() {
+				contourConfig.Compression = "brotli"
+				contourConfiguration.Spec.Envoy.Listener.Compression = "brotli"
+			})
+			testEnvoyDisableCompression(namespace, "br", "br", false)
+		})
+	})
+
+	f.NamespacedTest("httpproxy-zstd-compression", func(namespace string) {
+		Context("with zstd compression", func() {
+			BeforeEach(func() {
+				contourConfig.Compression = "zstd"
+				contourConfiguration.Spec.Envoy.Listener.Compression = "zstd"
+			})
+			testEnvoyDisableCompression(namespace, "zstd", "zstd", false)
 		})
 	})
 

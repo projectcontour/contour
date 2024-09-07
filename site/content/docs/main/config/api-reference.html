@@ -6595,6 +6595,35 @@ Kubernetes apps/v1.DeploymentStrategy
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.EnvoyCompressionType">EnvoyCompressionType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;brotli&#34;</p></td>
+<td><p>BrotliCompression specifies brotli as the default HTTP filter chain compression mechanism</p>
+</td>
+</tr><tr><td><p>&#34;disabled&#34;</p></td>
+<td><p>DisabledCompression specifies that there will be no compression in the default HTTP filter chain</p>
+</td>
+</tr><tr><td><p>&#34;gzip&#34;</p></td>
+<td><p>GzipCompression specifies gzip as the default HTTP filter chain compression mechanism</p>
+</td>
+</tr><tr><td><p>&#34;zstd&#34;</p></td>
+<td><p>ZstdCompression specifies zstd as the default HTTP filter chain compression mechanism</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig
 </h3>
 <p>
@@ -6900,17 +6929,19 @@ bool
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>disableCompression</code>
+<code>compression</code>
 <br>
 <em>
-bool
+<a href="#projectcontour.io/v1alpha1.EnvoyCompressionType">
+EnvoyCompressionType
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>DisableCompression disables GZIP compression HTTP filter from the default Listener filters
-Setting this true will enable Envoy skip &ldquo;Accept-Encoding: gzip,deflate&rdquo; request header and always return uncompressed response
-Contour&rsquo;s default is false.</p>
+<p>Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
+Values: <code>gzip</code> (default), <code>brotli</code>, <code>zstd</code>, <code>disabled</code>.
+Setting this to <code>disabled</code> will make Envoy skip &ldquo;Accept-Encoding: gzip,deflate&rdquo; request header and always return uncompressed response</p>
 </td>
 </tr>
 <tr>

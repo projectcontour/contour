@@ -125,6 +125,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	}
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").PlaceHolder("<envoy|json>").StringVar((*string)(&ctx.Config.AccessLogFormat))
 
+	serve.Flag("compression", "Set or disable compression type in default Listener filters.").PlaceHolder("<gzip|brotli|zstd|disabled>").StringVar((*string)(&ctx.Config.Compression))
 	serve.Flag("config-path", "Path to base configuration.").Short('c').PlaceHolder("/path/to/file").Action(parseConfig).ExistingFileVar(&configFile)
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS.").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").PlaceHolder("/path/to/file").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
@@ -447,7 +448,7 @@ func (s *Server) doServe() error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
-		DisableCompression:            contourConfiguration.Envoy.Listener.DisableCompression,
+		Compression:                   contourConfiguration.Envoy.Listener.Compression,
 		UseProxyProto:                 *contourConfiguration.Envoy.Listener.UseProxyProto,
 		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,
@@ -471,6 +472,8 @@ func (s *Server) doServe() error {
 		PerConnectionBufferLimitBytes: contourConfiguration.Envoy.Listener.PerConnectionBufferLimitBytes,
 		SocketOptions:                 contourConfiguration.Envoy.Listener.SocketOptions,
 	}
+
+	s.log.WithField("context", "listenerConfig").Infof("compression setting: %s", listenerConfig.Compression)
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
 		return err
