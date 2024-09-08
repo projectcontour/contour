@@ -121,6 +121,15 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		// envoy.RouteRoute. Currently the DAG processor adds any HTTP->HTTPS
 		// redirect routes to *both* the insecure and secure vhosts.
 		route.Action = UpgradeHTTPS()
+
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+		// Apply per-route authorization policy modifications.
+		if dagRoute.AuthDisabled {
+			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+		} else if len(dagRoute.AuthContext) > 0 {
+			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+		}
+
 	case dagRoute.DirectResponse != nil:
 		route.TypedPerFilterConfig = map[string]*anypb.Any{}
 
@@ -890,104 +899,104 @@ func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolic
 
 	codeTemplate := `
 function envoy_on_response(response_handle)
-	rewrite_table = {}
+  rewrite_table = {}
 
-	{{range $i, $p := .}}
-	function cookie_{{$i}}_attribute_rewrite(attributes)
-		response_handle:logDebug("rewriting cookie \"{{$p.Name}}\"")
+  {{range $i, $p := .}}
+  function cookie_{{$i}}_attribute_rewrite(attributes)
+    response_handle:logDebug("rewriting cookie \"{{$p.Name}}\"")
 
-		{{if $p.Path}}attributes["Path"] = "Path={{$p.Path}}"{{end}}
-		{{if $p.Domain}}attributes["Domain"] = "Domain={{$p.Domain}}"{{end}}
-		{{if $p.SameSite}}attributes["SameSite"] = "SameSite={{$p.SameSite}}"{{end}}
-		{{if eq $p.Secure 1}}attributes["Secure"] = nil{{end}}
-		{{if eq $p.Secure 2}}attributes["Secure"] = "Secure"{{end}}
-	end
-	rewrite_table["{{$p.Name}}"] = cookie_{{$i}}_attribute_rewrite
-	{{end}}
+    {{if $p.Path}}attributes["Path"] = "Path={{$p.Path}}"{{end}}
+    {{if $p.Domain}}attributes["Domain"] = "Domain={{$p.Domain}}"{{end}}
+    {{if $p.SameSite}}attributes["SameSite"] = "SameSite={{$p.SameSite}}"{{end}}
+    {{if eq $p.Secure 1}}attributes["Secure"] = nil{{end}}
+    {{if eq $p.Secure 2}}attributes["Secure"] = "Secure"{{end}}
+  end
+  rewrite_table["{{$p.Name}}"] = cookie_{{$i}}_attribute_rewrite
+  {{end}}
 
-	function rewrite_cookie(original)
-		local original_len = string.len(original)
-		local name_end = string.find(original, "=")
-		if name_end == nil then
-			return original
-		end
-		local name = string.sub(original, 1, name_end - 1)
+  function rewrite_cookie(original)
+    local original_len = string.len(original)
+    local name_end = string.find(original, "=")
+    if name_end == nil then
+      return original
+    end
+    local name = string.sub(original, 1, name_end - 1)
 
-		local rewrite_func = rewrite_table[name]
-		-- We don't have a rewrite rule for this cookie.
-		if rewrite_func == nil then
-			return original
-		end
+    local rewrite_func = rewrite_table[name]
+    -- We don't have a rewrite rule for this cookie.
+    if rewrite_func == nil then
+      return original
+    end
 
-		-- Find cookie value via ; or end of string
-		local value_end = string.find(original, ";", name_end)
-		-- Save position to use as iterator
-		local iter = value_end
-		if value_end == nil then
-			-- Set to 0 since we have to subtract below if we did find a ;
-			value_end = 0
-			iter = original_len
-		end
-		iter = iter + 1
-		local value = string.sub(original, name_end + 1, value_end - 1)
+    -- Find cookie value via ; or end of string
+    local value_end = string.find(original, ";", name_end)
+    -- Save position to use as iterator
+    local iter = value_end
+    if value_end == nil then
+      -- Set to 0 since we have to subtract below if we did find a ;
+      value_end = 0
+      iter = original_len
+    end
+    iter = iter + 1
+    local value = string.sub(original, name_end + 1, value_end - 1)
 
-		-- Parse original attributes into table
-		-- Keyed by attribute name, values are <name>=<value> or just <name>
-		-- so we can easily rebuild, esp for attributes like 'Secure' that
-		-- do not have a value
-		local attributes = {}
-		while iter < original_len do
-			local attr_end = string.find(original, ";", iter)
-			local new_iter = attr_end
-			if attr_end == nil then
-				-- Set to 0 since we have to subtract below if we did find a ;
-				attr_end = 0
-				new_iter = original_len
-			end
-			local attr_value = string.sub(original, iter + 1, attr_end - 1)
-			-- Strip whitespace from front
-			attr_value = string.gsub(attr_value, "^%s*(.-)$", "%1")
+    -- Parse original attributes into table
+    -- Keyed by attribute name, values are <name>=<value> or just <name>
+    -- so we can easily rebuild, esp for attributes like 'Secure' that
+    -- do not have a value
+    local attributes = {}
+    while iter < original_len do
+      local attr_end = string.find(original, ";", iter)
+      local new_iter = attr_end
+      if attr_end == nil then
+        -- Set to 0 since we have to subtract below if we did find a ;
+        attr_end = 0
+        new_iter = original_len
+      end
+      local attr_value = string.sub(original, iter + 1, attr_end - 1)
+      -- Strip whitespace from front
+      attr_value = string.gsub(attr_value, "^%s*(.-)$", "%1")
 
-			-- Get attribute name
-			local attr_name_end = string.find(attr_value, "=")
-			if attr_name_end == nil then
-				-- Set to 0 since we have to subtract below if we did find a =
-				attr_name_end = 0
-			end
-			local attr_name = string.sub(attr_value, 1, attr_name_end - 1)
+      -- Get attribute name
+      local attr_name_end = string.find(attr_value, "=")
+      if attr_name_end == nil then
+        -- Set to 0 since we have to subtract below if we did find a =
+        attr_name_end = 0
+      end
+      local attr_name = string.sub(attr_value, 1, attr_name_end - 1)
 
-			attributes[attr_name] = attr_value
+      attributes[attr_name] = attr_value
 
-			iter = new_iter + 1
-		end
+      iter = new_iter + 1
+    end
 
-		rewrite_func(attributes)
+    rewrite_func(attributes)
 
-		local rewritten = string.format("%s=%s", name, value)
-		for k, v in next, attributes do
-			if v then
-				rewritten = string.format("%s; %s", rewritten, v)
-			end
-		end
+    local rewritten = string.format("%s=%s", name, value)
+    for k, v in next, attributes do
+      if v then
+        rewritten = string.format("%s; %s", rewritten, v)
+      end
+    end
 
-		return rewritten
-	end
+    return rewritten
+  end
 
-	if response_handle:headers():get("set-cookie") then
-		rewritten_cookies = {}
-		for k, v in pairs(response_handle:headers()) do
-			if k == "set-cookie" then
-				table.insert(rewritten_cookies, rewrite_cookie(v))
-			end
-		end
+  if response_handle:headers():get("set-cookie") then
+    rewritten_cookies = {}
+    for k, v in pairs(response_handle:headers()) do
+      if k == "set-cookie" then
+        table.insert(rewritten_cookies, rewrite_cookie(v))
+      end
+    end
 
-		response_handle:headers():remove("set-cookie")
-		for k, v in next, rewritten_cookies do
-			response_handle:headers():add("set-cookie", v)
-		end
-	end
+    response_handle:headers():remove("set-cookie")
+    for k, v in next, rewritten_cookies do
+      response_handle:headers():add("set-cookie", v)
+    end
+  end
 end
-	`
+  `
 
 	t := new(bytes.Buffer)
 	if err := template.Must(template.New("code").Parse(codeTemplate)).Execute(t, policies); err != nil {

@@ -3662,6 +3662,19 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 									},
 								},
 							},
+							TypedPerFilterConfig: map[string]*anypb.Any{
+								envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+										CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+											ContextExtensions: map[string]string{
+												"header_1": "message_1",
+												"header_2": "new_message_2",
+												"header_3": "message_3",
+											},
+										},
+									},
+								}),
+							},
 						},
 					),
 				),

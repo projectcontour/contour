@@ -347,6 +347,22 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 			statsListener()),
 	}).Status(p).IsValid()
 
+	expectedAuthContext := map[string]*anypb.Any{
+		envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(
+			&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ContextExtensions: map[string]string{
+							"header_type": "proxy_config",
+							"header_1":    "message_1",
+							"header_2":    "message_2",
+						},
+					},
+				},
+			},
+		),
+	}
+
 	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
@@ -354,23 +370,9 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 				"https/foo.com",
 				envoy_v3.VirtualHost("foo.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/s1/80/da39a3ee5e"),
-						TypedPerFilterConfig: map[string]*anypb.Any{
-							envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(
-								&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-										CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
-											ContextExtensions: map[string]string{
-												"header_type": "proxy_config",
-												"header_1":    "message_1",
-												"header_2":    "message_2",
-											},
-										},
-									},
-								},
-							),
-						},
+						Match:                routePrefix("/"),
+						Action:               routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: expectedAuthContext,
 					},
 				),
 			),
@@ -378,8 +380,9 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 				"ingress_http",
 				envoy_v3.VirtualHost("foo.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: withRedirect(),
+						Match:                routePrefix("/"),
+						Action:               withRedirect(),
+						TypedPerFilterConfig: expectedAuthContext,
 					},
 				),
 			),
