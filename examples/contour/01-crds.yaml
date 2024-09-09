@@ -682,8 +682,6 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
                         minLength: 1
                         type: string
-                    required:
-                    - name
                     type: object
                   failOpen:
                     description: |-
@@ -4486,8 +4484,6 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
                             minLength: 1
                             type: string
-                        required:
-                        - name
                         type: object
                       failOpen:
                         description: |-
@@ -7463,8 +7459,6 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
                             minLength: 1
                             type: string
-                        required:
-                        - name
                         type: object
                       failOpen:
                         description: |-
