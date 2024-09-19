@@ -122,22 +122,17 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		// redirect routes to *both* the insecure and secure vhosts.
 		route.Action = UpgradeHTTPS()
 
+		// Disable External Authorization it is being redirected to HTTPS route
 		route.TypedPerFilterConfig = map[string]*anypb.Any{}
-		// Apply per-route authorization policy modifications.
-		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
-		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
-		}
-
+		route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 	case dagRoute.DirectResponse != nil:
 		route.TypedPerFilterConfig = map[string]*anypb.Any{}
 
 		// Apply per-route authorization policy modifications.
 		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		route.Action = routeDirectResponse(dagRoute.DirectResponse)
