@@ -166,8 +166,9 @@ func routeHostRewriteHeader(cluster, hostnameHeader string) *envoy_config_route_
 
 func upgradeHTTPS(match *envoy_config_route_v3.RouteMatch) *envoy_config_route_v3.Route {
 	return &envoy_config_route_v3.Route{
-		Match:  match,
-		Action: envoy_v3.UpgradeHTTPS(),
+		Match:                match,
+		Action:               envoy_v3.UpgradeHTTPS(),
+		TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 	}
 }
 

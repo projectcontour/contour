@@ -596,6 +596,19 @@ func UpgradeHTTPS() *envoy_config_route_v3.Route_Redirect {
 	}
 }
 
+// DisabledExtAuthConfig returns a route TypedPerFilterConfig that disables ExtAuth
+func DisabledExtAuthConfig() map[string]*anypb.Any {
+	return map[string]*anypb.Any{
+		ExtAuthzFilterName: protobuf.MustMarshalAny(
+			&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+					Disabled: true,
+				},
+			},
+		),
+	}
+}
+
 // headerValueList creates a list of Envoy HeaderValueOptions from the provided map.
 func headerValueList(hvm map[string]string, app bool) []*envoy_config_core_v3.HeaderValueOption {
 	var hvs []*envoy_config_core_v3.HeaderValueOption

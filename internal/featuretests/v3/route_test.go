@@ -310,12 +310,14 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/whoop"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/whoop"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -364,12 +366,14 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/whoop"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/whoop"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -462,8 +466,9 @@ func TestSSLRedirectOverlay(t *testing.T) {
 				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			},
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"), // match all
-				Action: envoy_v3.UpgradeHTTPS(),
+				Match:                routePrefix("/"), // match all
+				Action:               envoy_v3.UpgradeHTTPS(),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), virtualhosts(
@@ -707,8 +712,9 @@ func TestRDSFilter(t *testing.T) {
 						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"), // match all
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/"), // match all
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -1126,8 +1132,9 @@ func TestRouteWithTLS(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_config_route_v3.Route{
-						Action: envoy_v3.UpgradeHTTPS(),
-						Match:  routePrefix("/a"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
+						Match:                routePrefix("/a"),
 					},
 				),
 			),
@@ -1203,8 +1210,9 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/secure"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -1289,12 +1297,14 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/insecure"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/insecure"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/secure"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -1482,8 +1492,9 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/a"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/a"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -1555,8 +1566,9 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/secure"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -1637,12 +1649,14 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test2.test.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/insecure"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/insecure"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/secure"),
-						Action: envoy_v3.UpgradeHTTPS(),
+						Match:                routePrefix("/secure"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),

@@ -382,7 +382,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 					&envoy_config_route_v3.Route{
 						Match:                routePrefix("/"),
 						Action:               withRedirect(),
-						TypedPerFilterConfig: expectedAuthContext,
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
