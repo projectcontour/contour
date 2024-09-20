@@ -733,7 +733,6 @@ func globalExternalAuthorizationFilterTLSWithFallbackCertificate(t *testing.T, r
 }
 
 func TestGlobalAuthorization(t *testing.T) {
-
 	subtests := map[string]struct {
 		globalExtAuthConfig *contour_v1.AuthorizationServer
 		testFunction        func(*testing.T, ResourceEventHandlerWrapper, *Contour)
