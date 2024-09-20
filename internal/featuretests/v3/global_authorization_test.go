@@ -41,6 +41,39 @@ import (
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 )
 
+var (
+	normalGlobalExtAuthConfig contour_v1.AuthorizationServer = contour_v1.AuthorizationServer{
+		ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+			Name:      "extension",
+			Namespace: "auth",
+		},
+		FailOpen:        false,
+		ResponseTimeout: defaultResponseTimeout.String(),
+		AuthPolicy: &contour_v1.AuthorizationPolicy{
+			Context: map[string]string{
+				"header_type": "root_config",
+				"header_1":    "message_1",
+			},
+		},
+	}
+
+	disabledGlobalExtAuthConfig contour_v1.AuthorizationServer = contour_v1.AuthorizationServer{
+		ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+			Name:      "extension",
+			Namespace: "auth",
+		},
+		FailOpen:        false,
+		ResponseTimeout: defaultResponseTimeout.String(),
+		AuthPolicy: &contour_v1.AuthorizationPolicy{
+			Disabled: true,
+			Context: map[string]string{
+				"header_type": "root_config",
+				"header_1":    "message_1",
+			},
+		},
+	}
+)
+
 func globalExternalAuthorizationFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	p := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -264,6 +297,138 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEv
 												"header_type": "proxy_config",
 												"header_1":    "message_1",
 												"header_2":    "message_2",
+											},
+										},
+									},
+								},
+							),
+						},
+					},
+				),
+			),
+		),
+	})
+}
+
+func globalExternalAuthorizationDisabledByDefault(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "default",
+			Name:      "proxy1",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+			},
+			Routes: []contour_v1.Route{
+				{
+					Services: []contour_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+				},
+			},
+		},
+	}
+	rh.OnAdd(p)
+
+	httpListener := defaultHTTPListener()
+
+	// replace the default filter chains with an HCM that includes the global
+	// extAuthz filter.
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			httpListener,
+			statsListener()),
+	}).Status(p).IsValid()
+
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"ingress_http",
+				envoy_v3.VirtualHost("foo.com",
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: map[string]*anypb.Any{
+							envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(
+								&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+										Disabled: true,
+									},
+								},
+							),
+						},
+					},
+				),
+			),
+		),
+	})
+}
+
+func GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "default",
+			Name:      "proxy1",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+			},
+			Routes: []contour_v1.Route{
+				{
+					Services: []contour_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+					AuthPolicy: &contour_v1.AuthorizationPolicy{
+						Disabled: false,
+					},
+				},
+			},
+		},
+	}
+	rh.OnAdd(p)
+
+	httpListener := defaultHTTPListener()
+
+	// replace the default filter chains with an HCM that includes the global
+	// extAuthz filter.
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			httpListener,
+			statsListener()),
+	}).Status(p).IsValid()
+
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"ingress_http",
+				envoy_v3.VirtualHost("foo.com",
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: map[string]*anypb.Any{
+							envoy_v3.ExtAuthzFilterName: protobuf.MustMarshalAny(
+								&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+									Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+										CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+											ContextExtensions: map[string]string{
+												"header_type": "root_config",
+												"header_1":    "message_1",
 											},
 										},
 									},
@@ -568,25 +733,55 @@ func globalExternalAuthorizationFilterTLSWithFallbackCertificate(t *testing.T, r
 }
 
 func TestGlobalAuthorization(t *testing.T) {
-	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
+
+	subtests := map[string]struct {
+		globalExtAuthConfig *contour_v1.AuthorizationServer
+		testFunction        func(*testing.T, ResourceEventHandlerWrapper, *Contour)
+	}{
 		// Default extAuthz on non TLS host.
-		"GlobalExternalAuthorizationFilterExists": globalExternalAuthorizationFilterExists,
+		"GlobalExternalAuthorizationFilterExists": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationFilterExists,
+		},
 		// Default extAuthz on non TLS and TLS hosts.
-		"GlobalExternalAuthorizationFilterExistsTLS": globalExternalAuthorizationFilterExistsTLS,
+		"GlobalExternalAuthorizationFilterExistsTLS": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationFilterExistsTLS,
+		},
 		// extAuthz disabled on TLS host.
-		"GlobalExternalAuthorizationWithTLSGlobalAuthDisabled": globalExternalAuthorizationWithTLSGlobalAuthDisabled,
+		"GlobalExternalAuthorizationWithTLSGlobalAuthDisabled": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationWithTLSGlobalAuthDisabled,
+		},
 		// extAuthz override on TLS host.
-		"GlobalExternalAuthorizationWithTLSAuthOverride": globalExternalAuthorizationWithTLSAuthOverride,
+		"GlobalExternalAuthorizationWithTLSAuthOverride": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationWithTLSAuthOverride,
+		},
 		// extAuthz authpolicy merge for non TLS hosts.
-		"GlobalExternalAuthorizationWithMergedAuthPolicy": globalExternalAuthorizationWithMergedAuthPolicy,
+		"GlobalExternalAuthorizationWithMergedAuthPolicy": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationWithMergedAuthPolicy,
+		},
 		// extAuthz authpolicy merge for TLS hosts.
-		"GlobalExternalAuthorizationWithMergedAuthPolicyTLS": globalExternalAuthorizationWithMergedAuthPolicyTLS,
+		"GlobalExternalAuthorizationWithMergedAuthPolicyTLS": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationWithMergedAuthPolicyTLS,
+		},
 		// extAuthz on TLS host with Fallback Certificate enabled.
-		"GlobalExternalAuthorizationFilterTLSWithFallbackCertificate": globalExternalAuthorizationFilterTLSWithFallbackCertificate,
+		"GlobalExternalAuthorizationFilterTLSWithFallbackCertificate": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationFilterTLSWithFallbackCertificate,
+		},
+		// extAuthz authPolicy.disabled propagation
+		"GlobalExternalAuthorizationDisabledByDefault": {
+			&disabledGlobalExtAuthConfig, globalExternalAuthorizationDisabledByDefault,
+		},
+		// extAuthz non-empty vhost authPolicy enables authorization
+		"GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute": {
+			&disabledGlobalExtAuthConfig, GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute,
+		},
+		// extAuthz authPolicy.disabled propagation
+		"GlobalExternalAuthorizationDisabledByDefaultMergeAuthPolicy": {
+			&disabledGlobalExtAuthConfig, globalExternalAuthorizationWithMergedAuthPolicy,
+		},
 	}
 
-	for n, f := range subtests {
-		f := f
+	for n, env := range subtests {
+		f := env.testFunction
 		t.Run(n, func(t *testing.T) {
 			rh, c, done := setup(t,
 				func(cfg *xdscache_v3.ListenerConfig) {
@@ -605,20 +800,7 @@ func TestGlobalAuthorization(t *testing.T) {
 				func(b *dag.Builder) {
 					for _, processor := range b.Processors {
 						if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
-							httpProxyProcessor.GlobalExternalAuthorization = &contour_v1.AuthorizationServer{
-								ExtensionServiceRef: contour_v1.ExtensionServiceReference{
-									Name:      "extension",
-									Namespace: "auth",
-								},
-								FailOpen:        false,
-								ResponseTimeout: defaultResponseTimeout.String(),
-								AuthPolicy: &contour_v1.AuthorizationPolicy{
-									Context: map[string]string{
-										"header_type": "root_config",
-										"header_1":    "message_1",
-									},
-								},
-							}
+							httpProxyProcessor.GlobalExternalAuthorization = env.globalExtAuthConfig
 							httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
 								Namespace: "admin",
 								Name:      "fallbacksecret",
