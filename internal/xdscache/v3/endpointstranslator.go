@@ -246,7 +246,6 @@ func (c *EndpointsCache) DeleteEndpoint(eps *core_v1.Endpoints) bool {
 // NewEndpointsTranslator allocates a new endpoints translator.
 func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 	return &EndpointsTranslator{
-		Cond:        contour.Cond{},
 		FieldLogger: log,
 		entries:     map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
 		cache: EndpointsCache{
@@ -263,7 +262,6 @@ type EndpointsTranslator struct {
 	// Observer notifies when the endpoints cache has been updated.
 	Observer contour.Observer
 
-	contour.Cond
 	logrus.FieldLogger
 
 	cache EndpointsCache
@@ -325,7 +323,6 @@ func (e *EndpointsTranslator) OnChange(root *dag.DAG) {
 
 	if changed {
 		e.Debug("cluster load assignments changed, notifying waiters")
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -363,7 +360,6 @@ func (e *EndpointsTranslator) OnAdd(obj any, _ bool) {
 
 		e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -400,7 +396,6 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj any) {
 
 		e.WithField("endpoint", k8s.NamespacedNameOf(newObj)).Debug("Endpoint is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -418,7 +413,6 @@ func (e *EndpointsTranslator) OnDelete(obj any) {
 
 		e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint was in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
-		e.Notify()
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -436,26 +430,6 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 
 	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(e.entries))
 	for _, v := range e.entries {
-		values = append(values, v)
-	}
-
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-func (e *EndpointsTranslator) Query(names []string) []proto.Message {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(names))
-	for _, n := range names {
-		v, ok := e.entries[n]
-		if !ok {
-			e.Debugf("no cache entry for %q", n)
-			v = &envoy_config_endpoint_v3.ClusterLoadAssignment{
-				ClusterName: n,
-			}
-		}
 		values = append(values, v)
 	}
 
