@@ -1,6 +1,7 @@
 module github.com/projectcontour/contour
 
 go 1.22.0
+toolchain go1.23.2
 
 require (
 	dario.cat/mergo v1.0.1
@@ -27,7 +28,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/tsaarni/certyaml v0.9.3
-	github.com/vektra/mockery/v2 v2.46.0
+	github.com/vektra/mockery/v2 v2.46.1
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/oauth2 v0.23.0
 	gonum.org/v1/plot v0.14.0
