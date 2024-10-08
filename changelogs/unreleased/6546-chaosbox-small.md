@@ -1,1 +1,1 @@
-Add disableCompression boolean flag to disable GZIP compression HTTP filter from the default Listener filters.
+Add "compression" flag to set/disable the compression type applied in the default HTTP filter chain.

@@ -333,6 +333,18 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		accessLogLevel = contour_v1alpha1.LogLevelDisabled
 	}
 
+	var compression contour_v1alpha1.EnvoyCompressionType
+	switch ctx.Config.Compression {
+	case config.CompressionBrotli:
+		compression = contour_v1alpha1.BrotliCompression
+	case config.CompressionDisabled:
+		compression = contour_v1alpha1.DisabledCompression
+	case config.CompressionGzip:
+		compression = contour_v1alpha1.GzipCompression
+	case config.CompressionZstd:
+		compression = contour_v1alpha1.ZstdCompression
+	}
+
 	var defaultHTTPVersions []contour_v1alpha1.HTTPVersionType
 	for _, version := range ctx.Config.DefaultHTTPVersions {
 		switch version {
@@ -519,7 +531,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:                 &ctx.useProxyProto,
-				DisableCompression:            ctx.Config.DisableCompression,
+				Compression:                   compression,
 				DisableAllowChunkedLength:     &ctx.Config.DisableAllowChunkedLength,
 				DisableMergeSlashes:           &ctx.Config.DisableMergeSlashes,
 				ServerHeaderTransformation:    serverHeaderTransformation,

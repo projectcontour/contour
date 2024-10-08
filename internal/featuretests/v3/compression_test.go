@@ -72,7 +72,7 @@ func TestDefaultCompression(t *testing.T) {
 
 func TestDisableCompression(t *testing.T) {
 	withDisableCompression := func(conf *xdscache_v3.ListenerConfig) {
-		conf.DisableCompression = true
+		conf.Compression = "disabled"
 	}
 
 	rh, c, done := setup(t, withDisableCompression)
@@ -104,7 +104,103 @@ func TestDisableCompression(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-		DisableCompression(true).
+		Compression("disabled").
+		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+		DefaultFilters().
+		Get(),
+	)
+
+	c.Request(listenerType, xdscache_v3.ENVOY_HTTP_LISTENER).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, httpListener),
+	})
+}
+
+func TestBrotliCompression(t *testing.T) {
+	withBrotliCompression := func(conf *xdscache_v3.ListenerConfig) {
+		conf.Compression = "brotli"
+	}
+
+	rh, c, done := setup(t, withBrotliCompression)
+	defer done()
+
+	s1 := fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+	rh.OnAdd(s1)
+
+	hp1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: matchconditions(prefixMatchCondition("/")),
+				Services: []contour_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(hp1)
+
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+		Compression("brotli").
+		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+		DefaultFilters().
+		Get(),
+	)
+
+	c.Request(listenerType, xdscache_v3.ENVOY_HTTP_LISTENER).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, httpListener),
+	})
+}
+
+func TestZstdCompression(t *testing.T) {
+	withZstdCompression := func(conf *xdscache_v3.ListenerConfig) {
+		conf.Compression = "zstd"
+	}
+
+	rh, c, done := setup(t, withZstdCompression)
+	defer done()
+
+	s1 := fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+	rh.OnAdd(s1)
+
+	hp1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: matchconditions(prefixMatchCondition("/")),
+				Services: []contour_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(hp1)
+
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+		Compression("zstd").
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).

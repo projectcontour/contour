@@ -18,8 +18,10 @@ package httpproxy
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,12 +29,13 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-func testEnvoyDisableCompression(namespace string, enabled bool) {
-	testSpec := "responses compressed with default settings"
-	if enabled {
+func testEnvoyDisableCompression(namespace, acceptEncoding, contentEncoding string, disabled bool) {
+	testSpec := fmt.Sprintf("responses compressed with accept-encoding %s expecting content-encoding %s", acceptEncoding, contentEncoding)
+	if disabled {
 		testSpec = "responses are plaintext when compression disabled"
 	}
-	FSpecify(testSpec, func() {
+
+	Specify(testSpec, func() {
 		resp := "minimum_text_to_enable_gzipminimum_text_to_enable_gzipminimum_text_to_enable_gzipminimum_text_to_enable_gzipminimum_text_to_enable_gzipminimum_text_to_enable_gzip"
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -57,24 +60,25 @@ func testEnvoyDisableCompression(namespace string, enabled bool) {
 		}
 		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
-		// Send HTTP request, we will check backend connection was over HTTPS.
-		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Path: "/directresponse",
-			Host: p.Spec.VirtualHost.Fqdn,
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(map[string]string{
-					"Accept-Encoding": "gzip, deflate",
-				}),
-			},
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(f.T(), res, "request never succeeded")
-		require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
-		fmt.Printf("response: %+v\n", res.Headers)
-		if enabled {
-			require.NotContains(f.T(), res.Headers["Content-Encoding"], "gzip", "expected plain text")
-			return
-		}
-		require.Contains(f.T(), res.Headers["Content-Encoding"], "gzip", "expected plain text")
+		require.EventuallyWithT(f.T(), func(c *assert.CollectT) {
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Path: "/directresponse",
+				Host: p.Spec.VirtualHost.Fqdn,
+				RequestOpts: []func(*http.Request){
+					e2e.OptSetHeaders(map[string]string{
+						"Accept-Encoding": fmt.Sprintf("%s, deflate", acceptEncoding),
+					}),
+				},
+				Condition: e2e.HasStatusCode(200),
+			})
+			assert.NotNil(c, res, "request never succeeded")
+			assert.Truef(c, ok, "expected 200 response code, got %d", res.StatusCode)
+			contentEncodingHeaderValue := res.Headers.Get("Content-Encoding")
+			if disabled {
+				assert.NotEqual(c, contentEncodingHeaderValue, contentEncoding, "expected plain text")
+				return
+			}
+			assert.Equal(c, contentEncodingHeaderValue, contentEncoding, "expected plain text")
+		}, 15*time.Second, f.RetryInterval)
 	})
 }
