@@ -1396,6 +1396,55 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 			},
 		},
+		"If ContourDeployment.Spec.Envoy.DNSLookupFamily is specified, the envoy-initconfig container's arguments contain --dns-lookup-family": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
+					Envoy: &contour_v1alpha1.EnvoySettings{
+						DNSLookupFamily: "v4",
+					},
+				},
+			},
+			gateway: makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, _ *gatewayapi_v1.Gateway, _ error) {
+				ds := &apps_v1.DaemonSet{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
+				assert.Contains(t, ds.Spec.Template.Spec.InitContainers[0].Args, "--dns-lookup-family=v4")
+			},
+		},
+
+		"If ContourDeployment.Spec.Envoy.DNSLookupFamily is not specified, the envoy-initconfig container's arguments contain --dns-lookup-family=auto": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
+					Envoy: &contour_v1alpha1.EnvoySettings{},
+				},
+			},
+			gateway: makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, _ *gatewayapi_v1.Gateway, _ error) {
+				ds := &apps_v1.DaemonSet{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
+				assert.Contains(t, ds.Spec.Template.Spec.InitContainers[0].Args, "--dns-lookup-family=auto")
+			},
+		},
 	}
 
 	for name, tc := range tests {

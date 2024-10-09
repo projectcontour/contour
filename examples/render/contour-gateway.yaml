@@ -1840,6 +1840,12 @@ spec:
                             type: string
                         type: object
                     type: object
+                  dnsLookupFamily:
+                    description: |-
+                      DNSLookupFamily specifies DNS Resolution Policy to use for Envoy -> Contour cluster name lookup.
+                      Allowed values are "v4", "v6", "all" or "auto".
+                      defaults to "auto".
+                    type: string
                   extraVolumeMounts:
                     description: ExtraVolumeMounts holds the extra volume mounts to
                       add (normally used with extraVolumes).

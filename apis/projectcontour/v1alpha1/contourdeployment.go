@@ -245,6 +245,13 @@ type EnvoySettings struct {
 	//
 	// +optional
 	OverloadMaxHeapSize uint64 `json:"overloadMaxHeapSize,omitempty"`
+
+	// DNSLookupFamily specifies DNS Resolution Policy to use for Envoy -> Contour cluster name lookup.
+	// Allowed values are "v4", "v6", "all" or "auto".
+	// defaults to "auto".
+	//
+	// +optional
+	DNSLookupFamily string `json:"dnsLookupFamily,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

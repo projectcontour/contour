@@ -230,6 +230,15 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 					params.Spec.Envoy.LogLevel)
 				invalidParamsMessages = append(invalidParamsMessages, msg)
 			}
+
+			switch params.Spec.Envoy.DNSLookupFamily {
+			// valid values, nothing to do
+			case "", "auto", "v4", "v6", "all":
+			default:
+				msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.dnsLookupFamily %q, must be auto, v4, v6 or all", params.Spec.Envoy.DNSLookupFamily)
+				invalidParamsMessages = append(invalidParamsMessages, msg)
+			}
+
 		}
 
 		if len(invalidParamsMessages) > 0 {
