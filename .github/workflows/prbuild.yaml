@@ -23,7 +23,7 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: false
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - name: golangci-lint
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - name: Codespell
@@ -61,7 +61,7 @@ jobs:
   codegen:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - uses: actions/cache@3624ceb22c1c5a301c8db4169662070a689d9ea8 # v4.1.1
@@ -99,7 +99,7 @@ jobs:
     - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - name: Set up Docker Buildx
@@ -149,7 +149,7 @@ jobs:
           use_config_crd: "true"
 
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - name: Download image
@@ -209,7 +209,7 @@ jobs:
         - kubernetes_version: "kubernetes:n-2"
           node_image: "docker.io/kindest/node:v1.29.8@sha256:d46b7aa29567e93b27f7531d258c372e829d7224b25e3fc6ffdefed12476d3aa"
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
         # Fetch history for all tags and branches so we can figure out most
@@ -260,7 +260,7 @@ jobs:
     - codegen
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - uses: actions/cache@3624ceb22c1c5a301c8db4169662070a689d9ea8 # v4.1.1
@@ -307,7 +307,7 @@ jobs:
     - codegen
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - uses: actions/cache@3624ceb22c1c5a301c8db4169662070a689d9ea8 # v4.1.1
@@ -345,7 +345,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-image]
     steps:
-    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       with:
         persist-credentials: false
     - name: Download image
