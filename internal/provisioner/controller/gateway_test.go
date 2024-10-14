@@ -15,7 +15,10 @@ package controller
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -1396,6 +1399,32 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 			},
 		},
+		"The generated certificates' lifetime is specified": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
+					Contour: &contour_v1alpha1.ContourSettings{
+						CertLifetime: 123,
+					},
+				},
+			},
+			gateway: makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, _ *gatewayapi_v1.Gateway, _ error) {
+				s := &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contourcert-gateway-1",
+					},
+				}
+
+				require.NoError(t, r.client.Get(context.Background(), keyFor(s), s))
+				verifyCert(t, s.Data["ca.crt"], 123)
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1450,4 +1479,24 @@ func assertEnvoyServiceLoadBalancerIP(t *testing.T, gateway *gatewayapi_v1.Gatew
 
 	// Verify expected Spec.LoadBalancerIP.
 	assert.Equal(t, want, envoyService.Spec.LoadBalancerIP)
+}
+
+func verifyCert(t *testing.T, certPEM []byte, day int) {
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		require.FailNow(t, "decode the certificate from PEM form is failed")
+		return
+	}
+
+	if block.Bytes == nil {
+		require.FailNow(t, "the certificate is empty")
+		return
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	require.NoError(t, err, "parse the certificate is failed")
+
+	if cert.NotAfter.After(time.Now().AddDate(0, 0, day)) {
+		require.FailNow(t, "the certificate is not valid")
+	}
 }
