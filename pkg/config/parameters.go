@@ -714,6 +714,9 @@ type Parameters struct {
 	// from k8s endpoint slices. defaults to true,
 	// if false then reading endpoint data from the k8s endpoints.
 	FeatureFlags []string `yaml:"featureFlags,omitempty"`
+
+	// GlobalExternalProcessing optionally holds properties of the global external processing configurations.
+	GlobalExternalProcessing *GlobalExternalProcessing `yaml:"globalExternalProcessing,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -820,6 +823,66 @@ type GlobalAuthorizationPolicy struct {
 	//
 	// +optional
 	Context map[string]string `yaml:"context,omitempty"`
+}
+
+// ExternalProcessor defines the envoy External Processing filter which allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy external processing GRPC protocol
+// (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type ExternalProcessor struct {
+	// ExtensionService identifies the extension service defining the RLS,
+	// formatted as <namespace>/<name>.
+	ExtensionService string `yaml:"extensionService,omitempty"`
+
+	// ResponseTimeout sets how long the proxy should wait for responses.
+	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string "infinity" is also a valid input and specifies no timeout.
+	//
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	ResponseTimeout string `yaml:"responseTimeout,omitempty"`
+
+	// If FailOpen is true, the client request is forwarded to the upstream service
+	// even if the server fails to respond. This field should not be
+	// set in most cases.
+	//
+	// +optional
+	FailOpen bool `yaml:"failOpen,omitempty"`
+
+	// ProcessingMode describes which parts of an HTTP request and response are sent to a remote server
+	// and how they are delivered.
+	//
+	// +optional
+	ProcessingMode *contour_v1.ProcessingMode `yaml:"processingMode,omitempty"`
+
+	// MutationRules specifies what headers may be manipulated by a processing filter.
+	// This set of rules makes it possible to control which modifications a filter may make.
+	//
+	// for Overrides is must be nil
+	//
+	// +optional
+	MutationRules *contour_v1.HeaderMutationRules `yaml:"mutationRules,omitempty"`
+
+	// If true, the filter config processingMode can be overridden by the response message from the external processing server `mode_override``.
+	// If false, `mode_override` API in the response message will be ignored.
+	//
+	// +optional
+	AllowModeOverride bool `yaml:"allowModeOverride,omitempty"`
+}
+
+// The External Processing filter allows an external service to act on HTTP traffic in a flexible way
+// The external server must implement the v3 Envoy
+// external processing GRPC protocol (https://www.envoyproxy.io/docs/envoy/v1.27.0/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto).
+type GlobalExternalProcessing struct {
+	// Processor configures the global external processing
+	//
+	// +optional
+	Processor *ExternalProcessor `yaml:"processor,omitempty"`
+
+	// If Disabled is true, no external processing will be append to the filter chain
+	//
+	// +optional
+	Disabled bool `yaml:"disabled,omitempty"`
 }
 
 // RateLimitService defines properties of a global Rate Limit Service.

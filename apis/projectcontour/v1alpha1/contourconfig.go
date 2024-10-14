@@ -91,6 +91,11 @@ type ContourConfigurationSpec struct {
 	// from k8s endpoint slices. defaults to true,
 	// If false then reads endpoint data from the k8s endpoints.
 	FeatureFlags FeatureFlags `json:"featureFlags,omitempty"`
+
+	// GlobalExternalProcessing allows envoys external processing filter
+	// to be enabled for all virtual hosts.
+	// +optional
+	GlobalExternalProcessing *contour_v1.ExternalProcessing `json:"globalExternalProcessing,omitempty"`
 }
 
 // FeatureFlags defines the set of feature flags
