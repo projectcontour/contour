@@ -121,14 +121,18 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		// envoy.RouteRoute. Currently the DAG processor adds any HTTP->HTTPS
 		// redirect routes to *both* the insecure and secure vhosts.
 		route.Action = UpgradeHTTPS()
+
+		// Disable External Authorization it is being redirected to HTTPS route
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+		route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 	case dagRoute.DirectResponse != nil:
 		route.TypedPerFilterConfig = map[string]*anypb.Any{}
 
 		// Apply per-route authorization policy modifications.
 		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		route.Action = routeDirectResponse(dagRoute.DirectResponse)
@@ -589,6 +593,19 @@ func UpgradeHTTPS() *envoy_config_route_v3.Route_Redirect {
 				HttpsRedirect: true,
 			},
 		},
+	}
+}
+
+// DisabledExtAuthConfig returns a route TypedPerFilterConfig that disables ExtAuth
+func DisabledExtAuthConfig() map[string]*anypb.Any {
+	return map[string]*anypb.Any{
+		ExtAuthzFilterName: protobuf.MustMarshalAny(
+			&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+					Disabled: true,
+				},
+			},
+		),
 	}
 }
 

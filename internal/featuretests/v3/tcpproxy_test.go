@@ -103,14 +103,9 @@ func TestTCPProxy(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("kuard-tcp.example.com",
 					&envoy_config_route_v3.Route{
-						Match: routePrefix("/"),
-						Action: &envoy_config_route_v3.Route_Redirect{
-							Redirect: &envoy_config_route_v3.RedirectAction{
-								SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-									HttpsRedirect: true,
-								},
-							},
-						},
+						Match:                routePrefix("/"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -276,14 +271,9 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("kuard-tcp.example.com",
 					&envoy_config_route_v3.Route{
-						Match: routePrefix("/"),
-						Action: &envoy_config_route_v3.Route_Redirect{
-							Redirect: &envoy_config_route_v3.RedirectAction{
-								SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-									HttpsRedirect: true,
-								},
-							},
-						},
+						Match:                routePrefix("/"),
+						Action:               envoy_v3.UpgradeHTTPS(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
