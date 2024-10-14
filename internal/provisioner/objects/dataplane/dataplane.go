@@ -294,6 +294,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 				fmt.Sprintf("--envoy-cert-file=%s", filepath.Join("/", envoyCertsVolMntDir, "tls.crt")),
 				fmt.Sprintf("--envoy-key-file=%s", filepath.Join("/", envoyCertsVolMntDir, "tls.key")),
 				fmt.Sprintf("--overload-max-heap=%d", contour.Spec.EnvoyMaxHeapSizeBytes),
+				fmt.Sprintf("--dns-lookup-family=%s", contour.Spec.EnvoyDNSLookupFamily),
 			},
 			VolumeMounts: []core_v1.VolumeMount{
 				{

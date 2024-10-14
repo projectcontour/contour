@@ -7389,6 +7389,21 @@ When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests
 More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/">https://projectcontour.io/docs/main/config/overload-manager/</a></p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>dnsLookupFamily</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DNSLookupFamily specifies DNS Resolution Policy to use for Envoy -&gt; Contour cluster name lookup.
+Allowed values are &ldquo;v4&rdquo;, &ldquo;v6&rdquo;, &ldquo;all&rdquo; or &ldquo;auto&rdquo;.
+defaults to &ldquo;auto&rdquo;.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS
