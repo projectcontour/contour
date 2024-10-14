@@ -66,6 +66,7 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:              ptr.To(false),
+				Compression:                contour_v1alpha1.GzipCompression,
 				DisableAllowChunkedLength:  ptr.To(false),
 				DisableMergeSlashes:        ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,

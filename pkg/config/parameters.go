@@ -651,6 +651,12 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
+	// Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
+	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
+	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// +optional
+	Compression EnvoyCompressionType `yaml:"compression,omitempty"`
+
 	// Defines the action to be applied to the Server header on the response path.
 	// When configured as overwrite, overwrites any Server header with "envoy".
 	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
@@ -966,6 +972,19 @@ const (
 	LogLevelDisabled AccessLogLevel = "disabled"
 )
 
+type EnvoyCompressionType string
+
+func (c EnvoyCompressionType) Validate() error {
+	return contour_v1alpha1.EnvoyCompressionType(c).Validate()
+}
+
+const (
+	CompressionGzip     EnvoyCompressionType = "gzip"
+	CompressionBrotli   EnvoyCompressionType = "brotli"
+	CompressionDisabled EnvoyCompressionType = "disabled"
+	CompressionZstd     EnvoyCompressionType = "zstd"
+)
+
 // Validate verifies that the parameter values do not have any syntax errors.
 func (p *Parameters) Validate() error {
 	if err := p.Cluster.DNSLookupFamily.Validate(); err != nil {
@@ -993,6 +1012,10 @@ func (p *Parameters) Validate() error {
 	}
 
 	if err := contour_v1alpha1.AccessLogFormatString(p.AccessLogFormatString).Validate(); err != nil {
+		return err
+	}
+
+	if err := p.Compression.Validate(); err != nil {
 		return err
 	}
 
@@ -1029,6 +1052,9 @@ func (p *Parameters) Validate() error {
 	return p.Listener.Validate()
 }
 
+// DefaultCompressionFilter is the compression mechanism in the default HTTP filter chain
+const DefaultCompressionFilter = CompressionGzip
+
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
 	contourNamespace := GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
@@ -1048,6 +1074,7 @@ func Defaults() Parameters {
 		DisablePermitInsecure:      false,
 		DisableAllowChunkedLength:  false,
 		DisableMergeSlashes:        false,
+		Compression:                DefaultCompressionFilter,
 		ServerHeaderTransformation: OverwriteServerHeader,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,

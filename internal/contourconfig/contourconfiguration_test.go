@@ -55,10 +55,11 @@ func TestOverlayOnDefaults(t *testing.T) {
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:              ptr.To(true),
-				DisableAllowChunkedLength:  ptr.To(true),
-				DisableMergeSlashes:        ptr.To(true),
+				Compression:                "brotli",
 				MaxRequestsPerConnection:   ptr.To(uint32(1)),
 				HTTP2MaxConcurrentStreams:  ptr.To(uint32(10)),
+				DisableAllowChunkedLength:  ptr.To(true),
+				DisableMergeSlashes:        ptr.To(true),
 				ServerHeaderTransformation: contour_v1alpha1.PassThroughServerHeader,
 				ConnectionBalancer:         "yesplease",
 				TLS: &contour_v1alpha1.EnvoyTLS{
