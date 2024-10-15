@@ -588,7 +588,7 @@ spec:
 #### Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consistently routed to the same application backend.
-Contour supports session affinity on a per route basis with `loadBalancerPolocy` `strategy: Cookie`.
+Contour supports session affinity on a per route basis with `loadBalancerPolicy` `strategy: Cookie`.
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
