@@ -306,7 +306,7 @@ Since defining a TLS section of a root IngressRoute tells Contour that it should
 This results in any request to an insecure endpoint will receive a 301 http status code informing the client to redirect to the secure endpoint. No additional parameters need to be set for this functionality other than specifying TLS on the IngressRoute.
 
 Additionally, it may be necessary to serve specific routes over an insecure endpoint. 
-An example would be the challenges sent from LetsEncyrpt. Specific routes can set the permitInsecure parameter which will let that route serve insecure or secure traffic (Meaning no 301 redirects).
+An example would be the challenges sent from LetsEncrypt. Specific routes can set the permitInsecure parameter which will let that route serve insecure or secure traffic (Meaning no 301 redirects).
 
 ### Parameters
 
