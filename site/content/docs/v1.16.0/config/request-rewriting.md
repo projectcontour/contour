@@ -211,7 +211,7 @@ skips them entirely - for example:
   remote address cannot be added to request headers as the upstream host has not
   been selected when custom request headers are generated."
 * `%DOWNSTREAM_TLS_VERSION%` is skipped if TLS is not in use
-* Envoy ignores REQ headers that refer to an non-existent header - for example
+* Envoy ignores REQ headers that refer to an nonexistent header - for example
   `%REQ(Host)%` works as expected but `%REQ(Missing-Header)%` is skipped
 
 Contour already sets the `X-Request-Start` request header to

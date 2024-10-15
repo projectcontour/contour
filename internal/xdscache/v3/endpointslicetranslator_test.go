@@ -571,7 +571,7 @@ func TestEndpointSliceTranslatorRemoveEndpoints(t *testing.T) {
 			},
 			wantUpdate: false,
 		},
-		"remove non existent": {
+		"remove nonexistent": {
 			setup: func(*EndpointSliceTranslator) {},
 			endpointSlice: endpointSlice("default", "simple-eps-fs9du", "simple", discovery_v1.AddressTypeIPv4, []discovery_v1.Endpoint{
 				{

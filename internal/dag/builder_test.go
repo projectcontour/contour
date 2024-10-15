@@ -10776,8 +10776,8 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/finance",
 							}},
-							Name:      "non-existent",
-							Namespace: "non-existent",
+							Name:      "nonexistent",
+							Namespace: "nonexistent",
 						}},
 					},
 				},

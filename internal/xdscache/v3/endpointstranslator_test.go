@@ -460,7 +460,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			},
 			wantUpdate: false,
 		},
-		"remove non existent": {
+		"remove nonexistent": {
 			setup: func(*EndpointsTranslator) {},
 			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
