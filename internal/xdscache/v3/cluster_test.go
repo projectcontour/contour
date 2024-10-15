@@ -289,13 +289,13 @@ func TestClusterVisit(t *testing.T) {
 				&networking_v1.Ingress{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "webserver-1-unimatrix-zero-one",
-						Namespace: "beurocratic-company-test-domain-1",
+						Namespace: "bureaucratic-company-test-domain-1",
 					},
 					Spec: networking_v1.IngressSpec{
 						DefaultBackend: backend("tiny-cog-department-test-instance", 443),
 					},
 				},
-				service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance",
+				service("bureaucratic-company-test-domain-1", "tiny-cog-department-test-instance",
 					core_v1.ServicePort{
 						Name:       "svc-0",
 						Protocol:   "TCP",
@@ -306,12 +306,12 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&envoy_config_cluster_v3.Cluster{
-					Name:                 "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
-					AltStatName:          "beurocratic-company-test-domain-1_tiny-cog-department-test-instance_443",
+					Name:                 "bureaucr-0796f4/tiny-cog-0796f4/443/da39a3ee5e",
+					AltStatName:          "bureaucratic-company-test-domain-1_tiny-cog-department-test-instance_443",
 					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 					EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
 						EdsConfig:   envoy_v3.ConfigSource("contour"),
-						ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
+						ServiceName: "bureaucratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
 					},
 				}),
 		},
