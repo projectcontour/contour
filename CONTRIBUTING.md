@@ -63,7 +63,7 @@ This section describes how to build Contour from source.
     brew install go
     ```
 
-4. (Optional for MacOS) [Docker Mac Net Connect](https://github.com/chipmk/docker-mac-net-connect) to connect directly to Docker-for-Mac containers via IP address.
+4. (Optional for macOS) [Docker Mac Net Connect](https://github.com/chipmk/docker-mac-net-connect) to connect directly to Docker-for-Mac containers via IP address.
 
     See installation instructions [here](https://github.com/chipmk/docker-mac-net-connect?tab=readme-ov-file#installation)
 
@@ -126,10 +126,10 @@ To remove the Kind cluster and all resources, run:
 make cleanup-kind
 ```
 
-#### MacOS
+#### macOS
 
 Both `install-contour-working` and `install-provisioner-working` configure [MetalLB](https://metallb.universe.tf/) to setup a local LoadBalancer Service that can be accessed on the Docker network.
-On Linux, you are able to directly reach IPs on the Docker network, but on MacOS the docker network is not directly accessible on the host.
+On Linux, you are able to directly reach IPs on the Docker network, but on macOS the docker network is not directly accessible on the host.
 
 As a workaround to this problem, [Docker Mac Net Connect](https://github.com/chipmk/docker-mac-net-connect) can be installed to setup a tunnel between your host and the Docker Desktop Linux VM (see [here](https://github.com/chipmk/docker-mac-net-connect?tab=readme-ov-file#how-does-it-work) for more info on how this works).
 To setup follow the [readme installation instructions](https://github.com/chipmk/docker-mac-net-connect?tab=readme-ov-file#installation).
