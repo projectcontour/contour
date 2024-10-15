@@ -18,7 +18,7 @@ import "sync"
 // Cond implements a condition variable, a rendezvous point for goroutines
 // waiting for or announcing the ocurence of an event.
 //
-// Unlike sync.Cond, Cond communciates with waiters via channels registered by
+// Unlike sync.Cond, Cond communicates with waiters via channels registered by
 // the waiters. This permits goroutines to wait on Cond events using select.
 type Cond struct {
 	mu      sync.Mutex
