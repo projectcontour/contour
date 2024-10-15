@@ -85,7 +85,7 @@ spec:
       protocol: h2c
 ```
 
-Using the sample deployment above along with this HTTPProxy example, you can test calling this plaintext gRPC server with the following [grpccurl][5] command:
+Using the sample deployment above along with this HTTPProxy example, you can test calling this plaintext gRPC server with the following [grpcurl][5] command:
 
 ```
 grpcurl -plaintext -authority=my-grpc-service.foo.com <load balancer IP and port if needed> yages.Echo/Ping
