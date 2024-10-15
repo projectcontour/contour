@@ -217,28 +217,28 @@ func TestBuilderLookupService(t *testing.T) {
 		"lookup service by port number with annotated number": {
 			NamespacedName: types.NamespacedName{Name: annotatedService.Name, Namespace: annotatedService.Namespace},
 			port:           8443,
-			want:           appProtcolService(annotatedService, "tls"),
+			want:           appProtocolService(annotatedService, "tls"),
 		},
 		"lookup service by port number with k8s app protocol: h2c": {
 			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
 			port:           8443,
-			want:           appProtcolService(appProtoService, "h2c"),
+			want:           appProtocolService(appProtoService, "h2c"),
 		},
 
 		"lookup service by port number with unsupported k8s app protocol: wss": {
 			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
 			port:           8444,
-			want:           appProtcolService(appProtoService, "", 1),
+			want:           appProtocolService(appProtoService, "", 1),
 		},
 		"lookup service by port number with supported IANA app protocol: https": {
 			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
 			port:           8445,
-			want:           appProtcolService(appProtoService, "tls", 2),
+			want:           appProtocolService(appProtoService, "tls", 2),
 		},
 		"lookup service by port number with supported IANA app protocol: http": {
 			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
 			port:           8446,
-			want:           appProtcolService(appProtoService, "", 3),
+			want:           appProtocolService(appProtoService, "", 3),
 		},
 	}
 

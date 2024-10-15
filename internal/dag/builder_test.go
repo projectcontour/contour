@@ -15936,7 +15936,7 @@ func service(s *core_v1.Service) *Service {
 	return weightedService(s, 1)
 }
 
-func appProtcolService(s *core_v1.Service, protocol string, portIndex ...int) *Service {
+func appProtocolService(s *core_v1.Service, protocol string, portIndex ...int) *Service {
 	idx := 0
 	if len(portIndex) > 0 {
 		idx = portIndex[0]
