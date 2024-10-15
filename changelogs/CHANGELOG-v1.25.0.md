@@ -118,7 +118,7 @@ spec:
           port: 80
     - conditions:
       - queryParam:
-          # will match e.g. '?search=thispostfix' or any string value suffixed by `postfix` (case sensitive)
+          # will match e.g. '?search=thispostfix' or any string value suffixed by `postfix` (case-sensitive)
           name: search
           suffix: postfix
       services:
@@ -134,7 +134,7 @@ spec:
           port: 80
     - conditions:
       - queryParam:
-          # will match e.g. '?search=somethinginsideanother' or any string value containing the substring 'inside' (case sensitive)
+          # will match e.g. '?search=somethinginsideanother' or any string value containing the substring 'inside' (case-sensitive)
           name: search
           contains: inside
       services:

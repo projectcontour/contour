@@ -10,7 +10,7 @@ readonly KIND_VERS="v0.24.0"
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
 
-# Google storage is case sensitive, so we we need to lowercase the OS.
+# Google storage is case-sensitive, so we we need to lowercase the OS.
 readonly OS=$(uname | tr '[:upper:]' '[:lower:]')
 
 usage() {

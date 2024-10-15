@@ -127,7 +127,7 @@ func (s queryParamMatchConditionSorter) Less(i, j int) bool {
 		case 1:
 			return false
 		default:
-			// The match that is case sensitive sorts first.
+			// The match that is case-sensitive sorts first.
 			if a.IgnoreCase != b.IgnoreCase {
 				return !a.IgnoreCase
 			}

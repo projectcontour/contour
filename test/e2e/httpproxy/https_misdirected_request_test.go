@@ -94,7 +94,7 @@ func testHTTPSMisdirectedRequest(namespace string) {
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Verify that the hostname match is case-insensitive.
-		// The SNI server name match is still case sensitive,
+		// The SNI server name match is still case-sensitive,
 		// see https://github.com/envoyproxy/envoy/issues/6199.
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host: "HTTPS-Misdirected-reQUest.projectcontour.io",
