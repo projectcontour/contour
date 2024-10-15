@@ -8,7 +8,7 @@ Allow or deny traffic to services behind contour with an IP allowlist or an IP d
 
 ## Background
 
-There have been [long standing requests](https://github.com/projectcontour/contour/issues/62) to support some form of IP filtering.
+There have been [long-standing requests](https://github.com/projectcontour/contour/issues/62) to support some form of IP filtering.
 IP filtering is a useful tool for network segregation that is supported by other ingress controllers like [ingress-nginx](https://github.com/kubernetes/ingress-nginx/blob/87d1b8bbf28265386b339e65d8943d8c3f8582ed/docs/user-guide/nginx-configuration/annotations.md#whitelist-source-range) and [ambassador](https://www.getambassador.io/docs/edge-stack/latest/topics/running/ambassador#ip-allow-and-deny), and is a [common](https://github.com/projectcontour/contour/issues/62#issuecomment-698141472) [request](https://github.com/projectcontour/contour/issues/62#issuecomment-843193956) among the community, often listed as a [blocker](https://github.com/projectcontour/contour/issues/3693#issuecomment-1317049708) for adopting contour.
 
 ## Goals
