@@ -107,7 +107,7 @@ func (c *Certs) GetTLSCertificate(secretNamespace, secretName string) (tls.Certi
 	return cert, caBundle
 }
 
-// ensureSelfSignedIssuer ensuers that selfsigned issuer is created.
+// ensureSelfSignedIssuer ensures that selfsigned issuer is created.
 func (c *Certs) ensureSelfSignedIssuer(ns string) *certmanagerv1.Issuer {
 	issuer := &certmanagerv1.Issuer{
 		ObjectMeta: meta_v1.ObjectMeta{
