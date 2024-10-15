@@ -27,7 +27,7 @@ import (
 )
 
 // Collect all the label names for this metric and return them as
-// a comma-deparated string.
+// a comma-separated string.
 func labels(mf *dto.MetricFamily) string {
 	var l []string
 
