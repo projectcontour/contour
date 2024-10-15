@@ -115,7 +115,7 @@ Building on multiple upstreams is the ability to define relative weights for ups
 This is commonly used for canary testing of new versions of an application when you want to send a small fraction of traffic to a specific Service.
 
 ```yaml
-# httpproxy-weight-shfiting.yaml
+# httpproxy-weight-shifting.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
