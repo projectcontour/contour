@@ -77,7 +77,7 @@ type Configuration struct {
 }
 
 // Certificates contains a set of Certificates as []byte each holding
-// the CA Cert along with with Contour & Envoy Certs.
+// the CA Cert along with Contour & Envoy Certs.
 type Certificates struct {
 	CACertificate      []byte
 	ContourCertificate []byte
