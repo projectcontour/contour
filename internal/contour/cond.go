@@ -16,7 +16,7 @@ package contour
 import "sync"
 
 // Cond implements a condition variable, a rendezvous point for goroutines
-// waiting for or announcing the ocurence of an event.
+// waiting for or announcing the occurrence of an event.
 //
 // Unlike sync.Cond, Cond communicates with waiters via channels registered by
 // the waiters. This permits goroutines to wait on Cond events using select.
