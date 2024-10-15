@@ -185,7 +185,7 @@ spec:
 ```
 
 ### Contour Configuration
-If using global rate limiting, anexternal RLS can be configured in the Contour config file.
+If using global rate limiting, an external RLS can be configured in the Contour config file.
 This RLS will be used for all virtual hosts that defines a global rate limit policy.
 
 ```yaml
