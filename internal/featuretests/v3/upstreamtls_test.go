@@ -462,7 +462,7 @@ func TestBackendTLSPolicyPrecedenceOverUpstreamProtocolAnnotationWithHTTPRoute(t
 
 // Test that a unique cluster name is generated when there is an HTTPProxy with upstream TLS settings
 // and an HTTPRoute with a BackendTLSPolicy, configured with unique TLS settings, targeting the same service.
-func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
+func TestUpstreamTLSWithHTTPRouteAndHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
 		for _, processor := range b.Processors {
 			if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
