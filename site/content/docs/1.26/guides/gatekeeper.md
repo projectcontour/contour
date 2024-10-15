@@ -402,9 +402,9 @@ The `HTTPProxy` creates successfully.
 
 ## Gatekeeper Audit
 
-We've seen how Gatekeeper constraints can enforce constraints when a user tries to create a new `HTTPProxy`. Now let's look at how constraints can be applied to pre-existing resources in the cluster.
+We've seen how Gatekeeper constraints can enforce constraints when a user tries to create a new `HTTPProxy`. Now let's look at how constraints can be applied to preexisting resources in the cluster.
 
-Gatekeeper has an audit functionality, that periodically (every `60s` by default) checks all existing resources against the relevant set of constraints. Any violations are reported in the `Constraint` custom resource's `status.violations` field. This allows an administrator to periodically review & correct any pre-existing misconfigurations, while not having to worry about breaking existing resources when rolling out a new or updated constraint.
+Gatekeeper has an audit functionality, that periodically (every `60s` by default) checks all existing resources against the relevant set of constraints. Any violations are reported in the `Constraint` custom resource's `status.violations` field. This allows an administrator to periodically review & correct any preexisting misconfigurations, while not having to worry about breaking existing resources when rolling out a new or updated constraint.
 
 To try this out, let's revisit the previous example, and change our constraint to allow a maximum retry count of four.
 

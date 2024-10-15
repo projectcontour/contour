@@ -1,6 +1,6 @@
 ---
 # This config tells Gatekeeper to keep all HTTPProxy
-# resources in its internal cache so pre-existing
+# resources in its internal cache so preexisting
 # resources can be referenced in Constraints. See
 # https://github.com/open-policy-agent/gatekeeper#replicating-data
 # for more info.

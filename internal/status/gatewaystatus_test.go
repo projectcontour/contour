@@ -190,7 +190,7 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	assert.Equal(t, string(gatewayapi_v1.ListenerReasonInvalid), res.Reason)
 	assert.Equal(t, "message 3", res.Message)
 
-	// third condition (pre-existing type) for listener-1
+	// third condition (preexisting type) for listener-1
 	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1.ListenerConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.ListenerReasonUnsupportedProtocol, "message 4")
 	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
 	assert.Equal(t, string(gatewayapi_v1.ListenerConditionAccepted), res.Type)
