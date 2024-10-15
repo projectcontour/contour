@@ -590,7 +590,7 @@ func TestIssue257(t *testing.T) {
 	//	kind: Ingress
 	//	metadata:
 	//	  name: kuard-ing
-	//	  labhls:
+	//	  labels:
 	//	    app: kuard
 	//	  annotations:
 	//	    kubernetes.io/ingress.class: contour
