@@ -259,7 +259,7 @@ func MaxRetries(o meta_v1.Object) uint32 {
 }
 
 // PerHostMaxConnections returns the value of the first matching
-// per-host-max-connectionss annotation for the following annotations:
+// per-host-max-connections annotation for the following annotations:
 // 1. projectcontour.io/per-host-max-connections
 //
 // '0' is returned if the annotation is absent or unparsable.
