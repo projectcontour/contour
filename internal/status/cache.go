@@ -70,7 +70,7 @@ type Cache struct {
 	entries map[string]map[types.NamespacedName]CacheEntry
 }
 
-// Get returns a pointer to a the cache entry if it exists, nil
+// Get returns a pointer to the cache entry if it exists, nil
 // otherwise. The return value is shared between all callers, who
 // should take care to cooperate.
 func (c *Cache) Get(obj meta_v1.Object) CacheEntry {
