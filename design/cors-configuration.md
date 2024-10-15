@@ -15,7 +15,7 @@ Nowadays, most modern browsers don't allow requests to a domain from a webpage t
 
 Knowing how authentication works, a malicious webpage could try to force a user to execute unwanted actions on a web application in which they're currently authenticated using some social engineering. This could be an attack example:
 - A user who is authenticated on an online bank (`www.mybank.com`) receives an email saying that they won a brand new car. To get the prize, they only have to visit `www.malicious-site.com/winner` and fill out a form with some personal data.
-- When the user goes to the malicious web page, a Javascript code is executed in the background sending an AJAX request to `www.mybank.com/transfer` which is the URL used for doing money transfers on the online bank.
+- When the user goes to the malicious web page, a JavaScript code is executed in the background sending an AJAX request to `www.mybank.com/transfer` which is the URL used for doing money transfers on the online bank.
 - As the user is already authenticated on `mybank.com`, the authentication cookie is sent automatically.
 - The web application checks the cookie and as it's valid, the money transfer is performed on the victim's behalf.
 
@@ -25,9 +25,9 @@ To avoid this kind of scenario, web browsers apply the same-origin policy.
 
 Under the same-origin policy, a web browser allows scripts contained on a web page to access data on another server, but only if both share the same origin. An origin is defined as a combination of URI scheme, host name, and port number. Thanks to same-origin policy, attacks like the one explained previously are prevented by the browser itself because `www.mybank.com` and `www.malicious-site.com` don't share the same origin.
 
-However, the way web applications are developed has evolved, and nowadays it’s very frequent to separate the frontend from the backend, deploying them independently. For instance, the frontend could be a Javascript single page application deployed on a CDN (`myfrontend.com`) and the backend, a microservices cluster deployed somewhere else (`mybackend.com`).
+However, the way web applications are developed has evolved, and nowadays it’s very frequent to separate the frontend from the backend, deploying them independently. For instance, the frontend could be a JavaScript single page application deployed on a CDN (`myfrontend.com`) and the backend, a microservices cluster deployed somewhere else (`mybackend.com`).
 
-As the Javascript application needs to send requests to the API exposed by the backend and they are hosted on different domains, the web browser will prevent any communication between them due to the same-origin policy. This is where CORS comes into play.
+As the JavaScript application needs to send requests to the API exposed by the backend and they are hosted on different domains, the web browser will prevent any communication between them due to the same-origin policy. This is where CORS comes into play.
 
 ### CORS
 
