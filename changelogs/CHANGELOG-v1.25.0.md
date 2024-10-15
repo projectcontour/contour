@@ -109,7 +109,7 @@ spec:
           port: 80
     - conditions:
       - queryParam:
-          # will match e.g. '?search=prefixthis' or any string value prefixed by `prefix` (case insensitive)
+          # will match e.g. '?search=prefixthis' or any string value prefixed by `prefix` (case-insensitive)
           name: search
           prefix: PreFix
           ignoreCase: true
