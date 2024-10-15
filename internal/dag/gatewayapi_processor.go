@@ -2503,7 +2503,7 @@ func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *
 }
 
 // sortHTTPRoutes sorts httproutes based on creationTimestamp in ascending order
-// if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphetical ascending order
+// if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphabetical ascending order
 func sortHTTPRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gatewayapi_v1.HTTPRoute {
 	routes := []*gatewayapi_v1.HTTPRoute{}
 	for _, r := range m {
@@ -2522,7 +2522,7 @@ func sortHTTPRoutes(m map[types.NamespacedName]*gatewayapi_v1.HTTPRoute) []*gate
 }
 
 // sortGRPCRoutes sorts grpcroutes based on creationTimestamp in ascending order
-// if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphetical ascending order
+// if creationTimestamps are the same, sort based on namespaced name ("<namespace>/<name>") in alphabetical ascending order
 func sortGRPCRoutes(m map[types.NamespacedName]*gatewayapi_v1.GRPCRoute) []*gatewayapi_v1.GRPCRoute {
 	routes := []*gatewayapi_v1.GRPCRoute{}
 	for _, r := range m {
