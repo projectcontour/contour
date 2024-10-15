@@ -165,7 +165,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	p3 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "infinity"})
 	rh.OnUpdate(p2, p3)
 
-	// check timeout policy with explicit infine response timeout is propagated as infinity
+	// check timeout policy with explicit infinite response timeout is propagated as infinity
 	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
@@ -220,7 +220,7 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 	p3 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "infinity"})
 	rh.OnUpdate(p2, p3)
 
-	// check timeout policy with explicit infine response timeout is propagated as infinity
+	// check timeout policy with explicit infinite response timeout is propagated as infinity
 	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
