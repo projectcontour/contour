@@ -64,7 +64,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		cluster.EdsClusterConfig = edsconfig("contour", service)
 	default:
 		// external name set, use hard coded DNS name
-		// external name set to LOGICAL_DNS when user selects the ALL loookup family
+		// external name set to LOGICAL_DNS when user selects the ALL lookup family
 		clusterDiscoveryType := ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS)
 		if cluster.DnsLookupFamily == envoy_config_cluster_v3.Cluster_ALL {
 			clusterDiscoveryType = ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_LOGICAL_DNS)
