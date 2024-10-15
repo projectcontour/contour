@@ -58,7 +58,7 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 - `contour.heptio.com/upstream-protocol.{protocol}` : deprecated form of `projectcontour.io/upstream-protocol.{protocol}`.
 
 ## Contour specific IngressRoute annotations
-- `contour.heptio.com/ingress.class`: The Ingress class that should interpret and serve the IngressRoute. If not set, then all all Contour instances serve the IngressRoute. If specified as `contour.heptio.com/ingress.class: contour`, then Contour serves the IngressRoute. If any other value, Contour ignores the IngressRoute definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime.
+- `contour.heptio.com/ingress.class`: The Ingress class that should interpret and serve the IngressRoute. If not set, then all Contour instances serve the IngressRoute. If specified as `contour.heptio.com/ingress.class: contour`, then Contour serves the IngressRoute. If any other value, Contour ignores the IngressRoute definition. You can override the default class `contour` with the `--ingress-class-name` flag at runtime.
 
 [1]: https://www.envoyproxy.io/docs/envoy/v1.11.2/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries
 [2]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on
