@@ -8,7 +8,7 @@ change, preferably with a link to the design document involved, and what the
 Contour user should do about it.
 
 If the change is a breaking one, this document should also include instructions
-on what to do, preferably with copy-pastable commands to do it.
+on what to do, preferably with copy-pasteable commands to do it.
 
 Below is an example from a previous changelog.
 
