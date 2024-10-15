@@ -413,7 +413,7 @@ func circuitBreakerGlobalOpt(t *testing.T, g *contour_v1alpha1.CircuitBreakers) 
 	}
 }
 
-func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
+func TestClusterCircuitBreakerAnnotationsIngress(t *testing.T) {
 	g := &contour_v1alpha1.CircuitBreakers{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
@@ -548,7 +548,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 	})
 }
 
-func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
+func TestClusterCircuitBreakerAnnotationsHTTPProxy(t *testing.T) {
 	g := &contour_v1alpha1.CircuitBreakers{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
@@ -691,7 +691,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 	})
 }
 
-func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
+func TestClusterCircuitBreakerAnnotationsGateway(t *testing.T) {
 	g := &contour_v1alpha1.CircuitBreakers{
 		MaxConnections:     13,
 		MaxPendingRequests: 14,
