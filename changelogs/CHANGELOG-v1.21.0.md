@@ -165,7 +165,7 @@ Credit to @pkit for implementing this feature!
 - Node labels in `localhost:6060/debug/dag` troubleshooting API are sanitized by html-escaping user fields. (#4323, @kb000)
 - Upstream TCP connection timeout is now configurable in [configuration file](https://projectcontour.io/docs/main/configuration/#timeout-configuration) and in [`ContourConfiguration`](https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.TimeoutParameters). (#4326, @tsaarni)
 - Drops RBAC and caching for the `networking.k8s.io/IngressClass` resource as it's not used by Contour. (#4329, @skriss)
-- Fixed a bug where upstream TLS SNI (`HTTProxy.spec.routes.requestHeadersPolicy` `Host` key) and protocol fields might not take effect when e.g. two `HTTPProxies` were otherwise equal but differed only on those fields. (#4350, @tsaarni)
+- Fixed a bug where upstream TLS SNI (`HTTPProxy.spec.routes.requestHeadersPolicy` `Host` key) and protocol fields might not take effect when e.g. two `HTTPProxies` were otherwise equal but differed only on those fields. (#4350, @tsaarni)
 - New field `HTTPProxy.spec.routes.timeoutPolicy.idleConnection` was added. The field sets timeout for how long the upstream connection will be kept idle between requests before disconnecting it. (#4356, @tsaarni)
 - Update github.com/prometheus/client_golang to v1.11.1 to address CVE-2022-21698. (#4361, @tsaarni)
 - Envoy's [`merge_slashes`](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-merge-slashes) option that enables

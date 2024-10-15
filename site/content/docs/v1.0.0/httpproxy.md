@@ -784,7 +784,7 @@ It requires one field, `name`, and has two optional fields:
 HTTPProxies can include other HTTPProxy objects in the namespace by specifying the name of the object and its namespace in the top-level `includes` block.
 Note that `includes` is a list, and so it must use the YAML list construct.
 
-In this example, the HTTPProxy `include-root` has included the configuration for paths matching `/service2` from the HTTPPRoxy named `service2` in the same namespace as `include-root` (the `default` namespace).
+In this example, the HTTPProxy `include-root` has included the configuration for paths matching `/service2` from the HTTPProxy named `service2` in the same namespace as `include-root` (the `default` namespace).
 It's important to note that `service2` HTTPProxy has not defined a `virtualhost` property as it is NOT a root HTTPProxy.
 
 ```yaml

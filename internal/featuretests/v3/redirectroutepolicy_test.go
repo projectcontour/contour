@@ -27,7 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 )
 
-func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
+func TestRedirectResponsePolicy_HTTPProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 

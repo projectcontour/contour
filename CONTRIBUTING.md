@@ -134,7 +134,7 @@ On Linux, you are able to directly reach IPs on the Docker network, but on MacOS
 As a workaround to this problem, [Docker Mac Net Connect](https://github.com/chipmk/docker-mac-net-connect) can be installed to setup a tunnel between your host and the Docker Desktop Linux VM (see [here](https://github.com/chipmk/docker-mac-net-connect?tab=readme-ov-file#how-does-it-work) for more info on how this works).
 To setup follow the [readme installation instructions](https://github.com/chipmk/docker-mac-net-connect?tab=readme-ov-file#installation).
 
-Once it is setup, you are able to create the kind cluster using the above instructions. If you have issues with connecting to the MetalLB IP try to restart the Docker Engine or make sure there is an HTTProxy deployed on your kind cluster so the Contour listener is created.
+Once it is setup, you are able to create the kind cluster using the above instructions. If you have issues with connecting to the MetalLB IP try to restart the Docker Engine or make sure there is an HTTPProxy deployed on your kind cluster so the Contour listener is created.
 
 ### Pre-submit checks
 

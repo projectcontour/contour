@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 )
 
-func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
+func TestHeaderPolicy_ReplaceHeader_HTTPProxy(t *testing.T) {
 	// Enable ExternalName processing here because
 	// we need to check that host rewrites work in combination
 	// with ExternalName.
@@ -213,7 +213,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	})
 }
 
-func TestHeaderPolicy_ReplaceHostHeader_HTTProxy(t *testing.T) {
+func TestHeaderPolicy_ReplaceHostHeader_HTTPProxy(t *testing.T) {
 	// Enable ExternalName processing here because
 	// we need to check that host rewrites work in combination
 	// with ExternalName.
