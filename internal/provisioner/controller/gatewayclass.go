@@ -185,7 +185,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				case "", contour_v1alpha1.LoadBalancerServicePublishingType, contour_v1alpha1.NodePortServicePublishingType, contour_v1alpha1.ClusterIPServicePublishingType:
 				// invalid value, set message
 				default:
-					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.type %q, must be LoadBalancerService, NoderPortService or ClusterIPService",
+					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.type %q, must be LoadBalancerService, NodePortService or ClusterIPService",
 						params.Spec.Envoy.NetworkPublishing.Type)
 					invalidParamsMessages = append(invalidParamsMessages, msg)
 				}
