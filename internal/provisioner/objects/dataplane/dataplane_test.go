@@ -143,7 +143,7 @@ func checkContainerHaveResourceRequirements(t *testing.T, container *core_v1.Con
 	if apiequality.Semantic.DeepEqual(container.Resources, defContainerResources) {
 		return
 	}
-	t.Errorf("container doesn't have resource requiremetns")
+	t.Errorf("container doesn't have resource requirements")
 }
 
 func checkDaemonSetHasNodeSelector(t *testing.T, ds *apps_v1.DaemonSet, expected map[string]string) {
