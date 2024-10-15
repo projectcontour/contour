@@ -131,7 +131,7 @@ func TestValidateClusterDNSFamilyType(t *testing.T) {
 	require.NoError(t, AllClusterDNSFamily.Validate())
 }
 
-func TestValidateServerHeaderTranformationType(t *testing.T) {
+func TestValidateServerHeaderTransformationType(t *testing.T) {
 	require.Error(t, ServerHeaderTransformationType("").Validate())
 	require.Error(t, ServerHeaderTransformationType("foo").Validate())
 

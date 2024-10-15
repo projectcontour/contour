@@ -659,7 +659,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		connectionShutdownGracePeriod timeout.Setting
 		allowChunkedLength            bool
 		mergeSlashes                  bool
-		serverHeaderTranformation     contour_v1alpha1.ServerHeaderTransformationType
+		serverHeaderTransformation    contour_v1alpha1.ServerHeaderTransformationType
 		forwardClientCertificate      *dag.ClientCertificateDetails
 		xffNumTrustedHops             uint32
 		maxRequestsPerConnection      *uint32
@@ -1147,9 +1147,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 			},
 		},
 		"server header transform set to pass through": {
-			routename:                 "default/kuard",
-			accesslogger:              FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
-			serverHeaderTranformation: contour_v1alpha1.PassThroughServerHeader,
+			routename:                  "default/kuard",
+			accesslogger:               FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
+			serverHeaderTransformation: contour_v1alpha1.PassThroughServerHeader,
 			want: &envoy_config_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
@@ -1473,7 +1473,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				ConnectionShutdownGracePeriod(tc.connectionShutdownGracePeriod).
 				AllowChunkedLength(tc.allowChunkedLength).
 				MergeSlashes(tc.mergeSlashes).
-				ServerHeaderTransformation(tc.serverHeaderTranformation).
+				ServerHeaderTransformation(tc.serverHeaderTransformation).
 				NumTrustedHops(tc.xffNumTrustedHops).
 				ForwardClientCertificate(tc.forwardClientCertificate).
 				MaxRequestsPerConnection(tc.maxRequestsPerConnection).
