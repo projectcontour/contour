@@ -101,7 +101,7 @@ printf "Created tag '%s'\n" "$NEWVERS"
 
 # People set up their remotes in different ways, so we need to check
 # which one to dry run against. Choose a remote name that pushes to the
-# projectcontour org repository (i.e. not the user's Github fork).
+# projectcontour org repository (i.e. not the user's GitHub fork).
 readonly REMOTE=$(git remote -v | awk '$2~/projectcontour\/contour/ && $3=="(push)" {print $1}' | head -n 1)
 if [ -z "$REMOTE" ]; then
     printf "%s: unable to determine remote for %s\n" "$PROGNAME" "projectcontour/contour"

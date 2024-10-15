@@ -71,7 +71,7 @@ or https://github.com/projectcontour/contour/blob/main/design/changelog.md for b
 		log.Fatalf("Couldn't convert PR number, %s", err)
 	}
 
-	// We've got what we need, set up the Github client to get the
+	// We've got what we need, set up the GitHub client to get the
 	// labels associated with the PR.
 	ctx := context.Background()
 

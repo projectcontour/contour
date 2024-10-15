@@ -11,7 +11,7 @@ This document outlines a checklist for Contour security team members (at time of
 1. Contour maintainer team triages the vulnerability with the reporter and decide patch releases (multiple minors could be impacted) as well as downstream distributors.
 1. Create a Security Advisory Draft on github Contour repo https://github.com/projectcontour/contour/security/advisories
     - Requires patched versions 
-    - As part of this, fill out the CVSS score and CWE enumerator, and request a CVE ID via Github.
+    - As part of this, fill out the CVSS score and CWE enumerator, and request a CVE ID via GitHub.
 1. Create a private fork for the Security Advisory using the Advisory page, and ensure everyone who needs to can see it.
 1. Do not publish draft, keeping it in draft mode until we release patch
     - Remember to give credit to the reporter, they can however remain anonymous or keep their company info private if they wish
