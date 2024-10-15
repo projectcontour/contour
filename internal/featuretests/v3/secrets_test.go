@@ -171,7 +171,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 // issue 1169, an invalid certificate should not be
 // presented by SDS even if referenced by an ingress object.
-func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
+func TestSDSShouldNotPublishInvalidSecret(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
