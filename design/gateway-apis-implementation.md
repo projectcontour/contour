@@ -269,7 +269,7 @@ Contour will take into account if it is the Leader or not which will represent i
 
 ### Finalizers
 
-Finailzers will need to be put into place for the resources which Contour owns (i.e. Envoy) as well a GatewayAPI bits if applicable:
+Finalizers will need to be put into place for the resources which Contour owns (i.e. Envoy) as well a GatewayAPI bits if applicable:
 
 * Envoy Service/Daemonset
 * Gateway
