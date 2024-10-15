@@ -187,7 +187,7 @@ func getIndex(condType string, subconds []SubCondition) int {
 	return -1
 }
 
-// GetConditionFor returns the a pointer to the condition for a given type,
+// GetConditionFor returns a pointer to the condition for a given type,
 // or nil if there are none currently present.
 func (status *HTTPProxyStatus) GetConditionFor(condType string) *DetailedCondition {
 	for i, cond := range status.Conditions {

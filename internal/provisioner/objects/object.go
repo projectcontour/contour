@@ -40,7 +40,7 @@ const (
 	EnvoyHealthPort = 8002
 )
 
-// NewUnprivilegedPodSecurity makes a a non-root PodSecurityContext object
+// NewUnprivilegedPodSecurity makes a non-root PodSecurityContext object
 // using 65534 as the user and group ID.
 func NewUnprivilegedPodSecurity() *core_v1.PodSecurityContext {
 	user := int64(65534)

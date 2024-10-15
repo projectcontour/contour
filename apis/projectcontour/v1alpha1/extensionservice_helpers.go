@@ -17,7 +17,7 @@ import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-// GetConditionFor returns the a pointer to the condition for a given type,
+// GetConditionFor returns a pointer to the condition for a given type,
 // or nil if there are none currently present.
 func (status *ExtensionServiceStatus) GetConditionFor(condType string) *contour_v1.DetailedCondition {
 	for i, cond := range status.Conditions {
