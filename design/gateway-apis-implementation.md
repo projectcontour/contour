@@ -330,7 +330,7 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
 3. Operator receives update from Kubernetes API that a Contour CRD was created and deploys an instance of Contour
     - Contour RBAC Perms/Service Account/etc
     - Contour Deployment/Service
-    - Cergen Job to create self-signed certificates
+    - Certgen Job to create self-signed certificates
         - Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
 
 4. Cluster Operator creates `GatewayClass` with matching `gateway.controllerName` to the configuration CRD.
@@ -356,7 +356,7 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
 3. Operator receives update from Kubernetes API that a Contour CRD was created and deploys an instance of Contour
     - Contour RBAC Perms/Service Account/etc
     - Contour Deployment/Service
-    - Cergen Job to create self-signed certificates
+    - Certgen Job to create self-signed certificates
         - Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
 4. Contour creates an Envoy fleet which is an Envoy (Daemonset) and Service.
 5. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#heading=h.r00a5hk7oybo))

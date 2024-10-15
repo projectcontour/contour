@@ -115,7 +115,7 @@ The high-level
 3. Contour will automatically rotate its certificate
 4. Restart all Envoy pods
 
-### Rotate using the contour-cergen job
+### Rotate using the contour-certgen job
 
 If using the built-in Contour certificate generation the following steps can be taken:
 
