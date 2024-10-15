@@ -54,7 +54,7 @@ func (c *Cond) Register(ch chan int, last int, hints ...string) {
 	})
 }
 
-// Notify notifies all interested waiters that an event has ocured.
+// Notify notifies all interested waiters that an event has occurred.
 func (c *Cond) Notify(hints ...string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
