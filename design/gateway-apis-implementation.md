@@ -34,7 +34,7 @@ In terms of its stated goals, Contour is aiming at being an ingress controller -
 Currently, Contour provides "TCP Proxying" that allows the forwarding of TLS streams based on the SNI information, which is precisely what the Gateway API TLSRoute object is for.
 If Project Contour (the organisation) does add support for TCP and UDP forwarding, it will not be in the projectcontour/contour repo, but will be a separate repo.
 
-This design is intended to cover the initial alpha releases of the Gateway API. We will aim to implement the core featureset of the APIs at that point.
+This design is intended to cover the initial alpha releases of the Gateway API. We will aim to implement the core feature set of the APIs at that point.
 We will then work with the upstream community on features that Contour and HTTPProxy currently support, but the Gateway API do not, and how best to represent those features in the APIs.
 There are some features that are currently gaps for Contour (wildcard domain names, and exact path matching, for example), and some that Contour supports that the Gateway API do not (websockets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
 
