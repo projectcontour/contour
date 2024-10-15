@@ -4,7 +4,7 @@ Thanks for taking the time to join our community and start contributing.
 These guidelines will help you get started with the Contour project.
 Please note that we require [DCO sign off](#dco-sign-off).
 
-Read this document for additional website specific guildlines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md).
+Read this document for additional website specific guidelines: [Site Contribution Guidelines](/SITE_CONTRIBUTION.md).
 Guidelines in this document still apply to website contributions.
 
 If you want to get more insight into how the Contour maintainer team approaches R&D, this [page](https://projectcontour.io/resources/how-we-work/) captures how we work on Contour.
