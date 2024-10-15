@@ -218,7 +218,7 @@ To upgrade an existing Contour installation, please consult the [upgrade documen
 Contour v1.25.0 is tested against Kubernetes 1.25 through 1.27.
 
 # Community Thanks!
-We’re immensely grateful for all the community contributions that help make Contour even better! For this release, we would like to give a special shoutout to the folks who joined our ContribFest at KubeCon EU 2023:
+We’re immensely grateful for all the community contributions that help make Contour even better! For this release, we would like to give a special shout-out to the folks who joined our ContribFest at KubeCon EU 2023:
 
 - @padlar
 - @IdanAtias
