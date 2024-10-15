@@ -315,7 +315,7 @@ spec:
 
 ##### Error conditions
 
-If the `validation` spec is defined on a service, but the secret which it references does not exist, Contour will rejct the update and set the status of the `IngressRoute` object accordingly.
+If the `validation` spec is defined on a service, but the secret which it references does not exist, Contour will reject the update and set the status of the `IngressRoute` object accordingly.
 This is to help prevent the case of proxying to an upstream where validation is requested, but not yet available.
 
 ```yaml
