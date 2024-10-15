@@ -15630,7 +15630,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				},
 			),
 			ingressReqHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15640,7 +15640,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				Remove: []string{"K-Nada"},
 			},
 			ingressRespHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15668,7 +15668,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				},
 			),
 			httpProxyReqHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15678,7 +15678,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				Remove: []string{"K-Nada"},
 			},
 			httpProxyRespHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
