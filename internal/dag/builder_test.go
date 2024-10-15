@@ -11174,7 +11174,7 @@ func TestDAGInsert(t *testing.T) {
 				cert2, s1a,
 				&contour_v1.TLSCertificateDelegation{
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name:      "CACertDelagation",
+						Name:      "CACertDelegation",
 						Namespace: cert2.Namespace,
 					},
 					Spec: contour_v1.TLSCertificateDelegationSpec{
@@ -12729,7 +12729,7 @@ func TestDAGInsert(t *testing.T) {
 				sec4,
 				&contour_v1.TLSCertificateDelegation{
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name:      "CertDelagation",
+						Name:      "CertDelegation",
 						Namespace: sec4.Namespace,
 					},
 					Spec: contour_v1.TLSCertificateDelegationSpec{
