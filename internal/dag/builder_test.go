@@ -15090,7 +15090,7 @@ func TestBuilderRunsProcessorsInOrder(t *testing.T) {
 	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
 }
 
-func TestHTTPProxyConficts(t *testing.T) {
+func TestHTTPProxyConflicts(t *testing.T) {
 	type testcase struct {
 		objs          []any
 		wantListeners []*Listener

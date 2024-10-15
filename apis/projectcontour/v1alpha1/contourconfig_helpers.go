@@ -30,7 +30,7 @@ var featureFlagsMap = map[string]struct{}{
 // Validate configuration that is not already covered by CRD validation.
 func (c *ContourConfigurationSpec) Validate() error {
 	// Validation of root configuration fields.
-	if err := endpointsInConfict(c.Health, c.Metrics); err != nil {
+	if err := endpointsInConflict(c.Health, c.Metrics); err != nil {
 		return fmt.Errorf("invalid contour configuration: %v", err)
 	}
 
@@ -120,7 +120,7 @@ func (d ClusterDNSFamilyType) Validate() error {
 
 // Validate configuration that cannot be handled with CRD validation.
 func (e *EnvoyConfig) Validate() error {
-	if err := endpointsInConfict(e.Health, e.Metrics); err != nil {
+	if err := endpointsInConflict(e.Health, e.Metrics); err != nil {
 		return fmt.Errorf("invalid envoy configuration: %v", err)
 	}
 
@@ -335,8 +335,8 @@ func (e *EnvoyLogging) AccessLogFormatterExtensions() []string {
 	return extensions
 }
 
-// endpointsInConfict returns error if different protocol are configured to use single port.
-func endpointsInConfict(health *HealthConfig, metrics *MetricsConfig) error {
+// endpointsInConflict returns error if different protocol are configured to use single port.
+func endpointsInConflict(health *HealthConfig, metrics *MetricsConfig) error {
 	if health != nil && metrics != nil && metrics.TLS != nil && health.Address == metrics.Address && health.Port == metrics.Port {
 		return fmt.Errorf("cannot use single port for health over HTTP and metrics over HTTPS")
 	}
