@@ -363,7 +363,7 @@ func cookieRewritePolicies(policies []contour_v1.CookieRewritePolicy) ([]CookieR
 			domain = ptr.To(p.DomainRewrite.Value)
 		}
 		// We use a uint here since a pointer to bool cannot be
-		// distingiuished when unset or false in golang text templates.
+		// distinguished when unset or false in golang text templates.
 		// 0 means unset.
 		secure := uint(0)
 		if p.Secure != nil {
