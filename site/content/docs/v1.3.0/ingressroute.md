@@ -552,7 +552,7 @@ Session affinity is based on the premise that the backend servers are robust, do
 None of these properties are guaranteed by a Kubernetes cluster and will be visible to applications that rely heavily on session affinity.
 
 Any pertibation in the set of pods backing a service risks redistributing backends around the hash ring.
-This is an unavoidable consiquence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
+This is an unavoidable consequence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
 
 #### Per-Upstream Active Health Checking
 
