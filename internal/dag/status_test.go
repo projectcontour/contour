@@ -6107,7 +6107,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								{
 									Type:  ptr.To(gatewayapi_v1.HeaderMatchRegularExpression),
 									Name:  gatewayapi_v1.HTTPHeaderName("foo"),
-									Value: "invalid-regrex\\",
+									Value: "invalid-regex\\",
 								},
 							},
 						}},
