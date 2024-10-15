@@ -255,7 +255,7 @@ In addition, the meeting will be used to go over untriaged issues, longer-term i
 - Use the imperative mood (ie "If applied, this commit will (subject)" should make sense).
 - There must be a DCO line ("Signed-off-by: David Cheney <cheneyd@vmware.com>"), see [DCO Sign Off](#dco-sign-off) below.
 - Do not merge commits that don't relate to the affected issue (e.g. "Updating from PR comments", etc). Should
-the need to cherrypick a commit or rollback arise, it should be clear what a specific commit's purpose is.
+the need to cherry-pick a commit or rollback arise, it should be clear what a specific commit's purpose is.
 - Put a summary of the main area affected by the commit at the start,
 with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
 - PRs *must* be labelled with a `release-note/category` label, where category is one of
