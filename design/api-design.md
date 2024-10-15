@@ -81,7 +81,7 @@ The Stream API returns full copies of its cache to the caller at a schedule dete
 For example, a Stream API implementation that replies with the cache contents every 30 seconds would be compliant with the API.
 This approach, however, just moves the polling from the client to the server, with limited benefit.
 
-We propose to implement Stream like this (in peudocode):
+We propose to implement Stream like this (in pseudocode):
 ```
 func Stream() {
         for {
