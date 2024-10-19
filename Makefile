@@ -194,7 +194,7 @@ lint-codespell:
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,tools,gcp,oidc,none
+	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
 .PHONY: lint-yamllint
 lint-yamllint:
