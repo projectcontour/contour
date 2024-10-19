@@ -473,8 +473,6 @@ func (s *Server) doServe() error {
 		SocketOptions:                 contourConfiguration.Envoy.Listener.SocketOptions,
 	}
 
-	s.log.WithField("context", "listenerConfig").Infof("compression setting: %s", listenerConfig.Compression)
-
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
 		return err
 	}
