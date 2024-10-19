@@ -351,6 +351,7 @@ type EnvoyListenerConfig struct {
 	// Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
 	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
 	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// +kubebuilder:validation:Enum="gzip";"brotli";"zstd";"disabled"
 	// +optional
 	Compression EnvoyCompressionType `json:"compression,omitempty"`
 
