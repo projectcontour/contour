@@ -42,10 +42,7 @@ func (v *VirtualHost) DisableAuthorization() bool {
 
 // IsConfigured returns whether service ref is configured
 func (r *ExtensionServiceReference) IsConfigured() bool {
-	if r.Name != "" {
-		return true
-	}
-	return false
+	return r.Name != ""
 }
 
 // AuthorizationContext returns the authorization policy context (if present).
