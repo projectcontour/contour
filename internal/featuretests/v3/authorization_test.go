@@ -431,8 +431,8 @@ func authzInvalidReference(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_v1.ExtensionServiceReference{
 		APIVersion: "foo/bar",
-		Namespace:  "",
-		Name:       "",
+		Namespace:  "missing",
+		Name:       "extension",
 	}
 
 	rh.OnDelete(invalid)

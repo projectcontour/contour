@@ -221,7 +221,18 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("foo.com",
 				featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
-				httpsFilterFor("foo.com"),
+				authzFilterFor(
+					"foo.com",
+					&envoy_filter_http_ext_authz_v3.ExtAuthz{
+						Services:               grpcCluster("extension/auth/extension"),
+						ClearRouteCache:        true,
+						IncludePeerCertificate: true,
+						StatusOnError: &envoy_type_v3.HttpStatus{
+							Code: envoy_type_v3.StatusCode_Forbidden,
+						},
+						TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+					},
+				),
 				nil, "h2", "http/1.1"),
 		},
 		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
