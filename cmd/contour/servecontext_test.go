@@ -29,7 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
-	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"k8s.io/utils/ptr"
 
@@ -294,7 +293,7 @@ func tryConnect(address string, clientCert tls.Certificate, caCertPool *x509.Cer
 		MinVersion:   tls.VersionTLS13,
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      caCertPool,
-		NextProtos:   []string{http2.NextProtoTLS},
+		NextProtos:   []string{"h2"},
 	}
 
 	conn := tls.Client(rawConn, clientConfig)

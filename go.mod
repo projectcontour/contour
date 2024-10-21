@@ -30,7 +30,6 @@ require (
 	github.com/tsaarni/certyaml v0.9.3
 	github.com/vektra/mockery/v2 v2.46.0
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/net v0.29.0
 	golang.org/x/oauth2 v0.23.0
 	gonum.org/v1/plot v0.14.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1
@@ -128,6 +127,7 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/term v0.24.0 // indirect
