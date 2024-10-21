@@ -38,9 +38,3 @@ jobs:
         PUSH_IMAGE: "true"
       run: |
         make multiarch-build
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: failure()

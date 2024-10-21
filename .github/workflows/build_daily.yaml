@@ -46,12 +46,6 @@ jobs:
         CONTOUR_E2E_XDS_SERVER_TYPE: contour
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e-envoy-deployment:
     runs-on: ubuntu-latest
     steps:
@@ -82,12 +76,6 @@ jobs:
         CONTOUR_E2E_ENVOY_DEPLOYMENT_MODE: deployment
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e-ipv6:
     runs-on: ubuntu-latest
     steps:
@@ -121,12 +109,6 @@ jobs:
         make setup-kind-cluster
         export CONTOUR_E2E_LOCAL_HOST=$(ifconfig | grep inet6 | grep global | head -n1 | awk '{print $2}')
         make run-e2e cleanup-kind
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e-endpoints:
     runs-on: ubuntu-latest
     steps:
@@ -157,9 +139,3 @@ jobs:
         CONTOUR_E2E_USE_ENDPOINTS: true
       run: |
         make setup-kind-cluster run-e2e cleanup-kind
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
