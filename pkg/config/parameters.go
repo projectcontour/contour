@@ -651,11 +651,9 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
-	// Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
-	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// Compression defines configuration relating to compression in the default HTTP filter chain.
 	// +optional
-	Compression EnvoyCompressionType `yaml:"compression,omitempty"`
+	Compression *CompressionParameters `yaml:"compression,omitempty"`
 
 	// Defines the action to be applied to the Server header on the response path.
 	// When configured as overwrite, overwrites any Server header with "envoy".
@@ -972,17 +970,31 @@ const (
 	LogLevelDisabled AccessLogLevel = "disabled"
 )
 
-type EnvoyCompressionType string
+// CompressionParameters holds various configurable compression related values.
+type CompressionParameters struct {
 
-func (c EnvoyCompressionType) Validate() error {
-	return contour_v1alpha1.EnvoyCompressionType(c).Validate()
+	// Algorithm configures which compression algorithm, if any, to use in the default HTTP listener filter chain.
+	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
+	// +optional
+	Algorithm CompressionAlgorithm `yaml:"algorithm,omitempty"`
+}
+
+func (c CompressionParameters) Validate() error {
+	return c.Algorithm.Validate()
+}
+
+type CompressionAlgorithm string
+
+func (c CompressionAlgorithm) Validate() error {
+	return contour_v1alpha1.CompressionAlgorithm(c).Validate()
 }
 
 const (
-	CompressionGzip     EnvoyCompressionType = "gzip"
-	CompressionBrotli   EnvoyCompressionType = "brotli"
-	CompressionDisabled EnvoyCompressionType = "disabled"
-	CompressionZstd     EnvoyCompressionType = "zstd"
+	CompressionGzip     CompressionAlgorithm = "gzip"
+	CompressionBrotli   CompressionAlgorithm = "brotli"
+	CompressionDisabled CompressionAlgorithm = "disabled"
+	CompressionZstd     CompressionAlgorithm = "zstd"
+	CompressionDefault                       = CompressionGzip
 )
 
 // Validate verifies that the parameter values do not have any syntax errors.
@@ -1052,8 +1064,8 @@ func (p *Parameters) Validate() error {
 	return p.Listener.Validate()
 }
 
-// DefaultCompressionFilter is the compression mechanism in the default HTTP filter chain
-const DefaultCompressionFilter = CompressionGzip
+// DefaultCompressionAlgorithm is the compression mechanism in the default HTTP filter chain
+const DefaultCompressionAlgorithm = CompressionGzip
 
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
@@ -1074,7 +1086,6 @@ func Defaults() Parameters {
 		DisablePermitInsecure:      false,
 		DisableAllowChunkedLength:  false,
 		DisableMergeSlashes:        false,
-		Compression:                DefaultCompressionFilter,
 		ServerHeaderTransformation: OverwriteServerHeader,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,

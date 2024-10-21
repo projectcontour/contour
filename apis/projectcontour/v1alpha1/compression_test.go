@@ -21,9 +21,9 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
-func TestValidateEnvoyCompressionType(t *testing.T) {
-	require.Error(t, contour_v1alpha1.EnvoyCompressionType("").Validate())
-	require.Error(t, contour_v1alpha1.EnvoyCompressionType("foo").Validate())
+func TestValidateEnvoyCompressionAlgorithmType(t *testing.T) {
+	require.Error(t, contour_v1alpha1.CompressionAlgorithm("").Validate())
+	require.Error(t, contour_v1alpha1.CompressionAlgorithm("foo").Validate())
 
 	require.NoError(t, contour_v1alpha1.BrotliCompression.Validate())
 	require.NoError(t, contour_v1alpha1.DisabledCompression.Validate())

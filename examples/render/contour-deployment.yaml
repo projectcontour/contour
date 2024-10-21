@@ -502,16 +502,21 @@ spec:
                       values.
                     properties:
                       compression:
-                        description: |-
-                          Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
-                          Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-                          Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
-                        enum:
-                        - gzip
-                        - brotli
-                        - zstd
-                        - disabled
-                        type: string
+                        description: Compression defines configuration related to
+                          compression in the default HTTP Listener filters.
+                        properties:
+                          algorithm:
+                            description: |-
+                              Algorithm selects the compression type applied in the compression HTTP filter of the default Listener filters.
+                              Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
+                              Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+                            enum:
+                            - gzip
+                            - brotli
+                            - zstd
+                            - disabled
+                            type: string
+                        type: object
                       connectionBalancer:
                         description: |-
                           ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
@@ -4295,16 +4300,21 @@ spec:
                           values.
                         properties:
                           compression:
-                            description: |-
-                              Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
-                              Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-                              Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
-                            enum:
-                            - gzip
-                            - brotli
-                            - zstd
-                            - disabled
-                            type: string
+                            description: Compression defines configuration related
+                              to compression in the default HTTP Listener filters.
+                            properties:
+                              algorithm:
+                                description: |-
+                                  Algorithm selects the compression type applied in the compression HTTP filter of the default Listener filters.
+                                  Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
+                                  Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+                                enum:
+                                - gzip
+                                - brotli
+                                - zstd
+                                - disabled
+                                type: string
+                            type: object
                           connectionBalancer:
                             description: |-
                               ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer

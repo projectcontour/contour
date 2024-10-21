@@ -66,10 +66,8 @@ type ListenerConfig struct {
 	// If not set, defaults to false.
 	UseProxyProto bool
 
-	// Compression  configures which compression, if any, the listener uses in the compression filter as part of the defaultFilters.
-	// Valid values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
-	Compression contour_v1alpha1.EnvoyCompressionType
+	// Compression defines configuration related to compression in the default HTTP Listener filters.
+	Compression *contour_v1alpha1.EnvoyCompression
 
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
 	MinimumTLSVersion string

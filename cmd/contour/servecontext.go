@@ -333,16 +333,22 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		accessLogLevel = contour_v1alpha1.LogLevelDisabled
 	}
 
-	var compression contour_v1alpha1.EnvoyCompressionType
-	switch ctx.Config.Compression {
-	case config.CompressionBrotli:
-		compression = contour_v1alpha1.BrotliCompression
-	case config.CompressionDisabled:
-		compression = contour_v1alpha1.DisabledCompression
-	case config.CompressionGzip:
-		compression = contour_v1alpha1.GzipCompression
-	case config.CompressionZstd:
-		compression = contour_v1alpha1.ZstdCompression
+	var compression *contour_v1alpha1.EnvoyCompression
+	if ctx.Config.Compression != nil {
+		var algorithm contour_v1alpha1.CompressionAlgorithm
+		switch ctx.Config.Compression.Algorithm {
+		case config.CompressionBrotli:
+			algorithm = contour_v1alpha1.BrotliCompression
+		case config.CompressionDisabled:
+			algorithm = contour_v1alpha1.DisabledCompression
+		case config.CompressionGzip:
+			algorithm = contour_v1alpha1.GzipCompression
+		case config.CompressionZstd:
+			algorithm = contour_v1alpha1.ZstdCompression
+		}
+		compression = &contour_v1alpha1.EnvoyCompression{
+			Algorithm: algorithm,
+		}
 	}
 
 	var defaultHTTPVersions []contour_v1alpha1.HTTPVersionType

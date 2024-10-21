@@ -54,8 +54,10 @@ func TestOverlayOnDefaults(t *testing.T) {
 		},
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              ptr.To(true),
-				Compression:                "brotli",
+				UseProxyProto: ptr.To(true),
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.BrotliCompression,
+				},
 				MaxRequestsPerConnection:   ptr.To(uint32(1)),
 				HTTP2MaxConcurrentStreams:  ptr.To(uint32(10)),
 				DisableAllowChunkedLength:  ptr.To(true),

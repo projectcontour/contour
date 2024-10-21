@@ -395,8 +395,12 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-disable-compression", func(namespace string) {
 		Context("with compression disabled", func() {
 			BeforeEach(func() {
-				contourConfig.Compression = "disabled"
-				contourConfiguration.Spec.Envoy.Listener.Compression = "disabled"
+				contourConfig.Compression = &config.CompressionParameters{
+					Algorithm: config.CompressionDisabled,
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.DisabledCompression,
+				}
 			})
 			testEnvoyDisableCompression(namespace, "gzip", "gzip", true)
 		})
@@ -405,8 +409,12 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-brotli-compression", func(namespace string) {
 		Context("with brotli compression", func() {
 			BeforeEach(func() {
-				contourConfig.Compression = "brotli"
-				contourConfiguration.Spec.Envoy.Listener.Compression = "brotli"
+				contourConfig.Compression = &config.CompressionParameters{
+					Algorithm: config.CompressionBrotli,
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.BrotliCompression,
+				}
 			})
 			testEnvoyDisableCompression(namespace, "br", "br", false)
 		})
@@ -415,8 +423,12 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-zstd-compression", func(namespace string) {
 		Context("with zstd compression", func() {
 			BeforeEach(func() {
-				contourConfig.Compression = "zstd"
-				contourConfiguration.Spec.Envoy.Listener.Compression = "zstd"
+				contourConfig.Compression = &config.CompressionParameters{
+					Algorithm: config.CompressionZstd,
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.ZstdCompression,
+				}
 			})
 			testEnvoyDisableCompression(namespace, "zstd", "zstd", false)
 		})

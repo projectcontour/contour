@@ -72,7 +72,9 @@ func TestDefaultCompression(t *testing.T) {
 
 func TestDisableCompression(t *testing.T) {
 	withDisableCompression := func(conf *xdscache_v3.ListenerConfig) {
-		conf.Compression = "disabled"
+		conf.Compression = &contour_v1alpha1.EnvoyCompression{
+			Algorithm: contour_v1alpha1.DisabledCompression,
+		}
 	}
 
 	rh, c, done := setup(t, withDisableCompression)
@@ -104,7 +106,9 @@ func TestDisableCompression(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-		Compression("disabled").
+		Compression(&contour_v1alpha1.EnvoyCompression{
+			Algorithm: contour_v1alpha1.DisabledCompression,
+		}).
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -120,7 +124,9 @@ func TestDisableCompression(t *testing.T) {
 
 func TestBrotliCompression(t *testing.T) {
 	withBrotliCompression := func(conf *xdscache_v3.ListenerConfig) {
-		conf.Compression = "brotli"
+		conf.Compression = &contour_v1alpha1.EnvoyCompression{
+			Algorithm: contour_v1alpha1.BrotliCompression,
+		}
 	}
 
 	rh, c, done := setup(t, withBrotliCompression)
@@ -152,7 +158,9 @@ func TestBrotliCompression(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-		Compression("brotli").
+		Compression(&contour_v1alpha1.EnvoyCompression{
+			Algorithm: contour_v1alpha1.BrotliCompression,
+		}).
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -168,7 +176,9 @@ func TestBrotliCompression(t *testing.T) {
 
 func TestZstdCompression(t *testing.T) {
 	withZstdCompression := func(conf *xdscache_v3.ListenerConfig) {
-		conf.Compression = "zstd"
+		conf.Compression = &contour_v1alpha1.EnvoyCompression{
+			Algorithm: contour_v1alpha1.ZstdCompression,
+		}
 	}
 
 	rh, c, done := setup(t, withZstdCompression)
@@ -200,7 +210,9 @@ func TestZstdCompression(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-		Compression("zstd").
+		Compression(&contour_v1alpha1.EnvoyCompression{
+			Algorithm: contour_v1alpha1.ZstdCompression,
+		}).
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).

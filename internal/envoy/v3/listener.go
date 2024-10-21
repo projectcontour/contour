@@ -16,6 +16,8 @@ package v3
 import (
 	"errors"
 	"fmt"
+	envoy_compression_brotli_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/brotli/compressor/v3"
+	envoy_compression_zstd_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
 	"sort"
 	"strings"
 	"time"
@@ -23,9 +25,7 @@ import (
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoy_compression_brotli_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/brotli/compressor/v3"
 	envoy_compression_gzip_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
-	envoy_compression_zstd_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
@@ -191,7 +191,7 @@ type httpConnectionManagerBuilder struct {
 	maxRequestsPerConnection      *uint32
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
-	compression                   contour_v1alpha1.EnvoyCompressionType
+	compression                   *contour_v1alpha1.EnvoyCompression
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -275,7 +275,7 @@ func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectio
 	return b
 }
 
-func (b *httpConnectionManagerBuilder) Compression(compressor contour_v1alpha1.EnvoyCompressionType) *httpConnectionManagerBuilder {
+func (b *httpConnectionManagerBuilder) Compression(compressor *contour_v1alpha1.EnvoyCompression) *httpConnectionManagerBuilder {
 	b.compression = compressor
 	return b
 }
@@ -317,20 +317,22 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	// Add a default set of ordered http filters.
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
-	var compressor proto.Message
-	compressorName := ""
-	switch b.compression {
-	case contour_v1alpha1.BrotliCompression:
-		compressorName = "brotli"
-		compressor = &envoy_compression_brotli_compressor_v3.Brotli{}
-	case contour_v1alpha1.DisabledCompression:
-		compressor = nil
-	case contour_v1alpha1.ZstdCompression:
-		compressorName = "zstd"
-		compressor = &envoy_compression_zstd_compressor_v3.Zstd{}
-	default:
-		compressorName = "gzip"
-		compressor = &envoy_compression_gzip_compressor_v3.Gzip{}
+	var compressor proto.Message = &envoy_compression_gzip_compressor_v3.Gzip{}
+	var compressorName = string(contour_v1alpha1.GzipCompression)
+	if b.compression != nil {
+		switch b.compression.Algorithm {
+		case contour_v1alpha1.BrotliCompression:
+			compressorName = "brotli"
+			compressor = &envoy_compression_brotli_compressor_v3.Brotli{}
+		case contour_v1alpha1.DisabledCompression:
+			compressor = nil
+		case contour_v1alpha1.ZstdCompression:
+			compressorName = "zstd"
+			compressor = &envoy_compression_zstd_compressor_v3.Zstd{}
+		default:
+			compressorName = "gzip"
+			compressor = &envoy_compression_gzip_compressor_v3.Gzip{}
+		}
 	}
 
 	if compressor != nil {

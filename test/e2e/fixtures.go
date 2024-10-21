@@ -583,7 +583,6 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 				},
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto:             ptr.To(false),
-					Compression:               "gzip",
 					DisableAllowChunkedLength: ptr.To(false),
 					ConnectionBalancer:        "",
 					TLS: &contour_v1alpha1.EnvoyTLS{

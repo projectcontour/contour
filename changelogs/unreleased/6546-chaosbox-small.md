@@ -1,1 +1,1 @@
-Add "compression" flag to set/disable the compression type applied in the default HTTP filter chain.
+Add "compression" object to define settings in default HTTP filters, initially just supporting changing/disabling compression algorithm.

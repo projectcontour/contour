@@ -3076,7 +3076,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with disabled compression set in listener config": {
 			ListenerConfig: ListenerConfig{
-				Compression: "disabled",
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.DisabledCompression,
+				},
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3106,7 +3108,9 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression("disabled").
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.DisabledCompression,
+						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -3118,7 +3122,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with gzip compression set in listener config": {
 			ListenerConfig: ListenerConfig{
-				Compression: "gzip",
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.GzipCompression,
+				},
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3148,7 +3154,9 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression("gzip").
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.GzipCompression,
+						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -3160,7 +3168,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with brotli compression set in listener config": {
 			ListenerConfig: ListenerConfig{
-				Compression: "brotli",
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.BrotliCompression,
+				},
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3190,7 +3200,9 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression("brotli").
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.BrotliCompression,
+						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -3202,7 +3214,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with zstd compression set in listener config": {
 			ListenerConfig: ListenerConfig{
-				Compression: "zstd",
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.ZstdCompression,
+				},
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3232,7 +3246,9 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression("zstd").
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.ZstdCompression,
+						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -3244,7 +3260,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with invalid compression set in listener config": {
 			ListenerConfig: ListenerConfig{
-				Compression: "invalid value",
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: "invalid value",
+				},
 			},
 			objs: []any{
 				&contour_v1.HTTPProxy{
@@ -3274,7 +3292,9 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression("gzip").
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.GzipCompression,
+						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).

@@ -348,12 +348,9 @@ type EnvoyListenerConfig struct {
 	// +optional
 	UseProxyProto *bool `json:"useProxyProtocol,omitempty"`
 
-	// Compression selects the compression type applied in the compression HTTP filter of the default Listener filters.
-	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
-	// +kubebuilder:validation:Enum="gzip";"brotli";"zstd";"disabled"
+	// Compression defines configuration related to compression in the default HTTP Listener filters.
 	// +optional
-	Compression EnvoyCompressionType `json:"compression,omitempty"`
+	Compression *EnvoyCompression `json:"compression,omitempty"`
 
 	// DisableAllowChunkedLength disables the RFC-compliant Envoy behavior to
 	// strip the "Content-Length" header if "Transfer-Encoding: chunked" is
