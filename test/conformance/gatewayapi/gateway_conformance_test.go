@@ -138,7 +138,8 @@ func TestGatewayConformance(t *testing.T) {
 		// exclude tests we don't want to run using the ExemptFeatures
 		// field.
 		options.EnableAllSupportedFeatures = false
-		options.SupportedFeatures = features.AllFeatures.Delete(append(features.MeshCoreFeatures.UnsortedList(), features.UDPRouteFeatures.UnsortedList()...)...)
+		filteredFeatures := features.AllFeatures.Delete(append(features.MeshCoreFeatures.UnsortedList(), features.UDPRouteFeature)...)
+		options.SupportedFeatures = features.SetsToNamesSet(filteredFeatures)
 	}
 
 	conformance.RunConformanceWithOptions(t, options)

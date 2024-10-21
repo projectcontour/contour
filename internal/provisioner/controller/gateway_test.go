@@ -1276,9 +1276,9 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: gatewayapi_v1.GatewaySpec{
 					GatewayClassName: gatewayapi_v1.ObjectName("gatewayclass-1"),
 					Infrastructure: &gatewayapi_v1.GatewayInfrastructure{
-						Labels: map[gatewayapi_v1.AnnotationKey]gatewayapi_v1.AnnotationValue{
-							gatewayapi_v1.AnnotationKey("projectcontour.io/label-1"): gatewayapi_v1.AnnotationValue("label-value-1"),
-							gatewayapi_v1.AnnotationKey("projectcontour.io/label-2"): gatewayapi_v1.AnnotationValue("label-value-2"),
+						Labels: map[gatewayapi_v1.LabelKey]gatewayapi_v1.LabelValue{
+							gatewayapi_v1.LabelKey("projectcontour.io/label-1"): gatewayapi_v1.LabelValue("label-value-1"),
+							gatewayapi_v1.LabelKey("projectcontour.io/label-2"): gatewayapi_v1.LabelValue("label-value-2"),
 						},
 						Annotations: map[gatewayapi_v1.AnnotationKey]gatewayapi_v1.AnnotationValue{
 							gatewayapi_v1.AnnotationKey("projectcontour.io/annotation-1"): gatewayapi_v1.AnnotationValue("annotation-value-1"),

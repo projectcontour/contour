@@ -5064,7 +5064,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
 								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
-								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.HeaderMatchExact, "version", "2"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.GRPCHeaderMatchExact, "version", "2"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -5106,7 +5106,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
 								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
-								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.HeaderMatchRegularExpression, "version", "2+"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.GRPCHeaderMatchRegularExpression, "version", "2+"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -5147,7 +5147,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
-								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.HeaderMatchExact, "version", "2"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.GRPCHeaderMatchExact, "version", "2"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
