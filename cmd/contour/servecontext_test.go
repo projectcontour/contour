@@ -216,8 +216,9 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	address := l.Addr().String()
 
 	go func() {
-		err := g.Serve(l)
-		require.NoError(t, err)
+		// If server fails to start, connecting to it below will fail so
+		// can ignore the error.
+		_ = g.Serve(l)
 	}()
 	defer g.GracefulStop()
 
