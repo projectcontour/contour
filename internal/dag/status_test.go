@@ -10754,7 +10754,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1.GRPCHeaderMatch{
 								{
-									Type:  ptr.To(gatewayapi_v1.HeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
+									Type:  ptr.To(gatewayapi_v1.GRPCHeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
 									Name:  gatewayapi_v1.GRPCHeaderName("foo"),
 									Value: "bar",
 								},
@@ -10809,7 +10809,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1.GRPCHeaderMatch{
 								{
-									Type:  ptr.To(gatewayapi_v1.HeaderMatchRegularExpression),
+									Type:  ptr.To(gatewayapi_v1.GRPCHeaderMatchRegularExpression),
 									Name:  gatewayapi_v1.GRPCHeaderName("foo"),
 									Value: "invalid(-)regex)",
 								},
