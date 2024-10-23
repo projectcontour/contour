@@ -972,7 +972,6 @@ const (
 
 // CompressionParameters holds various configurable compression related values.
 type CompressionParameters struct {
-
 	// Algorithm configures which compression algorithm, if any, to use in the default HTTP listener filter chain.
 	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
 	// +optional
