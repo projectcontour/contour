@@ -266,6 +266,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			}},
 		},
+		Status: gatewayapi_v1.GatewayStatus{
+			Addresses: []gatewayapi_v1.GatewayStatusAddress{
+				{
+					Type:  ptr.To(gatewayapi_v1.IPAddressType),
+					Value: "1.2.3.5",
+				},
+			},
+		},
 	}
 
 	gatewayTLSPassthroughAllNamespaces := &gatewayapi_v1.Gateway{
