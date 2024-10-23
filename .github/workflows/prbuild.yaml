@@ -13,8 +13,8 @@ permissions:
 
 env:
   GOPROXY: https://proxy.golang.org/
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   GO_VERSION: 1.22.5
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -31,12 +31,6 @@ jobs:
       with:
         version: v1.56.2
         args: --build-tags=e2e,conformance,tools,gcp,oidc,none --out-format=colored-line-number
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   codespell:
     name: Codespell
     runs-on: ubuntu-latest
@@ -52,12 +46,6 @@ jobs:
         ignore_words_file: './.codespell.ignorewords'
         check_filenames: true
         check_hidden: true
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   codegen:
     runs-on: ubuntu-latest
     steps:
@@ -86,12 +74,6 @@ jobs:
       run: |
         make generate lint-yamllint lint-flags
         ./hack/actions/check-uncommitted-codegen.sh
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   build-image:
     needs:
     - lint
@@ -116,12 +98,6 @@ jobs:
       with:
         name: image
         path: image/contour-*.tar
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -183,12 +159,6 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make e2e
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   upgrade:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -247,12 +217,6 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make upgrade
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   test-linux:
     needs:
     - lint
@@ -294,12 +258,6 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: coverage.out
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   test-osx:
     needs:
     - lint
@@ -335,12 +293,6 @@ jobs:
       run: |
         make install
         make check-coverage
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   gateway-conformance:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -377,9 +329,3 @@ jobs:
       run: |
         export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*contour-(.*).tar/\1/')"
         make gateway-conformance
-    - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.ref == 'refs/heads/main' }}
