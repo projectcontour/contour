@@ -146,17 +146,20 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		// run to allow the holdoff timer to batch the updates from
 		// the API informers.
 		lastDAGRebuild = time.Now()
+
+		// initialSyncPollPeriod defines the duration to wait between polling attempts during the initial informer synchronization.
+		initialSyncPollPeriod = 100 * time.Millisecond
+
+		// initialSyncPollTicker is the ticker that will trigger the periodic polling.
+		initialSyncPollTicker = time.NewTicker(initialSyncPollPeriod)
+
+		// initialSyncPoll is the channel that will receive a signal when to poll the initial informer synchronization status.
+		initialSyncPoll = initialSyncPollTicker.C
 	)
 
 	reset := func() (v int) {
 		v, outstanding = outstanding, 0
 		return
-	}
-
-	// It may be that there are no resources at all to process in watched namespaces.
-	// Initial (empty) DAG build is not needed and we can mark it as built immediately to allow the XDS server to start.
-	if e.syncTracker.HasSynced() {
-		e.initialDagBuilt.Store(true)
 	}
 
 	for {
@@ -196,12 +199,6 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			if updateOpAdd, ok := op.(opAdd); ok {
 				if updateOpAdd.isInInitialList {
 					e.syncTracker.Finished()
-
-					// If this was the last event in the initial list but none of the events triggered DAG rebuild,
-					// then we can mark the (empty) DAG as built to allow the XDS server to start.
-					if e.syncTracker.HasSynced() && timer == nil {
-						e.initialDagBuilt.Store(true)
-					}
 				}
 			}
 		case <-pending:
@@ -220,9 +217,6 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			latestDAG := e.builder.Build()
 			e.observer.OnChange(latestDAG)
 
-			// Allow XDS server to start (if it hasn't already).
-			e.initialDagBuilt.Store(true)
-
 			// Update the status on objects.
 			for _, upd := range latestDAG.StatusCache.GetStatusUpdates() {
 				e.statusUpdater.Send(upd)
@@ -230,6 +224,12 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 			e.incSequence()
 			lastDAGRebuild = time.Now()
+		case <-initialSyncPoll:
+			if e.syncTracker.HasSynced() {
+				// Informer caches are synced, stop the polling and allow xDS server to start.
+				initialSyncPollTicker.Stop()
+				e.initialDagBuilt.Store(true)
+			}
 		case <-ctx.Done():
 			// shutdown
 			return nil
