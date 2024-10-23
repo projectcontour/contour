@@ -852,16 +852,31 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		// enable it on the route and propagate defaults
 		// downwards.
 		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() || p.GlobalExternalAuthorization != nil {
+			// Global external or vhost-level authorization is enabled by default
+			// unless an AuthPolicy explicitly disables it. By default, `disabled`
+			// is set to false, meaning authorization is active. This global setting
+			// can be overridden by vhost-level AuthPolicy, which can further be
+			// overridden by route-specific AuthPolicy.
+			// Therefore, the final authorization state is determined by the
+			// most specific policy applied at the route level.
+			disabled := false
+
+			if p.GlobalExternalAuthorization != nil && p.GlobalExternalAuthorization.AuthPolicy != nil {
+				disabled = p.GlobalExternalAuthorization.AuthPolicy.Disabled
+			}
+
 			// When the ext_authz filter is added to a
 			// vhost, it is in enabled state, but we can
 			// disable it per route. We emulate disabling
 			// it at the vhost layer by defaulting the state
 			// from the root proxy.
-			disabled := rootProxy.Spec.VirtualHost.DisableAuthorization()
+			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+				disabled = rootProxy.Spec.VirtualHost.DisableAuthorization()
+			}
 
 			// Take the default for enabling authorization
-			// from the virtual host. If this route has a
-			// policy, let that override.
+			// from the virtualhost/global-extauth. If this
+			// route has a policy, let that override.
 			if route.AuthPolicy != nil {
 				disabled = route.AuthPolicy.Disabled
 			}
@@ -1441,14 +1456,14 @@ func determineExternalAuthTimeout(responseTimeout string, validCond *contour_v1.
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
-	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && !httpproxy.Spec.VirtualHost.DisableAuthorization() {
+	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && !httpproxy.Spec.VirtualHost.DisableAuthorization() && httpproxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.IsConfigured() {
 		authorization := p.computeVirtualHostAuthorization(httpproxy.Spec.VirtualHost.Authorization, validCond, httpproxy)
 		if authorization == nil {
 			return false
 		}
 
 		svhost.ExternalAuthorization = authorization
-	} else if p.GlobalExternalAuthorization != nil && !httpproxy.Spec.VirtualHost.DisableAuthorization() {
+	} else if p.GlobalExternalAuthorization != nil {
 		globalAuthorization := p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, httpproxy)
 		if globalAuthorization == nil {
 			return false
