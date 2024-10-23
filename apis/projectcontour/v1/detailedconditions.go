@@ -197,4 +197,7 @@ const (
 	// ConditionTypeListenerError describes an error condition relating
 	// to the configuration of Listeners.
 	ConditionTypeListenerError = "ListenerError"
+
+	// ConditionTypeExtProcError describes an error condition related to external processing.
+	ConditionTypeExtProcError = "ExtProcError"
 )
