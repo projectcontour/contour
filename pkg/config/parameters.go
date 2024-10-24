@@ -651,6 +651,10 @@ type Parameters struct {
 	// which strips duplicate slashes from request URL paths.
 	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
 
+	// Compression defines configuration relating to compression in the default HTTP filter chain.
+	// +optional
+	Compression *CompressionParameters `yaml:"compression,omitempty"`
+
 	// Defines the action to be applied to the Server header on the response path.
 	// When configured as overwrite, overwrites any Server header with "envoy".
 	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
@@ -966,6 +970,32 @@ const (
 	LogLevelDisabled AccessLogLevel = "disabled"
 )
 
+// CompressionParameters holds various configurable compression related values.
+type CompressionParameters struct {
+	// Algorithm configures which compression algorithm, if any, to use in the default HTTP listener filter chain.
+	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
+	// +optional
+	Algorithm CompressionAlgorithm `yaml:"algorithm,omitempty"`
+}
+
+func (c CompressionParameters) Validate() error {
+	return c.Algorithm.Validate()
+}
+
+type CompressionAlgorithm string
+
+func (c CompressionAlgorithm) Validate() error {
+	return contour_v1alpha1.CompressionAlgorithm(c).Validate()
+}
+
+const (
+	CompressionGzip     CompressionAlgorithm = "gzip"
+	CompressionBrotli   CompressionAlgorithm = "brotli"
+	CompressionDisabled CompressionAlgorithm = "disabled"
+	CompressionZstd     CompressionAlgorithm = "zstd"
+	CompressionDefault                       = CompressionGzip
+)
+
 // Validate verifies that the parameter values do not have any syntax errors.
 func (p *Parameters) Validate() error {
 	if err := p.Cluster.DNSLookupFamily.Validate(); err != nil {
@@ -994,6 +1024,12 @@ func (p *Parameters) Validate() error {
 
 	if err := contour_v1alpha1.AccessLogFormatString(p.AccessLogFormatString).Validate(); err != nil {
 		return err
+	}
+
+	if p.Compression != nil {
+		if err := p.Compression.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if err := p.TLS.Validate(); err != nil {
@@ -1028,6 +1064,9 @@ func (p *Parameters) Validate() error {
 
 	return p.Listener.Validate()
 }
+
+// DefaultCompressionAlgorithm is the compression mechanism in the default HTTP filter chain
+const DefaultCompressionAlgorithm = CompressionGzip
 
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
