@@ -1026,8 +1026,10 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	if err := p.Compression.Validate(); err != nil {
-		return err
+	if p.Compression != nil {
+		if err := p.Compression.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if err := p.TLS.Validate(); err != nil {

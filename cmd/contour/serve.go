@@ -124,15 +124,16 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		return nil
 	}
 
-	if ctx.Config.Compression == nil {
-		ctx.Config.Compression = &config.CompressionParameters{
-			Algorithm: config.CompressionDefault,
-		}
-	}
-
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").PlaceHolder("<envoy|json>").StringVar((*string)(&ctx.Config.AccessLogFormat))
 
-	serve.Flag("compression", "Set or disable compression type in default Listener filters.").PlaceHolder("<gzip|brotli|zstd|disabled>").StringVar((*string)(&ctx.Config.Compression.Algorithm))
+	var compressionFlag string
+	serve.Flag("compression", "Set or disable compression type in default Listener filters.").PlaceHolder("<gzip|brotli|zstd|disabled>").StringVar(&compressionFlag)
+	if compressionFlag != "" {
+		if ctx.Config.Compression == nil {
+			ctx.Config.Compression = &config.CompressionParameters{}
+		}
+		ctx.Config.Compression.Algorithm = config.CompressionAlgorithm(compressionFlag)
+	}
 	serve.Flag("config-path", "Path to base configuration.").Short('c').PlaceHolder("/path/to/file").Action(parseConfig).ExistingFileVar(&configFile)
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS.").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").PlaceHolder("/path/to/file").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
