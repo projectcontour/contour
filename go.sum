@@ -383,8 +383,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/tsaarni/certyaml v0.9.3 h1:m8HHbuUzWVUOmv8IQU9HgVZZ8r5ICExKm++54DJKCs0=
-github.com/tsaarni/certyaml v0.9.3/go.mod h1:hhuU1qYr5re488geArUP4gZWqMUMqGlj4HA2qUyGYLk=
+github.com/tsaarni/certyaml v0.10.0 h1:8ZWHO4Zg4VHUf7YblZNju44PcG5M+YtlJawiArYUHRs=
+github.com/tsaarni/certyaml v0.10.0/go.mod h1:rI1wDTE/VQIglHOyGbjfvqb+5mWTVT5uLFVDDcT1sq8=
 github.com/tsaarni/x500dn v1.0.0 h1:LvaWTkqRpse4VHBhB5uwf3wytokK4vF9IOyNAEyiA+U=
 github.com/tsaarni/x500dn v1.0.0/go.mod h1:QaHa3EcUKC4dfCAZmj8+ZRGLKukWgpGv9H3oOCsAbcE=
 github.com/vektra/mockery/v2 v2.46.0 h1:DKIFj6hAPGwmOYiWfWzdsQtBgU8ozPXo3Bwbmf+Ku80=
