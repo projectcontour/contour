@@ -970,7 +970,8 @@ const (
 	LogLevelDisabled AccessLogLevel = "disabled"
 )
 
-// CompressionParameters holds various configurable compression related values.
+// CompressionParameters is a type defining configurable compression related values.
+// At present this is just the compression algorithm but this could be extended later with algorithm specific config.
 type CompressionParameters struct {
 	// Algorithm configures which compression algorithm, if any, to use in the default HTTP listener filter chain.
 	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
