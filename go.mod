@@ -32,7 +32,7 @@ require (
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.30.0
 	golang.org/x/oauth2 v0.23.0
-	gonum.org/v1/plot v0.14.0
+	gonum.org/v1/plot v0.15.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.35.1
@@ -51,7 +51,7 @@ require (
 
 require (
 	cel.dev/expr v0.16.0 // indirect
-	git.sr.ht/~sbinet/gg v0.5.0 // indirect
+	git.sr.ht/~sbinet/gg v0.6.0 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -68,12 +68,12 @@ require (
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.6 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
-	github.com/go-fonts/liberation v0.3.1 // indirect
-	github.com/go-latex/latex v0.0.0-20230307184459-12ec69307ad9 // indirect
+	github.com/go-fonts/liberation v0.3.3 // indirect
+	github.com/go-latex/latex v0.0.0-20240709081214-31cef3c7570e // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/go-pdf/fpdf v0.8.0 // indirect
+	github.com/go-pdf/fpdf v0.9.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -125,8 +125,8 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
-	golang.org/x/image v0.18.0 // indirect
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
+	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
