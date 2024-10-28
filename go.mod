@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/common v0.60.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
-	github.com/tsaarni/certyaml v0.9.3
+	github.com/tsaarni/certyaml v0.10.0
 	github.com/vektra/mockery/v2 v2.46.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.30.0
