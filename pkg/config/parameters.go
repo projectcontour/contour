@@ -653,7 +653,7 @@ type Parameters struct {
 
 	// Compression defines configuration relating to compression in the default HTTP filter chain.
 	// +optional
-	Compression *CompressionParameters `yaml:"compression,omitempty"`
+	Compression CompressionParameters `yaml:"compression,omitempty"`
 
 	// Defines the action to be applied to the Server header on the response path.
 	// When configured as overwrite, overwrites any Server header with "envoy".
@@ -1026,7 +1026,7 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	if p.Compression != nil {
+	if p.Compression.Algorithm != "" {
 		if err := p.Compression.Validate(); err != nil {
 			return err
 		}

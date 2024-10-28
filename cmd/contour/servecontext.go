@@ -334,7 +334,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 	}
 
 	var compression *contour_v1alpha1.EnvoyCompression
-	if ctx.Config.Compression != nil {
+	if ctx.Config.Compression.Algorithm != "" {
 		var algorithm contour_v1alpha1.CompressionAlgorithm
 		switch ctx.Config.Compression.Algorithm {
 		case config.CompressionBrotli:
