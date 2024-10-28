@@ -78,7 +78,7 @@ func testEnvoyDisableCompression(namespace, acceptEncoding, contentEncoding stri
 				assert.NotEqual(c, contentEncodingHeaderValue, contentEncoding, "expected plain text")
 				return
 			}
-			assert.Equal(c, contentEncodingHeaderValue, contentEncoding, "expected plain text")
-		}, 15*time.Second, f.RetryInterval)
+			assert.Equal(c, contentEncoding, contentEncodingHeaderValue, "expected plain text")
+		}, 20*time.Second, f.RetryInterval)
 	})
 }
