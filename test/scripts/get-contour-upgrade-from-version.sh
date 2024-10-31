@@ -14,7 +14,7 @@ if CURRENT_TAG=$(git describe --tags --exact-match 2>/dev/null); then
   git tag -l --sort=-v:refname | grep -A5 -x $CURRENT_TAG | grep -v -x $CURRENT_TAG | grep -v 'alpha\|beta\|rc' | head -n 1
 elif git describe --tags --abbrev=0 | grep -q -v v1.2.0; then
   # Note: Contour v1.2.0 was improperly tagged on main so we
-  # ignore it to ensure we dont hit that case here.
+  # ignore it to ensure we don't hit that case here.
 
   # We have a tag in our commit history, so we should
   # be on a release branch or a feature branch from a
