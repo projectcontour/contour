@@ -6,7 +6,7 @@ We are delighted to present version v1.28.7 of Contour, our layer 7 HTTP reverse
 
 # All Changes
 
-- Updates Envoy to v1.29.9. See the release notes [here](https://www.envoyproxy.io/docs/envoy/v1.29.9/version_history/v1.29/v1.29).
+- Updates Envoy to v1.29.10. See the release notes [here](https://www.envoyproxy.io/docs/envoy/v1.29.10/version_history/v1.29/v1.29).
 - Updates Go to v1.21.13. See the release notes [here](https://go.dev/doc/devel/release#go1.21.minor).
 
 
