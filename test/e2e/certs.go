@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -84,26 +83,8 @@ func (c *Certs) CreateSelfSignedCert(ns, name, secretName, dnsName string) func(
 
 // CreateCertAndWaitFor creates the provided Certificate in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (c *Certs) CreateCertAndWaitFor(cert *certmanagerv1.Certificate, condition func(cert *certmanagerv1.Certificate) bool) (*certmanagerv1.Certificate, bool) {
-	require.NoError(c.t, c.client.Create(context.TODO(), cert))
-
-	res := &certmanagerv1.Certificate{}
-
-	if err := wait.PollUntilContextTimeout(context.Background(), c.retryInterval, c.retryTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := c.client.Get(ctx, client.ObjectKeyFromObject(cert), res); err != nil {
-			// if there was an error, we want to keep
-			// retrying, so just return false, not an
-			// error.
-			return false, nil
-		}
-
-		return condition(res), nil
-	}); err != nil {
-		// return the last response for logging/debugging purposes
-		return res, false
-	}
-
-	return res, true
+func (c *Certs) CreateCertAndWaitFor(cert *certmanagerv1.Certificate, condition func(cert *certmanagerv1.Certificate) bool) bool {
+	return createAndWaitFor(c.t, c.client, cert, condition, c.retryInterval, c.retryTimeout)
 }
 
 // GetTLSCertificate returns a tls.Certificate containing the data in the specified

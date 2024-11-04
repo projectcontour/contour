@@ -16,9 +16,15 @@
 package e2e
 
 import (
+	"fmt"
+
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
+	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/status"
 )
 
 // GatewayClassAccepted returns true if the gateway has a .status.conditions
@@ -119,6 +125,40 @@ func HTTPRouteAccepted(route *gatewayapi_v1.HTTPRoute) bool {
 	return false
 }
 
+// HTTPRouteNotAcceptedDueToConflict returns true if the route has a .status.conditions
+// entry of "Accepted: false" && "Reason: RouteMatchConflict" && "Message: HTTPRoute's Match has
+// conflict with other HTTPRoute's Match".
+func HTTPRouteNotAcceptedDueToConflict(route *gatewayapi_v1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteRuleMatchConflict), fmt.Sprintf(status.MessageRouteRuleMatchConflict, dag.KindHTTPRoute, dag.KindHTTPRoute)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// HTTPRoutePartiallyInvalid returns true if the route has a .status.conditions
+// entry of "PartiallyInvalid: true" && "Reason: RuleMatchPartiallyConflict" && "Message:
+// HTTPRoute's Match has partial conflict with other HTTPRoute's Match".
+func HTTPRoutePartiallyInvalid(route *gatewayapi_v1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionPartiallyInvalid), meta_v1.ConditionTrue, string(status.ReasonRouteRuleMatchPartiallyConflict), fmt.Sprintf(status.MessageRouteRuleMatchPartiallyConflict, dag.KindHTTPRoute, dag.KindHTTPRoute)) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // HTTPRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
 func HTTPRouteIgnoredByContour(route *gatewayapi_v1.HTTPRoute) bool {
 	if route == nil {
@@ -161,7 +201,57 @@ func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	}
 
 	for _, gw := range route.Status.Parents {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.RouteConditionAccepted), meta_v1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GRPCRouteAccepted returns true if the route has a .status.conditions
+// entry of "Accepted: true".
+func GRPCRouteAccepted(route *gatewayapi_v1.GRPCRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionTrue) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GRPCRouteNotAcceptedDueToConflict returns true if the route has a .status.conditions
+// entry of "Accepted: false" && "Reason: RouteMatchConflict" && "Message: GRPCRoute's Match has
+// conflict with other GRPCRoute's Match".
+func GRPCRouteNotAcceptedDueToConflict(route *gatewayapi_v1.GRPCRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionAccepted), meta_v1.ConditionFalse, string(status.ReasonRouteRuleMatchConflict), fmt.Sprintf(status.MessageRouteRuleMatchConflict, dag.KindGRPCRoute, dag.KindGRPCRoute)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GRPCRoutePartiallyInvalid returns true if the route has a .status.conditions
+// entry of "PartiallyInvalid: true" && "Reason: RuleMatchPartiallyConflict" && "Message:
+// GRPCRoute's Match has partial conflict with other GRPCRoute's Match".
+func GRPCRoutePartiallyInvalid(route *gatewayapi_v1.GRPCRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		if conditionExistsWithAllKeys(gw.Conditions, string(gatewayapi_v1.RouteConditionPartiallyInvalid), meta_v1.ConditionTrue, string(status.ReasonRouteRuleMatchPartiallyConflict), fmt.Sprintf(status.MessageRouteRuleMatchPartiallyConflict, dag.KindGRPCRoute, dag.KindGRPCRoute)) {
 			return true
 		}
 	}
@@ -171,7 +261,7 @@ func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 
 // BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
 // entry of "Accepted: true".
-func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
+func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha3.BackendTLSPolicy) bool {
 	if btp == nil {
 		return false
 	}
@@ -188,6 +278,16 @@ func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha2.BackendTLSPolicy) bool {
 func conditionExists(conditions []meta_v1.Condition, conditionType string, conditionStatus meta_v1.ConditionStatus) bool {
 	for _, cond := range conditions {
 		if cond.Type == conditionType && cond.Status == conditionStatus {
+			return true
+		}
+	}
+
+	return false
+}
+
+func conditionExistsWithAllKeys(conditions []meta_v1.Condition, conditionType string, conditionStatus meta_v1.ConditionStatus, reason, message string) bool {
+	for _, cond := range conditions {
+		if cond.Type == conditionType && cond.Status == conditionStatus && cond.Reason == reason && cond.Message == message {
 			return true
 		}
 	}

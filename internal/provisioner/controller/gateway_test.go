@@ -1098,7 +1098,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
-				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key", "prometheus.io/scrape", "prometheus.io/port")
+				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key")
 			},
 		},
 
@@ -1212,7 +1212,7 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 
 				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
-				assert.Contains(t, deploy.Spec.Template.ObjectMeta.Annotations, "key", "prometheus.io/scrape", "prometheus.io/port")
+				assert.Contains(t, deploy.Spec.Template.ObjectMeta.Annotations, "key")
 			},
 		},
 

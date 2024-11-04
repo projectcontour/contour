@@ -144,20 +144,16 @@ var _ = Describe("When upgrading", func() {
 			cmd := exec.Command("../../scripts/install-provisioner-release.sh", contourUpgradeFromVersion)
 			sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			require.NoError(f.T(), err)
-
 			Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
-			gc, ok := f.CreateGatewayClassAndWaitFor(&gatewayapi_v1.GatewayClass{
+			require.True(f.T(), f.CreateGatewayClassAndWaitFor(&gatewayapi_v1.GatewayClass{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name: gatewayClassName,
 				},
 				Spec: gatewayapi_v1.GatewayClassSpec{
 					ControllerName: gatewayapi_v1.GatewayController("projectcontour.io/gateway-controller"),
 				},
-			}, e2e.GatewayClassAccepted)
-
-			require.True(f.T(), ok)
-			require.NotNil(f.T(), gc)
+			}, e2e.GatewayClassAccepted))
 		})
 
 		AfterEach(func() {
@@ -178,7 +174,7 @@ var _ = Describe("When upgrading", func() {
 
 				appHost := "upgrade.provisioner.projectcontour.io"
 
-				gateway, ok := f.CreateGatewayAndWaitFor(&gatewayapi_v1.Gateway{
+				gateway := &gatewayapi_v1.Gateway{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "upgrade-gateway",
@@ -194,17 +190,19 @@ var _ = Describe("When upgrading", func() {
 							},
 						},
 					},
-				}, func(gw *gatewayapi_v1.Gateway) bool {
+				}
+
+				require.True(f.T(), f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
 					return e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)
-				})
-				require.True(t, ok)
-				require.NotNil(t, gateway)
+				}))
+
+				require.NoError(f.T(), f.Client.Get(context.Background(), k8s.NamespacedNameOf(gateway), gateway))
 
 				f.HTTP.HTTPURLBase = "http://" + gateway.Status.Addresses[0].Value
 
 				f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 
-				f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1.HTTPRoute{
+				require.True(f.T(), f.CreateHTTPRouteAndWaitFor(&gatewayapi_v1.HTTPRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Namespace: namespace,
 						Name:      "echo",
@@ -243,13 +241,27 @@ var _ = Describe("When upgrading", func() {
 							},
 						},
 					},
-				}, e2e.HTTPRouteAccepted)
+				}, e2e.HTTPRouteAccepted))
 
 				By("ensuring it is routable")
 				checkRoutability(appHost)
 
 				poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK, GinkgoWriter)
 				require.NoError(f.T(), err)
+
+				By("updating gateway-api CRDs to latest")
+				// Delete existing BackendTLSPolicy CRD.
+				// TODO: remove this hack once BackendTLSPolicy v1alpha3 or
+				// above is available in multiple consecutive releases.
+				cmd := exec.Command("kubectl", "delete", "crd", "backendtlspolicies.gateway.networking.k8s.io")
+				sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				require.NoError(f.T(), err)
+				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
+
+				cmd = exec.Command("kubectl", "apply", "-f", "../../../examples/gateway/00-crds.yaml")
+				sess, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				require.NoError(f.T(), err)
+				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
 				By("deploying updated provisioner")
 				require.NoError(f.T(), f.Provisioner.EnsureResourcesForInclusterProvisioner())

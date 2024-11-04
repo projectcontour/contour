@@ -59,9 +59,8 @@ func TestRuntimeCacheContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			rc := NewRuntimeCache(tc.runtimeSettings)
 			fields := map[string]*structpb.Value{
-				"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
-				"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
-				"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
+				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
+				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
 			}
 			for k, v := range tc.additionalFields {
 				fields[k] = v
@@ -84,9 +83,8 @@ func TestRuntimeCacheQuery(t *testing.T) {
 			Name: "dynamic",
 			Layer: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
-					"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
-					"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
+					"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
+					"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
 				},
 			},
 		},
@@ -151,9 +149,8 @@ func TestRuntimeVisit(t *testing.T) {
 					Name: "dynamic",
 					Layer: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
-							"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
-							"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
+							"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
+							"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
 						},
 					},
 				},
@@ -191,7 +188,6 @@ func TestRuntimeVisit(t *testing.T) {
 					Name: "dynamic",
 					Layer: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"envoy.reloadable_features.sanitize_te":                        structpb.NewBoolValue(false),
 							"envoy.resource_limits.listener.ingress_http.connection_limit": structpb.NewNumberValue(100),
 							"re2.max_program_size.error_level":                             structpb.NewNumberValue(1 << 20),
 							"re2.max_program_size.warn_level":                              structpb.NewNumberValue(1000),
@@ -236,7 +232,6 @@ func TestRuntimeVisit(t *testing.T) {
 					Name: "dynamic",
 					Layer: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
-							"envoy.reloadable_features.sanitize_te":                         structpb.NewBoolValue(false),
 							"envoy.resource_limits.listener.ingress_http.connection_limit":  structpb.NewNumberValue(100),
 							"envoy.resource_limits.listener.ingress_https.connection_limit": structpb.NewNumberValue(100),
 							"re2.max_program_size.error_level":                              structpb.NewNumberValue(1 << 20),
@@ -304,7 +299,6 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 			Name: "dynamic",
 			Layer: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"envoy.reloadable_features.sanitize_te":                        structpb.NewBoolValue(false),
 					"envoy.resource_limits.listener.ingress_http.connection_limit": structpb.NewNumberValue(100),
 					"re2.max_program_size.error_level":                             structpb.NewNumberValue(1 << 20),
 					"re2.max_program_size.warn_level":                              structpb.NewNumberValue(1000),
@@ -319,9 +313,8 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 			Name: "dynamic",
 			Layer: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"envoy.reloadable_features.sanitize_te": structpb.NewBoolValue(false),
-					"re2.max_program_size.error_level":      structpb.NewNumberValue(1 << 20),
-					"re2.max_program_size.warn_level":       structpb.NewNumberValue(1000),
+					"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
+					"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
 				},
 			},
 		},

@@ -141,8 +141,10 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Envoy.Listener.TLS.CipherSuites = []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
+			"ECDHE-ECDSA-CHACHA20-POLY1305",
 			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
 			"ECDHE-RSA-AES128-GCM-SHA256",
+			"ECDHE-RSA-CHACHA20-POLY1305",
 			"ECDHE-ECDSA-AES128-SHA",
 			"AES128-GCM-SHA256",
 			"AES128-SHA",
@@ -159,6 +161,20 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
 			"NOTAVALIDCIPHER",
 			"AES128-GCM-SHA256",
+		}
+		require.Error(t, c.Validate())
+
+		// Equal-preference group with invalid cipher.
+		c.Envoy.Listener.TLS.CipherSuites = []string{
+			"[ECDHE-ECDSA-AES128-GCM-SHA256|NOTAVALIDCIPHER]",
+			"ECDHE-ECDSA-AES128-GCM-SHA256",
+		}
+		require.Error(t, c.Validate())
+
+		// Unmatched brackets.
+		c.Envoy.Listener.TLS.CipherSuites = []string{
+			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305",
+			"ECDHE-ECDSA-AES128-GCM-SHA256",
 		}
 		require.Error(t, c.Validate())
 	})
@@ -303,10 +319,26 @@ func TestFeatureFlagsValidate(t *testing.T) {
 		expected error
 	}{
 		{
-			name:     "valid flag",
+			name:     "valid flag: no value",
 			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices"},
 			expected: nil,
 		},
+		{
+			name:     "valid flag2: empty",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices="},
+			expected: nil,
+		},
+		{
+			name:     "valid flag: true",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=true"},
+			expected: nil,
+		},
+		{
+			name:     "valid flag: false",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=false"},
+			expected: nil,
+		},
+
 		{
 			name:     "invalid flag",
 			flags:    contour_v1alpha1.FeatureFlags{"invalidFlag"},
@@ -327,6 +359,71 @@ func TestFeatureFlagsValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.flags.Validate()
+			assert.Equal(t, tt.expected, err)
+		})
+	}
+}
+
+func TestFeatureFlagsIsEndpointSliceEnabled(t *testing.T) {
+	tests := []struct {
+		name     string
+		flags    contour_v1alpha1.FeatureFlags
+		expected bool
+	}{
+		{
+			name:     "valid flag: no value",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices"},
+			expected: true,
+		},
+		{
+			name:     "valid flag2: empty",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices="},
+			expected: true,
+		},
+		{
+			name:     "valid flag: true",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=true"},
+			expected: true,
+		},
+		{
+			name:     "valid flag: ANY",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=ANY"},
+			expected: true,
+		},
+
+		{
+			name:     "empty flags",
+			flags:    contour_v1alpha1.FeatureFlags{},
+			expected: true,
+		},
+		{
+			name:     "empty string",
+			flags:    contour_v1alpha1.FeatureFlags{""},
+			expected: true,
+		},
+
+		{
+			name:     "multi-flags",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices", "otherFlag"},
+			expected: true,
+		},
+
+		{
+			name:     "valid flag: false",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=false"},
+			expected: false,
+		},
+
+		{
+			name:     "valid flag: FALSE",
+			flags:    contour_v1alpha1.FeatureFlags{"useEndpointSlices=FALSE"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.flags.IsEndpointSliceEnabled()
 			assert.Equal(t, tt.expected, err)
 		})
 	}

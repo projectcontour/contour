@@ -235,7 +235,6 @@ type ExtensionServiceReference struct {
 	//
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 	//
-	// +required
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }

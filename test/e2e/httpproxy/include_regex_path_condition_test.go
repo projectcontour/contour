@@ -175,9 +175,8 @@ func testIncludeRegexCondition(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(rootProxy, e2e.HTTPProxyValid)
-
-		f.CreateHTTPProxyAndWaitFor(invalidRootProxy, e2e.HTTPProxyInvalid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(rootProxy, e2e.HTTPProxyValid))
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(invalidRootProxy, e2e.HTTPProxyInvalid))
 
 		cases := map[string]string{
 			"/echo2/":               "echo-2", // "Prefix: / with included Prefix: echo2/"

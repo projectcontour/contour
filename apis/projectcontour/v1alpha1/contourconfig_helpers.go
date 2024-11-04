@@ -15,18 +15,16 @@ package v1alpha1
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	featureFlagUseEndpointSlices string = "useEndpointSlices"
-)
+const featureFlagUseEndpointSlices string = "useEndpointSlices"
 
-var featureFlagsMap = map[string]bool{
-	featureFlagUseEndpointSlices: true,
+var featureFlagsMap = map[string]struct{}{
+	featureFlagUseEndpointSlices: {},
 }
 
 // Validate configuration that is not already covered by CRD validation.
@@ -187,6 +185,27 @@ func ValidateTLSProtocolVersions(min, max string) error {
 	return nil
 }
 
+// isValidTLSCipher parses a cipher string and returns true if it is valid.
+// We do not support the full syntax defined in the BoringSSL documentation,
+// see https://commondatastorage.googleapis.com/chromium-boringssl-docs/ssl.h.html#Cipher-suite-configuration
+func isValidTLSCipher(cipherSpec string) bool {
+	// Equal-preference group: [cipher1|cipher2|...]
+	if strings.HasPrefix(cipherSpec, "[") && strings.HasSuffix(cipherSpec, "]") {
+		for _, cipher := range strings.Split(strings.Trim(cipherSpec, "[]"), "|") {
+			if _, ok := ValidTLSCiphers[cipher]; !ok {
+				return false
+			}
+		}
+		return true
+	}
+
+	if _, ok := ValidTLSCiphers[cipherSpec]; !ok {
+		return false
+	}
+
+	return true
+}
+
 // Validate ensures EnvoyTLS configuration is valid.
 func (e *EnvoyTLS) Validate() error {
 	if err := ValidateTLSProtocolVersions(e.MinimumProtocolVersion, e.MaximumProtocolVersion); err != nil {
@@ -195,7 +214,7 @@ func (e *EnvoyTLS) Validate() error {
 
 	var invalidCipherSuites []string
 	for _, c := range e.CipherSuites {
-		if _, ok := ValidTLSCiphers[c]; !ok {
+		if !isValidTLSCipher(c) {
 			invalidCipherSuites = append(invalidCipherSuites, c)
 		}
 	}
@@ -226,16 +245,26 @@ func (e *EnvoyTLS) SanitizedCipherSuites() []string {
 
 func (f FeatureFlags) Validate() error {
 	for _, featureFlag := range f {
-		if _, found := featureFlagsMap[featureFlag]; !found {
+		fields := strings.Split(featureFlag, "=")
+		if _, found := featureFlagsMap[fields[0]]; !found {
 			return fmt.Errorf("invalid contour configuration, unknown feature flag:%s", featureFlag)
 		}
 	}
-
 	return nil
 }
 
 func (f FeatureFlags) IsEndpointSliceEnabled() bool {
-	return slices.Contains(f, featureFlagUseEndpointSlices)
+	// only when the flag: 'useEndpointSlices=false' is exists, return false
+	for _, flag := range f {
+		if !strings.HasPrefix(flag, featureFlagUseEndpointSlices) {
+			continue
+		}
+		fields := strings.Split(flag, "=")
+		if len(fields) == 2 && strings.ToLower(fields[1]) == "false" {
+			return false
+		}
+	}
+	return true
 }
 
 // Validate ensures that GatewayRef namespace/name is specified.

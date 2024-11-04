@@ -80,8 +80,7 @@ func testGRPCServicePlaintext(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(t, ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		insecureAddr := strings.TrimPrefix(f.HTTP.HTTPURLBase, "http://")
 		secureAddr := strings.TrimPrefix(f.HTTP.HTTPSURLBase, "https://")
@@ -93,8 +92,6 @@ func testGRPCServicePlaintext(namespace string) {
 				InsecureSkipVerify: true,
 			}),
 		} {
-			dialCtx, dialCancel := context.WithTimeout(context.Background(), time.Second*30)
-			defer dialCancel()
 			retryOpts := []grpc_retry.CallOption{
 				// Retry if Envoy returns unavailable, the upstream
 				// may not be healthy yet.
@@ -106,8 +103,7 @@ func testGRPCServicePlaintext(namespace string) {
 				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
 				grpc_retry.WithMax(20),
 			}
-			conn, err := grpc.DialContext(dialCtx, addr,
-				grpc.WithBlock(),
+			conn, err := grpc.NewClient(addr,
 				grpc.WithAuthority(p.Spec.VirtualHost.Fqdn),
 				grpc.WithTransportCredentials(transportCreds),
 				grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
@@ -159,8 +155,7 @@ func testGRPCWeb(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
-		require.True(t, ok)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// One byte marker that this is a data frame, and 4 bytes
 		// for the length (we can use 0 since the yages.Empty message

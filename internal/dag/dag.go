@@ -751,11 +751,23 @@ type VirtualHost struct {
 	Routes map[string]*Route
 }
 
+// Add route to VirtualHosts.Routes map.
 func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
 		v.Routes = make(map[string]*Route)
 	}
+
 	v.Routes[conditionsToString(route)] = route
+}
+
+// HasConflictRoute returns true if there is existing Path + Headers
+// + QueryParams combination match this route candidate and also they are same kind of Route.
+func (v *VirtualHost) HasConflictRoute(route *Route) bool {
+	// If match exist and kind is the same kind, return true.
+	if r, ok := v.Routes[conditionsToString(route)]; ok && r.Kind == route.Kind {
+		return true
+	}
+	return false
 }
 
 func conditionsToString(r *Route) string {
@@ -959,26 +971,7 @@ type Service struct {
 	Protocol string
 
 	// Circuit breaking limits
-
-	// Max connections is maximum number of connections
-	// that Envoy will make to the upstream cluster.
-	MaxConnections uint32
-
-	// MaxPendingRequests is maximum number of pending
-	// requests that Envoy will allow to the upstream cluster.
-	MaxPendingRequests uint32
-
-	// MaxRequests is the maximum number of parallel requests that
-	// Envoy will make to the upstream cluster.
-	MaxRequests uint32
-
-	// MaxRetries is the maximum number of parallel retries that
-	// Envoy will allow to the upstream cluster.
-	MaxRetries uint32
-
-	// PerHostMaxConnections is the maximum number of connections
-	// that Envoy will allow to each individual host in a cluster.
-	PerHostMaxConnections uint32
+	CircuitBreakers CircuitBreakers
 
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
@@ -1249,6 +1242,9 @@ type ExtensionCluster struct {
 
 	// UpstreamTLS contains the TLS version and cipher suite configurations for upstream connections
 	UpstreamTLS *UpstreamTLS
+
+	// Circuit breaking limits
+	CircuitBreakers CircuitBreakers
 }
 
 const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
@@ -1286,4 +1282,27 @@ type UpstreamTLS struct {
 	MinimumProtocolVersion string
 	MaximumProtocolVersion string
 	CipherSuites           []string
+}
+
+// CircuitBreakers holds configuration for circuit breakers.
+type CircuitBreakers struct {
+	// Max connections is maximum number of connections
+	// that Envoy will make to the upstream cluster.
+	MaxConnections uint32
+
+	// MaxPendingRequests is maximum number of pending
+	// requests that Envoy will allow to the upstream cluster.
+	MaxPendingRequests uint32
+
+	// MaxRequests is the maximum number of parallel requests that
+	// Envoy will make to the upstream cluster.
+	MaxRequests uint32
+
+	// MaxRetries is the maximum number of parallel retries that
+	// Envoy will allow to the upstream cluster.
+	MaxRetries uint32
+
+	// PerHostMaxConnections is the maximum number of connections
+	// that Envoy will allow to each individual host in a cluster.
+	PerHostMaxConnections uint32
 }

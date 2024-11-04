@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -209,6 +210,7 @@ func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_v1alpha1.TLS) *tls
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			ClientCAs:    certPool,
 			MinVersion:   tls.VersionTLS13,
+			NextProtos:   []string{http2.NextProtoTLS},
 		}, nil
 	}
 

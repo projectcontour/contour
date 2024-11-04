@@ -3,13 +3,14 @@
 readonly PROGNAME="yamllint"
 
 if command -v ${PROGNAME} >/dev/null; then
-	exec ${PROGNAME} "$@"
+	exec ${PROGNAME} -c .yamllint .
 fi
 
 if command -v docker >/dev/null; then
 	exec docker run --rm -i \
 		-v $(pwd):/workdir \
-		giantswarm/yamllint "$@"
+		--workdir=/workdir \
+		giantswarm/yamllint -c .yamllint .
 fi
 
 cat <<EOF

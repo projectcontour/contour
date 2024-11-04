@@ -502,12 +502,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			"type": "controller",
 		}),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, ptr.To(int32(1))),
 			}},
@@ -549,12 +549,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			"type": "controller",
 		}),
 		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-				ParentRefs: []gatewayapi_v1alpha2.ParentReference{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				},
 			},
-			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+			Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 				BackendRefs: gatewayapi.TLSRouteBackendRefs(
 					gatewayapi.TLSRouteBackendRef("svc1", 443, ptr.To(int32(1))),

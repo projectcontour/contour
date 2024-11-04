@@ -406,7 +406,9 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxConnections: 9000,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxConnections: 9000,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -427,15 +429,20 @@ func TestCluster(t *testing.T) {
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(9000),
+						TrackRemaining: true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
 		"projectcontour.io/max-pending-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxPendingRequests: 4096,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxPendingRequests: 4096,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -456,15 +463,20 @@ func TestCluster(t *testing.T) {
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxPendingRequests: wrapperspb.UInt32(4096),
+						TrackRemaining:     true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
 		"projectcontour.io/max-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxRequests: 404,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxRequests: 404,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -484,16 +496,21 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxRequests: wrapperspb.UInt32(404),
+						MaxRequests:    wrapperspb.UInt32(404),
+						TrackRemaining: true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
 		"projectcontour.io/max-retries": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					MaxRetries: 7,
+					CircuitBreakers: dag.CircuitBreakers{
+						MaxRetries: 7,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -513,16 +530,21 @@ func TestCluster(t *testing.T) {
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
-						MaxRetries: wrapperspb.UInt32(7),
+						MaxRetries:     wrapperspb.UInt32(7),
+						TrackRemaining: true,
 					}},
-					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 				},
 			},
 		},
 		"projectcontour.io/per-host-max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					PerHostMaxConnections: 45,
+					CircuitBreakers: dag.CircuitBreakers{
+						PerHostMaxConnections: 45,
+					},
 					Weighted: dag.WeightedService{
 						Weight:           1,
 						ServiceName:      s1.Name,
@@ -541,9 +563,12 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
-					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{}},
+					Thresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
+						TrackRemaining: true,
+					}},
 					PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 						MaxConnections: wrapperspb.UInt32(45),
+						TrackRemaining: true,
 					}},
 				},
 			},

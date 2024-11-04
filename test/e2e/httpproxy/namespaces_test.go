@@ -35,7 +35,7 @@ func testWatchNamespaces(namespaces []string) e2e.NamespacedTestBody {
 			for _, ns := range namespaces {
 				deployEchoServer(f.T(), f.Client, ns, "echo")
 				p := newEchoProxy("proxy", ns)
-				f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:      p.Spec.VirtualHost.Fqdn,
@@ -68,7 +68,7 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 			for _, ns := range rootNamespaces {
 				deployEchoServer(f.T(), f.Client, ns, "echo")
 				p := newEchoProxy("root-proxy", ns)
-				f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:      p.Spec.VirtualHost.Fqdn,
@@ -82,8 +82,7 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 
 			// Root proxy in non-root namespace should fail
 			p := newEchoProxy("root-proxy", nonRootNamespace)
-			_, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyRootNotAllowedInNS)
-			require.Truef(f.T(), ok, "expected HTTPProxy to have status RootNamespaceError")
+			require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, httpProxyRootNotAllowedInNS), "expected HTTPProxy to have status RootNamespaceError")
 
 			// Leaf proxy in non-root (but watched) namespace should succeed
 			lp := &contour_v1.HTTPProxy{
@@ -123,7 +122,8 @@ func testWatchAndRootNamespaces(rootNamespaces []string, nonRootNamespace string
 			}
 			err := f.CreateHTTPProxy(lp)
 			require.NoError(f.T(), err, "could not create leaf httpproxy")
-			f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+			require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
+
 			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 				Host:      p.Spec.VirtualHost.Fqdn,
 				Condition: e2e.HasStatusCode(200),
@@ -154,7 +154,7 @@ func testRootNamespaces(namespaces []string) e2e.NamespacedTestBody {
 			for _, ns := range namespaces {
 				deployEchoServer(f.T(), f.Client, ns, "echo")
 				p := newEchoProxy("root-proxy", ns)
-				f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+				require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:      p.Spec.VirtualHost.Fqdn,
@@ -167,8 +167,7 @@ func testRootNamespaces(namespaces []string) e2e.NamespacedTestBody {
 			// Root proxy in non-root namespace should fail
 			deployEchoServer(f.T(), f.Client, nonrootNS, "echo")
 			p := newEchoProxy("root-proxy", nonrootNS)
-			_, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyRootNotAllowedInNS)
-			require.Truef(f.T(), ok, "expected HTTPProxy to have status RootNamespaceError")
+			require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, httpProxyRootNotAllowedInNS), "expected HTTPProxy to have status RootNamespaceError")
 		})
 	}
 }

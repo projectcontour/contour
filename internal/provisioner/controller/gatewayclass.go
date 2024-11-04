@@ -39,7 +39,7 @@ import (
 
 const (
 	gatewayAPIBundleVersionAnnotation   = "gateway.networking.k8s.io/bundle-version"
-	gatewayAPICRDBundleSupportedVersion = "v1.0.0"
+	gatewayAPICRDBundleSupportedVersion = "v1.1.0"
 )
 
 // gatewayClassReconciler reconciles GatewayClass objects.
@@ -62,9 +62,9 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	}
 
 	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &gatewayapi_v1.GatewayClass{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.NewPredicateFuncs(r.hasMatchingController),
+		source.Kind(mgr.GetCache(), &gatewayapi_v1.GatewayClass{},
+			&handler.TypedEnqueueRequestForObject[*gatewayapi_v1.GatewayClass]{},
+			predicate.NewTypedPredicateFuncs(r.hasMatchingController)),
 	); err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	// Watch ContourDeployments since they can be used as parameters for
 	// GatewayClasses.
 	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &contour_v1alpha1.ContourDeployment{}),
-		handler.EnqueueRequestsFromMapFunc(r.mapContourDeploymentToGatewayClasses),
+		source.Kind(mgr.GetCache(), &contour_v1alpha1.ContourDeployment{},
+			handler.TypedEnqueueRequestsFromMapFunc(r.mapContourDeploymentToGatewayClasses)),
 	); err != nil {
 		return nil, err
 	}
@@ -81,19 +81,14 @@ func NewGatewayClassController(mgr manager.Manager, gatewayController string) (c
 	return c, nil
 }
 
-func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
-	gatewayClass, ok := obj.(*gatewayapi_v1.GatewayClass)
-	if !ok {
-		return false
-	}
-
+func (r *gatewayClassReconciler) hasMatchingController(gatewayClass *gatewayapi_v1.GatewayClass) bool {
 	return gatewayClass.Spec.ControllerName == r.gatewayController
 }
 
 // mapContourDeploymentToGatewayClasses returns a list of reconcile requests
 // for all provisioner-controlled GatewayClasses that have a ParametersRef to
 // the specified ContourDeployment object.
-func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(ctx context.Context, contourDeployment client.Object) []reconcile.Request {
+func (r *gatewayClassReconciler) mapContourDeploymentToGatewayClasses(ctx context.Context, contourDeployment *contour_v1alpha1.ContourDeployment) []reconcile.Request {
 	var gatewayClasses gatewayapi_v1.GatewayClassList
 	if err := r.client.List(ctx, &gatewayClasses); err != nil {
 		r.log.Error(err, "error listing gateway classes")

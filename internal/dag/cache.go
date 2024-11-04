@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -72,10 +73,10 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
-	grpcroutes                map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute
+	grpcroutes                map[types.NamespacedName]*gatewayapi_v1.GRPCRoute
 	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
-	backendtlspolicies        map[types.NamespacedName]*gatewayapi_v1alpha2.BackendTLSPolicy
+	backendtlspolicies        map[types.NamespacedName]*gatewayapi_v1alpha3.BackendTLSPolicy
 	extensions                map[types.NamespacedName]*contour_v1alpha1.ExtensionService
 
 	// Metrics contains Prometheus metrics.
@@ -109,9 +110,9 @@ func (kc *KubernetesCache) init() {
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1.HTTPRoute)
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
-	kc.grpcroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.GRPCRoute)
+	kc.grpcroutes = make(map[types.NamespacedName]*gatewayapi_v1.GRPCRoute)
 	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute)
-	kc.backendtlspolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha2.BackendTLSPolicy)
+	kc.backendtlspolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha3.BackendTLSPolicy)
 	kc.extensions = make(map[types.NamespacedName]*contour_v1alpha1.ExtensionService)
 }
 
@@ -238,7 +239,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tlsroutes)
 
-		case *gatewayapi_v1alpha2.GRPCRoute:
+		case *gatewayapi_v1.GRPCRoute:
 			kc.grpcroutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.grpcroutes)
 
@@ -250,7 +251,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.referencegrants)
 
-		case *gatewayapi_v1alpha2.BackendTLSPolicy:
+		case *gatewayapi_v1alpha3.BackendTLSPolicy:
 			kc.backendtlspolicies[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.backendtlspolicies)
 
@@ -396,7 +397,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.tlsroutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tlsroutes)
 
-	case *gatewayapi_v1alpha2.GRPCRoute:
+	case *gatewayapi_v1.GRPCRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.grpcroutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.grpcroutes)
@@ -412,7 +413,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.referencegrants, m)
 		return ok, len(kc.referencegrants)
 
-	case *gatewayapi_v1alpha2.BackendTLSPolicy:
+	case *gatewayapi_v1alpha3.BackendTLSPolicy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.backendtlspolicies[m]
 		delete(kc.backendtlspolicies, m)
@@ -617,7 +618,7 @@ func (kc *KubernetesCache) configMapTriggersRebuild(configMapObj *core_v1.Config
 	}
 
 	for _, backendtlspolicy := range kc.backendtlspolicies {
-		for _, caCertRef := range backendtlspolicy.Spec.TLS.CACertRefs {
+		for _, caCertRef := range backendtlspolicy.Spec.Validation.CACertificateRefs {
 			if caCertRef.Group != "" || caCertRef.Kind != "ConfigMap" {
 				continue
 			}
@@ -856,45 +857,40 @@ func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.
 	return nil, core_v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
 }
 
-// LookupBackendTLSPolicyByTargetRef returns the Kubernetes BackendTLSPolicies that matches the provided targetRef with
+// LookupBackendTLSPolicyByTargetRef returns the Kubernetes BackendTLSPolicy that matches the provided targetRef with
 // a SectionName, if possible. A BackendTLSPolicy may be returned if there is a BackendTLSPolicy matching the targetRef
 // but has no SectionName.
 //
 // For example, there could be two BackendTLSPolicies matching Service "foo". One of them matches SectionName "https",
 // but the other has no SectionName and functions as a catch-all policy for service "foo".
 //
-// The namespace on the provided targetRef will be used to match the namespace on the backendTLSPolicy. If not set it is
-// assumed to be the default namespace.
+// The namespace provided is intended to be the namespace of the backend we are looking up a reference to (since only
+// namespace-local references are allowed) and is used to match the namespace on the resulting backendTLSPolicy.
 //
 // If a policy is found, true is returned.
-func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1alpha2.PolicyTargetReferenceWithSectionName) (*gatewayapi_v1alpha2.BackendTLSPolicy, bool) {
-	var fallbackBackendTLSPolicy *gatewayapi_v1alpha2.BackendTLSPolicy
+func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName, namespace string) (*gatewayapi_v1alpha3.BackendTLSPolicy, bool) {
+	var fallbackBackendTLSPolicy *gatewayapi_v1alpha3.BackendTLSPolicy
 	for _, v := range kc.backendtlspolicies {
-		// Match the namespace in the targetRef to the BackendTLSPolicy namespace instead of it's
-		// spec.targetRef.namespace. Cross namespace references aren't allowed and validating the targetRef's
-		// namespace is either the same or empty is checked further down.
-		namespaceMatches := targetRef.PolicyTargetReference.Namespace == nil && (v.Namespace == "" || v.Namespace == "default") ||
-			targetRef.PolicyTargetReference.Namespace != nil && v.Namespace == string(*targetRef.PolicyTargetReference.Namespace)
+		// Make sure the BackendTLSPolicy namespace matches the backend namespace.
+		if v.Namespace != namespace {
+			continue
+		}
 
-		// Match the targetRef namespace to the backendtlspolicy namespace or ensure it is empty
-		targetRefNamespaceMatchesPolicyNamspace := v.Spec.TargetRef.PolicyTargetReference.Namespace == nil ||
-			v.Namespace == string(*v.Spec.TargetRef.PolicyTargetReference.Namespace)
+		// One of the Policy target refs must match the expected target ref.
+		for _, tr := range v.Spec.TargetRefs {
+			sectionNameMatches := tr.SectionName != nil && targetRef.SectionName != nil &&
+				*tr.SectionName == *targetRef.SectionName
 
-		sectionNameMatches := v.Spec.TargetRef.SectionName == nil && targetRef.SectionName == nil ||
-			v.Spec.TargetRef.SectionName != nil && targetRef.SectionName != nil &&
-				*v.Spec.TargetRef.SectionName == *targetRef.SectionName
+			if tr.LocalPolicyTargetReference.Group == targetRef.Group &&
+				tr.LocalPolicyTargetReference.Kind == targetRef.Kind &&
+				tr.LocalPolicyTargetReference.Name == targetRef.Name {
+				if sectionNameMatches {
+					return v, true
+				}
 
-		if v.Spec.TargetRef.PolicyTargetReference.Group == targetRef.Group &&
-			v.Spec.TargetRef.PolicyTargetReference.Kind == targetRef.Kind &&
-			v.Spec.TargetRef.PolicyTargetReference.Name == targetRef.Name &&
-			namespaceMatches &&
-			targetRefNamespaceMatchesPolicyNamspace {
-			if sectionNameMatches {
-				return v, true
-			}
-
-			if v.Spec.TargetRef.SectionName == nil {
-				fallbackBackendTLSPolicy = v
+				if tr.SectionName == nil {
+					fallbackBackendTLSPolicy = v
+				}
 			}
 		}
 	}

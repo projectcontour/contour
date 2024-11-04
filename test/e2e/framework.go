@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -104,8 +105,9 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contour_v1.AddToScheme(scheme))
 	require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
-	require.NoError(t, gatewayapi_v1alpha2.AddToScheme(scheme))
-	require.NoError(t, gatewayapi_v1.AddToScheme(scheme))
+	require.NoError(t, gatewayapi_v1alpha2.Install(scheme))
+	require.NoError(t, gatewayapi_v1alpha3.Install(scheme))
+	require.NoError(t, gatewayapi_v1.Install(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
@@ -311,7 +313,7 @@ func (f *Framework) CreateHTTPProxy(proxy *contour_v1.HTTPProxy) error {
 	return f.Client.Create(context.TODO(), proxy)
 }
 
-func createAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) (T, bool) {
+func createAndWaitFor[T client.Object](t require.TestingT, client client.Client, obj T, condition func(T) bool, interval, timeout time.Duration) bool {
 	require.NoError(t, client.Create(context.Background(), obj))
 
 	key := types.NamespacedName{
@@ -329,11 +331,10 @@ func createAndWaitFor[T client.Object](t require.TestingT, client client.Client,
 
 		return condition(obj), nil
 	}); err != nil {
-		// return the last response for logging/debugging purposes
-		return obj, false
+		return false
 	}
 
-	return obj, true
+	return true
 }
 
 func updateAndWaitFor[T client.Object](t require.TestingT, cli client.Client, obj T, mutate func(T), condition func(T) bool, interval, timeout time.Duration) (T, bool) {
@@ -366,31 +367,37 @@ func updateAndWaitFor[T client.Object](t require.TestingT, cli client.Client, ob
 
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contour_v1.HTTPProxy, condition func(*contour_v1.HTTPProxy) bool) (*contour_v1.HTTPProxy, bool) {
+func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contour_v1.HTTPProxy, condition func(*contour_v1.HTTPProxy) bool) bool {
 	return createAndWaitFor(f.t, f.Client, proxy, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateHTTPRouteAndWaitFor creates the provided HTTPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1.HTTPRoute, condition func(*gatewayapi_v1.HTTPRoute) bool) (*gatewayapi_v1.HTTPRoute, bool) {
+func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1.HTTPRoute, condition func(*gatewayapi_v1.HTTPRoute) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateTLSRouteAndWaitFor creates the provided TLSRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute, condition func(*gatewayapi_v1alpha2.TLSRoute) bool) (*gatewayapi_v1alpha2.TLSRoute, bool) {
+func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute, condition func(*gatewayapi_v1alpha2.TLSRoute) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateTCPRouteAndWaitFor creates the provided TCPRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute, condition func(*gatewayapi_v1alpha2.TCPRoute) bool) (*gatewayapi_v1alpha2.TCPRoute, bool) {
+func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute, condition func(*gatewayapi_v1alpha2.TCPRoute) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateBackendTLSPolicy creates the provided BackendTLSPolicy in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha2.BackendTLSPolicy, condition func(*gatewayapi_v1alpha2.BackendTLSPolicy) bool) (*gatewayapi_v1alpha2.BackendTLSPolicy, bool) {
+func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha3.BackendTLSPolicy, condition func(*gatewayapi_v1alpha3.BackendTLSPolicy) bool) bool {
+	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
+}
+
+// CreateGRPCRouteAndWaitFor creates the provided GRPCRoute in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateGRPCRouteAndWaitFor(route *gatewayapi_v1.GRPCRoute, condition func(*gatewayapi_v1.GRPCRoute) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
@@ -438,13 +445,13 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 
 // CreateGatewayAndWaitFor creates a gateway in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1.Gateway, condition func(*gatewayapi_v1.Gateway) bool) (*gatewayapi_v1.Gateway, bool) {
+func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayapi_v1.Gateway, condition func(*gatewayapi_v1.Gateway) bool) bool {
 	return createAndWaitFor(f.t, f.Client, gateway, condition, f.RetryInterval, f.RetryTimeout)
 }
 
 // CreateGatewayClassAndWaitFor creates a GatewayClass in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1.GatewayClass, condition func(*gatewayapi_v1.GatewayClass) bool) (*gatewayapi_v1.GatewayClass, bool) {
+func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayapi_v1.GatewayClass, condition func(*gatewayapi_v1.GatewayClass) bool) bool {
 	return createAndWaitFor(f.t, f.Client, gatewayClass, condition, f.RetryInterval, f.RetryTimeout)
 }
 

@@ -724,7 +724,7 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
-		"circuitbreaker annotations": {
+		"CircuitBreakers annotations": {
 			objs: []any{
 				&networking_v1.Ingress{
 					ObjectMeta: meta_v1.ObjectMeta{
@@ -772,9 +772,11 @@ func TestClusterVisit(t *testing.T) {
 							MaxPendingRequests: wrapperspb.UInt32(4096),
 							MaxRequests:        wrapperspb.UInt32(404),
 							MaxRetries:         wrapperspb.UInt32(7),
+							TrackRemaining:     true,
 						}},
 						PerHostThresholds: []*envoy_config_cluster_v3.CircuitBreakers_Thresholds{{
 							MaxConnections: wrapperspb.UInt32(45),
+							TrackRemaining: true,
 						}},
 					},
 				},

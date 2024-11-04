@@ -181,7 +181,7 @@ func testClientCertRevocation(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(proxyWithFullCRLCheck, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxyWithFullCRLCheck, e2e.HTTPProxyValid))
 
 		// Create HTTPProxy that does CRL check for leaf-certificates only.
 		proxyWithCRLLeafOnly := &contour_v1.HTTPProxy{
@@ -213,7 +213,7 @@ func testClientCertRevocation(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(proxyWithCRLLeafOnly, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxyWithCRLLeafOnly, e2e.HTTPProxyValid))
 
 		// HTTPProxy with full chain revocation but refers to Secret with only partial set of CRLs.
 		proxyWithCRLMissing := &contour_v1.HTTPProxy{
@@ -244,7 +244,7 @@ func testClientCertRevocation(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(proxyWithCRLMissing, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxyWithCRLMissing, e2e.HTTPProxyValid))
 
 		cases := map[string]struct {
 			host       string
@@ -407,7 +407,7 @@ func testClientCertRevocation(namespace string) {
 		}
 
 		// HTTPProxy should be invalid since CertificateRevocationList refers to non-existent Secret.
-		f.CreateHTTPProxyAndWaitFor(proxyWithCRLCheck, e2e.HTTPProxyInvalid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxyWithCRLCheck, e2e.HTTPProxyInvalid))
 
 		// Create Secret with CRL where client certificate is revoked.
 		require.NoError(t, f.Client.Create(context.TODO(),

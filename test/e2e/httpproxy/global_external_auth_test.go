@@ -86,7 +86,7 @@ func testGlobalExternalAuthVirtualHostNonTLS(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// By default requests to /first should not be authorized.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
@@ -184,7 +184,7 @@ func testGlobalExternalAuthTLS(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// By default requests to /first should not be authorized.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
@@ -275,7 +275,7 @@ func testGlobalExternalAuthNonTLSAuthDisabled(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
@@ -367,7 +367,7 @@ func testGlobalExternalAuthTLSAuthDisabled(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,

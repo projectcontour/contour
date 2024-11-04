@@ -122,10 +122,7 @@ func doInternalRedirectTest(namespace string, proxy *contour_v1.HTTPProxy, t Gin
 	}
 	require.NoError(t, f.Client.Create(context.TODO(), envoyService))
 
-	p, ok := f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
-	if !ok {
-		t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", e2e.HTTPProxyErrors(p))
-	}
+	require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid))
 
 	// /redirect ensure the redirect works as expected.
 	assertInternalRedirectRequest(t, proxy.Spec.VirtualHost.Fqdn, "/redirect",

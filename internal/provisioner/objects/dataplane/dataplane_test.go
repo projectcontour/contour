@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -53,6 +54,13 @@ func checkDaemonSetHasEnvVar(t *testing.T, ds *apps_v1.DaemonSet, container, nam
 	}
 
 	t.Errorf("daemonset is missing environment variable %q", name)
+}
+
+func checkDaemonSetHasAnnotation(t *testing.T, ds *apps_v1.DaemonSet, key, value string) {
+	t.Helper()
+
+	require.Contains(t, ds.Spec.Template.Annotations, key)
+	require.Equal(t, value, ds.Spec.Template.Annotations[key])
 }
 
 func checkDaemonSetHasContainer(t *testing.T, ds *apps_v1.DaemonSet, name string, expect bool) *core_v1.Container {
@@ -251,15 +259,6 @@ func checkContainerHasReadinessPort(t *testing.T, container *core_v1.Container, 
 	t.Errorf("container has unexpected readiness port %d", port)
 }
 
-func checkDaemonSetHasMetricsPort(t *testing.T, ds *apps_v1.DaemonSet, port int32) {
-	t.Helper()
-
-	if ds.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] == fmt.Sprint(port) {
-		return
-	}
-	t.Errorf("container has unexpected metrics port %d", port)
-}
-
 func checkEnvoyDeploymentHasAffinity(t *testing.T, d *apps_v1.Deployment, contour *model.Contour) {
 	t.Helper()
 	if apiequality.Semantic.DeepEqual(*d.Spec.Template.Spec.Affinity,
@@ -290,6 +289,9 @@ func TestDesiredDaemonSet(t *testing.T) {
 	cntr.Spec.EnvoyPodAnnotations = map[string]string{
 		"annotation":           "value",
 		"prometheus.io/scrape": "false",
+	}
+	cntr.Spec.ResourceAnnotations = map[string]string{
+		"other-annotation": "other-val",
 	}
 
 	volTest := core_v1.Volume{
@@ -367,7 +369,9 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSecurityContext(t, ds)
 	checkDaemonSetHasVolume(t, ds, volTest, volTestMount)
 	checkDaemonSetHasPodAnnotations(t, ds, envoyPodAnnotations(cntr))
-	checkDaemonSetHasMetricsPort(t, ds, objects.EnvoyMetricsPort)
+	checkDaemonSetHasAnnotation(t, ds, "annotation", "value")
+	checkDaemonSetHasAnnotation(t, ds, "other-annotation", "other-val")
+	checkDaemonSetHasAnnotation(t, ds, "prometheus.io/scrape", "false")
 
 	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
 	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
@@ -430,7 +434,6 @@ func TestEnvoyCustomPorts(t *testing.T) {
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
-	checkDaemonSetHasMetricsPort(t, ds, int32(metricPort))
 	checkContainerHasPort(t, ds, int32(metricPort))
 
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)

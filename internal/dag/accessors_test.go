@@ -127,6 +127,18 @@ func TestBuilderLookupService(t *testing.T) {
 					AppProtocol: ptr.To("kubernetes.io/wss"),
 					Port:        8444,
 				},
+				{
+					Name:        "iana-https",
+					Protocol:    "TCP",
+					AppProtocol: ptr.To("https"),
+					Port:        8445,
+				},
+				{
+					Name:        "iana-http",
+					Protocol:    "TCP",
+					AppProtocol: ptr.To("http"),
+					Port:        8446,
+				},
 			},
 		},
 	}
@@ -217,6 +229,16 @@ func TestBuilderLookupService(t *testing.T) {
 			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
 			port:           8444,
 			want:           appProtcolService(appProtoService, "", 1),
+		},
+		"lookup service by port number with supported IANA app protocol: https": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8445,
+			want:           appProtcolService(appProtoService, "tls", 2),
+		},
+		"lookup service by port number with supported IANA app protocol: http": {
+			NamespacedName: types.NamespacedName{Name: appProtoService.Name, Namespace: appProtoService.Namespace},
+			port:           8446,
+			want:           appProtcolService(appProtoService, "", 3),
 		},
 	}
 

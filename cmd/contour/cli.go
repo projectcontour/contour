@@ -109,7 +109,7 @@ func (c *Client) dial() *grpc.ClientConn {
 		options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	conn, err := grpc.Dial(c.ContourAddr, options...)
+	conn, err := grpc.NewClient(c.ContourAddr, options...)
 	if err != nil {
 		c.Log.WithError(err).Fatal("failed connecting Contour Server")
 	}

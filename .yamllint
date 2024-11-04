@@ -1,4 +1,11 @@
 ---
+ignore: |
+  .github/
+  .mockery.yaml
+  codecov.yaml
+  examples/gateway/00-crds.yaml
+  site/data/docs/*-toc.yml
+  site/themes/contour/i18n/en.yaml
 
 rules:
   braces:

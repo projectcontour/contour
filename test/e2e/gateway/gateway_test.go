@@ -134,8 +134,8 @@ var _ = Describe("Gateway API", func() {
 		// or become valid.
 		gatewayClassCond := func(*gatewayapi_v1.GatewayClass) bool { return true }
 
-		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
-		f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed)
+		require.True(f.T(), f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond))
+		require.True(f.T(), f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed))
 	})
 
 	AfterEach(func() {
@@ -181,6 +181,14 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 
 		f.NamespacedTest("gateway-backend-tls-policy", testWithHTTPGateway(testBackendTLSPolicy))
+
+		f.NamespacedTest("gateway-httproute-conflict-match", testWithHTTPGateway(testHTTPRouteConflictMatch))
+
+		f.NamespacedTest("gateway-httproute-partially-conflict-match", testWithHTTPGateway(testHTTPRoutePartiallyConflictMatch))
+
+		f.NamespacedTest("gateway-grpcroute-conflict-match", testWithHTTPGateway(testGRPCRouteConflictMatch))
+
+		f.NamespacedTest("gateway-grpcroute-partially-conflict-match", testWithHTTPGateway(testGRPCRoutePartiallyConflictMatch))
 	})
 
 	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
