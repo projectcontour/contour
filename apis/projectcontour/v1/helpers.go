@@ -60,10 +60,7 @@ func (v *VirtualHost) ExtProcConfigured() bool {
 // external processing explicit. If an external processor is present, the default
 // policy is to not disable.
 func (v *VirtualHost) ExtProcDisabled() bool {
-	if v.ExternalProcessing == nil {
-		return false
-	}
-	return v.ExternalProcessing.Disabled
+	return v.ExternalProcessing != nil && v.ExternalProcessing.Disabled
 }
 
 // GetPrefixReplacements returns replacement prefixes from the path

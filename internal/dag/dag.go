@@ -384,7 +384,7 @@ type Route struct {
 	// If false, traffic is allowed only if it doesn't match any rule.
 	IPFilterAllow bool
 
-	// IPFilterRules i /6 filter rules for which matching
+	// IPFilterRules is a list of ipv4/6 filter rules for which matching
 	// requests should be filtered. The behavior of the filters is governed
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
