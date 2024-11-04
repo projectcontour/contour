@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"net"
@@ -24,8 +25,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"k8s.io/utils/ptr"
 
@@ -152,7 +156,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 
 	caCertPool := x509.NewCertPool()
 	ca, err := trustedCACert.X509Certificate()
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 	caCertPool.AddCert(&ca)
 
 	tests := map[string]struct {
@@ -184,7 +188,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 
 	// Create temporary directory to store certificates and key for the server.
 	configDir, err := os.MkdirTemp("", "contour-testdata-")
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(configDir)
 
 	contourTLS := &contour_v1alpha1.TLS{
@@ -197,25 +201,24 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	// Initial set of credentials must be written into temp directory before
 	// starting the tests to avoid error at server startup.
 	err = trustedCACert.WritePEM(contourTLS.CAFile, filepath.Join(configDir, "CAkey.pem"))
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 	err = contourCertBeforeRotation.WritePEM(contourTLS.CertFile, contourTLS.KeyFile)
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 
 	// Start a dummy server.
 	log := fixture.NewTestLogger(t)
 	opts := grpcOptions(log, contourTLS)
 	g := grpc.NewServer(opts...)
-	if g == nil {
-		t.Error("failed to create server")
-	}
+	require.NotNil(t, g)
 
-	address := "localhost:8001"
-	l, err := net.Listen("tcp", address)
-	checkFatalErr(t, err)
+	l, err := net.Listen("tcp", "localhost:")
+	require.NoError(t, err)
+	address := l.Addr().String()
 
 	go func() {
-		err := g.Serve(l)
-		checkFatalErr(t, err)
+		// If server fails to start, connecting to it below will fail so
+		// can ignore the error.
+		_ = g.Serve(l)
 	}()
 	defer g.GracefulStop()
 
@@ -223,15 +226,16 @@ func TestServeContextCertificateHandling(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			// Store certificate and key to temp dir used by serveContext.
 			err = tc.serverCredentials.WritePEM(contourTLS.CertFile, contourTLS.KeyFile)
-			checkFatalErr(t, err)
-			clientCert, _ := tc.clientCredentials.TLSCertificate()
+			require.NoError(t, err)
+			clientCert, err := tc.clientCredentials.TLSCertificate()
+			require.NoError(t, err)
 			receivedCert, err := tryConnect(address, clientCert, caCertPool)
-			gotError := err != nil
-			if gotError != tc.expectError {
-				t.Errorf("Unexpected result when connecting to the server: %s", err)
-			}
-			if err == nil {
-				expectedCert, _ := tc.serverCredentials.X509Certificate()
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				expectedCert, err := tc.serverCredentials.X509Certificate()
+				require.NoError(t, err)
 				assert.Equal(t, &expectedCert, receivedCert)
 			}
 		})
@@ -242,7 +246,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 	// To get tls.Config for the gRPC XDS server, we need to arrange valid TLS certificates and keys.
 	// Create temporary directory to store them for the server.
 	configDir, err := os.MkdirTemp("", "contour-testdata-")
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(configDir)
 
 	caCert := certyaml.Certificate{
@@ -261,9 +265,9 @@ func TestTlsVersionDeprecation(t *testing.T) {
 	}
 
 	err = caCert.WritePEM(contourTLS.CAFile, filepath.Join(configDir, "CAkey.pem"))
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 	err = contourCert.WritePEM(contourTLS.CertFile, contourTLS.KeyFile)
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 
 	// Get preliminary TLS config from the serveContext.
 	log := fixture.NewTestLogger(t)
@@ -271,36 +275,33 @@ func TestTlsVersionDeprecation(t *testing.T) {
 
 	// Get actual TLS config that will be used during TLS handshake.
 	tlsConfig, err := preliminaryTLSConfig.GetConfigForClient(nil)
-	checkFatalErr(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, tlsConfig.MinVersion, uint16(tls.VersionTLS13))
-}
-
-func checkFatalErr(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 // tryConnect tries to establish TLS connection to the server.
 // If successful, return the server certificate.
 func tryConnect(address string, clientCert tls.Certificate, caCertPool *x509.CertPool) (*x509.Certificate, error) {
+	rawConn, err := net.Dial("tcp", address)
+	if err != nil {
+		rawConn.Close()
+		return nil, errors.Wrapf(err, "error dialing %s", address)
+	}
+
 	clientConfig := &tls.Config{
 		ServerName:   "localhost",
 		MinVersion:   tls.VersionTLS13,
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      caCertPool,
+		NextProtos:   []string{http2.NextProtoTLS},
 	}
-	conn, err := tls.Dial("tcp", address, clientConfig)
-	if err != nil {
-		return nil, err
-	}
+
+	conn := tls.Client(rawConn, clientConfig)
 	defer conn.Close()
 
-	err = peekError(conn)
-	if err != nil {
-		return nil, err
+	if err := peekError(conn); err != nil {
+		return nil, errors.Wrap(err, "error peeking TLS alert")
 	}
 
 	return conn.ConnectionState().PeerCertificates[0], nil
@@ -311,12 +312,12 @@ func tryConnect(address string, clientCert tls.Certificate, caCertPool *x509.Cer
 // To receive alert for bad certificate, this function tries to read one byte.
 // Adapted from https://golang.org/src/crypto/tls/handshake_client_test.go
 func peekError(conn net.Conn) error {
-	_ = conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	if err := conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
+		return err
+	}
 	_, err := conn.Read(make([]byte, 1))
-	if err != nil {
-		if netErr, ok := err.(net.Error); !ok || !netErr.Timeout() {
-			return err
-		}
+	if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		return err
 	}
 	return nil
 }

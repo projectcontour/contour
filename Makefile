@@ -3,10 +3,6 @@ PROJECT = contour
 MODULE = github.com/$(ORG)/$(PROJECT)
 REGISTRY ?= ghcr.io/projectcontour
 IMAGE := $(REGISTRY)/$(PROJECT)
-SRCDIRS := ./cmd ./internal ./apis
-LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
-SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.30.4
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
