@@ -918,7 +918,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		healthPolicy, err := httpHealthCheckPolicy(route.HealthCheckPolicy)
 		if err != nil {
-			validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", err.Error())
+			validCond.AddError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", err.Error())
 			return nil
 		}
 

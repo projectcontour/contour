@@ -5168,7 +5168,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 }
 
-func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v1.ProtocolType, attachedRoutes int) []*status.GatewayStatusUpdate {
+func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v1.ProtocolType, attachedRoutes int32) []*status.GatewayStatusUpdate {
 	var supportedKinds []gatewayapi_v1.RouteGroupKind
 
 	switch listenerProtocol {
@@ -5218,7 +5218,7 @@ func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v
 			ListenerStatus: map[string]*gatewayapi_v1.ListenerStatus{
 				listenerName: {
 					Name:           gatewayapi_v1.SectionName(listenerName),
-					AttachedRoutes: int32(attachedRoutes),
+					AttachedRoutes: attachedRoutes,
 					SupportedKinds: supportedKinds,
 					Conditions:     listenerValidConditions(),
 				},

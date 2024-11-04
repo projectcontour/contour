@@ -15,7 +15,6 @@ package v3
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -168,7 +167,7 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 					break
 				}
 			}
-			assert.NotNil(t, logEntry, fmt.Sprintf("no log line with expected message %q", tc.expectedLogMsg))
+			assert.NotNil(t, logEntry, "no log line with expected message %q", tc.expectedLogMsg)
 			assert.Equal(t, tc.expectedLogData, logEntry.Data)
 			logHook.Reset()
 		})

@@ -110,7 +110,7 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 		args = append(args, fmt.Sprintf("--watch-namespaces=%s", strings.Join(ns, ",")))
 	}
 
-	if contour.Spec.DisabledFeatures != nil && len(contour.Spec.DisabledFeatures) > 0 {
+	if len(contour.Spec.DisabledFeatures) > 0 {
 		for _, f := range contour.Spec.DisabledFeatures {
 			args = append(args, fmt.Sprintf("--disable-feature=%s", string(f)))
 		}

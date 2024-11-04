@@ -321,7 +321,7 @@ func (s *StatusResult) Equals(want contour_v1.HTTPProxyStatus) *Contour {
 	// We should never get an error fetching the status for an
 	// object, so make it fatal if we do.
 	if s.Err != nil {
-		s.T.Fatalf(s.Err.Error())
+		s.T.Fatal(s.Err.Error())
 	}
 
 	assert.Equal(s.T, want, *s.Have)
@@ -336,7 +336,7 @@ func (s *StatusResult) Like(want contour_v1.HTTPProxyStatus) *Contour {
 	// We should never get an error fetching the status for an
 	// object, so make it fatal if we do.
 	if s.Err != nil {
-		s.T.Fatalf(s.Err.Error())
+		s.T.Fatal(s.Err.Error())
 	}
 
 	if len(want.CurrentStatus) > 0 {
