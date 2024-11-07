@@ -175,7 +175,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 
 	for listenerName, attachedRoutes := range listenerAttachedRoutes {
-		gwAccessor.SetListenerAttachedRoutes(listenerName, attachedRoutes)
+		gwAccessor.SetListenerAttachedRoutes(listenerName, int32(attachedRoutes)) //nolint:gosec // disable G115
 	}
 
 	p.computeGatewayConditions(gwAccessor, gatewayNotProgrammedCondition)
@@ -1034,7 +1034,7 @@ func (p *GatewayAPIProcessor) computeTLSRouteForListener(route *gatewayapi_v1alp
 			// Route defaults to a weight of "1" unless otherwise specified.
 			routeWeight := uint32(1)
 			if backendRef.Weight != nil {
-				routeWeight = uint32(*backendRef.Weight)
+				routeWeight = uint32(*backendRef.Weight) //nolint:gosec // disable G115
 			}
 
 			// Keep track of all the weights for this set of backendRefs. This will be
@@ -1299,7 +1299,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 
 				var portNumber uint32
 				if filter.RequestRedirect.Port != nil {
-					portNumber = uint32(*filter.RequestRedirect.Port)
+					portNumber = uint32(*filter.RequestRedirect.Port) //nolint:gosec // disable G115
 				}
 
 				var scheme string
@@ -1440,7 +1440,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 		// index of the rule to ensure rules that come first have a higher
 		// priority. All dag.Routes generated from a single HTTPRoute rule have
 		// the same priority.
-		priority := uint8(ruleIndex)
+		priority := uint8(ruleIndex) //nolint:gosec // disable G115
 
 		// Get our list of routes based on whether it's a redirect or a cluster-backed route.
 		// Note that we can end up with multiple routes here since the match conditions are
@@ -1632,7 +1632,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 		// index of the rule to ensure rules that come first have a higher
 		// priority. All dag.Routes generated from a single GRPCRoute rule have
 		// the same priority.
-		priority := uint8(ruleIndex)
+		priority := uint8(ruleIndex) //nolint:gosec // disable G115
 
 		// Note that we can end up with multiple routes here since the match conditions are
 		// logically "OR"-ed, which we express as multiple routes, each with one of the
@@ -1799,7 +1799,7 @@ func (p *GatewayAPIProcessor) computeTCPRouteForListener(route *gatewayapi_v1alp
 		// Route defaults to a weight of "1" unless otherwise specified.
 		routeWeight := uint32(1)
 		if backendRef.Weight != nil {
-			routeWeight = uint32(*backendRef.Weight)
+			routeWeight = uint32(*backendRef.Weight) //nolint:gosec // disable G115
 		}
 
 		// Keep track of all the weights for this set of backendRefs. This will be
@@ -2133,7 +2133,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 		// Route defaults to a weight of "1" unless otherwise specified.
 		routeWeight := uint32(1)
 		if backendRef.Weight != nil {
-			routeWeight = uint32(*backendRef.Weight)
+			routeWeight = uint32(*backendRef.Weight) //nolint:gosec // disable G115
 		}
 
 		// Keep track of all the weights for this set of backend refs. This will be
@@ -2332,7 +2332,7 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 		// Route defaults to a weight of "1" unless otherwise specified.
 		routeWeight := uint32(1)
 		if backendRef.Weight != nil {
-			routeWeight = uint32(*backendRef.Weight)
+			routeWeight = uint32(*backendRef.Weight) //nolint:gosec // disable G115
 		}
 
 		// Keep track of all the weights for this set of backend refs. This will be

@@ -64,7 +64,7 @@ func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *
 
 	// Envoy defaults to 429 (Too Many Requests) if this is not specified.
 	if config.ResponseStatusCode > 0 {
-		c.Status = &envoy_type_v3.HttpStatus{Code: envoy_type_v3.StatusCode(config.ResponseStatusCode)}
+		c.Status = &envoy_type_v3.HttpStatus{Code: envoy_type_v3.StatusCode(config.ResponseStatusCode)} //nolint:gosec // disable G115
 	}
 
 	return protobuf.MustMarshalAny(c)

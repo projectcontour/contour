@@ -579,7 +579,7 @@ type HeaderValueMatchDescriptorEntry struct {
 	Value       string
 }
 
-type VhRateLimitsType int
+type VhRateLimitsType int32
 
 const (
 	// VhRateLimitsOverride (Default) will use the virtual host rate limits unless the route has a rate limit policy.

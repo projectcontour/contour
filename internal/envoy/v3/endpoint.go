@@ -40,7 +40,7 @@ func HealthCheckConfig(healthCheckPort int32) *envoy_config_endpoint_v3.Endpoint
 		return nil
 	}
 	return &envoy_config_endpoint_v3.Endpoint_HealthCheckConfig{
-		PortValue: uint32(healthCheckPort),
+		PortValue: uint32(healthCheckPort), //nolint:gosec // disable G115
 	}
 }
 

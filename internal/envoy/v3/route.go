@@ -229,7 +229,7 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rba
 		prefixLen, _ := f.CIDR.Mask.Size()
 		cidr := &envoy_config_core_v3.CidrRange{
 			AddressPrefix: f.CIDR.IP.String(),
-			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)),
+			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)), //nolint:gosec // disable G115
 		}
 
 		if f.Remote {
@@ -518,7 +518,7 @@ func mirrorPolicy(r *dag.Route) []*envoy_config_route_v3.RouteAction_RequestMirr
 			Cluster: envoy.Clustername(mp.Cluster),
 			RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
 				DefaultValue: &envoy_type_v3.FractionalPercent{
-					Numerator:   uint32(mp.Weight),
+					Numerator:   uint32(mp.Weight), //nolint:gosec // disable G115
 					Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 				},
 			},
