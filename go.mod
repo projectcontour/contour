@@ -1,7 +1,6 @@
 module github.com/projectcontour/contour
 
-go 1.22.0
-toolchain go1.22.9
+go 1.22.7
 
 require (
 	dario.cat/mergo v1.0.1
