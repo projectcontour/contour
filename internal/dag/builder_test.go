@@ -16164,7 +16164,7 @@ func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1.HTT
 	}
 }
 
-func makeHTTPRouteRule(pathType gatewayapi_v1.PathMatchType, pathValue, serviceName string, port int, weight int32) gatewayapi_v1.HTTPRouteRule {
+func makeHTTPRouteRule(pathType gatewayapi_v1.PathMatchType, pathValue, serviceName string, port uint16, weight int32) gatewayapi_v1.HTTPRouteRule {
 	return gatewayapi_v1.HTTPRouteRule{
 		Matches:     gatewayapi.HTTPRouteMatch(pathType, pathValue),
 		BackendRefs: gatewayapi.HTTPBackendRef(serviceName, port, weight),

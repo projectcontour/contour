@@ -50,7 +50,7 @@ func TestGenerateCerts(t *testing.T) {
 			// as of an hour before the intended expiration.
 			currentTime := time.Now()
 			if tc.config.Lifetime != 0 {
-				currentTime = currentTime.Add(24 * time.Hour * time.Duration(tc.config.Lifetime)).Add(-time.Hour)
+				currentTime = currentTime.Add(24 * time.Hour * time.Duration(tc.config.Lifetime)).Add(-time.Hour) //nolint:gosec // disable G115
 			}
 
 			roots := x509.NewCertPool()

@@ -685,6 +685,7 @@ func UnixSocketAddress(address string) *envoy_config_core_v3.Address {
 
 // SocketAddress creates a new TCP envoy_config_core_v3.Address.
 func SocketAddress(address string, port int) *envoy_config_core_v3.Address {
+	portValue := uint32(port) //nolint:gosec // disable G115
 	if address == "::" {
 		return &envoy_config_core_v3.Address{
 			Address: &envoy_config_core_v3.Address_SocketAddress{
@@ -693,7 +694,7 @@ func SocketAddress(address string, port int) *envoy_config_core_v3.Address {
 					Address:    address,
 					Ipv4Compat: true,
 					PortSpecifier: &envoy_config_core_v3.SocketAddress_PortValue{
-						PortValue: uint32(port),
+						PortValue: portValue,
 					},
 				},
 			},
@@ -705,7 +706,7 @@ func SocketAddress(address string, port int) *envoy_config_core_v3.Address {
 				Protocol: envoy_config_core_v3.SocketAddress_TCP,
 				Address:  address,
 				PortSpecifier: &envoy_config_core_v3.SocketAddress_PortValue{
-					PortValue: uint32(port),
+					PortValue: portValue,
 				},
 			},
 		},

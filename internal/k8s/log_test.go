@@ -159,7 +159,7 @@ func TestLogLevelOptionKlog(t *testing.T) {
 			InitLogging(LogWriterOption(l), LogLevelOption(logLevel))
 			// Make sure log verbosity is set properly.
 			for verbosityLevel := 0; verbosityLevel <= 10; verbosityLevel++ {
-				enabled := klog.V(klog.Level(verbosityLevel)).Enabled()
+				enabled := klog.V(klog.Level(verbosityLevel)).Enabled() //nolint:gosec // disable G115
 				if verbosityLevel <= logLevel {
 					assert.True(t, enabled)
 				} else {

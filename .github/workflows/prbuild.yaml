@@ -13,7 +13,7 @@ permissions:
 
 env:
   GOPROXY: https://proxy.golang.org/
-  GO_VERSION: 1.22.5
+  GO_VERSION: 1.23.2
 
 jobs:
   lint:
@@ -29,8 +29,8 @@ jobs:
     - name: golangci-lint
       uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.1
       with:
-        version: v1.56.2
-        args: --build-tags=e2e,conformance,tools,gcp,oidc,none --out-format=colored-line-number
+        version: v1.61.0
+        args: --build-tags=e2e,conformance,gcp,oidc,none --out-format=colored-line-number
   codespell:
     name: Codespell
     runs-on: ubuntu-latest

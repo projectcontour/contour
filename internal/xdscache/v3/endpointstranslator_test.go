@@ -1087,13 +1087,13 @@ func clusterloadassignments(clas ...*envoy_config_endpoint_v3.ClusterLoadAssignm
 	return m
 }
 
-func weightedHealthcheckEndpoints(weight uint32, healthcheckPort int32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
+func weightedHealthcheckEndpoints(weight, healthcheckPort uint32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
 	lbendpoints := healthcheckEndpoints(healthcheckPort, addrs...)
 	lbendpoints[0].LoadBalancingWeight = wrapperspb.UInt32(weight)
 	return lbendpoints
 }
 
-func healthcheckEndpoints(healthcheckPort int32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
+func healthcheckEndpoints(healthcheckPort uint32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
 	lbendpoints := make([]*envoy_config_endpoint_v3.LbEndpoint, 0, len(addrs))
 	for _, addr := range addrs {
 		lbendpoints = append(lbendpoints, healthCheckLBEndpoint(addr, healthcheckPort))
@@ -1104,11 +1104,11 @@ func healthcheckEndpoints(healthcheckPort int32, addrs ...*envoy_config_core_v3.
 }
 
 // healthCheckLBEndpoint creates a new LbEndpoint include healthCheckConfig
-func healthCheckLBEndpoint(addr *envoy_config_core_v3.Address, healthCheckPort int32) *envoy_config_endpoint_v3.LbEndpoint {
+func healthCheckLBEndpoint(addr *envoy_config_core_v3.Address, healthCheckPort uint32) *envoy_config_endpoint_v3.LbEndpoint {
 	var hc *envoy_config_endpoint_v3.Endpoint_HealthCheckConfig
 	if healthCheckPort != 0 {
 		hc = &envoy_config_endpoint_v3.Endpoint_HealthCheckConfig{
-			PortValue: uint32(healthCheckPort),
+			PortValue: healthCheckPort,
 		}
 	}
 	return &envoy_config_endpoint_v3.LbEndpoint{

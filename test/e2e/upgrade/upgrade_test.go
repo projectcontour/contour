@@ -130,9 +130,9 @@ var _ = Describe("When upgrading", func() {
 				poller.Stop()
 				totalRequests, successfulRequests := poller.Results()
 				f.T().Logf("Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
-				require.Greater(f.T(), totalRequests, uint(0))
+				require.Positive(f.T(), totalRequests)
 				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
-				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
+				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%%", successPercentage)
 			})
 		})
 	})
@@ -292,7 +292,7 @@ var _ = Describe("When upgrading", func() {
 				poller.Stop()
 				totalRequests, successfulRequests := poller.Results()
 				f.T().Logf("Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
-				require.Greater(f.T(), totalRequests, uint(0))
+				require.Positive(f.T(), totalRequests)
 				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
 				// Success threshold is somewhat arbitrary but less than the standalone
 				// Contour upgrade threshold because the Gateway provisioner does not
@@ -300,7 +300,7 @@ var _ = Describe("When upgrading", func() {
 				// can lead to additional downtime when both are upgrading at the same
 				// time.
 				// ref. https://github.com/projectcontour/contour/issues/5375.
-				require.Greaterf(f.T(), successPercentage, float64(80.0), "success rate of %.2f%% less than 80%", successPercentage)
+				require.Greaterf(f.T(), successPercentage, float64(80.0), "success rate of %.2f%% less than 80%%", successPercentage)
 			})
 		})
 	})

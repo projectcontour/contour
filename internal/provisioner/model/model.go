@@ -136,7 +136,7 @@ func (c *Contour) EnvoyTolerationsExist() bool {
 }
 
 func (c *Contour) WatchAllNamespaces() bool {
-	return c.Spec.WatchNamespaces == nil || len(c.Spec.WatchNamespaces) == 0
+	return len(c.Spec.WatchNamespaces) == 0
 }
 
 // ContourSpec defines the desired state of Contour.

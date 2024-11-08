@@ -161,7 +161,7 @@ func main() {
 		// Reinitialize with the target debug level.
 		k8s.InitLogging(
 			k8s.LogWriterOption(log.WithField("context", "kubernetes")),
-			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)),
+			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)), //nolint:gosec // disable G115
 		)
 
 		log.Infof("args: %v", args)

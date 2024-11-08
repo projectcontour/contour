@@ -286,12 +286,12 @@ func withIdleTimeout(route *envoy_config_route_v3.Route_Route, timeout time.Dura
 	return route
 }
 
-func withMirrorPolicy(route *envoy_config_route_v3.Route_Route, mirror string, weight int64) *envoy_config_route_v3.Route_Route {
+func withMirrorPolicy(route *envoy_config_route_v3.Route_Route, mirror string, weight uint32) *envoy_config_route_v3.Route_Route {
 	route.Route.RequestMirrorPolicies = []*envoy_config_route_v3.RouteAction_RequestMirrorPolicy{{
 		Cluster: mirror,
 		RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
 			DefaultValue: &envoy_type_v3.FractionalPercent{
-				Numerator:   uint32(weight),
+				Numerator:   weight,
 				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 			},
 		},

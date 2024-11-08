@@ -918,7 +918,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		healthPolicy, err := httpHealthCheckPolicy(route.HealthCheckPolicy)
 		if err != nil {
-			validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", err.Error())
+			validCond.AddError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", err.Error())
 			return nil
 		}
 
@@ -1023,7 +1023,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			c := &Cluster{
 				Upstream:                      s,
 				LoadBalancerPolicy:            lbPolicy,
-				Weight:                        uint32(service.Weight),
+				Weight:                        uint32(service.Weight), //nolint:gosec // disable G115
 				HTTPHealthCheckPolicy:         healthPolicy,
 				UpstreamValidation:            uv,
 				RequestHeadersPolicy:          reqHP,
@@ -1236,7 +1236,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_v1.Deta
 
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
-				Weight:               uint32(service.Weight),
+				Weight:               uint32(service.Weight), //nolint:gosec // disable G115
 				Protocol:             protocol,
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: healthPolicy,
@@ -1926,7 +1926,7 @@ func redirectRoutePolicy(redirect *contour_v1.HTTPRequestRedirectPolicy) (*Redir
 
 	var portNumber uint32
 	if redirect.Port != nil {
-		portNumber = uint32(*redirect.Port)
+		portNumber = uint32(*redirect.Port) //nolint:gosec // disable G115
 	}
 
 	var scheme string
@@ -1971,7 +1971,7 @@ func directResponsePolicy(direct *contour_v1.HTTPDirectResponsePolicy) *DirectRe
 		return nil
 	}
 
-	return directResponse(uint32(direct.StatusCode), direct.Body)
+	return directResponse(uint32(direct.StatusCode), direct.Body) //nolint:gosec // disable G115
 }
 
 func internalRedirectPolicy(internal *contour_v1.HTTPInternalRedirectPolicy) *InternalRedirectPolicy {
