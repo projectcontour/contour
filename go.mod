@@ -1,6 +1,6 @@
 module github.com/projectcontour/contour
 
-go 1.22.0
+go 1.22.7
 
 require (
 	dario.cat/mergo v1.0.1
@@ -46,7 +46,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.19.1
 	sigs.k8s.io/controller-tools v0.16.4
 	sigs.k8s.io/gateway-api v1.1.0
-	sigs.k8s.io/kustomize/kyaml v0.17.2
+	sigs.k8s.io/kustomize/kyaml v0.18.1
 )
 
 require (
