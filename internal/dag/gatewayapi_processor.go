@@ -1727,10 +1727,10 @@ func gatewayGRPCHeaderMatchConditions(matches []gatewayapi_v1.GRPCHeaderMatch) (
 	for _, match := range matches {
 		// "Exact" and "RegularExpression" are the only supported match types. If match type is not specified, use "Exact" as default.
 		var matchType string
-		switch ptr.Deref(match.Type, gatewayapi_v1.HeaderMatchExact) {
-		case gatewayapi_v1.HeaderMatchExact:
+		switch ptr.Deref(match.Type, gatewayapi_v1.GRPCHeaderMatchExact) {
+		case gatewayapi_v1.GRPCHeaderMatchExact:
 			matchType = HeaderMatchTypeExact
-		case gatewayapi_v1.HeaderMatchRegularExpression:
+		case gatewayapi_v1.GRPCHeaderMatchRegularExpression:
 			if err := ValidateRegex(match.Value); err != nil {
 				return nil, fmt.Errorf("GRPCRoute.Spec.Rules.Matches.Headers: Invalid value for RegularExpression match type is specified")
 			}
