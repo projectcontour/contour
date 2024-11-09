@@ -14,6 +14,10 @@ readonly GO111MODULE=on
 
 export GO111MODULE
 
+# Workaround for https://github.com/projectcontour/contour/pull/6709#issuecomment-2466179766
+readonly GODEBUG=gotypesalias=0
+export GODEBUG
+
 boilerplate() {
     cat <<EOF
 /*
