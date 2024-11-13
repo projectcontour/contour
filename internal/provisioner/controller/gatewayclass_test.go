@@ -676,7 +676,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name: "gatewayclasses.gateway.networking.k8s.io",
 						Annotations: map[string]string{
-							"gateway.networking.k8s.io/bundle-version": "v1.1.0",
+							"gateway.networking.k8s.io/bundle-version": "v1.1.1",
 						},
 					},
 				})
