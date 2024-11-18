@@ -17,6 +17,10 @@ readonly REPO=$(cd "${HERE}/.." && pwd)
 # Optional first arg is the package root to scan for documentation.
 readonly PKGROOT="${1:-github.com/projectcontour/contour/apis/projectcontour}"
 
+# Workaround for https://github.com/projectcontour/contour/pull/6709#issuecomment-2466179766
+readonly GODEBUG=gotypesalias=0
+export GODEBUG
+
 gendoc::build() {
     go install github.com/ahmetb/gen-crd-api-reference-docs
 }
