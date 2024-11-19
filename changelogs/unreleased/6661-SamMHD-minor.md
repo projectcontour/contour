@@ -1,7 +1,10 @@
 ## Disable ExtAuth by default if GlobalExtAuth.AuthPolicy.Disabled is set
 
-Global external authorization or vhost-level authorization is enabled by default unless an AuthPolicy explicitly disables it. By default, `disabled` is set to `GlobalExtAuth.AuthPolicy.Disabled`. This global setting can be overridden by vhost-level AuthPolicy, which can further be overridden by route-specific AuthPolicy. Therefore, the final authorization state is determined by the most specific policy applied at the route level.
+Global external authorization can now be disabled by default and enabled by overriding the vhost and route level auth policies.
+This is achieved by setting the `globalExtAuth.authPolicy.disabled` in the configuration file or `ContourConfiguration` CRD to `true`, and setting the `authPolicy.disabled` to `false` in the vhost and route level auth policies.
+The final authorization state is determined by the most specific policy applied at the route level.
 
-## Disable External Authorization in UpgradeHTTPS
+## Disable External Authorization in HTTPS Upgrade
 
-From now on, Contour will configure Envoy to handle HTTPS Redirection without authorization on routes. (previously if GlobalExtAuth was set, Envoy would check request with ext_auth before redirection which could result in 401 instead of redirection)
+When external authorization is enabled, no authorization check will be performed for HTTP to HTTPS redirection.
+Previously, external authorization was checked before redirection, which could result in a 401 Unauthorized error instead of a 301 Moved Permanently status code.
