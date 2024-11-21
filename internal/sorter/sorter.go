@@ -472,6 +472,7 @@ func For(v any) sort.Interface {
 		return listenerSorter(v)
 	case []*envoy_config_listener_v3.FilterChain:
 		return filterChainSorter(v)
+
 	default:
 		return nil
 	}

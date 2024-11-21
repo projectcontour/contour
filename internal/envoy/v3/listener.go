@@ -21,12 +21,14 @@ import (
 	"time"
 
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_mutation_rules_v3 "github.com/envoyproxy/go-control-plane/envoy/config/common/mutation_rules/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compression_gzip_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_filter_http_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_filter_http_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
@@ -44,6 +46,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -160,11 +163,13 @@ const (
 	GlobalRateLimitFilterName string = "envoy.filters.http.ratelimit"
 	RBACFilterName            string = "envoy.filters.http.rbac"
 	ExtAuthzFilterName        string = "envoy.filters.http.ext_authz"
+	ExtProcFilterName         string = "envoy.filters.http.ext_proc"
 	JWTAuthnFilterName        string = "envoy.filters.http.jwt_authn"
 	LuaFilterName             string = "envoy.filters.http.lua"
 	CompressorFilterName      string = "envoy.filters.http.compressor"
 	GRPCWebFilterName         string = "envoy.filters.http.grpc_web"
 	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
+	RouterFilterName          string = "router"
 )
 
 type httpConnectionManagerBuilder struct {
@@ -402,7 +407,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 
 // AddFilter appends f to the list of filters for this HTTPConnectionManager. f
 // may be nil, in which case it is ignored. Note that Router filters
-// (filters with TypeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`)
+// (filters with TypeUrl `type.googleapis.com/envoy.extensions.filters.envoy_filter_network_http_connection_manager_v3.router.v3.Router`)
 // are specially treated. There may only be one of these filters, and it must be the last.
 // AddFilter will ensure that the router filter, if present, is last, and will panic
 // if a second Router is added when one is already present.
@@ -463,7 +468,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 	// If the router filter is not the last, the listener will be rejected by Envoy.
 	// More specifically, the last filter must be a terminating filter. The only one
 	// of these used by Contour is the router filter, which is set as the one
-	// with typeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`,
+	// with typeUrl `type.googleapis.com/envoy.extensions.filters.envoy_filter_network_http_connection_manager_v3.router.v3.Router`,
 	// which in this case is the one of type Router.
 	lastIndex := len(b.filters) - 1
 	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_filter_http_router_v3.Router{}) {
@@ -785,6 +790,71 @@ end
 					},
 				},
 			}),
+		},
+	}
+}
+
+func makeProcessMode(mode *contour_v1.ProcessingMode) *envoy_filter_http_ext_proc_v3.ProcessingMode {
+	reqHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respHeaderMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
+
+	reqBodyMode := envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.RequestBodyMode)]
+	respBodyMode := envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode_value[string(mode.ResponseBodyMode)]
+
+	reqTrailerMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.RequestHeaderMode)]
+	respTrailerMode := envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode_value[string(mode.ResponseHeaderMode)]
+
+	return &envoy_filter_http_ext_proc_v3.ProcessingMode{
+		RequestHeaderMode:   envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(reqHeaderMode),
+		ResponseHeaderMode:  envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(respHeaderMode),
+		RequestBodyMode:     envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(reqBodyMode),
+		ResponseBodyMode:    envoy_filter_http_ext_proc_v3.ProcessingMode_BodySendMode(respBodyMode),
+		RequestTrailerMode:  envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(reqTrailerMode),
+		ResponseTrailerMode: envoy_filter_http_ext_proc_v3.ProcessingMode_HeaderSendMode(respTrailerMode),
+	}
+}
+
+// FilterExtProc returns an `ext_proc` filter configured with the
+// requested parameters.
+func FilterExtProc(extProc *dag.ExtProc) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+	if extProc == nil {
+		return nil
+	}
+	if extProc.ProcessingMode == nil {
+		extProc.ProcessingMode = &contour_v1.ProcessingMode{
+			RequestHeaderMode:   contour_v1.ProcessingModeSend,
+			ResponseHeaderMode:  contour_v1.ProcessingModeSend,
+			RequestBodyMode:     contour_v1.ProcessingModeNone,
+			ResponseBodyMode:    contour_v1.ProcessingModeNone,
+			RequestTrailerMode:  contour_v1.ProcessingModeSkip,
+			ResponseTrailerMode: contour_v1.ProcessingModeSkip,
+		}
+	}
+	if extProc.MutationRules == nil {
+		extProc.MutationRules = &contour_v1.HeaderMutationRules{}
+	}
+
+	extProcConfig := envoy_filter_http_ext_proc_v3.ExternalProcessor{
+		GrpcService:            GrpcService(extProc.ExtProcService.Name, extProc.ExtProcService.SNI, extProc.ResponseTimeout),
+		FailureModeAllow:       extProc.FailOpen,
+		ProcessingMode:         makeProcessMode(extProc.ProcessingMode),
+		MessageTimeout:         envoy.Timeout(extProc.ResponseTimeout),
+		MaxMessageTimeout:      envoy.Timeout(extProc.ResponseTimeout),
+		DisableClearRouteCache: false,
+		AllowModeOverride:      extProc.AllowModeOverride,
+		MutationRules: &envoy_mutation_rules_v3.HeaderMutationRules{
+			AllowAllRouting: &wrapperspb.BoolValue{Value: extProc.MutationRules.AllowAllRouting},
+			AllowEnvoy:      &wrapperspb.BoolValue{Value: extProc.MutationRules.AllowEnvoy},
+			DisallowSystem:  &wrapperspb.BoolValue{Value: extProc.MutationRules.DisallowSystem},
+			DisallowAll:     &wrapperspb.BoolValue{Value: extProc.MutationRules.DisallowAll},
+			DisallowIsError: &wrapperspb.BoolValue{Value: extProc.MutationRules.DisallowIsError},
+		},
+	}
+
+	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: ExtProcFilterName,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&extProcConfig),
 		},
 	}
 }
