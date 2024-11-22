@@ -1,0 +1,1 @@
+Added conditions `reset-before-request`, `envoy-ratelimited` and `http3-post-connect-failure` for `httpproxy.spec.routes.retryPolicy.retryOn`, see Envoy [documentation](https://www.envoyproxy.io/docs/envoy/v1.32.0/configuration/http/http_filters/router_filter#config-http-filters-router-x-envoy-retry-on) for more details.
