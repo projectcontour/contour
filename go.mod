@@ -26,7 +26,7 @@ require (
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.60.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/tsaarni/certyaml v0.10.0
 	github.com/vektra/mockery/v2 v2.46.3
 	go.uber.org/automaxprocs v1.6.0
