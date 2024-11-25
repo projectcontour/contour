@@ -4,6 +4,7 @@ filename: "{{.InterfaceNameSnake}}.go"
 outpkg: "mocks"
 dir: '{{trimPrefix .PackagePath "github.com/projectcontour/contour/" }}/mocks'
 disable-version-string: True
+resolve-type-alias: False
 packages:
     github.com/projectcontour/contour/internal/debug:
         interfaces:
