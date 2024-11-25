@@ -387,8 +387,8 @@ github.com/tsaarni/certyaml v0.10.0 h1:8ZWHO4Zg4VHUf7YblZNju44PcG5M+YtlJawiArYUH
 github.com/tsaarni/certyaml v0.10.0/go.mod h1:rI1wDTE/VQIglHOyGbjfvqb+5mWTVT5uLFVDDcT1sq8=
 github.com/tsaarni/x500dn v1.0.0 h1:LvaWTkqRpse4VHBhB5uwf3wytokK4vF9IOyNAEyiA+U=
 github.com/tsaarni/x500dn v1.0.0/go.mod h1:QaHa3EcUKC4dfCAZmj8+ZRGLKukWgpGv9H3oOCsAbcE=
-github.com/vektra/mockery/v2 v2.46.3 h1:Aia4iShZeNTy6CZJcvweK4X97XOzXcqb+k9jm8IqBS0=
-github.com/vektra/mockery/v2 v2.46.3/go.mod h1:dDivqi0ShM8A29mLgZn13yZ14MdXlTM4V360u8JDWCQ=
+github.com/vektra/mockery/v2 v2.49.0 h1:KFJKqRa0zd4h+ntM+JFr9Z6fIz++CUgAAogPWnwTwJY=
+github.com/vektra/mockery/v2 v2.49.0/go.mod h1:xO2DeYemEPC2tCzIZ+a1tifZ/7Laf/Chxg3vlc+oDsI=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xhit/go-str2duration/v2 v2.1.0 h1:lxklc02Drh6ynqX+DdPyp5pCKLUQpRT8bp8Ydu2Bstc=
