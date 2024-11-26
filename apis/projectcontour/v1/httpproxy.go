@@ -1146,7 +1146,7 @@ type TimeoutPolicy struct {
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.
-// +kubebuilder:validation:Enum="5xx";gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers;cancelled;deadline-exceeded;internal;resource-exhausted;unavailable
+// +kubebuilder:validation:Enum="5xx";gateway-error;reset;reset-before-request;connect-failure;envoy-ratelimited;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers;http3-post-connect-failure;cancelled;deadline-exceeded;internal;resource-exhausted;unavailable
 type RetryOn string
 
 // RetryPolicy defines the attributes associated with retrying policy.
@@ -1171,11 +1171,14 @@ type RetryPolicy struct {
 	// - `5xx`
 	// - `gateway-error`
 	// - `reset`
+	// - `reset-before-request`
 	// - `connect-failure`
+	// - `envoy-ratelimited`
 	// - `retriable-4xx`
 	// - `refused-stream`
 	// - `retriable-status-codes`
 	// - `retriable-headers`
+	// - `http3-post-connect-failure`
 	//
 	// Supported [gRPC conditions](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on):
 	//
