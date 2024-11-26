@@ -736,6 +736,17 @@ spec:
                           Contour's default is 0.
                         format: int32
                         type: integer
+                      stripTrailingHostDot:
+                        description: |-
+                          EnvoyStripTrailingHostDot defines if trailing dot of the host should be removed from host/authority header
+                          before any processing of request by HTTP filters or routing. This
+                          affects the upstream host header. Without setting this option to true, incoming
+                          requests with host example.com. will not match against route with domains
+                          match set to example.com.
+                          See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
+                          for more information.
+                          Contour's default is false.
+                        type: boolean
                     type: object
                   service:
                     description: |-
@@ -4552,6 +4563,17 @@ spec:
                               Contour's default is 0.
                             format: int32
                             type: integer
+                          stripTrailingHostDot:
+                            description: |-
+                              EnvoyStripTrailingHostDot defines if trailing dot of the host should be removed from host/authority header
+                              before any processing of request by HTTP filters or routing. This
+                              affects the upstream host header. Without setting this option to true, incoming
+                              requests with host example.com. will not match against route with domains
+                              match set to example.com.
+                              See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
+                              for more information.
+                              Contour's default is false.
+                            type: boolean
                         type: object
                       service:
                         description: |-

@@ -185,6 +185,7 @@ type httpConnectionManagerBuilder struct {
 	serverHeaderTransformation    envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
+	stripTrailingHostDot          bool
 	tracingConfig                 *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing
 	maxRequestsPerConnection      *uint32
 	http2MaxConcurrentStreams     *uint32
@@ -291,6 +292,11 @@ func (b *httpConnectionManagerBuilder) ForwardClientCertificate(details *dag.Cli
 
 func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectionManagerBuilder {
 	b.numTrustedHops = num
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) StripTrailingHostDot(strip bool) *httpConnectionManagerBuilder {
+	b.stripTrailingHostDot = strip
 	return b
 }
 
@@ -506,8 +512,9 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 			AllowChunkedLength: b.allowChunkedLength,
 		},
 
-		UseRemoteAddress:  wrapperspb.Bool(true),
-		XffNumTrustedHops: b.numTrustedHops,
+		UseRemoteAddress:     wrapperspb.Bool(true),
+		XffNumTrustedHops:    b.numTrustedHops,
+		StripTrailingHostDot: b.stripTrailingHostDot,
 
 		NormalizePath: wrapperspb.Bool(true),
 

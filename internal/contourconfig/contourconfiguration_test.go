@@ -130,8 +130,9 @@ func TestOverlayOnDefaults(t *testing.T) {
 				},
 			},
 			Network: &contour_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: ptr.To(uint32(77)),
-				EnvoyAdminPort:    ptr.To(9997),
+				XffNumTrustedHops:         ptr.To(uint32(77)),
+				EnvoyAdminPort:            ptr.To(9997),
+				EnvoyStripTrailingHostDot: ptr.To(true),
 			},
 		},
 		Gateway: &contour_v1alpha1.GatewayConfig{

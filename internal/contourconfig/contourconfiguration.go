@@ -127,8 +127,9 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				},
 			},
 			Network: &contour_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: ptr.To(uint32(0)),
-				EnvoyAdminPort:    ptr.To(9001),
+				XffNumTrustedHops:         ptr.To(uint32(0)),
+				EnvoyAdminPort:            ptr.To(9001),
+				EnvoyStripTrailingHostDot: ptr.To(false),
 			},
 		},
 		Gateway: nil,

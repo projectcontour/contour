@@ -8273,6 +8273,26 @@ If configured to port &ldquo;0&rdquo; then the admin interface is disabled.</p>
 <p>Contour&rsquo;s default is 9001.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>stripTrailingHostDot</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EnvoyStripTrailingHostDot defines if trailing dot of the host should be removed from host/authority header
+before any processing of request by HTTP filters or routing. This
+affects the upstream host header. Without setting this option to true, incoming
+requests with host example.com. will not match against route with domains
+match set to example.com.</p>
+<p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot</a>
+for more information.</p>
+<p>Contour&rsquo;s default is false.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing
