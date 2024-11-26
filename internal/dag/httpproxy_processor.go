@@ -1951,7 +1951,7 @@ func redirectRoutePolicy(redirect *contour_v1.HTTPRequestRedirectPolicy) (*Redir
 
 	var statusCode int
 	if redirect.StatusCode != nil {
-		statusCode = *redirect.StatusCode
+		statusCode = int(*redirect.StatusCode)
 	}
 
 	if redirect.Path != nil && redirect.Prefix != nil {

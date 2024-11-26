@@ -516,7 +516,7 @@ func (in *HTTPRequestRedirectPolicy) DeepCopyInto(out *HTTPRequestRedirectPolicy
 	}
 	if in.StatusCode != nil {
 		in, out := &in.StatusCode, &out.StatusCode
-		*out = new(int)
+		*out = new(RedirectResponseCode)
 		**out = **in
 	}
 	if in.Path != nil {
