@@ -326,6 +326,7 @@ func TestTLSParametersValidation(t *testing.T) {
 }
 
 func TestCompressionValidation(t *testing.T) {
+	require.NoError(t, CompressionParameters{""}.Validate())
 	require.NoError(t, CompressionParameters{CompressionBrotli}.Validate())
 	require.NoError(t, CompressionParameters{CompressionDisabled}.Validate())
 	require.NoError(t, CompressionParameters{CompressionGzip}.Validate())

@@ -31,7 +31,7 @@ type EnvoyCompression struct {
 
 func (a CompressionAlgorithm) Validate() error {
 	switch a {
-	case BrotliCompression, DisabledCompression, GzipCompression, ZstdCompression:
+	case BrotliCompression, DisabledCompression, GzipCompression, ZstdCompression, "":
 		return nil
 	default:
 		return fmt.Errorf("invalid compression type: %q", a)

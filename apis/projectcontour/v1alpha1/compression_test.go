@@ -22,9 +22,9 @@ import (
 )
 
 func TestValidateEnvoyCompressionAlgorithmType(t *testing.T) {
-	require.Error(t, contour_v1alpha1.CompressionAlgorithm("").Validate())
 	require.Error(t, contour_v1alpha1.CompressionAlgorithm("foo").Validate())
 
+	require.NoError(t, contour_v1alpha1.CompressionAlgorithm("").Validate())
 	require.NoError(t, contour_v1alpha1.BrotliCompression.Validate())
 	require.NoError(t, contour_v1alpha1.DisabledCompression.Validate())
 	require.NoError(t, contour_v1alpha1.GzipCompression.Validate())
