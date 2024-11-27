@@ -507,7 +507,6 @@ func defaultContourConfiguration() contour_v1alpha1.ContourConfigurationSpec {
 }
 
 func TestConvertServeContext(t *testing.T) {
-
 	cases := map[string]struct {
 		getServeContext         func(ctx *serveContext) *serveContext
 		getContourConfiguration func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec
