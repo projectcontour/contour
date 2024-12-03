@@ -6668,6 +6668,10 @@ spec:
                           enum:
                           - 301
                           - 302
+                          - 303
+                          - 307
+                          - 308
+                          format: int32
                           type: integer
                       type: object
                     responseHeadersPolicy:
