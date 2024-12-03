@@ -182,7 +182,7 @@ Initially using the Envoy Lua filter, there should be no compatibility issues as
 If we do end up getting the Envoy native feature merged, we can wait to merge the Lua implementation until a couple releases with the Envoy feature.
 - In Contour version X, Envoy version Y we can implement feature with Lua.
 - In Contour version X+1, Envoy version Y+1 (with native feature), we will still implement this feature with Lua in Contour
-- In Contour version X+2, Envoy version Y+2, we can implement cookie reqriting with the Envoy native feature
+- In Contour version X+2, Envoy version Y+2, we can implement cookie rewriting with the Envoy native feature
 
 ## Open Issues
 

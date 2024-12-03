@@ -36,7 +36,7 @@ func withInternalRedirectPolicy(route *envoy_config_route_v3.Route_Route, policy
 	return route
 }
 
-func TestInternalRedirectPolicy_HTTProxy(t *testing.T) {
+func TestInternalRedirectPolicy_HTTPProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 

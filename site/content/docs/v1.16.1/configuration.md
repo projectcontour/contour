@@ -250,7 +250,7 @@ data:
     # kubeconfig: /path/to/.kube/config
     #
     # Disable RFC-compliant behavior to strip "Content-Length" header if
-    # "Tranfer-Encoding: chunked" is also set.
+    # "Transfer-Encoding: chunked" is also set.
     # disableAllowChunkedLength: false
     # Disable HTTPProxy permitInsecure field
     disablePermitInsecure: false

@@ -34,7 +34,7 @@ In terms of its stated goals, Contour is aiming at being an ingress controller -
 Currently, Contour provides "TCP Proxying" that allows the forwarding of TLS streams based on the SNI information, which is precisely what the Gateway API TLSRoute object is for.
 If Project Contour (the organisation) does add support for TCP and UDP forwarding, it will not be in the projectcontour/contour repo, but will be a separate repo.
 
-This design is intended to cover the initial alpha releases of the Gateway API. We will aim to implement the core featureset of the APIs at that point.
+This design is intended to cover the initial alpha releases of the Gateway API. We will aim to implement the core feature set of the APIs at that point.
 We will then work with the upstream community on features that Contour and HTTPProxy currently support, but the Gateway API do not, and how best to represent those features in the APIs.
 There are some features that are currently gaps for Contour (wildcard domain names, and exact path matching, for example), and some that Contour supports that the Gateway API do not (websockets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
 
@@ -269,7 +269,7 @@ Contour will take into account if it is the Leader or not which will represent i
 
 ### Finalizers
 
-Finailzers will need to be put into place for the resources which Contour owns (i.e. Envoy) as well a GatewayAPI bits if applicable:
+Finalizers will need to be put into place for the resources which Contour owns (i.e. Envoy) as well a GatewayAPI bits if applicable:
 
 * Envoy Service/Daemonset
 * Gateway
@@ -330,7 +330,7 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
 3. Operator receives update from Kubernetes API that a Contour CRD was created and deploys an instance of Contour
     - Contour RBAC Perms/Service Account/etc
     - Contour Deployment/Service
-    - Cergen Job to create self-signed certificates
+    - Certgen Job to create self-signed certificates
         - Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
 
 4. Cluster Operator creates `GatewayClass` with matching `gateway.controllerName` to the configuration CRD.
@@ -356,7 +356,7 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
 3. Operator receives update from Kubernetes API that a Contour CRD was created and deploys an instance of Contour
     - Contour RBAC Perms/Service Account/etc
     - Contour Deployment/Service
-    - Cergen Job to create self-signed certificates
+    - Certgen Job to create self-signed certificates
         - Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
 4. Contour creates an Envoy fleet which is an Envoy (Daemonset) and Service.
 5. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#heading=h.r00a5hk7oybo))

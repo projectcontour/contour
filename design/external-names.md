@@ -20,7 +20,7 @@ This document looks to allow Contour to process Kubernetes service types `Extern
 Contour currently watches Kubernetes services and endpoints, streaming them to via Envoy xDS CDS & EDS endpoints.
 Kubernetes pods are identified by their presence in the Endpoint document and streamed to Envoy via EDS.
 Requests to envoy are routed directly to Kubernetes pods (i.e. endpoints).
-This proposal looks to add a second way to identify the members of a Envoy clustr object, using a DNS entry to supply the cluster members rather than EDS.
+This proposal looks to add a second way to identify the members of a Envoy cluster object, using a DNS entry to supply the cluster members rather than EDS.
 
 ## High-level Design
 

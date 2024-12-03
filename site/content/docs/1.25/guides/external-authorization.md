@@ -414,7 +414,7 @@ date: Mon, 20 Feb 2023 13:45:31 GMT
 If you add the username and password to the same request you can verify that the request succeeds. 
 ```
 $ curl -k --user user1:password1 http://local.projectcontour.io/test/$((RANDOM))
-{"TestId":"","Path":"/test/27748","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Header1":["value1"],"Auth-Context-Header2":["value2"],"Auth-Context-Routq":["global"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["http"],"X-Request-Id":["b6bb7036-8408-4b03-9ce5-7011d89799b4"],"X-Request-Start":["t=1676900780.118"]}}
+{"TestId":"","Path":"/test/27748","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Header1":["value1"],"Auth-Context-Header2":["value2"],"Auth-Context-Route":["global"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["http"],"X-Request-Id":["b6bb7036-8408-4b03-9ce5-7011d89799b4"],"X-Request-Start":["t=1676900780.118"]}}
 ```
 
 Global external authorization can also be configured with TLS virtual hosts. Update your HTTPProxy by adding `tls` and `secretName` to it. 
@@ -443,7 +443,7 @@ httpproxy.projectcontour.io/echo configured
 you can verify the HTTPS requests succeeds
 ```
 $ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM))
-{"TestId":"","Path":"/test/13499","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Header1":["value1"],"Auth-Context-Header2":["value2"],"Auth-Context-Routq":["global"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["2b3edbed-3c68-44ef-a659-2e1245d7fe13"],"X-Request-Start":["t=1676901557.918"]}}
+{"TestId":"","Path":"/test/13499","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Header1":["value1"],"Auth-Context-Header2":["value2"],"Auth-Context-Route":["global"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["2b3edbed-3c68-44ef-a659-2e1245d7fe13"],"X-Request-Start":["t=1676901557.918"]}}
 ```
 
 ### Excluding a virtual host from global external authorization
@@ -514,7 +514,7 @@ You can verify that the endpoint has applied the overridden external authorizati
 
 ```
 $ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM))
-{"TestId":"","Path":"/test/4514","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Overriden_message":["overriden_value"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["8a02d6ce-8be0-4e87-8ed8-cca7e239e986"],"X-Request-Start":["t=1676902237.111"]}}
+{"TestId":"","Path":"/test/4514","Host":"local.projectcontour.io","Method":"GET","Proto":"HTTP/1.1","Headers":{"Accept":["*/*"],"Auth-Context-Overridden_message":["overridden_value"],"Auth-Handler":["htpasswd"],"Auth-Realm":["default"],"Auth-Username":["user1"],"Authorization":["Basic dXNlcjE6cGFzc3dvcmQx"],"User-Agent":["curl/7.86.0"],"X-Envoy-Expected-Rq-Timeout-Ms":["15000"],"X-Envoy-Internal":["true"],"X-Forwarded-For":["172.18.0.1"],"X-Forwarded-Proto":["https"],"X-Request-Id":["8a02d6ce-8be0-4e87-8ed8-cca7e239e986"],"X-Request-Start":["t=1676902237.111"]}}
 ```
 
 NOTE: You can only override the global external configuration on a HTTPS virtual host.

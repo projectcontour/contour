@@ -406,7 +406,7 @@ func testClientCertRevocation(namespace string) {
 			},
 		}
 
-		// HTTPProxy should be invalid since CertificateRevocationList refers to non-existent Secret.
+		// HTTPProxy should be invalid since CertificateRevocationList refers to nonexistent Secret.
 		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(proxyWithCRLCheck, e2e.HTTPProxyInvalid))
 
 		// Create Secret with CRL where client certificate is revoked.

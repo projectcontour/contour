@@ -565,7 +565,7 @@ func TestLDSFilter(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	// fetch something non existent.
+	// fetch something nonexistent.
 	c.Request(listenerType, "HTTP").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 	})

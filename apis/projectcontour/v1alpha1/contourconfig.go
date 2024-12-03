@@ -462,7 +462,7 @@ type SocketOptions struct {
 	TrafficClass int32 `json:"trafficClass,omitempty"`
 }
 
-// EnvoyTLS describes tls parameters for Envoy listneners.
+// EnvoyTLS describes tls parameters for Envoy listeners.
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
 	// negotiate.

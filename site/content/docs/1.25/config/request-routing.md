@@ -434,7 +434,7 @@ spec:
       strategy: RequestHash
       requestHashPolicies:
       - queryParameterHashOptions:
-          prameterName: param1
+          parameterName: param1
         terminal: true
       - queryParameterHashOptions:
           parameterName: param2

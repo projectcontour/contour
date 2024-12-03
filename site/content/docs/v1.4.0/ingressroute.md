@@ -315,7 +315,7 @@ spec:
 
 ##### Error conditions
 
-If the `validation` spec is defined on a service, but the secret which it references does not exist, Contour will rejct the update and set the status of the `IngressRoute` object accordingly.
+If the `validation` spec is defined on a service, but the secret which it references does not exist, Contour will reject the update and set the status of the `IngressRoute` object accordingly.
 This is to help prevent the case of proxying to an upstream where validation is requested, but not yet available.
 
 ```yaml
@@ -551,8 +551,8 @@ spec:
 Session affinity is based on the premise that the backend servers are robust, do not change ordering, or grow and shrink according to load.
 None of these properties are guaranteed by a Kubernetes cluster and will be visible to applications that rely heavily on session affinity.
 
-Any pertibation in the set of pods backing a service risks redistributing backends around the hash ring.
-This is an unavoidable consiquence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
+Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
+This is an unavoidable consequence of Envoy's session affinity implementation and the pods-as-cattle approach of Kubernetes.
 
 #### Per-Upstream Active Health Checking
 

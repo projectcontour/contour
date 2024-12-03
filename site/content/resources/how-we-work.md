@@ -5,7 +5,7 @@ layout: how-we-work
 
 This page captures how we work on Contour.
 
-## Github Issue Management
+## GitHub Issue Management
 
 - When you pick up an issue, assign it to yourself.
 When you stop working, unassign yourself.
@@ -19,7 +19,7 @@ While you hold an issue, you are responsible for giving status reports on it; ov
 
 - Log an issue or it didn’t happen. 
 
-- When submitting a PR add the appropriate release milestone and also add the appropriate Github "release-note" label if this PR warrants getting called out in the next release.
+- When submitting a PR add the appropriate release milestone and also add the appropriate GitHub "release-note" label if this PR warrants getting called out in the next release.
 
 ## Code reviews
 
@@ -42,9 +42,9 @@ GitHub review tools suck for extended debate, if you find you’re taking past y
 - You are permitted to refactor as much as you like to achieve these goals.
 As Kent beck said, ["make the change easy, then make the easy change."][2]
 
-## Github Labels
+## GitHub Labels
 
-Github issues should be triaged and have their status recorded.
+GitHub issues should be triaged and have their status recorded.
 Triaging issues and labeling them appropriately makes it easy for the issue submitter and other contributors to see what the state of an issue is at any time.
 The goal of triaging an issue is to make a decision about what should be done with it.
 The issue should be investigated enough to fully understand and document the problem and then decide whether the issue should be addressed by the project.

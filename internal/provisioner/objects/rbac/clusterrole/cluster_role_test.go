@@ -159,7 +159,7 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 			},
 		},
 		{
-			description:               "disable non-existent features",
+			description:               "disable nonexistent features",
 			disabledFeatures:          []contour_v1.Feature{"abc", "efg"},
 			clusterScopedResourceOnly: false,
 			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},

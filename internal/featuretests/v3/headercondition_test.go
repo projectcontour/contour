@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 )
 
-func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
+func TestConditions_ContainsHeader_HTTPProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 

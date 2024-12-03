@@ -47,4 +47,4 @@ Please see the [CONTRIBUTING doc](https://github.com/projectcontour/contour/blob
 
 ### What if you can’t finish your work?
 
-When you join the working group and get assigned an issue, we'd ask that you try to open a pull requests with your fixes within a few days. If you are unable to finish your assigned issue, please submit a pull request with the content that you were able to create and update the Github issue with the latest information of your progress. This way your work goes to use, you get credit for your a contributions, and we can work with other team members to continue making progress on the issue :)
+When you join the working group and get assigned an issue, we'd ask that you try to open a pull requests with your fixes within a few days. If you are unable to finish your assigned issue, please submit a pull request with the content that you were able to create and update the GitHub issue with the latest information of your progress. This way your work goes to use, you get credit for your a contributions, and we can work with other team members to continue making progress on the issue :)

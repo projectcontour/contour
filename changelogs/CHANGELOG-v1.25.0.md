@@ -109,7 +109,7 @@ spec:
           port: 80
     - conditions:
       - queryParam:
-          # will match e.g. '?search=prefixthis' or any string value prefixed by `prefix` (case insensitive)
+          # will match e.g. '?search=prefixthis' or any string value prefixed by `prefix` (case-insensitive)
           name: search
           prefix: PreFix
           ignoreCase: true
@@ -118,7 +118,7 @@ spec:
           port: 80
     - conditions:
       - queryParam:
-          # will match e.g. '?search=thispostfix' or any string value suffixed by `postfix` (case sensitive)
+          # will match e.g. '?search=thispostfix' or any string value suffixed by `postfix` (case-sensitive)
           name: search
           suffix: postfix
       services:
@@ -134,7 +134,7 @@ spec:
           port: 80
     - conditions:
       - queryParam:
-          # will match e.g. '?search=somethinginsideanother' or any string value containing the substring 'inside' (case sensitive)
+          # will match e.g. '?search=somethinginsideanother' or any string value containing the substring 'inside' (case-sensitive)
           name: search
           contains: inside
       services:
@@ -218,7 +218,7 @@ To upgrade an existing Contour installation, please consult the [upgrade documen
 Contour v1.25.0 is tested against Kubernetes 1.25 through 1.27.
 
 # Community Thanks!
-We’re immensely grateful for all the community contributions that help make Contour even better! For this release, we would like to give a special shoutout to the folks who joined our ContribFest at KubeCon EU 2023:
+We’re immensely grateful for all the community contributions that help make Contour even better! For this release, we would like to give a special shout-out to the folks who joined our ContribFest at KubeCon EU 2023:
 
 - @padlar
 - @IdanAtias

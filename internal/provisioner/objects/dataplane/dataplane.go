@@ -346,7 +346,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		},
 		Spec: apps_v1.DaemonSetSpec{
 			RevisionHistoryLimit: ptr.To(int32(10)),
-			// Ensure the deamonset adopts only its own pods.
+			// Ensure the daemonset adopts only its own pods.
 			Selector:       EnvoyPodSelector(contour),
 			UpdateStrategy: contour.Spec.EnvoyDaemonSetUpdateStrategy,
 			Template: core_v1.PodTemplateSpec{
@@ -418,7 +418,7 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 		Spec: apps_v1.DeploymentSpec{
 			Replicas:             ptr.To(contour.Spec.EnvoyReplicas),
 			RevisionHistoryLimit: ptr.To(int32(10)),
-			// Ensure the deamonset adopts only its own pods.
+			// Ensure the daemonset adopts only its own pods.
 			Selector: EnvoyPodSelector(contour),
 			Strategy: contour.Spec.EnvoyDeploymentStrategy,
 			Template: core_v1.PodTemplateSpec{

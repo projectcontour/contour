@@ -15,12 +15,12 @@ All other requirements such as RBAC permissions, configuration details, are prov
 ### Envoy as Daemonset
 
 The recommended installation is for Contour to run as a Deployment and Envoy to run as a Daemonset.
-The example Damonset places a single instance of Envoy per node in the cluster as well as attaches to `hostPorts` on each node.
+The example Daemonset places a single instance of Envoy per node in the cluster as well as attaches to `hostPorts` on each node.
 This model allows for simple scaling of Envoy instances as well as ensuring even distribution of instances across the cluster.
 
 The [example daemonset manifest][2] or [Contour Operator][12] will create an installation based on these recommendations.
 
-_Note: If the size of the cluster is scaled down, connections can be lost since Kubernetes Damonsets do not follow proper `preStop` hooks._
+_Note: If the size of the cluster is scaled down, connections can be lost since Kubernetes Daemonsets do not follow proper `preStop` hooks._
 _Note: Contour Operator is alpha and therefore follows the Contour [deprecation policy][13]._
 
 ### Envoy as Deployment

@@ -112,9 +112,9 @@ Steps to submit a conformance report are:
 1. Update `netlify.toml` to redirect Contour quickstart links to the new release branch.
 1. Commit all changes, push the branch, and PR it into `main`.
 
-### Do the Github release
+### Do the GitHub release
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
+Now you have a tag pushed to GitHub, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
 
 # Patch Release Process
 
@@ -202,9 +202,9 @@ Steps to submit a conformance report are:
 1. Download the `gateway-conformance-report` artifact from the workflow run and unzip
 1. Check it for accuracy, and make a PR like [this one][7] to the `gateway-api` repo with the content of the report
 
-### Do the Github release
+### Do the GitHub release
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
+Now you have a tag pushed to GitHub, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
 
 # RC Release process
 
@@ -274,9 +274,9 @@ This process is easier than managing a `release-*` branch and having to cherry-p
 git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 ```
 
-### Do the Github release
+### Do the GitHub release
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
+Now you have a tag pushed to GitHub, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
 
 # Release announcements
 

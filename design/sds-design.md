@@ -40,7 +40,7 @@ Create secretVisitor and implement visit() and visitSecrets() to produce a map w
 ### Support contour cli for SDS
 
 In order to facilitate debugging and to find out exactly the data that is being sent to Envoy,
-will add support to contour cli sub command. This cmd shd be used stream changes to the SDS api endpoint
+will add support to contour cli sub command. This cmd should be used stream changes to the SDS api endpoint
 to the terminal.
 
 `kubectl -n projectcontour exec $CONTOUR_POD -c contour contour cli sds`

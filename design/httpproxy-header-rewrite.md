@@ -13,7 +13,7 @@ Setting and removing headers from requests and responses at two levels:
 ## Non Goals
 
 - Support for projecting dynamic values into header values.
-- Appending to pre-existing headers (for now).
+- Appending to preexisting headers (for now).
 
 ## Background
 
