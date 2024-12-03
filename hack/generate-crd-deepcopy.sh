@@ -42,8 +42,8 @@ readonly HEADER=$(mktemp)
 
 boilerplate > "${HEADER}"
 
-exec echo "controller-gen version: "
-exec go run sigs.k8s.io/controller-tools/cmd/controller-gen --version
+echo "controller-gen version: "
+go run sigs.k8s.io/controller-tools/cmd/controller-gen --version
 
 exec go run sigs.k8s.io/controller-tools/cmd/controller-gen \
     "object:headerFile=${HEADER}" \

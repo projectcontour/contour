@@ -187,7 +187,7 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 	if in.Gateway != nil {
 		in, out := &in.Gateway, &out.Gateway
 		*out = new(GatewayConfig)
-		(*in).DeepCopyInto(*out)
+		**out = **in
 	}
 	if in.HTTPProxy != nil {
 		in, out := &in.HTTPProxy, &out.HTTPProxy
@@ -405,6 +405,11 @@ func (in *ContourSettings) DeepCopyInto(out *ContourSettings) {
 	if in.WatchNamespaces != nil {
 		in, out := &in.WatchNamespaces, &out.WatchNamespaces
 		*out = make([]v1.Namespace, len(*in))
+		copy(*out, *in)
+	}
+	if in.DisabledFeatures != nil {
+		in, out := &in.DisabledFeatures, &out.DisabledFeatures
+		*out = make([]v1.Feature, len(*in))
 		copy(*out, *in)
 	}
 }
