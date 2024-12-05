@@ -275,7 +275,9 @@ func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectio
 	return b
 }
 
-func (b *httpConnectionManagerBuilder) Compression(compressor *contour_v1alpha1.EnvoyCompression) *httpConnectionManagerBuilder {
+// SetDefaultFilterCompression configures the builder to set the compression method applied by DefaultFilters() to the
+// given value `compressor`. When chaining builder method calls, this method should be called before DefaultFilters().
+func (b *httpConnectionManagerBuilder) SetDefaultFilterCompression(compressor *contour_v1alpha1.EnvoyCompression) *httpConnectionManagerBuilder {
 	b.compression = compressor
 	return b
 }

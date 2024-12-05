@@ -396,7 +396,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		// order for the HTTPS virtualhosts.
 		if len(listener.VirtualHosts) > 0 {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
-				Compression(cfg.Compression).
+				SetDefaultFilterCompression(cfg.Compression).
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 				DefaultFilters().
 				RouteConfigName(httpRouteConfigName(listener)).
@@ -469,7 +469,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// Contour versions since the metrics prefix will be
 				// coded into monitoring dashboards.
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
-					Compression(cfg.Compression).
+					SetDefaultFilterCompression(cfg.Compression).
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
@@ -554,7 +554,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				}
 
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
-					Compression(cfg.Compression).
+					SetDefaultFilterCompression(cfg.Compression).
 					DefaultFilters().
 					AddFilter(authzFilter).
 					RouteConfigName(fallbackCertRouteConfigName(listener)).

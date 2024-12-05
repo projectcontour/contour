@@ -3108,7 +3108,7 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression(&contour_v1alpha1.EnvoyCompression{
+						SetDefaultFilterCompression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.DisabledCompression,
 						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
@@ -3154,7 +3154,7 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression(&contour_v1alpha1.EnvoyCompression{
+						SetDefaultFilterCompression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.GzipCompression,
 						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
@@ -3200,7 +3200,7 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression(&contour_v1alpha1.EnvoyCompression{
+						SetDefaultFilterCompression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.BrotliCompression,
 						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
@@ -3246,7 +3246,7 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression(&contour_v1alpha1.EnvoyCompression{
+						SetDefaultFilterCompression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.ZstdCompression,
 						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
@@ -3292,7 +3292,7 @@ func TestListenerVisit(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
-						Compression(&contour_v1alpha1.EnvoyCompression{
+						SetDefaultFilterCompression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.GzipCompression,
 						}).
 						RouteConfigName(ENVOY_HTTP_LISTENER).
