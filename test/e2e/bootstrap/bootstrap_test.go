@@ -23,7 +23,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/stretchr/testify/require"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 )
@@ -63,7 +63,7 @@ var _ = Describe("Bootstrap", func() {
 		contourCmd           *gexec.Session
 		kubectlCmd           *gexec.Session
 		contourConfig        *config.Parameters
-		contourConfiguration *contour_api_v1alpha1.ContourConfiguration
+		contourConfiguration *contour_v1alpha1.ContourConfiguration
 		contourConfigFile    string
 	)
 
