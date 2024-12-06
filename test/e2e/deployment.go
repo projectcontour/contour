@@ -104,6 +104,9 @@ type Deployment struct {
 	EnvoyExtraVolumes      []core_v1.Volume
 	EnvoyExtraVolumeMounts []core_v1.VolumeMount
 
+	// Optional additional args to pass to the bootstrap subcommand
+	ContourBootstrapExtraArgs []string
+
 	// Ratelimit deployment.
 	RateLimitDeployment       *apps_v1.Deployment
 	RateLimitService          *core_v1.Service
@@ -475,14 +478,20 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 
 	// Generate bootstrap config with Contour local address and plaintext
 	// client config.
-	bootstrapCmd := exec.Command( // nolint:gosec
-		d.contourBin,
+	bootstrapCmdArgs := []string{
 		"bootstrap",
 		bFile.Name(),
-		"--xds-address="+d.localContourHost,
-		"--xds-port="+d.localContourPort,
+		"--xds-address=" + d.localContourHost,
+		"--xds-port=" + d.localContourPort,
 		"--xds-resource-version=v3",
 		"--admin-address=/admin/admin.sock",
+	}
+
+	bootstrapCmdArgs = append(bootstrapCmdArgs, d.ContourBootstrapExtraArgs...)
+
+	bootstrapCmd := exec.Command( // nolint:gosec
+		d.contourBin,
+		bootstrapCmdArgs...,
 	)
 
 	session, err := gexec.Start(bootstrapCmd, d.cmdOutputWriter, d.cmdOutputWriter)

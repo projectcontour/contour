@@ -38,7 +38,7 @@ const (
 // The listeners are configured to serve:
 //   - prometheus metrics on /stats (either over HTTP or HTTPS)
 //   - readiness probe on /ready (always over HTTP)
-func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alpha1.HealthConfig) []*envoy_config_listener_v3.Listener {
+func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alpha1.HealthConfig, omEnforcedHealth *contour_v1alpha1.HealthConfig) []*envoy_config_listener_v3.Listener {
 	var listeners []*envoy_config_listener_v3.Listener
 
 	switch {
@@ -51,11 +51,13 @@ func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alp
 			FilterChains: filterChain("stats",
 				DownstreamTLSTransportSocket(
 					downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats", "/stats/prometheus")),
+			IgnoreGlobalConnLimit: true,
 		}, {
-			Name:          "health",
-			Address:       SocketAddress(health.Address, health.Port),
-			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready")),
+			Name:                  "health",
+			Address:               SocketAddress(health.Address, health.Port),
+			SocketOptions:         NewSocketOptions().TCPKeepalive().Build(),
+			FilterChains:          filterChain("stats", nil, routeForAdminInterface("/ready")),
+			IgnoreGlobalConnLimit: true,
 		}}
 
 	// Create combined HTTP listener for metrics and health.
@@ -70,21 +72,34 @@ func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alp
 				"/stats",
 				"/stats/prometheus",
 			)),
+			IgnoreGlobalConnLimit: true,
 		}}
 
 	// Create separate HTTP listeners for metrics and health.
 	default:
 		listeners = []*envoy_config_listener_v3.Listener{{
-			Name:          "stats",
-			Address:       SocketAddress(metrics.Address, metrics.Port),
-			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/stats", "/stats/prometheus")),
+			Name:                  "stats",
+			Address:               SocketAddress(metrics.Address, metrics.Port),
+			SocketOptions:         NewSocketOptions().TCPKeepalive().Build(),
+			FilterChains:          filterChain("stats", nil, routeForAdminInterface("/stats", "/stats/prometheus")),
+			IgnoreGlobalConnLimit: true,
 		}, {
-			Name:          "health",
-			Address:       SocketAddress(health.Address, health.Port),
-			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
-			FilterChains:  filterChain("stats", nil, routeForAdminInterface("/ready")),
+			Name:                  "health",
+			Address:               SocketAddress(health.Address, health.Port),
+			SocketOptions:         NewSocketOptions().TCPKeepalive().Build(),
+			FilterChains:          filterChain("stats", nil, routeForAdminInterface("/ready")),
+			IgnoreGlobalConnLimit: true,
 		}}
+	}
+
+	if omEnforcedHealth != nil {
+		listeners = append(listeners, &envoy_config_listener_v3.Listener{
+			Name:                  "health-om-enforced",
+			Address:               SocketAddress(omEnforcedHealth.Address, omEnforcedHealth.Port),
+			SocketOptions:         NewSocketOptions().TCPKeepalive().Build(),
+			FilterChains:          filterChain("stats", nil, routeForAdminInterface("/ready")),
+			IgnoreGlobalConnLimit: false,
+		})
 	}
 
 	return listeners
@@ -111,7 +126,8 @@ func AdminListener(port int) *envoy_config_listener_v3.Listener {
 				"/stats/recentlookups",
 			),
 		),
-		SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
+		SocketOptions:         NewSocketOptions().TCPKeepalive().Build(),
+		IgnoreGlobalConnLimit: true,
 	}
 }
 
