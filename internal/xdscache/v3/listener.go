@@ -66,6 +66,9 @@ type ListenerConfig struct {
 	// If not set, defaults to false.
 	UseProxyProto bool
 
+	// Compression defines configuration related to compression in the default HTTP Listener filters.
+	Compression *contour_v1alpha1.EnvoyCompression
+
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
 	MinimumTLSVersion string
 
@@ -393,6 +396,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		// order for the HTTPS virtualhosts.
 		if len(listener.VirtualHosts) > 0 {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
+				SetDefaultFilterCompression(cfg.Compression).
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 				DefaultFilters().
 				RouteConfigName(httpRouteConfigName(listener)).
@@ -465,6 +469,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// Contour versions since the metrics prefix will be
 				// coded into monitoring dashboards.
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
+					SetDefaultFilterCompression(cfg.Compression).
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
@@ -549,6 +554,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				}
 
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
+					SetDefaultFilterCompression(cfg.Compression).
 					DefaultFilters().
 					AddFilter(authzFilter).
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
