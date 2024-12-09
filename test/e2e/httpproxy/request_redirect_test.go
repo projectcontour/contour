@@ -124,7 +124,7 @@ func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_v1.HTT
 					Scheme:     ptr.To("https"),
 					Hostname:   ptr.To("envoyproxy.io"),
 					Port:       ptr.To(int32(8080)),
-					StatusCode: ptr.To(301),
+					StatusCode: ptr.To(contour_v1.RedirectResponseCode(301)),
 				},
 			}, {
 				Conditions: []contour_v1.MatchCondition{{

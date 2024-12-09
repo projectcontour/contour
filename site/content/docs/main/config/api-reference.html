@@ -1767,7 +1767,9 @@ When empty, port (if specified) of the request is used.</p>
 <code>statusCode</code>
 <br>
 <em>
-int
+<a href="#projectcontour.io/v1.RedirectResponseCode">
+RedirectResponseCode
+</a>
 </em>
 </td>
 <td>
@@ -3085,7 +3087,8 @@ service (RLS) for a rate limit decision on each request.</p>
 (<code>uint32</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy</a>)
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy</a>, 
+<a href="#projectcontour.io/v1.HTTPRequestRedirectPolicy">HTTPRequestRedirectPolicy</a>)
 </p>
 <p>
 <p>RedirectResponseCode is a uint32 type alias with validation to ensure that the value is valid.</p>
