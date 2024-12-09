@@ -32,6 +32,7 @@ import (
 	envoy_config_overload_v3 "github.com/envoyproxy/go-control-plane/envoy/config/overload/v3"
 	envoy_access_logger_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_regex_engines_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/regex_engines/v3"
+	envoy_downstream_connections_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/downstream_connections/v3"
 	envoy_fixed_heap_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/resource_monitors/fixed_heap/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -252,50 +253,14 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootst
 			Address:   UnixSocketAddress(c.GetAdminAddress()),
 		},
 	}
-	if c.MaximumHeapSizeBytes > 0 {
+	if c.MaximumHeapSizeBytes > 0 || c.GlobalDownstreamConnectionLimit > 0 {
 		bootstrap.OverloadManager = &envoy_config_overload_v3.OverloadManager{
 			RefreshInterval: durationpb.New(250 * time.Millisecond),
-			ResourceMonitors: []*envoy_config_overload_v3.ResourceMonitor{
-				{
-					Name: "envoy.resource_monitors.fixed_heap",
-					ConfigType: &envoy_config_overload_v3.ResourceMonitor_TypedConfig{
-						TypedConfig: protobuf.MustMarshalAny(
-							&envoy_fixed_heap_v3.FixedHeapConfig{
-								MaxHeapSizeBytes: c.MaximumHeapSizeBytes,
-							}),
-					},
-				},
-			},
-			Actions: []*envoy_config_overload_v3.OverloadAction{
-				{
-					Name: "envoy.overload_actions.shrink_heap",
-					Triggers: []*envoy_config_overload_v3.Trigger{
-						{
-							Name: "envoy.resource_monitors.fixed_heap",
-							TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
-								Threshold: &envoy_config_overload_v3.ThresholdTrigger{
-									Value: 0.95,
-								},
-							},
-						},
-					},
-				},
-				{
-					Name: "envoy.overload_actions.stop_accepting_requests",
-					Triggers: []*envoy_config_overload_v3.Trigger{
-						{
-							Name: "envoy.resource_monitors.fixed_heap",
-							TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
-								Threshold: &envoy_config_overload_v3.ThresholdTrigger{
-									Value: 0.98,
-								},
-							},
-						},
-					},
-				},
-			},
 		}
+		includeMaxHeapMonitoring(bootstrap, c.MaximumHeapSizeBytes)
+		includeMaxConnectionMonitoring(bootstrap, c.GlobalDownstreamConnectionLimit)
 	}
+
 	return bootstrap
 }
 
@@ -443,5 +408,70 @@ func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_d
 
 	return &envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: []*anypb.Any{protobuf.MustMarshalAny(secret)},
+	}
+}
+
+// includeMaxHeapMonitoring appends the fixed heap resource monitor and corresponding
+// overload actions to the overload manager
+func includeMaxHeapMonitoring(bootstrap *envoy_config_bootstrap_v3.Bootstrap, maxHeapBytes uint64) {
+	if maxHeapBytes > 0 {
+		bootstrap.OverloadManager.ResourceMonitors = append(bootstrap.OverloadManager.ResourceMonitors,
+			&envoy_config_overload_v3.ResourceMonitor{
+				Name: "envoy.resource_monitors.fixed_heap",
+				ConfigType: &envoy_config_overload_v3.ResourceMonitor_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(
+						&envoy_fixed_heap_v3.FixedHeapConfig{
+							MaxHeapSizeBytes: maxHeapBytes,
+						}),
+				},
+			},
+		)
+
+		bootstrap.OverloadManager.Actions = append(bootstrap.OverloadManager.Actions,
+			&envoy_config_overload_v3.OverloadAction{
+				Name: "envoy.overload_actions.shrink_heap",
+				Triggers: []*envoy_config_overload_v3.Trigger{
+					{
+						Name: "envoy.resource_monitors.fixed_heap",
+						TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
+							Threshold: &envoy_config_overload_v3.ThresholdTrigger{
+								Value: 0.95,
+							},
+						},
+					},
+				},
+			},
+			&envoy_config_overload_v3.OverloadAction{
+				Name: "envoy.overload_actions.stop_accepting_requests",
+				Triggers: []*envoy_config_overload_v3.Trigger{
+					{
+						Name: "envoy.resource_monitors.fixed_heap",
+						TriggerOneof: &envoy_config_overload_v3.Trigger_Threshold{
+							Threshold: &envoy_config_overload_v3.ThresholdTrigger{
+								Value: 0.98,
+							},
+						},
+					},
+				},
+			},
+		)
+	}
+}
+
+// includeMaxConnectionMonitoring appends the downstream connection resource monitor to
+// the overload manager
+func includeMaxConnectionMonitoring(bootstrap *envoy_config_bootstrap_v3.Bootstrap, maxConns int64) {
+	if maxConns > 0 {
+		bootstrap.OverloadManager.ResourceMonitors = append(bootstrap.OverloadManager.ResourceMonitors,
+			&envoy_config_overload_v3.ResourceMonitor{
+				Name: "envoy.resource_monitors.global_downstream_max_connections",
+				ConfigType: &envoy_config_overload_v3.ResourceMonitor_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(
+						&envoy_downstream_connections_v3.DownstreamConnectionsConfig{
+							MaxActiveDownstreamConnections: maxConns,
+						}),
+				},
+			},
+		)
 	}
 }

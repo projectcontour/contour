@@ -497,6 +497,14 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		Port:    ctx.statsPort,
 	}
 
+	var envoyOMEnforcedHealthListenerConfig *contour_v1alpha1.HealthConfig
+	if ctx.Config.OMEnforcedHealthListener != nil {
+		envoyOMEnforcedHealthListenerConfig = &contour_v1alpha1.HealthConfig{
+			Address: ctx.Config.OMEnforcedHealthListener.Address,
+			Port:    ctx.Config.OMEnforcedHealthListener.Port,
+		}
+	}
+
 	// Override metrics endpoint info from config files
 	//
 	// Note!
@@ -583,6 +591,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,
 				EnvoyAdminPort:    &ctx.Config.Network.EnvoyAdminPort,
 			},
+			OMEnforcedHealth: envoyOMEnforcedHealthListenerConfig,
 		},
 		Gateway: gatewayConfig,
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
