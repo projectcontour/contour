@@ -71,7 +71,7 @@ type Condition struct {
 	Message string `json:"message" protobuf:"bytes,6,opt,name=message"`
 }
 ```
-This will also have some convenience methods like `AddorUpdateCondition`, `GetCondition`, `IsPresent` and so on.
+This will also have some convenience methods like `AddOrUpdateCondition`, `GetCondition`, `IsPresent` and so on.
 
 We'll also add an interface to cover this new struct, and then we'll add a slice of those interfaces of to `status` as `conditions`.
 

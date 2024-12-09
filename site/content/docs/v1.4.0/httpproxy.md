@@ -453,7 +453,7 @@ Building on multiple upstreams is the ability to define relative weights for ups
 This is commonly used for canary testing of new versions of an application when you want to send a small fraction of traffic to a specific Service.
 
 ```yaml
-# httpproxy-weight-shfiting.yaml
+# httpproxy-weight-shifting.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -948,7 +948,7 @@ It requires one field, `name`, and has two optional fields:
 HTTPProxies can include other HTTPProxy objects in the namespace by specifying the name of the object and its namespace in the top-level `includes` block.
 Note that `includes` is a list, and so it must use the YAML list construct.
 
-In this example, the HTTPProxy `include-root` has included the configuration for paths matching `/service2` from the HTTPPRoxy named `service2` in the same namespace as `include-root` (the `default` namespace).
+In this example, the HTTPProxy `include-root` has included the configuration for paths matching `/service2` from the HTTPProxy named `service2` in the same namespace as `include-root` (the `default` namespace).
 It's important to note that `service2` HTTPProxy has not defined a `virtualhost` property as it is NOT a root HTTPProxy.
 
 ```yaml
@@ -1095,7 +1095,7 @@ HTTPProxy with a defined `virtualhost` field that are not in one of the allowed 
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
-An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httproxies`.
+An example of this is included in the [examples directory][1] and shows how you might create a namespace called `root-httpproxies`.
 
 > **NOTE: The restricted root namespace feature is only supported for HTTPProxy CRDs.
 > `--root-namespaces` does not affect the operation of `v1beta1.Ingress` objects**

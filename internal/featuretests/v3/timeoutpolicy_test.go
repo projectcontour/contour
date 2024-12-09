@@ -133,7 +133,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 	rh.OnDelete(i4)
 
-	p1 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "600"}) // not 600s
+	p1 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "600"}) // not 600s
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propagated
@@ -144,7 +144,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p2 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "3m"})
+	p2 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "3m"})
 	rh.OnUpdate(p1, p2)
 
 	// check timeout policy with response timeout is propagated correctly
@@ -162,10 +162,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "infinity"})
+	p3 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{Response: "infinity"})
 	rh.OnUpdate(p2, p3)
 
-	// check timeout policy with explicit infine response timeout is propagated as infinity
+	// check timeout policy with explicit infinite response timeout is propagated as infinity
 	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
@@ -188,7 +188,7 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 	svc := fixture.NewService("kuard").
 		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
-	p1 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "600"}) // not 600s
+	p1 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "600"}) // not 600s
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propagated
@@ -199,7 +199,7 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p2 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "3m"})
+	p2 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "3m"})
 	rh.OnUpdate(p1, p2)
 
 	// check timeout policy with response timeout is propagated correctly
@@ -217,10 +217,10 @@ func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "infinity"})
+	p3 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{Idle: "infinity"})
 	rh.OnUpdate(p2, p3)
 
-	// check timeout policy with explicit infine response timeout is propagated as infinity
+	// check timeout policy with explicit infinite response timeout is propagated as infinity
 	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
@@ -243,7 +243,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 	svc := fixture.NewService("kuard").WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
-	p1 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{IdleConnection: "invalid"})
+	p1 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{IdleConnection: "invalid"})
 	rh.OnAdd(p1)
 
 	// Check that cluster was not created with invalid input.
@@ -252,7 +252,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 		TypeUrl:   clusterType,
 	})
 
-	p2 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{IdleConnection: "3m"})
+	p2 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{IdleConnection: "3m"})
 	rh.OnUpdate(p1, p2)
 
 	// Check that cluster has connection timeout set.
@@ -261,7 +261,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 		TypeUrl:   clusterType,
 	})
 
-	p3 := httpProxyWithTimoutPolicy(svc, &contour_v1.TimeoutPolicy{IdleConnection: "infinite"})
+	p3 := httpProxyWithTimeoutPolicy(svc, &contour_v1.TimeoutPolicy{IdleConnection: "infinite"})
 	rh.OnUpdate(p2, p3)
 
 	// Check that cluster has connection timeout set to zero (infinite).
@@ -271,7 +271,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 	})
 }
 
-func httpProxyWithTimoutPolicy(svc *core_v1.Service, tp *contour_v1.TimeoutPolicy) *contour_v1.HTTPProxy {
+func httpProxyWithTimeoutPolicy(svc *core_v1.Service, tp *contour_v1.TimeoutPolicy) *contour_v1.HTTPProxy {
 	return &contour_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
 		Spec: contour_v1.HTTPProxySpec{

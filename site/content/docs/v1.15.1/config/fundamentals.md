@@ -152,7 +152,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 ## HTTPProxy API Specification
 
 The full HTTPProxy specification is described in detail in the [API documentation][4].
-There are a number of working examples of HTTPProxy objects in the [`examples/example-workload`][3] directory of the Contour Github repository.
+There are a number of working examples of HTTPProxy objects in the [`examples/example-workload`][3] directory of the Contour GitHub repository.
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md

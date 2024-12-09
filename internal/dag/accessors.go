@@ -53,7 +53,7 @@ func (d *DAG) EnsureService(meta types.NamespacedName, port, healthPort int, cac
 	// so nothing is getting attached to them, and when used
 	// to generate an Envoy cluster any copy of this info will
 	// do. Doing a DAG walk to look for them is also very
-	// inefficient and can cause performance isuses at scale
+	// inefficient and can cause performance issues at scale
 	// (see https://github.com/projectcontour/contour/issues/4058).
 	return &Service{
 		Weighted: WeightedService{

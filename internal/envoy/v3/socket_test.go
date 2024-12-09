@@ -27,11 +27,11 @@ import (
 
 func TestUpstreamTLSTransportSocket(t *testing.T) {
 	tests := map[string]struct {
-		ctxt *envoy_transport_socket_tls_v3.UpstreamTlsContext
+		ctx  *envoy_transport_socket_tls_v3.UpstreamTlsContext
 		want *envoy_config_core_v3.TransportSocket
 	}{
 		"h2": {
-			ctxt: UpstreamTLSContext(nil, "", nil, nil, "h2"),
+			ctx: UpstreamTLSContext(nil, "", nil, nil, "h2"),
 			want: &envoy_config_core_v3.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
 				ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
@@ -43,7 +43,7 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSTransportSocket(tc.ctxt)
+			got := UpstreamTLSTransportSocket(tc.ctx)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -63,11 +63,11 @@ func TestDownstreamTLSTransportSocket(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		ctxt *envoy_transport_socket_tls_v3.DownstreamTlsContext
+		ctx  *envoy_transport_socket_tls_v3.DownstreamTlsContext
 		want *envoy_config_core_v3.TransportSocket
 	}{
 		"default/tls": {
-			ctxt: DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, nil, "client-subject-name", "h2", "http/1.1"),
+			ctx: DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, nil, "client-subject-name", "h2", "http/1.1"),
 			want: &envoy_config_core_v3.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
 				ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
@@ -79,7 +79,7 @@ func TestDownstreamTLSTransportSocket(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := DownstreamTLSTransportSocket(tc.ctxt)
+			got := DownstreamTLSTransportSocket(tc.ctx)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

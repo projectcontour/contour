@@ -18,7 +18,7 @@ See [#4954](https://github.com/projectcontour/contour/issues/4954) for context.
 
 ## High-Level Design
 
-Contour will add HTTP support for Envoy's External Authorozation.
+Contour will add HTTP support for Envoy's External Authorization.
 
 Currently, Contour supports External Authorization only over HTTPS. External Authorization allows for requests to be authenticated before they are forwarded upstream. However, External authorization over HTTPS is incompatible with setups that terminate TLS at the cloud provider's load balancer layer because the Envoy HCM relies on the SNI to choose the correct filter chain. 
 

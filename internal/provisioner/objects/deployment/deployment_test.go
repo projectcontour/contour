@@ -140,7 +140,7 @@ func TestDesiredDeployment(t *testing.T) {
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
 
-	resQutoa := core_v1.ResourceRequirements{
+	resQuota := core_v1.ResourceRequirements{
 		Limits: core_v1.ResourceList{
 			core_v1.ResourceCPU:    resource.MustParse("400m"),
 			core_v1.ResourceMemory: resource.MustParse("256Mi"),
@@ -151,7 +151,7 @@ func TestDesiredDeployment(t *testing.T) {
 		},
 	}
 
-	cntr.Spec.ContourResources = resQutoa
+	cntr.Spec.ContourResources = resQuota
 
 	// Change the Kubernetes log level to test --kubernetes-debug.
 	cntr.Spec.KubernetesLogLevel = 7
@@ -212,7 +212,7 @@ func TestDesiredDeployment(t *testing.T) {
 
 	checkDeploymentHasNodeSelector(t, deploy, nil)
 	checkDeploymentHasTolerations(t, deploy, nil)
-	checkDeploymentHasResourceRequirements(t, deploy, resQutoa)
+	checkDeploymentHasResourceRequirements(t, deploy, resQuota)
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.ContourDeploymentStrategy)
 }
 

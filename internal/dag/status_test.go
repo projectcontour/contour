@@ -1273,7 +1273,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyInvalidDuplicateIncludeCondtionHeaders := &contour_v1.HTTPProxy{
+	proxyInvalidDuplicateIncludeConditionHeaders := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
@@ -1309,13 +1309,13 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	run(t, "duplicate include condition headers", testcase{
-		objs: []any{proxyInvalidDuplicateIncludeCondtionHeaders, proxyValidDelegatedRoots, fixture.ServiceRootsHome},
+		objs: []any{proxyInvalidDuplicateIncludeConditionHeaders, proxyValidDelegatedRoots, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{
-				Name:      proxyInvalidDuplicateIncludeCondtionHeaders.Name,
-				Namespace: proxyInvalidDuplicateIncludeCondtionHeaders.Namespace,
+				Name:      proxyInvalidDuplicateIncludeConditionHeaders.Name,
+				Namespace: proxyInvalidDuplicateIncludeConditionHeaders.Namespace,
 			}: fixture.NewValidCondition().
-				WithGeneration(proxyInvalidDuplicateIncludeCondtionHeaders.Generation).WithError(contour_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
+				WithGeneration(proxyInvalidDuplicateIncludeConditionHeaders.Generation).WithError(contour_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
 			{
 				Name:      proxyValidDelegatedRoots.Name,
 				Namespace: proxyValidDelegatedRoots.Namespace,
@@ -6107,7 +6107,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 								{
 									Type:  ptr.To(gatewayapi_v1.HeaderMatchRegularExpression),
 									Name:  gatewayapi_v1.HTTPHeaderName("foo"),
-									Value: "invalid-regrex\\",
+									Value: "invalid-regex\\",
 								},
 							},
 						}},

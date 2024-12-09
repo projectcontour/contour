@@ -7220,7 +7220,7 @@ func TestDAGInsert(t *testing.T) {
 	}
 
 	// proxy1f is identical to proxy1 and ir1, except for a different service.
-	// Used to test priority when importing ir then httproxy.
+	// Used to test priority when importing ir then httpproxy.
 	proxy1f := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "example-com",
@@ -10733,7 +10733,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy": {
+		"insert httpproxy": {
 			objs: []any{
 				proxy1, s1,
 			},
@@ -10747,7 +10747,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy w/o condition": {
+		"insert httpproxy w/o condition": {
 			objs: []any{
 				proxy1b, s1,
 			},
@@ -10761,7 +10761,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy with invalid include": {
+		"insert httpproxy with invalid include": {
 			objs: []any{
 				&contour_v1.HTTPProxy{
 					ObjectMeta: meta_v1.ObjectMeta{
@@ -10776,8 +10776,8 @@ func TestDAGInsert(t *testing.T) {
 							Conditions: []contour_v1.MatchCondition{{
 								Prefix: "/finance",
 							}},
-							Name:      "non-existent",
-							Namespace: "non-existent",
+							Name:      "nonexistent",
+							Namespace: "nonexistent",
 						}},
 					},
 				},
@@ -10797,7 +10797,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy with include references another root": {
+		"insert httpproxy with include references another root": {
 			objs: []any{
 				&contour_v1.HTTPProxy{
 					ObjectMeta: meta_v1.ObjectMeta{
@@ -10844,7 +10844,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy w/ conditions": {
+		"insert httpproxy w/ conditions": {
 			objs: []any{
 				proxy1c, s1,
 			},
@@ -10868,7 +10868,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy w/ multiple routes with a Contains condition on the same header": {
+		"insert httpproxy w/ multiple routes with a Contains condition on the same header": {
 			objs: []any{
 				proxy2d, s1,
 			},
@@ -10895,7 +10895,7 @@ func TestDAGInsert(t *testing.T) {
 			),
 		},
 
-		"insert httproxy w/ multiple routes with condition on the same header, one Contains and one NotContains": {
+		"insert httpproxy w/ multiple routes with condition on the same header, one Contains and one NotContains": {
 			objs: []any{
 				proxy2e, s1,
 			},
@@ -10921,7 +10921,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy w/ included conditions": {
+		"insert httpproxy w/ included conditions": {
 			objs: []any{
 				proxy2a, proxy2b, s1,
 			},
@@ -11174,7 +11174,7 @@ func TestDAGInsert(t *testing.T) {
 				cert2, s1a,
 				&contour_v1.TLSCertificateDelegation{
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name:      "CACertDelagation",
+						Name:      "CACertDelegation",
 						Namespace: cert2.Namespace,
 					},
 					Spec: contour_v1.TLSCertificateDelegationSpec{
@@ -11608,7 +11608,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert httproxy w/ route w/ no services": {
+		"insert httpproxy w/ route w/ no services": {
 			objs: []any{proxy41, s1},
 			want: listeners(), // expect empty, route is invalid so vhost is invalid
 		},
@@ -12729,7 +12729,7 @@ func TestDAGInsert(t *testing.T) {
 				sec4,
 				&contour_v1.TLSCertificateDelegation{
 					ObjectMeta: meta_v1.ObjectMeta{
-						Name:      "CertDelagation",
+						Name:      "CertDelegation",
 						Namespace: sec4.Namespace,
 					},
 					Spec: contour_v1.TLSCertificateDelegationSpec{
@@ -15090,7 +15090,7 @@ func TestBuilderRunsProcessorsInOrder(t *testing.T) {
 	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
 }
 
-func TestHTTPProxyConficts(t *testing.T) {
+func TestHTTPProxyConflicts(t *testing.T) {
 	type testcase struct {
 		objs          []any
 		wantListeners []*Listener
@@ -15630,7 +15630,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				},
 			),
 			ingressReqHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15640,7 +15640,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				Remove: []string{"K-Nada"},
 			},
 			ingressRespHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15668,7 +15668,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				},
 			),
 			httpProxyReqHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15678,7 +15678,7 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 				Remove: []string{"K-Nada"},
 			},
 			httpProxyRespHp: &HeadersPolicy{
-				// Add not currently siupported
+				// Add not currently supported
 				// Add: map[string]string{
 				// 	"Custom-Header-Add": "foo-bar",
 				// },
@@ -15936,7 +15936,7 @@ func service(s *core_v1.Service) *Service {
 	return weightedService(s, 1)
 }
 
-func appProtcolService(s *core_v1.Service, protocol string, portIndex ...int) *Service {
+func appProtocolService(s *core_v1.Service, protocol string, portIndex ...int) *Service {
 	idx := 0
 	if len(portIndex) > 0 {
 		idx = portIndex[0]

@@ -116,7 +116,7 @@ type MatchCondition struct {
 // IgnoreCase has no effect for Regex.
 type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
-	// Header names are case insensitive.
+	// Header names are case-insensitive.
 	Name string `json:"name"`
 
 	// Present specifies that condition is true when the named header
@@ -142,7 +142,7 @@ type HeaderMatchCondition struct {
 	// +optional
 	NotContains string `json:"notcontains,omitempty"`
 
-	// IgnoreCase specifies that string matching should be case insensitive.
+	// IgnoreCase specifies that string matching should be case-insensitive.
 	// Note that this has no effect on the Regex parameter.
 	// +optional
 	IgnoreCase bool `json:"ignoreCase,omitempty"`
@@ -175,7 +175,7 @@ type HeaderMatchCondition struct {
 // for Regex.
 type QueryParameterMatchCondition struct {
 	// Name is the name of the query parameter to match against. Name is required.
-	// Query parameter names are case insensitive.
+	// Query parameter names are case-insensitive.
 	Name string `json:"name"`
 
 	// Exact specifies a string that the query parameter value must be equal to.
@@ -200,7 +200,7 @@ type QueryParameterMatchCondition struct {
 	// +optional
 	Contains string `json:"contains,omitempty"`
 
-	// IgnoreCase specifies that string matching should be case insensitive.
+	// IgnoreCase specifies that string matching should be case-insensitive.
 	// Note that this has no effect on the Regex parameter.
 	// +optional
 	IgnoreCase bool `json:"ignoreCase,omitempty"`

@@ -291,7 +291,7 @@ $ curl -k http://local.projectcontour.io/test/$((RANDOM))
 
 ## Add global rate limit policies
 
-Now that we have a working application exposed by a `HTTPProxy` resource, we can add add global rate limiting to it.
+Now that we have a working application exposed by a `HTTPProxy` resource, we can add global rate limiting to it.
 
 Edit the `HTTPProxy` that we created in the previous step to add rate limit policies to both routes:
 

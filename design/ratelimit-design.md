@@ -185,7 +185,7 @@ spec:
 ```
 
 ### Contour Configuration
-If using global rate limiting, anexternal RLS can be configured in the Contour config file.
+If using global rate limiting, an external RLS can be configured in the Contour config file.
 This RLS will be used for all virtual hosts that defines a global rate limit policy.
 
 ```yaml
@@ -467,7 +467,7 @@ descriptors:
           unit: minute
 ```
 
-#### Limit each client to 5 requests per per minute if they have the "os: linux" header, and 10 total requests per minute
+#### Limit each client to 5 requests per minute if they have the "os: linux" header, and 10 total requests per minute
 
 The `HTTPProxy` rate limit policy:
 ```yaml

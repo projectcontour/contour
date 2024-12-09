@@ -47,7 +47,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 		wantConditions  []*meta_v1.Condition
 		assertions      func(t *testing.T, r *gatewayClassReconciler, gc *gatewayapi_v1.GatewayClass, reconcileErr error)
 	}{
-		"reconcile request for non-existent gatewayclass results in no error": {
+		"reconcile request for nonexistent gatewayclass results in no error": {
 			req: &reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "nonexistent"},
 			},
