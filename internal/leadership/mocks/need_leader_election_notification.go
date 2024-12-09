@@ -9,7 +9,7 @@ type NeedLeaderElectionNotification struct {
 	mock.Mock
 }
 
-// OnElectedLeader provides a mock function with given fields:
+// OnElectedLeader provides a mock function with no fields
 func (_m *NeedLeaderElectionNotification) OnElectedLeader() {
 	_m.Called()
 }
