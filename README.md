@@ -1,6 +1,6 @@
 # Contour
 
-![GitHub release](https://img.shields.io/github/release/projectcontour/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Slack](https://img.shields.io/badge/slack-join%20chat-e01563.svg?logo=slack)](https://kubernetes.slack.com/messages/contour)
+![GitHub release](https://img.shields.io/github/release/projectcontour/contour.svg) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Slack](https://img.shields.io/badge/slack-join%20chat-e01563.svg?logo=slack)](https://kubernetes.slack.com/messages/contour) [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Contour%20Guru-006BFF)](https://gurubase.io/g/contour)
 
 ![Build and Test Pull Request](https://github.com/projectcontour/contour/workflows/Build%20and%20Test%20Pull%20Request/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/projectcontour/contour)](https://goreportcard.com/report/github.com/projectcontour/contour) [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/projectcontour/contour/badge)](https://securityscorecards.dev/viewer/?uri=github.com/projectcontour/contour) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4141/badge)](https://bestpractices.coreinfrastructure.org/projects/4141)
 
