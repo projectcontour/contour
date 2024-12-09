@@ -8703,7 +8703,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: backendlbpolicies.gateway.networking.k8s.io
@@ -8836,8 +8836,8 @@ spec:
                 x-kubernetes-validations:
                 - message: AbsoluteTimeout must be specified when cookie lifetimeType
                     is Permanent
-                  rule: '!has(self.cookieConfig.lifetimeType) || self.cookieConfig.lifetimeType
-                    != ''Permanent'' || has(self.absoluteTimeout)'
+                  rule: '!has(self.cookieConfig) || !has(self.cookieConfig.lifetimeType)
+                    || self.cookieConfig.lifetimeType != ''Permanent'' || has(self.absoluteTimeout)'
               targetRefs:
                 description: |-
                   TargetRef identifies an API object to apply policy to.
@@ -9213,7 +9213,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   labels:
@@ -9766,7 +9766,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
@@ -10294,7 +10294,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
@@ -12582,7 +12582,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: grpcroutes.gateway.networking.k8s.io
@@ -14393,8 +14393,8 @@ spec:
                       x-kubernetes-validations:
                       - message: AbsoluteTimeout must be specified when cookie lifetimeType
                           is Permanent
-                        rule: '!has(self.cookieConfig.lifetimeType) || self.cookieConfig.lifetimeType
-                          != ''Permanent'' || has(self.absoluteTimeout)'
+                        rule: '!has(self.cookieConfig) || !has(self.cookieConfig.lifetimeType)
+                          || self.cookieConfig.lifetimeType != ''Permanent'' || has(self.absoluteTimeout)'
                   type: object
                 maxItems: 16
                 type: array
@@ -14686,7 +14686,14 @@ spec:
     storage: true
     subresources:
       status: {}
-  - deprecated: true
+  - additionalPrinterColumns:
+    - jsonPath: .spec.hostnames
+      name: Hostnames
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    deprecated: true
     deprecationWarning: The v1alpha2 version of GRPCRoute has been deprecated and
       will be removed in a future release of the API. Please upgrade to v1.
     name: v1alpha2
@@ -16478,8 +16485,8 @@ spec:
                       x-kubernetes-validations:
                       - message: AbsoluteTimeout must be specified when cookie lifetimeType
                           is Permanent
-                        rule: '!has(self.cookieConfig.lifetimeType) || self.cookieConfig.lifetimeType
-                          != ''Permanent'' || has(self.absoluteTimeout)'
+                        rule: '!has(self.cookieConfig) || !has(self.cookieConfig.lifetimeType)
+                          || self.cookieConfig.lifetimeType != ''Permanent'' || has(self.absoluteTimeout)'
                   type: object
                 maxItems: 16
                 type: array
@@ -16769,6 +16776,8 @@ spec:
         type: object
     served: true
     storage: false
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
@@ -16784,7 +16793,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
@@ -19308,8 +19317,8 @@ spec:
                       x-kubernetes-validations:
                       - message: AbsoluteTimeout must be specified when cookie lifetimeType
                           is Permanent
-                        rule: '!has(self.cookieConfig.lifetimeType) || self.cookieConfig.lifetimeType
-                          != ''Permanent'' || has(self.absoluteTimeout)'
+                        rule: '!has(self.cookieConfig) || !has(self.cookieConfig.lifetimeType)
+                          || self.cookieConfig.lifetimeType != ''Permanent'' || has(self.absoluteTimeout)'
                     timeouts:
                       description: |+
                         Timeouts defines the timeouts that can be configured for an HTTP request.
@@ -22212,8 +22221,8 @@ spec:
                       x-kubernetes-validations:
                       - message: AbsoluteTimeout must be specified when cookie lifetimeType
                           is Permanent
-                        rule: '!has(self.cookieConfig.lifetimeType) || self.cookieConfig.lifetimeType
-                          != ''Permanent'' || has(self.absoluteTimeout)'
+                        rule: '!has(self.cookieConfig) || !has(self.cookieConfig.lifetimeType)
+                          || self.cookieConfig.lifetimeType != ''Permanent'' || has(self.absoluteTimeout)'
                     timeouts:
                       description: |+
                         Timeouts defines the timeouts that can be configured for an HTTP request.
@@ -22622,7 +22631,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: referencegrants.gateway.networking.k8s.io
@@ -22983,7 +22992,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
@@ -23715,7 +23724,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
@@ -24510,7 +24519,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.1.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io

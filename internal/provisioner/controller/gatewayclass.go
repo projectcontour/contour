@@ -39,7 +39,7 @@ import (
 
 const (
 	gatewayAPIBundleVersionAnnotation   = "gateway.networking.k8s.io/bundle-version"
-	gatewayAPICRDBundleSupportedVersion = "v1.1.0"
+	gatewayAPICRDBundleSupportedVersion = "v1.1.1"
 )
 
 // gatewayClassReconciler reconciles GatewayClass objects.
