@@ -61,7 +61,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 	case 0:
 		// external name not set, cluster will be discovered via EDS
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS)
-		cluster.EdsClusterConfig = edsconfig("contour", service)
+		cluster.EdsClusterConfig = edsconfig(service)
 	default:
 		// external name set, use hard coded DNS name
 		// external name set to LOGICAL_DNS when user selects the ALL loookup family
@@ -156,7 +156,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 	// Cluster will be discovered via EDS.
 	cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS)
 	cluster.EdsClusterConfig = &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-		EdsConfig:   ConfigSource("contour"),
+		EdsConfig:   ConfigSource(),
 		ServiceName: ext.Upstream.ClusterName,
 	}
 
@@ -231,9 +231,9 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v3.Cluster {
 	return cluster
 }
 
-func edsconfig(cluster string, service *dag.Service) *envoy_config_cluster_v3.Cluster_EdsClusterConfig {
+func edsconfig(service *dag.Service) *envoy_config_cluster_v3.Cluster_EdsClusterConfig {
 	return &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-		EdsConfig: ConfigSource(cluster),
+		EdsConfig: ConfigSource(),
 		ServiceName: xds.ClusterLoadAssignmentName(
 			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
 			service.Weighted.ServicePort.Name,
@@ -280,18 +280,9 @@ func ClusterCommonLBConfig() *envoy_config_cluster_v3.Cluster_CommonLbConfig {
 }
 
 // ConfigSource returns a *envoy_config_core_v3.ConfigSource for cluster.
-func ConfigSource(cluster string) *envoy_config_core_v3.ConfigSource {
+func ConfigSource() *envoy_config_core_v3.ConfigSource {
 	return &envoy_config_core_v3.ConfigSource{
-		ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-		ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-				ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-				TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-				GrpcServices: []*envoy_config_core_v3.GrpcService{
-					GrpcService(cluster, "", timeout.DefaultSetting()),
-				},
-			},
-		},
+		ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 	}
 }
 

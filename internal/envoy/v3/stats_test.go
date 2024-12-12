@@ -216,7 +216,7 @@ func TestStatsListeners(t *testing.T) {
 							},
 							TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 								Name:      "metrics-tls-certificate",
-								SdsConfig: ConfigSource("contour"),
+								SdsConfig: ConfigSource(),
 							}},
 						},
 					},
@@ -307,12 +307,12 @@ func TestStatsListeners(t *testing.T) {
 							},
 							TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 								Name:      "metrics-tls-certificate",
-								SdsConfig: ConfigSource("contour"),
+								SdsConfig: ConfigSource(),
 							}},
 							ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 								ValidationContextSdsSecretConfig: &envoy_transport_socket_tls_v3.SdsSecretConfig{
 									Name:      "metrics-ca-certificate",
-									SdsConfig: ConfigSource("contour"),
+									SdsConfig: ConfigSource(),
 								},
 							},
 						},

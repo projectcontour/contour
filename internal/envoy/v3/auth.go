@@ -31,7 +31,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	if clientSecret != nil {
 		clientSecretConfigs = []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 			Name:      envoy.Secretname(clientSecret),
-			SdsConfig: ConfigSource("contour"),
+			SdsConfig: ConfigSource(),
 		}}
 	}
 
@@ -125,7 +125,7 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxPr
 			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name:      envoy.Secretname(serverSecret),
-				SdsConfig: ConfigSource("contour"),
+				SdsConfig: ConfigSource(),
 			}},
 			AlpnProtocols: alpnProtos,
 		},

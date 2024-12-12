@@ -490,7 +490,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		RouteSpecifier: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Rds{
 			Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 				RouteConfigName: b.routeConfigName,
-				ConfigSource:    ConfigSource("contour"),
+				ConfigSource:    ConfigSource(),
 			},
 		},
 		Tracing:     b.tracingConfig,

@@ -178,7 +178,7 @@ func cluster(name, servicename, statName string) *envoy_config_cluster_v3.Cluste
 		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 		AltStatName:          statName,
 		EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-			EdsConfig:   envoy_v3.ConfigSource("contour"),
+			EdsConfig:   envoy_v3.ConfigSource(),
 			ServiceName: servicename,
 		},
 	})

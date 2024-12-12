@@ -169,7 +169,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootst
 					LayerSpecifier: &envoy_config_bootstrap_v3.RuntimeLayer_RtdsLayer_{
 						RtdsLayer: &envoy_config_bootstrap_v3.RuntimeLayer_RtdsLayer{
 							Name:       DynamicRuntimeLayerName,
-							RtdsConfig: ConfigSource("contour"),
+							RtdsConfig: ConfigSource(),
 						},
 					},
 				},
@@ -187,8 +187,15 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootst
 			},
 		},
 		DynamicResources: &envoy_config_bootstrap_v3.Bootstrap_DynamicResources{
-			LdsConfig: ConfigSource("contour"),
-			CdsConfig: ConfigSource("contour"),
+			AdsConfig: &envoy_config_core_v3.ApiConfigSource{
+				ApiType:             envoy_config_core_v3.ApiConfigSource_DELTA_GRPC,
+				TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+				GrpcServices: []*envoy_config_core_v3.GrpcService{
+					GrpcService("contour", "", timeout.DefaultSetting()),
+				},
+			},
+			LdsConfig: ConfigSource(),
+			CdsConfig: ConfigSource(),
 		},
 		StaticResources: &envoy_config_bootstrap_v3.Bootstrap_StaticResources{
 			Clusters: []*envoy_config_cluster_v3.Cluster{{
