@@ -41,7 +41,7 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
   - The `tls` protocol allows for requests which terminate at Envoy to proxy via tls to the upstream. _Note: This does not validate the upstream certificate._
 
 ## Contour specific HTTPProxy annotations
-- `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the HTTPProxy. If not set, then all all Contour instances serve the HTTPProxy. If specified as `projectcontour.io/ingress.class: contour`, then Contour serves the HTTPProxy and any others that have no annotation defined. If any other value, Contour ignores the HTTPProxy definition.
+- `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the HTTPProxy. If not set, then all Contour instances serve the HTTPProxy. If specified as `projectcontour.io/ingress.class: contour`, then Contour serves the HTTPProxy and any others that have no annotation defined. If any other value, Contour ignores the HTTPProxy definition.
 You can override the default class `contour` with the `--ingress-class-name` flag at runtime.
 
 [1]: https://www.envoyproxy.io/docs/envoy/v1.11.2/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries

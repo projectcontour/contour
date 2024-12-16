@@ -338,7 +338,7 @@ Once that happens, the client has to resend the original request and it will ent
 1. Contour could install itself as the authorization server.
    This could remove some of the limitations of the Envoy configuration structure at the cost of more complexity in Contour.
 1. Integrate external authorization directly into `HTTPProxy`.
-   This increases the complexity of the `HTTPProxy` structure and makes it difficult to reuse the same authorization service acrtoss multiple proxies.
+   This increases the complexity of the `HTTPProxy` structure and makes it difficult to reuse the same authorization service across multiple proxies.
    A separate CRD gives better opportunities to expose useful operational status.
    Integrating specific authorization parameters into `HTTPProxy` prevents operators implementing their own authorization flows.
 

@@ -146,7 +146,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 					envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true))
 
 				// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
-				// When a request is received, the default TLS filterchain will accept the connection,
+				// When a request is received, the default TLS filter chain will accept the connection,
 				// and this routing table in RDS defines where the request proxies next.
 				if vhost.FallbackCertificate != nil {
 					routeConfigName := fallbackCertRouteConfigName(dagListener)

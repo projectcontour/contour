@@ -8,7 +8,7 @@ The intent is to make the process of building the release changelog faster and e
 
 ## Background
 At the time of writing, creating Contour's release notes takes at least a day, sometimes two.
-Whoever is in charge of a given release must carefully check through all the PRs merged since the last release, write up a change summary for each, and get all of that into Markdown, ready to be put into the Github Release.
+Whoever is in charge of a given release must carefully check through all the PRs merged since the last release, write up a change summary for each, and get all of that into Markdown, ready to be put into the GitHub Release.
 The Contour team has got feedback on a few occasions that our current release notes are excellent, and we want to keep that up, but it should not take so long.
 
 ## Goals

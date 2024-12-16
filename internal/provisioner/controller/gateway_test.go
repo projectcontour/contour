@@ -1008,7 +1008,7 @@ func TestGatewayReconcile(t *testing.T) {
 			},
 		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment," +
-			"an Envoy deployment is provisioned with the settings come from DeployemntSettings": {
+			"an Envoy deployment is provisioned with the settings come from DeploymentSettings": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contour_v1alpha1.ContourDeployment{
 				ObjectMeta: meta_v1.ObjectMeta{

@@ -143,7 +143,7 @@ func checkContainerHaveResourceRequirements(t *testing.T, container *core_v1.Con
 	if apiequality.Semantic.DeepEqual(container.Resources, defContainerResources) {
 		return
 	}
-	t.Errorf("container doesn't have resource requiremetns")
+	t.Errorf("container doesn't have resource requirements")
 }
 
 func checkDaemonSetHasNodeSelector(t *testing.T, ds *apps_v1.DaemonSet, expected map[string]string) {
@@ -315,7 +315,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	testBaseIDArg := "--base-id 1"
 	testEnvoyMaxHeapSize := "--overload-max-heap=8000000000"
 
-	resQutoa := core_v1.ResourceRequirements{
+	resQuota := core_v1.ResourceRequirements{
 		Limits: core_v1.ResourceList{
 			core_v1.ResourceCPU:    resource.MustParse("400m"),
 			core_v1.ResourceMemory: resource.MustParse("256Mi"),
@@ -325,7 +325,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 			core_v1.ResourceMemory: resource.MustParse("25Mi"),
 		},
 	}
-	cntr.Spec.EnvoyResources = resQutoa
+	cntr.Spec.EnvoyResources = resQuota
 
 	// Change the Envoy log level to test --log-level debug.
 	cntr.Spec.EnvoyLogLevel = contour_v1alpha1.DebugLog
@@ -373,7 +373,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasAnnotation(t, ds, "other-annotation", "other-val")
 	checkDaemonSetHasAnnotation(t, ds, "prometheus.io/scrape", "false")
 
-	checkDaemonSetHasResourceRequirements(t, ds, resQutoa)
+	checkDaemonSetHasResourceRequirements(t, ds, resQuota)
 	checkDaemonSetHasUpdateStrategy(t, ds, cntr.Spec.EnvoyDaemonSetUpdateStrategy)
 }
 

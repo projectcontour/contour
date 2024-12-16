@@ -45,7 +45,7 @@ If a root `HTTPProxy` defines both, the proxy will be set to an error.
 
 Contour defines `FilterChainMatches` (https://www.envoyproxy.io/docs/envoy/v1.14.1/api-v2/api/v2/listener/listener_components.proto.html?highlight=filterchainmatch#listener-filterchainmatch) on SNI names which allows for a single Envoy listener to proxy multiple vhosts over TLS.
 This feature will add a new filter chain match on `TransportProtocol:  tls` which will match any request which is TLS but does not match a pre-configured SNI defined in the previous step.
-Envoy processes `FilterChainMataches` with `SNI` matches before transport protocol.
+Envoy processes `FilterChainMatches` with `SNI` matches before transport protocol.
 
 Next this catch-all filter chain takes a `route_config_name` reference in the `envoy.http_connection_manager`.
 For all non-http requests, an Envoy RDS config named `ingress_http` is configured with  all the routes.

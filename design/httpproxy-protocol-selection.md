@@ -14,7 +14,7 @@ Allow for the HTTPProxy to encode all of the additional configuration needed to 
 
 ## Background
 
-Today, Contour requires K8s Services to be annotated with additional protocol metadata encoded in annotations to use more than `http1`.  This presents a problem for controllers looking to emit HTTPProxy resources which don't own the K8s services being targeted because it involves manipulating resources they don't control.  The motivating issue (https://github.com/projectcontour/contour/issues/1962) also calls out the use of annotations as somewhat anithetical to some of the underlying motivations for HTTPProxy in the first place!
+Today, Contour requires K8s Services to be annotated with additional protocol metadata encoded in annotations to use more than `http1`.  This presents a problem for controllers looking to emit HTTPProxy resources which don't own the K8s services being targeted because it involves manipulating resources they don't control.  The motivating issue (https://github.com/projectcontour/contour/issues/1962) also calls out the use of annotations as somewhat antithetical to some of the underlying motivations for HTTPProxy in the first place!
 
 ## High-Level Design
 

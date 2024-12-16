@@ -160,7 +160,7 @@ func TestDesiredRoleFilterResources(t *testing.T) {
 			},
 		},
 		{
-			description:      "disable non-existent features",
+			description:      "disable nonexistent features",
 			disabledFeatures: []contour_v1.Feature{"abc", "efg"},
 			expectedGateway:  [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
 			expectedContour:  [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},

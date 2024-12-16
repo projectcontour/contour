@@ -6,7 +6,7 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 GATEWAY_API_VERSION ?= $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
-# 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
+# 'contour serve'. On macOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
 LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 'inet 127.' | head -n1 | awk '{print $$2}')
 

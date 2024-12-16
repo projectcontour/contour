@@ -77,7 +77,7 @@ Example:
 $ kubectl create secret generic my-certificate-authority --from-file=./ca.key
 ```
 
-Contour already subscribes to Secrets in all namespaces so Secrets will be piped through to the `dag.KubernetsCache` automatically.
+Contour already subscribes to Secrets in all namespaces so Secrets will be piped through to the `dag.KubernetesCache` automatically.
 
 ### Changes to the DAG
 

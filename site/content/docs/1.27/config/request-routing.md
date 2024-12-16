@@ -123,7 +123,7 @@ Operators:
 - `regex` is a string representing a regular expression, and checks that the header value matches against the given regular expression.
 
 Modifiers:
-- `ignoreCase`: IgnoreCase specifies that string matching should be case insensitive. It has no effect on the `Regex` parameter.
+- `ignoreCase`: IgnoreCase specifies that string matching should be case-insensitive. It has no effect on the `Regex` parameter.
 - `treatMissingAsEmpty`: specifies if the header match rule specified header does not exist, this header value will be treated as empty. Defaults to false. Unlike the underlying Envoy implementation this is **only** supported for negative matches (e.g. NotContains, NotExact).
 
 #### Query parameter conditions
@@ -454,7 +454,7 @@ spec:
       strategy: RequestHash
       requestHashPolicies:
       - queryParameterHashOptions:
-          prameterName: param1
+          parameterName: param1
         terminal: true
       - queryParameterHashOptions:
           parameterName: param2

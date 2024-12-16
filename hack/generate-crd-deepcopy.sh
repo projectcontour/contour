@@ -7,7 +7,7 @@ set -o pipefail
 readonly REPO=$(cd "$(dirname "$0")/.." && pwd)
 readonly YEAR=$(date +%Y)
 
-# Optional first aarg is the paths pattern.
+# Optional first arg is the paths pattern.
 readonly PATHS="${1:-"./apis/..."}"
 
 readonly GO111MODULE=on
