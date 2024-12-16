@@ -359,6 +359,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if envoyParams.OverloadMaxHeapSize > 0 {
 				contourModel.Spec.EnvoyMaxHeapSizeBytes = envoyParams.OverloadMaxHeapSize
 			}
+			if envoyParams.DNSLookupFamily != "" {
+				contourModel.Spec.EnvoyDNSLookupFamily = envoyParams.DNSLookupFamily
+			}
 
 		}
 	}
