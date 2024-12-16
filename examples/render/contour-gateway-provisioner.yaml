@@ -533,6 +533,20 @@ spec:
                         format: int32
                         type: integer
                     type: object
+                  omEnforcedHealth:
+                    description: |-
+                      OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+                      the envoy overload manager actions, such as global connection limits, enforced.
+                      This is disabled by default
+                    properties:
+                      address:
+                        description: Defines the health address interface.
+                        minLength: 1
+                        type: string
+                      port:
+                        description: Defines the health port.
+                        type: integer
+                    type: object
                   service:
                     description: |-
                       Service holds Envoy service parameters for setting Ingress status.
@@ -4333,6 +4347,20 @@ spec:
                               for more information.
                               Contour's default is 0.
                             format: int32
+                            type: integer
+                        type: object
+                      omEnforcedHealth:
+                        description: |-
+                          OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+                          the envoy overload manager actions, such as global connection limits, enforced.
+                          This is disabled by default
+                        properties:
+                          address:
+                            description: Defines the health address interface.
+                            minLength: 1
+                            type: string
+                          port:
+                            description: Defines the health port.
                             type: integer
                         type: object
                       service:

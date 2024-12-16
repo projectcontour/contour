@@ -714,6 +714,11 @@ type Parameters struct {
 	// from k8s endpoint slices. defaults to true,
 	// if false then reading endpoint data from the k8s endpoints.
 	FeatureFlags []string `yaml:"featureFlags,omitempty"`
+
+	// OMEnforcedHealthListener holds configuration for an envoy listener
+	// that enforces the overload manager actions, like global downstream
+	// connection limits.
+	OMEnforcedHealthListener *OMEnforcedHealthListenerConfig `yaml:"omEnforcedHealthListener,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.
@@ -884,6 +889,14 @@ type MetricsServerParameters struct {
 // FeatureFlags defines the set of feature flags
 // to toggle new contour features.
 type FeatureFlags []string
+
+type OMEnforcedHealthListenerConfig struct {
+	// Address that the listener will bind to
+	Address string `yaml:"address,omitempty"`
+
+	// Port that the listener will bind to.
+	Port int `yaml:"port,omitempty"`
+}
 
 func (p *MetricsParameters) Validate() error {
 	if err := p.Contour.Validate(); err != nil {

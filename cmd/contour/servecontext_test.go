@@ -487,6 +487,7 @@ func TestConvertServeContext(t *testing.T) {
 					EnvoyAdminPort:    ptr.To(9001),
 					XffNumTrustedHops: ptr.To(uint32(0)),
 				},
+				OMEnforcedHealth: nil,
 			},
 			Gateway: nil,
 			HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
@@ -899,6 +900,22 @@ func TestConvertServeContext(t *testing.T) {
 				cfg.Envoy.Listener.MaxRequestsPerIOCycle = ptr.To(uint32(10))
 				cfg.Envoy.Listener.HTTP2MaxConcurrentStreams = ptr.To(uint32(30))
 				cfg.Envoy.Listener.MaxConnectionsPerListener = ptr.To(uint32(50))
+				return cfg
+			},
+		},
+		"envoy overload manager health checks": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.OMEnforcedHealthListener = &config.OMEnforcedHealthListenerConfig{
+					Address: "0.0.0.0",
+					Port:    8005,
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.OMEnforcedHealth = &contour_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8005,
+				}
 				return cfg
 			},
 		},

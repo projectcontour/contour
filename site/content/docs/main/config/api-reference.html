@@ -6810,6 +6810,23 @@ NetworkParameters
 <p>Network holds various configurable Envoy network values.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>omEnforcedHealth</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.HealthConfig">
+HealthConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+the envoy overload manager actions, such as global connection limits, enforced.</p>
+<p>This is disabled by default</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListener">EnvoyListener
