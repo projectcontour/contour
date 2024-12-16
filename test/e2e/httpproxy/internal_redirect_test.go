@@ -190,7 +190,7 @@ func getInternalRedirectHTTPProxy(namespace string) *contour_v1.HTTPProxy {
 					Services: []contour_v1.Service{},
 					RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
 						Hostname:   ptr.To(fqdn),
-						StatusCode: ptr.To(302),
+						StatusCode: ptr.To(contour_v1.RedirectResponseCode(302)),
 						Path:       ptr.To("/echo"),
 					},
 				},
