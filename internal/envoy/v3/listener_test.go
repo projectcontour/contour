@@ -272,21 +272,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 	tlsCertificateSdsSecretConfigs := []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 		Name: envoy.Secretname(serverSecret),
 		SdsConfig: &envoy_config_core_v3.ConfigSource{
-			ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-			ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-				ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-					ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-					TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-					GrpcServices: []*envoy_config_core_v3.GrpcService{{
-						TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-							EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-								ClusterName: "contour",
-								Authority:   "contour",
-							},
-						},
-					}},
-				},
-			},
+			ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 		},
 	}}
 
@@ -678,21 +664,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -725,21 +697,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -773,21 +731,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -822,21 +766,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -870,21 +800,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -919,21 +835,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -966,21 +868,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1014,21 +902,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1063,21 +937,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1112,21 +972,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1159,21 +1005,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1220,21 +1052,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1277,21 +1095,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1324,21 +1128,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1372,21 +1162,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},
@@ -1421,21 +1197,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 								RouteConfigName: "default/kuard",
 								ConfigSource: &envoy_config_core_v3.ConfigSource{
-									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-											GrpcServices: []*envoy_config_core_v3.GrpcService{{
-												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
-														ClusterName: "contour",
-														Authority:   "contour",
-													},
-												},
-											}},
-										},
-									},
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_Ads{},
 								},
 							},
 						},

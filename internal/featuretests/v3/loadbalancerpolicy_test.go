@@ -61,7 +61,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoy_v3.ConfigSource(),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -113,7 +113,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoy_v3.ConfigSource(),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -123,7 +123,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_8080",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoy_v3.ConfigSource(),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -198,7 +198,7 @@ func TestLoadBalancerPolicyRequestHashHeader(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoy_v3.ConfigSource(),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -268,7 +268,7 @@ func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoy_v3.ConfigSource(),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -341,7 +341,7 @@ func TestLoadBalancerPolicyRequestHashQueryParameter(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoy_v3.ConfigSource(),
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,

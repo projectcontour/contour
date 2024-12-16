@@ -130,35 +130,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+		"api_type": "DELTA_GRPC",
+		"transport_api_version": "V3",
+		"grpc_services": [{
+			"envoy_grpc": {
+			  "cluster_name": "contour",
+			  "authority": "contour"
+			}
+		   }]
+		},
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
- 	  "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -191,19 +177,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+			"ads": {}
           }
         }
       },
@@ -311,35 +285,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+	  "api_type": "DELTA_GRPC",
+	  "transport_api_version": "V3",
+	  "grpc_services": [{
+		"envoy_grpc": {
+		  "cluster_name": "contour",
+		  "authority": "contour"
+		}
+	   }]
+	},
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -372,19 +332,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+		"ads": {}
           }
         }
       },
@@ -492,35 +440,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+      "api_type": "DELTA_GRPC",
+      "transport_api_version": "V3",
+      "grpc_services": [{
+        "envoy_grpc": {
+          "cluster_name": "contour",
+          "authority": "contour"
+        }
+       }]
+    },
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -553,19 +487,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         }
       },
@@ -674,35 +596,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+    "ads_config": {
+      "api_type": "DELTA_GRPC",
+      "transport_api_version": "V3",
+      "grpc_services": [{
+        "envoy_grpc": {
+          "cluster_name": "contour",
+          "authority": "contour"
+        }
+       }]
+	},
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
- 		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
- 		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+     "ads": {}
     }
   },
   "default_regex_engine": {
@@ -735,19 +643,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         }
       },
@@ -856,35 +752,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+	  "api_type": "DELTA_GRPC",
+	  "transport_api_version": "V3",
+	  "grpc_services": [{
+		"envoy_grpc": {
+		  "cluster_name": "contour",
+		  "authority": "contour"
+		}
+	   }]
+	},
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -917,19 +799,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         }
       },
@@ -1038,35 +908,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+      "api_type": "DELTA_GRPC",
+      "transport_api_version": "V3",
+      "grpc_services": [{
+        "envoy_grpc": {
+          "cluster_name": "contour",
+          "authority": "contour"
+        }
+       }]
+    },
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -1099,19 +955,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         }
       },
@@ -1222,35 +1066,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+      "api_type": "DELTA_GRPC",
+      "transport_api_version": "V3",
+      "grpc_services": [{
+        "envoy_grpc": {
+          "cluster_name": "contour",
+          "authority": "contour"
+        }
+       }]
+    },
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -1283,19 +1113,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         }
       },
@@ -1440,35 +1258,21 @@ func TestBootstrap(t *testing.T) {
     ]
   },
   "dynamic_resources": {
+	"ads_config": {
+	  "api_type": "DELTA_GRPC",
+	  "transport_api_version": "V3",
+	  "grpc_services": [{
+		"envoy_grpc": {
+		  "cluster_name": "contour",
+		  "authority": "contour"
+		}
+	   }]
+	},
     "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     },
     "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour",
-              "authority": "contour"
-            }
-          }
-        ]
-      },
-	  "resource_api_version": "V3"
+      "ads": {}
     }
   },
   "default_regex_engine": {
@@ -1501,19 +1305,7 @@ func TestBootstrap(t *testing.T) {
         "rtds_layer": {
           "name": "dynamic",
           "rtds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         }
       },
@@ -1656,35 +1448,21 @@ func TestBootstrap(t *testing.T) {
           ]
         },
         "dynamic_resources": {
+		  "ads_config": {
+			"api_type": "DELTA_GRPC",
+			  "transport_api_version": "V3",
+			  "grpc_services": [{
+				"envoy_grpc": {
+				  "cluster_name": "contour",
+				  "authority": "contour"
+				}
+			   }]
+			},
           "lds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           },
           "cds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         },
         "default_regex_engine": {
@@ -1717,19 +1495,7 @@ func TestBootstrap(t *testing.T) {
               "rtds_layer": {
                 "name": "dynamic",
                 "rtds_config": {
-                  "api_config_source": {
-                    "api_type": "GRPC",
-                    "transport_api_version": "V3",
-                    "grpc_services": [
-                      {
-                        "envoy_grpc": {
-                          "cluster_name": "contour",
-                          "authority": "contour"
-                        }
-                      }
-                    ]
-                  },
-                  "resource_api_version": "V3"
+                  "ads": {}
                 }
               }
             },
@@ -1890,35 +1656,21 @@ func TestBootstrap(t *testing.T) {
           }
         },
         "dynamic_resources": {
+		  "ads_config": {
+			"api_type": "DELTA_GRPC",
+			"transport_api_version": "V3",
+			"grpc_services": [{
+			  "envoy_grpc": {
+              "cluster_name": "contour",
+              "authority": "contour"
+              }
+			}]
+		  },
           "lds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           },
           "cds_config": {
-            "api_config_source": {
-              "api_type": "GRPC",
-              "transport_api_version": "V3",
-              "grpc_services": [
-                {
-                  "envoy_grpc": {
-                    "cluster_name": "contour",
-                    "authority": "contour"
-                  }
-                }
-              ]
-            },
-            "resource_api_version": "V3"
+            "ads": {}
           }
         },
         "layered_runtime": {
@@ -1928,19 +1680,7 @@ func TestBootstrap(t *testing.T) {
               "rtds_layer": {
                 "name": "dynamic",
                 "rtds_config": {
-                  "api_config_source": {
-                    "api_type": "GRPC",
-                    "transport_api_version": "V3",
-                    "grpc_services": [
-                      {
-                        "envoy_grpc": {
-                          "cluster_name": "contour",
-                          "authority": "contour"
-                        }
-                      }
-                    ]
-                  },
-                  "resource_api_version": "V3"
+                  "ads": {}
                 }
               }
             },
