@@ -138,7 +138,18 @@ func TestGatewayConformance(t *testing.T) {
 		// exclude tests we don't want to run using the ExemptFeatures
 		// field.
 		options.EnableAllSupportedFeatures = false
-		options.SupportedFeatures = features.AllFeatures.Delete(append(features.MeshCoreFeatures.UnsortedList(), features.UDPRouteFeatures.UnsortedList()...)...)
+
+		supportedFeatures := features.AllFeatures
+		supportedFeatures.Delete(features.MeshCoreFeatures.UnsortedList()...)
+		// As of GWAPI 1.2.1 UDPRouteFeatures is a different
+		// type than AllFeatures/MeshCoreFeatures hence the
+		// slightly different deletion syntax.
+		for _, f := range features.UDPRouteFeatures {
+			supportedFeatures.Delete(f)
+		}
+		for f := range supportedFeatures {
+			options.SupportedFeatures.Insert(f.Name)
+		}
 	}
 
 	conformance.RunConformanceWithOptions(t, options)
