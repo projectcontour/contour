@@ -67,6 +67,7 @@ func TestGatewayConformance(t *testing.T) {
 		// This clientset is needed in addition to the client only because
 		// controller-runtime client doesn't support non CRUD sub-resources yet (https://github.com/kubernetes-sigs/controller-runtime/issues/452).
 		Clientset:                  clientset,
+		RestConfig:                 cfg,
 		GatewayClassName:           *flags.GatewayClassName,
 		Debug:                      *flags.ShowDebug,
 		CleanupBaseResources:       *flags.CleanupBaseResources,
