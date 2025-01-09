@@ -173,7 +173,7 @@ func GRPCMethodMatch(matchType gatewayapi_v1.GRPCMethodMatchType, service, metho
 	}
 }
 
-func GRPCHeaderMatch(matchType gatewayapi_v1.HeaderMatchType, name, value string) []gatewayapi_v1.GRPCHeaderMatch {
+func GRPCHeaderMatch(matchType gatewayapi_v1.GRPCHeaderMatchType, name, value string) []gatewayapi_v1.GRPCHeaderMatch {
 	return []gatewayapi_v1.GRPCHeaderMatch{
 		{
 			Type:  ptr.To(matchType),

@@ -10,7 +10,7 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
 | --------------- | :------------------- | ------------------- | --------------------|
-| main            | [1.32.0][65]         | 1.32, 1.31, 1.30    | [1.1.0][111]        |
+| main            | [1.32.0][65]         | 1.32, 1.31, 1.30    | [1.2.1][112]        |
 | 1.30.1          | [1.31.3][64]         | 1.30, 1.29, 1.28    | [1.1.0][111]        |
 | 1.30.0          | [1.31.0][60]         | 1.30, 1.29, 1.28    | [1.1.0][111]        |
 | 1.29.3          | [1.30.7][63]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
@@ -230,3 +230,4 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [109]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v0.8.1
 [110]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v1.0.0
 [111]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v1.1.0
+[112]: https://github.com/kubernetes-sigs/gateway-api/releases/tag/v1.2.1
