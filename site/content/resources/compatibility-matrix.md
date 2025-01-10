@@ -17,7 +17,8 @@ These combinations of versions are specifically tested in CI and supported by th
 | 1.29.2          | [1.30.4][59]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
 | 1.29.1          | [1.30.2][56]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
 | 1.29.0          | [1.30.1][53]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
-| 1.28.7          | [1.29.10][62]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| 1.28.8          | [1.29.12][67]        | 1.29, 1.28, 1.27    | [1.0.0][110]        |
+| 1.28.7          | [1.29.10][62]        | 1.29, 1.28, 1.27    | [1.0.0][110]        |
 | 1.28.6          | [1.29.7][61]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
 | 1.28.5          | [1.29.5][57]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
 | 1.28.4          | [1.29.4][55]         | 1.29, 1.28, 1.27    | [1.0.0][110]        |
@@ -215,6 +216,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [64]: https://www.envoyproxy.io/docs/envoy/v1.31.3/version_history/v1.31/v1.31
 [65]: https://www.envoyproxy.io/docs/envoy/v1.32.0/version_history/v1.32/v1.32
 [66]: https://www.envoyproxy.io/docs/envoy/v1.32.3/version_history/v1.32/v1.32.3
+[67]: https://www.envoyproxy.io/docs/envoy/v1.29.12/version_history/v1.29/v1.29.12
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

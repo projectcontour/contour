@@ -74,8 +74,18 @@ versions:
         - "1.27"
       gateway-api:
         - "1.0.0"
-  - version: v1.28.7
+  - version: v1.28.8
     supported: "true"
+    dependencies:
+      envoy: "1.29.12"
+      kubernetes:
+        - "1.29"
+        - "1.28"
+        - "1.27"
+      gateway-api:
+        - "1.0.0"
+  - version: v1.28.7
+    supported: "false"
     dependencies:
       envoy: "1.29.10"
       kubernetes:
