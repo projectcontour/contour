@@ -602,10 +602,10 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		cm.CommonHttpProtocolOptions.MaxRequestsPerConnection = wrapperspb.UInt32(*b.maxRequestsPerConnection)
 	}
 
+	http2Options := &envoy_config_core_v3.Http2ProtocolOptions{}
+
 	if b.http2MaxConcurrentStreams != nil {
-		cm.Http2ProtocolOptions = &envoy_config_core_v3.Http2ProtocolOptions{
-			MaxConcurrentStreams: wrapperspb.UInt32(*b.http2MaxConcurrentStreams),
-		}
+		http2Options.MaxConcurrentStreams = wrapperspb.UInt32(*b.http2MaxConcurrentStreams)
 	}
 
 	if b.enableWebsockets {
@@ -614,7 +614,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 				UpgradeType: "websocket",
 			},
 		)
-		cm.Http2ProtocolOptions.AllowConnect = true
+		http2Options.AllowConnect = true
+	}
+
+	// Assign http2Options only if it has been modified
+	if b.http2MaxConcurrentStreams != nil {
+		cm.Http2ProtocolOptions = http2Options
 	}
 
 	return &envoy_config_listener_v3.Filter{
