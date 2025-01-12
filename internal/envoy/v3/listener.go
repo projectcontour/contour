@@ -568,6 +568,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 				UpgradeType: "websocket",
 			},
 		)
+		cm.Http2ProtocolOptions.AllowConnect = true
 	}
 
 	return &envoy_config_listener_v3.Filter{
