@@ -97,7 +97,6 @@ Where Contour settings can also be specified with command-line flags, the comman
 | cluster                   | ClusterConfig          |                                                                                                      | The [cluster configuration](#cluster-configuration).                                                                                                                                                                                                                                  |
 | network                   | NetworkConfig          |                                                                                                      | The [network configuration](#network-configuration).                                                                                                                                                                                                                                  |
 | listener                  | ListenerConfig         |                                                                                                      | The [listener configuration](#listener-configuration).                                                                                                                                                                                                                                |
-| server                    | ServerConfig           |                                                                                                      | The [server configuration](#server-configuration) for `contour serve` command.                                                                                                                                                                                                        |
 | gateway                   | GatewayConfig          |                                                                                                      | The [gateway-api Gateway configuration](#gateway-configuration).                                                                                                                                                                                                                      |
 | rateLimitService          | RateLimitServiceConfig |                                                                                                      | The [rate limit service configuration](#rate-limit-service-configuration).                                                                                                                                                                                                            |
 | enableExternalNameService | boolean                | `false`                                                                                              | Enable ExternalName Service processing. Enabling this has security implications. Please see the [advisory](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) for more details.                                                                       |
@@ -199,14 +198,6 @@ The listener configuration block can be used to configure various parameters for
 | http2-max-concurrent-streams      | int    | none    | Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed for a peer on a single HTTP/2 connection. It is recommended to not set this lower than 100 but this field can be used to bound resource usage by HTTP/2 connections and mitigate attacks like CVE-2023-44487. The default value when this is not set is unlimited. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
-
-### Server Configuration
-
-The server configuration block can be used to configure various settings for the `contour serve` command.
-
-| Field Name      | Type   | Default | Description                                                                   |
-| --------------- | ------ | ------- | ----------------------------------------------------------------------------- |
-|                 |        |         |                                                                               |
 
 ### Gateway Configuration
 
