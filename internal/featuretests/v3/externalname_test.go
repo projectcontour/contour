@@ -42,6 +42,9 @@ func TestExternalNameService(t *testing.T) {
 	rh, c, done := setup(t, enableExternalNameService(t))
 	defer done()
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	s1 := fixture.NewService("kuard").
 		WithSpec(core_v1.ServiceSpec{
 			Ports: []core_v1.ServicePort{{
@@ -219,7 +222,7 @@ func TestExternalNameService(t *testing.T) {
 				},
 				&envoy_config_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
-						envoy_v3.UpstreamTLSContext(nil, "external.address", nil, nil, "h2"),
+						envoyGen.UpstreamTLSContext(nil, "external.address", nil, nil, "h2"),
 					),
 				},
 			),
@@ -271,7 +274,7 @@ func TestExternalNameService(t *testing.T) {
 				externalNameCluster("default/kuard/80/f9439c1de8", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_config_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
-						envoy_v3.UpstreamTLSContext(nil, "external.address", nil, nil),
+						envoyGen.UpstreamTLSContext(nil, "external.address", nil, nil),
 					),
 				},
 			),
@@ -305,7 +308,7 @@ func TestExternalNameService(t *testing.T) {
 				externalNameCluster("default/kuard/80/7d449598f5", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_config_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
-						envoy_v3.UpstreamTLSContext(nil, "foo.io", nil, nil),
+						envoyGen.UpstreamTLSContext(nil, "foo.io", nil, nil),
 					),
 				},
 			),

@@ -51,6 +51,9 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			port,
+			envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+				XDSClusterName: envoy_v3.DefaultXDSClusterName,
+			}),
 		),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
@@ -274,6 +277,9 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
@@ -395,7 +401,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				envoyGen.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
@@ -426,6 +432,9 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	})
 	defer done()
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
@@ -470,7 +479,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				envoyGen.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
@@ -808,6 +817,9 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	})
 	defer done()
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 
 	svc1 := fixture.NewService("backend").
@@ -855,7 +867,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(
-		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+		envoyGen.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 	)
 
 	httpsListener := &envoy_config_listener_v3.Listener{
@@ -866,7 +878,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
-				envoy_v3.HTTPConnectionManagerBuilder().
+				envoyGen.HTTPConnectionManagerBuilder().
 					AddFilter(envoy_v3.FilterMisdirectedRequests("kuard.example.com")).
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
@@ -974,7 +986,9 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	})
 
 	defer done()
-
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
 	rh.OnAdd(secret1)
 
@@ -1015,7 +1029,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				envoyGen.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
@@ -1073,7 +1087,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v3.DownstreamTLSContext(
+				envoyGen.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
@@ -1163,6 +1177,9 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	})
 
 	defer done()
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 
 	rh.OnAdd(fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
@@ -1193,7 +1210,7 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	// verify that the xff-num-trusted-hops have been set to 1.
 	httpListener := defaultHTTPListener()
 
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -1217,6 +1234,9 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	})
 
 	defer done()
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 
 	rh.OnAdd(fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
@@ -1247,7 +1267,7 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	// verify that the server-header-transformation has been set to append_if_absent.
 	httpListener := defaultHTTPListener()
 
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -1480,6 +1500,9 @@ func TestSocketOptions(t *testing.T) {
 	})
 	defer done()
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	svc1 := fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
@@ -1533,7 +1556,7 @@ func TestSocketOptions(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+					envoyGen.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 				),
 				SocketOptions: socketOpts,
 			},
@@ -1546,7 +1569,7 @@ func TestSocketOptions(t *testing.T) {
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					envoy_v3.FilterChainTLS(
 						"kuard.example.com",
-						envoy_v3.DownstreamTLSContext(
+						envoyGen.DownstreamTLSContext(
 							&dag.Secret{Object: secret1},
 							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,

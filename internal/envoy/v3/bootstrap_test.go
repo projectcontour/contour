@@ -2010,7 +2010,10 @@ func TestBootstrap(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tc := tc
-			steps, gotError := bootstrap(&tc.config)
+			envoyGen := NewEnvoysGen(EnvoyGenOpt{
+				XDSClusterName: DefaultXDSClusterName,
+			})
+			steps, gotError := envoyGen.bootstrap(&tc.config)
 			assert.Equal(t, tc.wantedError, gotError != nil)
 
 			gotConfigs := map[string]proto.Message{}

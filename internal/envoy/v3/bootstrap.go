@@ -47,9 +47,9 @@ import (
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
-func WriteBootstrap(c *envoy.BootstrapConfig) error {
+func (e *EnvoyGen) WriteBootstrap(c *envoy.BootstrapConfig) error {
 	// Create Envoy bootstrap config and associated resource files.
-	steps, err := bootstrap(c)
+	steps, err := e.bootstrap(c)
 	if err != nil {
 		return err
 	}
@@ -77,13 +77,13 @@ func WriteBootstrap(c *envoy.BootstrapConfig) error {
 type bootstrapf func(*envoy.BootstrapConfig) (string, proto.Message)
 
 // bootstrap creates a new v3 bootstrap configuration and associated resource files.
-func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
+func (e *EnvoyGen) bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 	var steps []bootstrapf
 
 	if c.GrpcClientCert == "" && c.GrpcClientKey == "" && c.GrpcCABundle == "" {
 		steps = append(steps,
 			func(*envoy.BootstrapConfig) (string, proto.Message) {
-				return c.Path, bootstrapConfig(c)
+				return c.Path, e.bootstrapConfig(c)
 			})
 
 		return steps, nil
@@ -122,7 +122,7 @@ func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 
 		steps = append(steps,
 			func(*envoy.BootstrapConfig) (string, proto.Message) {
-				b := bootstrapConfig(c)
+				b := e.bootstrapConfig(c)
 				b.StaticResources.Clusters[0].TransportSocket = UpstreamTLSTransportSocket(
 					upstreamFileTLSContext(c))
 				return c.Path, b
@@ -150,7 +150,7 @@ func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 			return sdsValidationContextPath, validationContextSdsSecretConfig(c)
 		},
 		func(*envoy.BootstrapConfig) (string, proto.Message) {
-			b := bootstrapConfig(c)
+			b := e.bootstrapConfig(c)
 			b.StaticResources.Clusters[0].TransportSocket = UpstreamTLSTransportSocket(
 				upstreamSdsTLSContext(sdsTLSCertificatePath, sdsValidationContextPath))
 			return c.Path, b
@@ -160,7 +160,7 @@ func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 	return steps, nil
 }
 
-func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootstrap {
+func (e *EnvoyGen) bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootstrap {
 	bootstrap := &envoy_config_bootstrap_v3.Bootstrap{
 		LayeredRuntime: &envoy_config_bootstrap_v3.LayeredRuntime{
 			Layers: []*envoy_config_bootstrap_v3.RuntimeLayer{
@@ -169,7 +169,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootst
 					LayerSpecifier: &envoy_config_bootstrap_v3.RuntimeLayer_RtdsLayer_{
 						RtdsLayer: &envoy_config_bootstrap_v3.RuntimeLayer_RtdsLayer{
 							Name:       DynamicRuntimeLayerName,
-							RtdsConfig: ConfigSource("contour"),
+							RtdsConfig: e.GetConfigSource(),
 						},
 					},
 				},
@@ -187,8 +187,8 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_bootstrap_v3.Bootst
 			},
 		},
 		DynamicResources: &envoy_config_bootstrap_v3.Bootstrap_DynamicResources{
-			LdsConfig: ConfigSource("contour"),
-			CdsConfig: ConfigSource("contour"),
+			LdsConfig: e.GetConfigSource(),
+			CdsConfig: e.GetConfigSource(),
 		},
 		StaticResources: &envoy_config_bootstrap_v3.Bootstrap_StaticResources{
 			Clusters: []*envoy_config_cluster_v3.Cluster{{

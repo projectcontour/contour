@@ -493,11 +493,15 @@ func (s *Server) doServe() error {
 		endpointHandler = xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
 	}
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort),
+		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort, envoyGen),
 		xdscache_v3.NewSecretsCache(envoy_v3.StatsSecrets(contourConfiguration.Envoy.Metrics.TLS)),
 		&xdscache_v3.RouteCache{},
-		&xdscache_v3.ClusterCache{},
+		xdscache_v3.NewClusterCache(envoyGen),
 		endpointHandler,
 		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
 			MaxRequestsPerIOCycle:     contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,

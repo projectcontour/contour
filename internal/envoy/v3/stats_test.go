@@ -115,6 +115,10 @@ func TestStatsListeners(t *testing.T) {
 		},
 	}
 
+	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
 	type testcase struct {
 		metrics contour_v1alpha1.MetricsConfig
 		health  contour_v1alpha1.HealthConfig
@@ -125,7 +129,7 @@ func TestStatsListeners(t *testing.T) {
 		t.Helper()
 		t.Run(name, func(t *testing.T) {
 			t.Helper()
-			got := StatsListeners(tc.metrics, tc.health)
+			got := envoyGen.StatsListeners(tc.metrics, tc.health)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -216,7 +220,7 @@ func TestStatsListeners(t *testing.T) {
 							},
 							TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 								Name:      "metrics-tls-certificate",
-								SdsConfig: ConfigSource("contour"),
+								SdsConfig: envoyGen.GetConfigSource(),
 							}},
 						},
 					},
@@ -307,12 +311,12 @@ func TestStatsListeners(t *testing.T) {
 							},
 							TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 								Name:      "metrics-tls-certificate",
-								SdsConfig: ConfigSource("contour"),
+								SdsConfig: envoyGen.GetConfigSource(),
 							}},
 							ValidationContextType: &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 								ValidationContextSdsSecretConfig: &envoy_transport_socket_tls_v3.SdsSecretConfig{
 									Name:      "metrics-ca-certificate",
-									SdsConfig: ConfigSource("contour"),
+									SdsConfig: envoyGen.GetConfigSource(),
 								},
 							},
 						},

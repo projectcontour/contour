@@ -78,6 +78,10 @@ func TestProtoNamesForVersions(t *testing.T) {
 }
 
 func TestListener(t *testing.T) {
+	envoygen := NewEnvoysGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
 	tests := map[string]struct {
 		name, address                 string
 		port                          int
@@ -91,13 +95,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			f: []*envoy_config_listener_v3.Filter{
-				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+				envoygen.HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 			},
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+					envoygen.HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -110,7 +114,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 			},
 			f: []*envoy_config_listener_v3.Filter{
-				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+				envoygen.HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 			},
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "http-proxy",
@@ -119,7 +123,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 				),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+					envoygen.HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -164,14 +168,14 @@ func TestListener(t *testing.T) {
 			port:                          9000,
 			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			f: []*envoy_config_listener_v3.Filter{
-				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+				envoygen.HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 			},
 			want: &envoy_config_listener_v3.Listener{
 				Name:                          "http",
 				Address:                       SocketAddress("0.0.0.0", 9000),
 				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
+					envoygen.HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null", "", nil, contour_v1alpha1.LogLevelInfo), 0),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -469,12 +473,16 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 
+	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
 	tests := map[string]struct {
 		got  *envoy_transport_socket_tls_v3.DownstreamTlsContext
 		want *envoy_transport_socket_tls_v3.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -484,7 +492,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContext, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContext, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -496,7 +504,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -508,7 +516,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -520,7 +528,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation with ca": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -532,7 +540,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"optional client cert validation with ca": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -544,7 +552,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -556,7 +564,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check but only for leaf-certificate": {
-			DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -577,6 +585,9 @@ func TestDownstreamTLSContext(t *testing.T) {
 }
 
 func TestHTTPConnectionManager(t *testing.T) {
+	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
 	defaultHTTPFilters := []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
 		{
 			Name: CompressorFilterName,
@@ -1461,7 +1472,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := HTTPConnectionManagerBuilder().
+			got := envoyGen.HTTPConnectionManagerBuilder().
 				RouteConfigName(tc.routename).
 				MetricsPrefix(tc.routename).
 				AccessLoggers(tc.accesslogger).
@@ -1720,10 +1731,14 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
-	require.Error(t, HTTPConnectionManagerBuilder().Validate(),
+	envoygen := NewEnvoysGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	require.Error(t, envoygen.HTTPConnectionManagerBuilder().Validate(),
 		"ConnectionManager with no filters should not pass validation")
 
-	require.Error(t, HTTPConnectionManagerBuilder().AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+	require.Error(t, envoygen.HTTPConnectionManagerBuilder().AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 		Name: "foo",
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: &anypb.Any{
@@ -1733,10 +1748,10 @@ func TestBuilderValidation(t *testing.T) {
 	}).Validate(),
 		"ConnectionManager with only non-router filter should not pass validation")
 
-	require.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
+	require.NoError(t, envoygen.HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
 		"ConnectionManager with default filters failed validation")
 
-	badBuilder := HTTPConnectionManagerBuilder().DefaultFilters()
+	badBuilder := envoygen.HTTPConnectionManagerBuilder().DefaultFilters()
 	badBuilder.filters = append(badBuilder.filters, &envoy_filter_network_http_connection_manager_v3.HttpFilter{
 		Name: "foo",
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
@@ -1828,39 +1843,43 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 
+	envoygen := NewEnvoysGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
 	tests := map[string]struct {
 		builder *httpConnectionManagerBuilder
 		add     *envoy_filter_network_http_connection_manager_v3.HttpFilter
 		want    []*envoy_filter_network_http_connection_manager_v3.HttpFilter
 	}{
 		"Nil add to empty builder": {
-			builder: HTTPConnectionManagerBuilder(),
+			builder: envoygen.HTTPConnectionManagerBuilder(),
 			add:     nil,
 			want:    nil,
 		},
 		"Add a single router filter to empty builder": {
-			builder: HTTPConnectionManagerBuilder(),
+			builder: envoygen.HTTPConnectionManagerBuilder(),
 			add:     routerFilter,
 			want:    []*envoy_filter_network_http_connection_manager_v3.HttpFilter{routerFilter},
 		},
 		"Add a single non-router filter to empty builder": {
-			builder: HTTPConnectionManagerBuilder(),
+			builder: envoygen.HTTPConnectionManagerBuilder(),
 			add:     grpcWebFilter,
 			want:    []*envoy_filter_network_http_connection_manager_v3.HttpFilter{grpcWebFilter},
 		},
 		"Add a single router filter to non-empty builder": {
-			builder: HTTPConnectionManagerBuilder().AddFilter(grpcWebFilter),
+			builder: envoygen.HTTPConnectionManagerBuilder().AddFilter(grpcWebFilter),
 			add:     routerFilter,
 			want:    []*envoy_filter_network_http_connection_manager_v3.HttpFilter{grpcWebFilter, routerFilter},
 		},
 
 		"Add a filter to a builder with a router": {
-			builder: HTTPConnectionManagerBuilder().AddFilter(routerFilter),
+			builder: envoygen.HTTPConnectionManagerBuilder().AddFilter(routerFilter),
 			add:     grpcWebFilter,
 			want:    []*envoy_filter_network_http_connection_manager_v3.HttpFilter{grpcWebFilter, routerFilter},
 		},
 		"Add to the default filters": {
-			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
+			builder: envoygen.HTTPConnectionManagerBuilder().DefaultFilters(),
 			add:     authzFilter(),
 			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
 				compressFilter,
@@ -1875,7 +1894,7 @@ func TestAddFilter(t *testing.T) {
 			},
 		},
 		"Add to the default filters with AuthorizationServerBufferSettings": {
-			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
+			builder: envoygen.HTTPConnectionManagerBuilder().DefaultFilters(),
 			add: authzFilter("ext-auth-server.com", &dag.AuthorizationServerBufferSettings{
 				MaxRequestBytes:     10,
 				AllowPartialMessage: true,
@@ -1907,7 +1926,7 @@ func TestAddFilter(t *testing.T) {
 	}
 
 	assert.Panics(t, func() {
-		HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(routerFilter)
+		envoygen.HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(routerFilter)
 	})
 }
 

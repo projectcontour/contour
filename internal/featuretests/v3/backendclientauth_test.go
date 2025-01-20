@@ -181,6 +181,9 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 }
 
 func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))
 	defer done()
 
@@ -209,7 +212,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	rh.OnAdd(ext)
 
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
-		envoy_v3.UpstreamTLSContext(
+		envoyGen.UpstreamTLSContext(
 			&dag.PeerValidationContext{
 				CACertificates: []*dag.Secret{{Object: featuretests.CASecret(t, "secret", &featuretests.CACertificate)}},
 				SubjectNames:   []string{"subjname"},

@@ -169,6 +169,7 @@ const (
 
 type httpConnectionManagerBuilder struct {
 	routeConfigName               string
+	routeConfigSource             *envoy_config_core_v3.ConfigSource
 	metricsPrefix                 string
 	accessLoggers                 []*envoy_config_accesslog_v3.AccessLog
 	requestTimeout                timeout.Setting
@@ -490,7 +491,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		RouteSpecifier: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Rds{
 			Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 				RouteConfigName: b.routeConfigName,
-				ConfigSource:    ConfigSource("contour"),
+				ConfigSource:    b.routeConfigSource,
 			},
 		},
 		Tracing:     b.tracingConfig,
@@ -580,8 +581,8 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*envoy_config_accesslog_v3.AccessLog, requestTimeout time.Duration) *envoy_config_listener_v3.Filter {
-	return HTTPConnectionManagerBuilder().
+func (e *EnvoyGen) HTTPConnectionManager(routename string, accesslogger []*envoy_config_accesslog_v3.AccessLog, requestTimeout time.Duration) *envoy_config_listener_v3.Filter {
+	return e.HTTPConnectionManagerBuilder().
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
 		AccessLoggers(accesslogger).
@@ -592,8 +593,10 @@ func HTTPConnectionManager(routename string, accesslogger []*envoy_config_access
 
 // HTTPConnectionManagerBuilder creates a new HTTP connection manager builder.
 // nolint:revive
-func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
-	return &httpConnectionManagerBuilder{}
+func (e *EnvoyGen) HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
+	return &httpConnectionManagerBuilder{
+		routeConfigSource: e.GetConfigSource(),
+	}
 }
 
 // TCPProxy creates a new TCPProxy filter.

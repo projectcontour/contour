@@ -35,6 +35,10 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: "contour",
+	})
+
 	s1 := fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
@@ -61,7 +65,7 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(
-		envoy_v3.HTTPConnectionManagerBuilder().
+		envoyGen.HTTPConnectionManagerBuilder().
 			RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 			MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 			AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
@@ -89,6 +93,9 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 
 	rh, c, done := setup(t, withTimeouts)
 	defer done()
+	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: "contour",
+	})
 
 	s1 := fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
@@ -115,7 +122,7 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	rh.OnAdd(hp1)
 
 	httpListener := defaultHTTPListener()
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
