@@ -22,6 +22,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+	client_go_cache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -55,6 +56,9 @@ type loadBalancerStatusWriter struct {
 	statusUpdater     k8s.StatusUpdater
 	ingressClassNames []string
 	gatewayRef        *types.NamespacedName
+	statusAddress     string
+	serviceName       string
+	serviceNamespace  string
 }
 
 func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
@@ -62,6 +66,35 @@ func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
 }
 
 func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
+	// Register an informer to watch envoy's service if we haven't been given static details.
+	// The informer is registered only after leader election to prevent events from being sent before the status writer
+	// is ready to process them.
+	if lbAddress := isw.statusAddress; len(lbAddress) > 0 {
+		isw.log.WithField("loadbalancer-address", lbAddress).Info("Using supplied information for Ingress status")
+		isw.lbStatus <- parseStatusFlag(lbAddress)
+	} else {
+		// Register Service informer to watch for status updates.
+		var serviceHandler client_go_cache.ResourceEventHandler = &k8s.ServiceStatusLoadBalancerWatcher{
+			ServiceName: isw.serviceName,
+			LBStatus:    isw.lbStatus,
+			Log:         isw.log.WithField("context", "serviceStatusLoadBalancerWatcher"),
+		}
+		var handler client_go_cache.ResourceEventHandler = serviceHandler
+		if isw.serviceNamespace != "" {
+			serviceHandler = k8s.NewNamespaceFilter([]string{isw.serviceNamespace}, handler)
+		}
+		inf, err := isw.cache.GetInformer(ctx, &core_v1.Service{})
+		if err != nil {
+			isw.log.WithError(err).Fatal("failed to get Service informer")
+			return err
+		}
+		_, err = inf.AddEventHandler(serviceHandler)
+		if err != nil {
+			isw.log.WithError(err).Fatal("failed to add Service event handler")
+			return err
+		}
+	}
+
 	u := &k8s.StatusAddressUpdater{
 		Logger: func() logrus.FieldLogger {
 			// Configure the StatusAddressUpdater logger.
