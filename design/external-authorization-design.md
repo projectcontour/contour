@@ -34,7 +34,7 @@ This document describes a design for performing request authorization for virtua
 A new `ExtensionService` CRD adds a way to represent and track an authorization service.
 This CRD is relatively generic, so that it can be reused for Envoy rate limiting and logging services.
 The core of the `ExtensionService` CRD is subset of the `projectcontour.v1.HTTPProxy` `Service` specification.
-Re-using the `Service` type allows the operator to specify configuration in familiar and consistent terms, especially TLS configuration.
+Reusing the `Service` type allows the operator to specify configuration in familiar and consistent terms, especially TLS configuration.
 
 Note that only the Envoy [GRPC authorization protocol][2] will be supported.
 The GRPC protocol is a superset of the HTTP protocol and requires less configuration.
