@@ -797,7 +797,7 @@ end
 func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	authConfig := envoy_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: GrpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
+			GrpcService: grpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
 		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
@@ -930,8 +930,8 @@ func FilterChainTLSFallback(downstream *envoy_transport_socket_tls_v3.Downstream
 	return fc
 }
 
-// GRPCService returns a envoy_config_core_v3.GrpcService for the given parameters.
-func GrpcService(clusterName, sni string, timeout timeout.Setting) *envoy_config_core_v3.GrpcService {
+// grpcService returns a envoy_config_core_v3.GrpcService for the given parameters.
+func grpcService(clusterName, sni string, timeout timeout.Setting) *envoy_config_core_v3.GrpcService {
 	authority := strings.ReplaceAll(clusterName, "/", ".")
 	if sni != "" {
 		authority = sni

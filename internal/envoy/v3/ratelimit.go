@@ -148,7 +148,7 @@ func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *envoy_filter_network_
 				Timeout:         envoy.Timeout(config.Timeout),
 				FailureModeDeny: !config.FailOpen,
 				RateLimitService: &envoy_config_ratelimit_v3.RateLimitServiceConfig{
-					GrpcService:         GrpcService(dag.ExtensionClusterName(config.ExtensionService), config.SNI, timeout.DefaultSetting()),
+					GrpcService:         grpcService(dag.ExtensionClusterName(config.ExtensionService), config.SNI, timeout.DefaultSetting()),
 					TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 				},
 				EnableXRatelimitHeaders:        enableXRateLimitHeaders(config.EnableXRateLimitHeaders),

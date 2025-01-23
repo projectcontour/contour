@@ -45,7 +45,7 @@ func (e *EnvoyGen) GetConfigSource() *envoy_config_core_v3.ConfigSource {
 				ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
 				TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
 				GrpcServices: []*envoy_config_core_v3.GrpcService{
-					GrpcService(e.xdsClusterName, "", timeout.DefaultSetting()),
+					grpcService(e.xdsClusterName, "", timeout.DefaultSetting()),
 				},
 			},
 		},

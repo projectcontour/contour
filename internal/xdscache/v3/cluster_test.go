@@ -165,9 +165,10 @@ func TestClusterCacheQuery(t *testing.T) {
 }
 
 func TestClusterVisit(t *testing.T) {
-	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
-	}).GetConfigSource()
+	})
+	envoyConfigSource := envoyGen.GetConfigSource()
 	tests := map[string]struct {
 		objs []any
 		want map[string]*envoy_config_cluster_v3.Cluster
@@ -835,7 +836,9 @@ func TestClusterVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			var cc ClusterCache
+			cc := ClusterCache{
+				envoyGen: envoyGen,
+			}
 			cc.OnChange(buildDAG(t, tc.objs...))
 			protobuf.ExpectEqual(t, tc.want, cc.values)
 		})
