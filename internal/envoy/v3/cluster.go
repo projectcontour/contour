@@ -71,7 +71,7 @@ func (e *EnvoyGen) Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		}
 
 		cluster.ClusterDiscoveryType = clusterDiscoveryType
-		cluster.LoadAssignment = ExternalNameClusterLoadAssignment(service)
+		cluster.LoadAssignment = externalNameClusterLoadAssignment(service)
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
@@ -300,10 +300,10 @@ func ClusterDiscoveryType(t envoy_config_cluster_v3.Cluster_DiscoveryType) *envo
 	return &envoy_config_cluster_v3.Cluster_Type{Type: t}
 }
 
-// ClusterDiscoveryTypeForAddress returns the type of a ClusterDiscovery as a Cluster_type.
+// clusterDiscoveryTypeForAddress returns the type of a ClusterDiscovery as a Cluster_type.
 // If the provided address is an IP, overrides the type to STATIC, otherwise uses the
 // passed in type.
-func ClusterDiscoveryTypeForAddress(address string, t envoy_config_cluster_v3.Cluster_DiscoveryType) *envoy_config_cluster_v3.Cluster_Type {
+func clusterDiscoveryTypeForAddress(address string, t envoy_config_cluster_v3.Cluster_DiscoveryType) *envoy_config_cluster_v3.Cluster_Type {
 	clusterType := t
 	if net.ParseIP(address) != nil {
 		clusterType = envoy_config_cluster_v3.Cluster_STATIC

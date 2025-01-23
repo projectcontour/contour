@@ -674,8 +674,8 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*envoy_conf
 	}
 }
 
-// UnixSocketAddress creates a new Unix Socket envoy_config_core_v3.Address.
-func UnixSocketAddress(address string) *envoy_config_core_v3.Address {
+// unixSocketAddress creates a new Unix Socket envoy_config_core_v3.Address.
+func unixSocketAddress(address string) *envoy_config_core_v3.Address {
 	return &envoy_config_core_v3.Address{
 		Address: &envoy_config_core_v3.Address_Pipe{
 			Pipe: &envoy_config_core_v3.Pipe{

@@ -196,7 +196,7 @@ func (e *EnvoyGen) bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_boots
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.GetXdsGRPCPort())}, "_"),
 				ConnectTimeout:       durationpb.New(5 * time.Second),
-				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetXdsAddress(), envoy_config_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: clusterDiscoveryTypeForAddress(c.GetXdsAddress(), envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LbPolicy:             envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "contour",
@@ -233,12 +233,12 @@ func (e *EnvoyGen) bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_boots
 				Name:                 "envoy-admin",
 				AltStatName:          strings.Join([]string{c.Namespace, "envoy-admin", strconv.Itoa(c.GetAdminPort())}, "_"),
 				ConnectTimeout:       durationpb.New(250 * time.Millisecond),
-				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_config_cluster_v3.Cluster_STATIC),
+				ClusterDiscoveryType: clusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_config_cluster_v3.Cluster_STATIC),
 				LbPolicy:             envoy_config_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "envoy-admin",
 					Endpoints: Endpoints(
-						UnixSocketAddress(c.GetAdminAddress()),
+						unixSocketAddress(c.GetAdminAddress()),
 					),
 				},
 			}},
@@ -249,7 +249,7 @@ func (e *EnvoyGen) bootstrapConfig(c *envoy.BootstrapConfig) *envoy_config_boots
 		},
 		Admin: &envoy_config_bootstrap_v3.Admin{
 			AccessLog: adminAccessLog(c.GetAdminAccessLogPath()),
-			Address:   UnixSocketAddress(c.GetAdminAddress()),
+			Address:   unixSocketAddress(c.GetAdminAddress()),
 		},
 	}
 	if c.MaximumHeapSizeBytes > 0 {

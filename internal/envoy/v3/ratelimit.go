@@ -33,9 +33,9 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
-// LocalRateLimitConfig returns a config for the HTTP local rate
+// localRateLimitConfig returns a config for the HTTP local rate
 // limit filter.
-func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *anypb.Any {
+func localRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *anypb.Any {
 	if config == nil {
 		return nil
 	}
