@@ -880,7 +880,7 @@ func TestCluster(t *testing.T) {
 
 func TestDNSNameCluster(t *testing.T) {
 	envoyGen := NewEnvoyGen(EnvoyGenOpt{
-		XDSClusterName: DefaultXDSClusterName,
+		XDSClusterName: "notcontour",
 	})
 	tests := map[string]struct {
 		cluster *dag.DNSNameCluster

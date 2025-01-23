@@ -1732,7 +1732,7 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
 	envoygen := NewEnvoyGen(EnvoyGenOpt{
-		XDSClusterName: DefaultXDSClusterName,
+		XDSClusterName: "notcontour",
 	})
 
 	require.Error(t, envoygen.HTTPConnectionManagerBuilder().Validate(),
