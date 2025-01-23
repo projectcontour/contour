@@ -51,7 +51,7 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			port,
-			envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+			envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 				XDSClusterName: envoy_v3.DefaultXDSClusterName,
 			}),
 		),
@@ -277,7 +277,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
@@ -432,7 +432,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	})
 	defer done()
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
@@ -817,7 +817,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	})
 	defer done()
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
@@ -986,7 +986,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 	})
 
 	defer done()
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
@@ -1177,7 +1177,7 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	})
 
 	defer done()
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 
@@ -1234,7 +1234,7 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	})
 
 	defer done()
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 
@@ -1500,7 +1500,7 @@ func TestSocketOptions(t *testing.T) {
 	})
 	defer done()
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	svc1 := fixture.NewService("backend").

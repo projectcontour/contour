@@ -35,7 +35,7 @@ import (
 )
 
 func TestClusterCacheContents(t *testing.T) {
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 	tests := map[string]struct {
@@ -82,7 +82,7 @@ func TestClusterCacheContents(t *testing.T) {
 }
 
 func TestClusterCacheQuery(t *testing.T) {
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 	tests := map[string]struct {
@@ -165,7 +165,7 @@ func TestClusterCacheQuery(t *testing.T) {
 }
 
 func TestClusterVisit(t *testing.T) {
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 	tests := map[string]struct {

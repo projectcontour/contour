@@ -2010,7 +2010,7 @@ func TestBootstrap(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			tc := tc
-			envoyGen := NewEnvoysGen(EnvoyGenOpt{
+			envoyGen := NewEnvoyGen(EnvoyGenOpt{
 				XDSClusterName: DefaultXDSClusterName,
 			})
 			steps, gotError := envoyGen.bootstrap(&tc.config)

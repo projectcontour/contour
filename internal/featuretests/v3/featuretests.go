@@ -93,7 +93,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		}
 	}
 
-	envoyGen := v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 

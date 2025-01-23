@@ -40,7 +40,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	i1 := &networking_v1.Ingress{

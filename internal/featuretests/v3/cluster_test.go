@@ -423,7 +423,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 
@@ -562,7 +562,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 	s1 := fixture.NewService("kuard").
@@ -708,7 +708,7 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 	s1 := fixture.NewService("kuard").
@@ -941,7 +941,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 

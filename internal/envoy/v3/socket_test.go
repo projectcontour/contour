@@ -26,7 +26,7 @@ import (
 )
 
 func TestUpstreamTLSTransportSocket(t *testing.T) {
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 	tests := map[string]struct {
@@ -53,7 +53,7 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 }
 
 func TestDownstreamTLSTransportSocket(t *testing.T) {
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 	serverSecret := &dag.Secret{

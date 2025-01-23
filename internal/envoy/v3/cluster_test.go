@@ -137,7 +137,7 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 	edsConfig := envoyGen.GetConfigSource()
@@ -879,7 +879,7 @@ func TestCluster(t *testing.T) {
 }
 
 func TestDNSNameCluster(t *testing.T) {
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 	tests := map[string]struct {

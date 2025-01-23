@@ -46,7 +46,7 @@ import (
 )
 
 func TestListenerCacheContents(t *testing.T) {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	tests := map[string]struct {
@@ -86,7 +86,7 @@ func TestListenerCacheContents(t *testing.T) {
 }
 
 func TestListenerCacheQuery(t *testing.T) {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	tests := map[string]struct {
@@ -151,7 +151,7 @@ func TestListenerCacheQuery(t *testing.T) {
 }
 
 func TestListenerVisit(t *testing.T) {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	httpsFilterFor := func(vhost string) *envoy_config_listener_v3.Filter {

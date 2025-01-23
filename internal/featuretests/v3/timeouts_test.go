@@ -35,7 +35,7 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: "contour",
 	})
 
@@ -93,7 +93,7 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 
 	rh, c, done := setup(t, withTimeouts)
 	defer done()
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: "contour",
 	})
 

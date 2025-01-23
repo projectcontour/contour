@@ -178,7 +178,7 @@ func cluster(name, servicename, statName string) *envoy_config_cluster_v3.Cluste
 		ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 		AltStatName:          statName,
 		EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-			EdsConfig: envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+			EdsConfig: envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 				XDSClusterName: envoy_v3.DefaultXDSClusterName,
 			}).GetConfigSource(),
 			ServiceName: servicename,
@@ -199,7 +199,7 @@ func tlsCluster(c *envoy_config_cluster_v3.Cluster, ca *core_v1.Secret, subjectN
 	}
 
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
-		envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 			XDSClusterName: envoy_v3.DefaultXDSClusterName,
 		}).UpstreamTLSContext(
 			&dag.PeerValidationContext{
@@ -222,7 +222,7 @@ func tlsClusterWithoutValidation(c *envoy_config_cluster_v3.Cluster, sni string,
 	}
 
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
-		envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 			XDSClusterName: envoy_v3.DefaultXDSClusterName,
 		}).UpstreamTLSContext(
 			nil,
@@ -435,7 +435,7 @@ func appendFilterChains(chains ...*envoy_config_listener_v3.FilterChain) []*envo
 func filterchaintls(domain string, secret *core_v1.Secret, filter *envoy_config_listener_v3.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_config_listener_v3.FilterChain {
 	return envoy_v3.FilterChainTLS(
 		domain,
-		envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+		envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 			XDSClusterName: envoy_v3.DefaultXDSClusterName,
 		}).DownstreamTLSContext(
 			&dag.Secret{Object: secret},
@@ -450,7 +450,7 @@ func filterchaintls(domain string, secret *core_v1.Secret, filter *envoy_config_
 
 // filterchaintlsfallback returns a FilterChain for the given TLS fallback certificate.
 func filterchaintlsfallback(fallbackSecret *core_v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_config_listener_v3.FilterChain {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoy_v3.FilterChainTLSFallback(
@@ -475,7 +475,7 @@ func filterchaintlsfallback(fallbackSecret *core_v1.Secret, peerValidationContex
 // filterchaintlsfallbackauthz does same thing as filterchaintlsfallback but inserts a
 // `ext_authz` filter with the specified configuration into the filter chain.
 func filterchaintlsfallbackauthz(fallbackSecret *core_v1.Secret, authz *envoy_filter_http_ext_authz_v3.ExtAuthz, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_config_listener_v3.FilterChain {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoy_v3.FilterChainTLSFallback(
@@ -504,7 +504,7 @@ func filterchaintlsfallbackauthz(fallbackSecret *core_v1.Secret, authz *envoy_fi
 }
 
 func httpsFilterFor(vhost string) *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
@@ -517,7 +517,7 @@ func httpsFilterFor(vhost string) *envoy_config_listener_v3.Filter {
 }
 
 func httpFilterForGateway() *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
@@ -529,7 +529,7 @@ func httpFilterForGateway() *envoy_config_listener_v3.Filter {
 }
 
 func httpsFilterForGateway(listener, vhost string) *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
@@ -545,7 +545,7 @@ func httpsFilterForGateway(listener, vhost string) *envoy_config_listener_v3.Fil
 // httpsFilterWithXfccFor does the same as httpsFilterFor but enable
 // client certs details forwarding
 func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
@@ -565,7 +565,7 @@ func authzFilterFor(
 	vhost string,
 	authz *envoy_filter_http_ext_authz_v3.ExtAuthz,
 ) *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
@@ -587,7 +587,7 @@ func jwtAuthnFilterFor(
 	vhost string,
 	jwt *envoy_filter_http_jwt_authn_v3.JwtAuthentication,
 ) *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
@@ -652,7 +652,7 @@ func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_confi
 
 func statsListener() *envoy_config_listener_v3.Listener {
 	// Single listener with metrics and health endpoints.
-	listeners := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	listeners := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).StatsListeners(
 		contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
@@ -665,7 +665,7 @@ func envoyAdminListener(port int) *envoy_config_listener_v3.Listener {
 }
 
 func defaultHTTPListener() *envoy_config_listener_v3.Listener {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return &envoy_config_listener_v3.Listener{

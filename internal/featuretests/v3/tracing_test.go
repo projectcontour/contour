@@ -61,7 +61,7 @@ func TestTracing(t *testing.T) {
 	rh, c, done := setup(t, withTrace)
 	defer done()
 
-	envoygen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoygen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 

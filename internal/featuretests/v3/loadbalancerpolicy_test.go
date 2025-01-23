@@ -32,7 +32,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 
@@ -161,7 +161,7 @@ func TestLoadBalancerPolicyRequestHashHeader(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 
@@ -238,7 +238,7 @@ func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 
@@ -312,7 +312,7 @@ func TestLoadBalancerPolicyRequestHashQueryParameter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	envoyConfigSource := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	}).GetConfigSource()
 

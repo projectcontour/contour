@@ -64,7 +64,7 @@ func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c
 
 	httpListener := defaultHTTPListener()
 
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 

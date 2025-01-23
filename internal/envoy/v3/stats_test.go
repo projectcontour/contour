@@ -115,7 +115,7 @@ func TestStatsListeners(t *testing.T) {
 		},
 	}
 
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 

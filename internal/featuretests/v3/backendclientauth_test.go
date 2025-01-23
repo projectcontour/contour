@@ -181,7 +181,7 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 }
 
 func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	rh, c, done := setup(t, proxyClientCertificateOpt(t))

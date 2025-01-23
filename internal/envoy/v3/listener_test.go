@@ -78,7 +78,7 @@ func TestProtoNamesForVersions(t *testing.T) {
 }
 
 func TestListener(t *testing.T) {
-	envoygen := NewEnvoysGen(EnvoyGenOpt{
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 
@@ -473,7 +473,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 
@@ -585,7 +585,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 }
 
 func TestHTTPConnectionManager(t *testing.T) {
-	envoyGen := NewEnvoysGen(EnvoyGenOpt{
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 	defaultHTTPFilters := []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
@@ -1731,7 +1731,7 @@ func TestFilterChainTLS_Match(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
-	envoygen := NewEnvoysGen(EnvoyGenOpt{
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 
@@ -1843,7 +1843,7 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 
-	envoygen := NewEnvoysGen(EnvoyGenOpt{
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
 		XDSClusterName: DefaultXDSClusterName,
 	})
 

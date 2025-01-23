@@ -31,7 +31,7 @@ type EnvoyGenOpt struct {
 	XDSClusterName string
 }
 
-func NewEnvoysGen(opt EnvoyGenOpt) *EnvoyGen {
+func NewEnvoyGen(opt EnvoyGenOpt) *EnvoyGen {
 	return &EnvoyGen{
 		xdsClusterName: opt.XDSClusterName,
 	}

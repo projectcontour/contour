@@ -859,7 +859,7 @@ func TestGlobalAuthorization(t *testing.T) {
 
 // getGlobalExtAuthHCM returns a HTTP Connection Manager with Global External Authorization configured.
 func getGlobalExtAuthHCM() *envoy_config_listener_v3.Filter {
-	envoyGen := envoy_v3.NewEnvoysGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: "contour",
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
