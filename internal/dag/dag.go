@@ -215,7 +215,7 @@ type DirectResponse struct {
 	Body string
 }
 
-// Redirect allows for a 301/302 redirect to be the response
+// Redirect allows for a redirect to be the response
 // to a route request vs. routing to an envoy cluster.
 type Redirect struct {
 	// Hostname is the host name to redirect to.
@@ -230,7 +230,7 @@ type Redirect struct {
 	PortNumber uint32
 
 	// StatusCode is the HTTP response code to
-	// use. Valid options are 301 or 302.
+	// use. Valid options are 301, 302, 303, 307, or 308.
 	StatusCode int
 
 	// PathRewritePolicy is the policy for rewriting

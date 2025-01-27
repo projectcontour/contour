@@ -2762,7 +2762,7 @@ func TestRouteRedirect(t *testing.T) {
 		},
 		"unsupported status code specified": {
 			redirect: &dag.Redirect{
-				StatusCode: 303,
+				StatusCode: 306,
 			},
 			want: &envoy_config_route_v3.Route_Redirect{
 				Redirect: &envoy_config_route_v3.RedirectAction{},

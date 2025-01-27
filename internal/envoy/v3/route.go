@@ -392,6 +392,12 @@ func routeRedirect(redirect *dag.Redirect) *envoy_config_route_v3.Route_Redirect
 		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_MOVED_PERMANENTLY
 	case http.StatusFound:
 		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_FOUND
+	case http.StatusSeeOther:
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_SEE_OTHER
+	case http.StatusTemporaryRedirect:
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_TEMPORARY_REDIRECT
+	case http.StatusPermanentRedirect:
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_PERMANENT_REDIRECT
 	}
 
 	return r

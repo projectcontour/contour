@@ -714,8 +714,7 @@ type HTTPRequestRedirectPolicy struct {
 	// StatusCode is the HTTP status code to be used in response.
 	// +optional
 	// +kubebuilder:default=302
-	// +kubebuilder:validation:Enum=301;302
-	StatusCode *int `json:"statusCode,omitempty"`
+	StatusCode *RedirectResponseCode `json:"statusCode,omitempty"`
 
 	// Path allows for redirection to a different path from the
 	// original on the request. The path must start with a
