@@ -622,7 +622,8 @@ func statsListener() *envoy_config_listener_v3.Listener {
 	// Single listener with metrics and health endpoints.
 	listeners := envoy_v3.StatsListeners(
 		contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
-		contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
+		contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
+		nil)
 	return listeners[0]
 }
 
