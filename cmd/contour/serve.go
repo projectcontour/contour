@@ -703,6 +703,10 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	notifier := &leadership.Notifier{
+		ToNotify: []leadership.NeedLeaderElectionNotification{contourHandler, observer},
+	}
+
 	// Register an informer to watch envoy's service if we haven't been given static details.
 	if lbAddress := contourConfiguration.Ingress.StatusAddress; len(lbAddress) > 0 {
 		s.log.WithField("loadbalancer-address", lbAddress).Info("Using supplied information for Ingress status")
@@ -723,6 +727,8 @@ func (s *Server) doServe() error {
 			s.log.WithError(err).WithField("resource", "services").Fatal("failed to create informer")
 		}
 
+		notifier.ToNotify = append(notifier.ToNotify, serviceHandler)
+
 		s.log.WithField("envoy-service-name", contourConfiguration.Envoy.Service.Name).
 			WithField("envoy-service-namespace", contourConfiguration.Envoy.Service.Namespace).
 			Info("Watching Service for Ingress status")
@@ -740,9 +746,6 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	notifier := &leadership.Notifier{
-		ToNotify: []leadership.NeedLeaderElectionNotification{contourHandler, observer},
-	}
 	if err := s.mgr.Add(notifier); err != nil {
 		return err
 	}
