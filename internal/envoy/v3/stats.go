@@ -194,7 +194,7 @@ func downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.
 			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name:      metricsServerCertSDSName,
-				SdsConfig: ConfigSource("contour"),
+				SdsConfig: ConfigSource(),
 			}},
 		},
 	}
@@ -203,7 +203,7 @@ func downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.
 		context.CommonTlsContext.ValidationContextType = &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 			ValidationContextSdsSecretConfig: &envoy_transport_socket_tls_v3.SdsSecretConfig{
 				Name:      metricsCaBundleSDSName,
-				SdsConfig: ConfigSource("contour"),
+				SdsConfig: ConfigSource(),
 			},
 		}
 		context.RequireClientCertificate = wrapperspb.Bool(true)
