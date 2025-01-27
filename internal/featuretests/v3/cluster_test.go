@@ -423,6 +423,10 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
+
 	s1 := fixture.NewService("kuard").
 		Annotate("projectcontour.io/max-connections", "9000").
 		Annotate("projectcontour.io/max-pending-requests", "4096").
@@ -452,7 +456,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 				AltStatName:          "default_kuard_8080",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -490,7 +494,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 				AltStatName:          "default_kuard_8080",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -527,7 +531,7 @@ func TestClusterCircuitbreakerAnnotationsIngress(t *testing.T) {
 				AltStatName:          "default_kuard_8080",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -558,6 +562,9 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
 	s1 := fixture.NewService("kuard").
 		Annotate("projectcontour.io/max-connections", "9000").
 		Annotate("projectcontour.io/max-pending-requests", "4096").
@@ -596,7 +603,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -633,7 +640,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -670,7 +677,7 @@ func TestClusterCircuitbreakerAnnotationsHTTPProxy(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -701,6 +708,9 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 	rh, c, done := setup(t, circuitBreakerGlobalOpt(t, g))
 	defer done()
 
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
 	s1 := fixture.NewService("kuard").
 		Annotate("projectcontour.io/max-connections", "9000").
 		Annotate("projectcontour.io/max-pending-requests", "4096").
@@ -782,7 +792,7 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -819,7 +829,7 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -856,7 +866,7 @@ func TestClusterCircuitbreakerAnnotationsGateway(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -931,6 +941,10 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
+
 	rh.OnAdd(fixture.NewService("kuard").
 		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
@@ -975,7 +989,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RANDOM,
@@ -985,7 +999,7 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 				AltStatName:          "default_kuard_80",
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_LEAST_REQUEST,

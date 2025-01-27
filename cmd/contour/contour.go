@@ -104,7 +104,10 @@ func main() {
 		if err := envoy.ValidAdminAddress(bootstrapCtx.AdminAddress); err != nil {
 			log.WithField("flag", "--admin-address").WithError(err).Fatal("failed to parse bootstrap args")
 		}
-		if err := envoy_v3.WriteBootstrap(bootstrapCtx); err != nil {
+		envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+			XDSClusterName: envoy_v3.DefaultXDSClusterName,
+		})
+		if err := envoyGen.WriteBootstrap(bootstrapCtx); err != nil {
 			log.WithError(err).Fatal("failed to write bootstrap configuration")
 		}
 	case certgenApp.FullCommand():

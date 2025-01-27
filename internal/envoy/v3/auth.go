@@ -26,12 +26,12 @@ import (
 // UpstreamTLSContext creates an envoy_transport_socket_tls_v3.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_transport_socket_tls_v3.UpstreamTlsContext {
+func (e *EnvoyGen) UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, upstreamTLS *dag.UpstreamTLS, alpnProtocols ...string) *envoy_transport_socket_tls_v3.UpstreamTlsContext {
 	var clientSecretConfigs []*envoy_transport_socket_tls_v3.SdsSecretConfig
 	if clientSecret != nil {
 		clientSecretConfigs = []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 			Name:      envoy.Secretname(clientSecret),
-			SdsConfig: ConfigSource("contour"),
+			SdsConfig: e.GetConfigSource(),
 		}}
 	}
 
@@ -115,7 +115,7 @@ func validationContext(ca []byte, subjectNames []string, skipVerifyPeerCert bool
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxProtoVersion envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
+func (e *EnvoyGen) DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxProtoVersion envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
 	context := &envoy_transport_socket_tls_v3.DownstreamTlsContext{
 		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
@@ -125,7 +125,7 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxPr
 			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name:      envoy.Secretname(serverSecret),
-				SdsConfig: ConfigSource("contour"),
+				SdsConfig: e.GetConfigSource(),
 			}},
 			AlpnProtocols: alpnProtos,
 		},

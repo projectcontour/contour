@@ -43,7 +43,7 @@ func clusterDefaults() *envoy_config_cluster_v3.Cluster {
 }
 
 // Cluster creates new envoy_config_cluster_v3.Cluster from dag.Cluster.
-func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
+func (e *EnvoyGen) Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 	service := c.Upstream
 	cluster := clusterDefaults()
 
@@ -61,7 +61,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 	case 0:
 		// external name not set, cluster will be discovered via EDS
 		cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS)
-		cluster.EdsClusterConfig = edsconfig("contour", service)
+		cluster.EdsClusterConfig = e.edsconfig(service)
 	default:
 		// external name set, use hard coded DNS name
 		// external name set to LOGICAL_DNS when user selects the ALL loookup family
@@ -71,7 +71,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		}
 
 		cluster.ClusterDiscoveryType = clusterDiscoveryType
-		cluster.LoadAssignment = ExternalNameClusterLoadAssignment(service)
+		cluster.LoadAssignment = externalNameClusterLoadAssignment(service)
 	}
 
 	// Drain connections immediately if using healthchecks and the endpoint is known to be removed
@@ -85,7 +85,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 	switch c.Protocol {
 	case "tls":
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
+			e.UpstreamTLSContext(
 				c.UpstreamValidation,
 				c.SNI,
 				c.ClientCertificate,
@@ -95,7 +95,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 	case "h2":
 		httpVersion = HTTPVersion2
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
+			e.UpstreamTLSContext(
 				c.UpstreamValidation,
 				c.SNI,
 				c.ClientCertificate,
@@ -136,7 +136,7 @@ func Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 }
 
 // ExtensionCluster builds a envoy_config_cluster_v3.Cluster struct for the given extension service.
-func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluster {
+func (e *EnvoyGen) ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluster {
 	cluster := clusterDefaults()
 
 	// The Envoy cluster name has already been set.
@@ -156,7 +156,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 	// Cluster will be discovered via EDS.
 	cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS)
 	cluster.EdsClusterConfig = &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-		EdsConfig:   ConfigSource("contour"),
+		EdsConfig:   e.GetConfigSource(),
 		ServiceName: ext.Upstream.ClusterName,
 	}
 
@@ -167,7 +167,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_cluster_v3.Cluste
 	case "h2":
 		http2Version = HTTPVersion2
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
+			e.UpstreamTLSContext(
 				ext.UpstreamValidation,
 				ext.SNI,
 				ext.ClientCertificate,
@@ -208,7 +208,7 @@ func applyCircuitBreakers(cluster *envoy_config_cluster_v3.Cluster, settings dag
 }
 
 // DNSNameCluster builds a envoy_config_cluster_v3.Cluster for the given *dag.DNSNameCluster.
-func DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v3.Cluster {
+func (e *EnvoyGen) DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v3.Cluster {
 	cluster := clusterDefaults()
 
 	cluster.Name = envoy.DNSNameClusterName(c)
@@ -222,7 +222,7 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v3.Cluster {
 
 	var transportSocket *envoy_config_core_v3.TransportSocket
 	if c.Scheme == "https" {
-		transportSocket = UpstreamTLSTransportSocket(UpstreamTLSContext(c.UpstreamValidation, c.Address, nil, c.UpstreamTLS))
+		transportSocket = UpstreamTLSTransportSocket(e.UpstreamTLSContext(c.UpstreamValidation, c.Address, nil, c.UpstreamTLS))
 	}
 
 	cluster.LoadAssignment = ClusterLoadAssignment(envoy.DNSNameClusterName(c), SocketAddress(c.Address, c.Port))
@@ -231,9 +231,9 @@ func DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v3.Cluster {
 	return cluster
 }
 
-func edsconfig(cluster string, service *dag.Service) *envoy_config_cluster_v3.Cluster_EdsClusterConfig {
+func (e *EnvoyGen) edsconfig(service *dag.Service) *envoy_config_cluster_v3.Cluster_EdsClusterConfig {
 	return &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-		EdsConfig: ConfigSource(cluster),
+		EdsConfig: e.GetConfigSource(),
 		ServiceName: xds.ClusterLoadAssignmentName(
 			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},
 			service.Weighted.ServicePort.Name,
@@ -279,31 +279,15 @@ func ClusterCommonLBConfig() *envoy_config_cluster_v3.Cluster_CommonLbConfig {
 	}
 }
 
-// ConfigSource returns a *envoy_config_core_v3.ConfigSource for cluster.
-func ConfigSource(cluster string) *envoy_config_core_v3.ConfigSource {
-	return &envoy_config_core_v3.ConfigSource{
-		ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
-		ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
-			ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
-				ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
-				TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-				GrpcServices: []*envoy_config_core_v3.GrpcService{
-					GrpcService(cluster, "", timeout.DefaultSetting()),
-				},
-			},
-		},
-	}
-}
-
 // ClusterDiscoveryType returns the type of a ClusterDiscovery as a Cluster_type.
 func ClusterDiscoveryType(t envoy_config_cluster_v3.Cluster_DiscoveryType) *envoy_config_cluster_v3.Cluster_Type {
 	return &envoy_config_cluster_v3.Cluster_Type{Type: t}
 }
 
-// ClusterDiscoveryTypeForAddress returns the type of a ClusterDiscovery as a Cluster_type.
+// clusterDiscoveryTypeForAddress returns the type of a ClusterDiscovery as a Cluster_type.
 // If the provided address is an IP, overrides the type to STATIC, otherwise uses the
 // passed in type.
-func ClusterDiscoveryTypeForAddress(address string, t envoy_config_cluster_v3.Cluster_DiscoveryType) *envoy_config_cluster_v3.Cluster_Type {
+func clusterDiscoveryTypeForAddress(address string, t envoy_config_cluster_v3.Cluster_DiscoveryType) *envoy_config_cluster_v3.Cluster_Type {
 	clusterType := t
 	if net.ParseIP(address) != nil {
 		clusterType = envoy_config_cluster_v3.Cluster_STATIC

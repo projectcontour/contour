@@ -50,7 +50,7 @@ func TracingConfig(tracing *EnvoyTracingConfig) *envoy_filter_network_http_conne
 			Name: "envoy.tracers.opentelemetry",
 			ConfigType: &envoy_config_trace_v3.Tracing_Http_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_config_trace_v3.OpenTelemetryConfig{
-					GrpcService: GrpcService(dag.ExtensionClusterName(tracing.ExtensionService), tracing.SNI, tracing.Timeout),
+					GrpcService: grpcService(dag.ExtensionClusterName(tracing.ExtensionService), tracing.SNI, tracing.Timeout),
 					ServiceName: tracing.ServiceName,
 				}),
 			},

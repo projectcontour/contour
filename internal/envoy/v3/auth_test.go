@@ -174,7 +174,10 @@ func TestUpstreamTLSContext(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := UpstreamTLSContext(tc.validation, tc.externalName, nil, tc.upstreamTLS, tc.alpnProtocols...)
+			e := NewEnvoyGen(EnvoyGenOpt{
+				XDSClusterName: DefaultXDSClusterName,
+			})
+			got := e.UpstreamTLSContext(tc.validation, tc.externalName, nil, tc.upstreamTLS, tc.alpnProtocols...)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

@@ -63,7 +63,7 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
-		evh.TypedPerFilterConfig[LocalRateLimitFilterName] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
+		evh.TypedPerFilterConfig[LocalRateLimitFilterName] = localRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 	}
 
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
@@ -155,7 +155,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 
 		// Apply per-route local rate limit policy.
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
-			route.TypedPerFilterConfig[LocalRateLimitFilterName] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
+			route.TypedPerFilterConfig[LocalRateLimitFilterName] = localRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
 
 		if dagRoute.RateLimitPerRoute != nil {
@@ -292,7 +292,7 @@ func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_config_route_v
 			PathSpecifier: &envoy_config_route_v3.RouteMatch_SafeRegex{
 				// Add an anchor since we at the very least have a / as a string literal prefix.
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
-				SafeRegex: SafeRegexMatch("^" + c.Regex),
+				SafeRegex: safeRegexMatch("^" + c.Regex),
 			},
 		}
 	case *dag.PrefixMatchCondition:
@@ -379,7 +379,7 @@ func routeRedirect(redirect *dag.Redirect) *envoy_config_route_v3.Route_Redirect
 		case len(redirect.PathRewritePolicy.PrefixRegexRemove) > 0:
 			r.Redirect.PathRewriteSpecifier = &envoy_config_route_v3.RedirectAction_RegexRewrite{
 				RegexRewrite: &envoy_matcher_v3.RegexMatchAndSubstitute{
-					Pattern:      SafeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
+					Pattern:      safeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
 					Substitution: "/",
 				},
 			}
@@ -416,12 +416,12 @@ func routeRoute(r *dag.Route) *envoy_config_route_v3.Route_Route {
 			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
 		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
 			ra.RegexRewrite = &envoy_matcher_v3.RegexMatchAndSubstitute{
-				Pattern:      SafeRegexMatch("^/.*$"), // match the entire path
+				Pattern:      safeRegexMatch("^/.*$"), // match the entire path
 				Substitution: r.PathRewritePolicy.FullPathRewrite,
 			}
 		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
 			ra.RegexRewrite = &envoy_matcher_v3.RegexMatchAndSubstitute{
-				Pattern:      SafeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
+				Pattern:      safeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
 				Substitution: "/",
 			}
 		}
@@ -745,7 +745,7 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_filter_http_cors_v3.CorsPolicy {
 			m.IgnoreCase = true
 		case dag.CORSAllowOriginMatchRegex:
 			m.MatchPattern = &envoy_matcher_v3.StringMatcher_SafeRegex{
-				SafeRegex: SafeRegexMatch(ao.Value),
+				SafeRegex: safeRegexMatch(ao.Value),
 			}
 		}
 		ecp.AllowOriginStringMatch = append(ecp.AllowOriginStringMatch, m)
@@ -794,7 +794,7 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_config_route_v3.
 			header.HeaderMatchSpecifier = &envoy_config_route_v3.HeaderMatcher_StringMatch{
 				StringMatch: &envoy_matcher_v3.StringMatcher{
 					MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
-						SafeRegex: SafeRegexMatch(h.Value),
+						SafeRegex: safeRegexMatch(h.Value),
 					},
 				},
 			}
@@ -838,7 +838,7 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_conf
 			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
 				StringMatch: &envoy_matcher_v3.StringMatcher{
 					MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
-						SafeRegex: SafeRegexMatch(q.Value),
+						SafeRegex: safeRegexMatch(q.Value),
 					},
 				},
 			}

@@ -17,9 +17,9 @@ import (
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 )
 
-// SafeRegexMatch returns a envoy_matcher_v3.RegexMatcher for the supplied regex.
-// SafeRegexMatch does not escape regex meta characters.
-func SafeRegexMatch(regex string) *envoy_matcher_v3.RegexMatcher {
+// safeRegexMatch returns a envoy_matcher_v3.RegexMatcher for the supplied regex.
+// safeRegexMatch does not escape regex meta characters.
+func safeRegexMatch(regex string) *envoy_matcher_v3.RegexMatcher {
 	return &envoy_matcher_v3.RegexMatcher{
 		Regex: regex,
 	}
