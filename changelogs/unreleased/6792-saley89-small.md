@@ -1,0 +1,1 @@
+Envoy's listener configuration to remove trailing dots at the end of a hostname before request processing can now be configured using the `network.strip-trailing-host-dot` field in the configuration file or the `spec.envoy.network.stripTrailingHostDot` field in the `ContourConfiguration` CRD. The available values are `false` (default) and `true`.
