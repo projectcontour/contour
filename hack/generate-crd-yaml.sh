@@ -11,10 +11,6 @@ readonly TEMPDIR=$(mktemp -d crd-XXXXXX)
 # Optional first arg is the paths pattern.
 readonly PATHS="${1:-"./apis/..."}"
 
-# Workaround for https://github.com/projectcontour/contour/pull/6709#issuecomment-2466179766
-readonly GODEBUG=gotypesalias=0
-export GODEBUG
-
 trap 'rm -rf "$TEMPDIR"; exit' 0 1 2 15
 
 cd "${REPO}"
