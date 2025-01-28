@@ -44,6 +44,7 @@ func Default(namespace, name string) *Contour {
 		},
 		Spec: ContourSpec{
 			ContourReplicas:       2,
+			EnvoyDNSLookupFamily:  "auto",
 			EnvoyWorkloadType:     WorkloadTypeDaemonSet,
 			EnvoyReplicas:         2, // ignored if not provisioning Envoy as a deployment.
 			EnvoyLogLevel:         contour_v1alpha1.InfoLog,
@@ -257,6 +258,11 @@ type ContourSpec struct {
 	// DisabledFeatures defines an array of resources that will be ignored by
 	// contour reconciler.
 	DisabledFeatures []contour_v1.Feature
+
+	// EnvoyDNSLookupFamily specifies DNS Resolution Policy to use for Envoy -> Contour cluster name lookup.
+	// Either v4, v6, all or auto.
+	// defaults to "auto".
+	EnvoyDNSLookupFamily string
 }
 
 func NamespacesToStrings(ns []contour_v1.Namespace) []string {
