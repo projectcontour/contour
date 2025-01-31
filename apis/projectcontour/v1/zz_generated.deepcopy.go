@@ -229,12 +229,16 @@ func (in *DetailedCondition) DeepCopyInto(out *DetailedCondition) {
 	if in.Errors != nil {
 		in, out := &in.Errors, &out.Errors
 		*out = make([]SubCondition, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	if in.Warnings != nil {
 		in, out := &in.Warnings, &out.Warnings
 		*out = make([]SubCondition, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 }
 
