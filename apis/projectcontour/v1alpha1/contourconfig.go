@@ -323,6 +323,13 @@ type EnvoyConfig struct {
 	// Network holds various configurable Envoy network values.
 	// +optional
 	Network *NetworkParameters `json:"network,omitempty"`
+
+	// OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+	// the envoy overload manager actions, such as global connection limits, enforced.
+	//
+	// This is disabled by default
+	// +optional
+	OMEnforcedHealth *HealthConfig `json:"omEnforcedHealth,omitempty"`
 }
 
 // DebugConfig contains Contour specific troubleshooting options.

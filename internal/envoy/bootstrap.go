@@ -95,6 +95,12 @@ type BootstrapConfig struct {
 	// MaximumHeapSizeBytes specifies the number of bytes that overload manager allows heap to grow to.
 	// When reaching the set threshold, new connections are denied.
 	MaximumHeapSizeBytes uint64
+
+	// GlobalDownstreamConnectionLimit specifies the maximum number of global open downstream connections to envoy.
+	// When at the limit, envoy will reject connections at L4.
+	//
+	// Although a valid limit must be >= 0, to avoid overflow we require the type be int64
+	GlobalDownstreamConnectionLimit int64
 }
 
 // GetXdsAddress returns the address configured or defaults to "127.0.0.1"
@@ -126,6 +132,16 @@ func ValidAdminAddress(address string) error {
 	// Value of "localhost" is invalid.
 	if address == "localhost" || net.ParseIP(address) != nil {
 		return fmt.Errorf("invalid value %q, cannot be `localhost` or an ip address", address)
+	}
+	return nil
+}
+
+// ValidConnectionLimit checks if the supplied
+// envoy global connection limit is an integer
+// greater than or equal to 0.
+func ValidConnectionLimit(limit int64) error {
+	if limit < 0 {
+		return fmt.Errorf("invalid value %d, cannot be < 0", limit)
 	}
 	return nil
 }
