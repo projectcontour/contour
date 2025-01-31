@@ -1,1 +1,1 @@
-Use RedirectResponseCode instead of just 301/302 for HTTPRequestRedirectPolicy StatusCode
+`HTTPProxy.spec.routes.requestRedirectPolicy.statusCode` now supports 303, 307 and 308 redirect status codes in addition to 301 and 302.
