@@ -38,7 +38,7 @@ const (
 // The listeners are configured to serve:
 //   - prometheus metrics on /stats (either over HTTP or HTTPS)
 //   - readiness probe on /ready (always over HTTP)
-func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alpha1.HealthConfig) []*envoy_config_listener_v3.Listener {
+func (e *EnvoyGen) StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alpha1.HealthConfig) []*envoy_config_listener_v3.Listener {
 	var listeners []*envoy_config_listener_v3.Listener
 
 	switch {
@@ -50,7 +50,7 @@ func StatsListeners(metrics contour_v1alpha1.MetricsConfig, health contour_v1alp
 			SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			FilterChains: filterChain("stats",
 				DownstreamTLSTransportSocket(
-					downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats", "/stats/prometheus")),
+					e.downstreamTLSContext(metrics.TLS.CAFile != "")), routeForAdminInterface("/stats", "/stats/prometheus")),
 		}, {
 			Name:          "health",
 			Address:       SocketAddress(health.Address, health.Port),
@@ -185,7 +185,7 @@ func routeForAdminInterface(paths ...string) *envoy_filter_network_http_connecti
 
 // downstreamTLSContext creates TLS context when HTTPS is used to protect Envoy stats endpoint.
 // Certificates and key are hardcoded to the SDS secrets which are returned by StatsSecrets.
-func downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
+func (e *EnvoyGen) downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
 	context := &envoy_transport_socket_tls_v3.DownstreamTlsContext{
 		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
@@ -194,7 +194,7 @@ func downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.
 			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name:      metricsServerCertSDSName,
-				SdsConfig: ConfigSource("contour"),
+				SdsConfig: e.GetConfigSource(),
 			}},
 		},
 	}
@@ -203,7 +203,7 @@ func downstreamTLSContext(clientValidation bool) *envoy_transport_socket_tls_v3.
 		context.CommonTlsContext.ValidationContextType = &envoy_transport_socket_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 			ValidationContextSdsSecretConfig: &envoy_transport_socket_tls_v3.SdsSecretConfig{
 				Name:      metricsCaBundleSDSName,
-				SdsConfig: ConfigSource("contour"),
+				SdsConfig: e.GetConfigSource(),
 			},
 		}
 		context.RequireClientCertificate = wrapperspb.Bool(true)

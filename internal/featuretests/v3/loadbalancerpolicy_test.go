@@ -32,6 +32,10 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
+
 	s1 := fixture.NewService("app").WithPorts(
 		core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)},
 		core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
@@ -61,7 +65,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -113,7 +117,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -123,7 +127,7 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_8080",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -156,6 +160,10 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 func TestLoadBalancerPolicyRequestHashHeader(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
+
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
 
 	s1 := fixture.NewService("app").WithPorts(
 		core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)},
@@ -198,7 +206,7 @@ func TestLoadBalancerPolicyRequestHashHeader(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -229,6 +237,10 @@ func TestLoadBalancerPolicyRequestHashHeader(t *testing.T) {
 func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
+
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
 
 	s1 := fixture.NewService("app").WithPorts(
 		core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)},
@@ -268,7 +280,7 @@ func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -299,6 +311,10 @@ func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 func TestLoadBalancerPolicyRequestHashQueryParameter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
+
+	envoyConfigSource := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	}).GetConfigSource()
 
 	s1 := fixture.NewService("app").WithPorts(
 		core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)},
@@ -341,7 +357,7 @@ func TestLoadBalancerPolicyRequestHashQueryParameter(t *testing.T) {
 				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					EdsConfig:   envoyConfigSource,
 					ServiceName: s1.Namespace + "/" + s1.Name,
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,

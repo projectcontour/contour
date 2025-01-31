@@ -64,9 +64,13 @@ func globalRateLimitFilterExists(t *testing.T, rh ResourceEventHandlerWrapper, c
 
 	httpListener := defaultHTTPListener()
 
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
 	// replace the default filter chains with an HCM that includes the global
 	// rate limit filter.
-	hcm := envoy_v3.HTTPConnectionManagerBuilder().
+	hcm := envoyGen.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).

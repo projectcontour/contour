@@ -61,6 +61,10 @@ func TestTracing(t *testing.T) {
 	rh, c, done := setup(t, withTrace)
 	defer done()
 
+	envoygen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
 	rh.OnAdd(fixture.NewService("projectcontour/otel-collector").
 		WithPorts(core_v1.ServicePort{Port: 4317}))
 
@@ -114,7 +118,7 @@ func TestTracing(t *testing.T) {
 	rh.OnAdd(p)
 
 	httpListener := defaultHTTPListener()
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(envoygen.HTTPConnectionManagerBuilder().
 		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).

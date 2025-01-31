@@ -46,7 +46,7 @@ func TestSafeRegexMatch(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := SafeRegexMatch(tc.regex)
+			got := safeRegexMatch(tc.regex)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

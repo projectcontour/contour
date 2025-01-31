@@ -137,6 +137,10 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+	edsConfig := envoyGen.GetConfigSource()
 	tests := map[string]struct {
 		cluster *dag.Cluster
 		want    *envoy_config_cluster_v3.Cluster
@@ -150,7 +154,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 			},
@@ -165,7 +169,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
@@ -190,11 +194,11 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", nil, nil, "h2"),
+					envoyGen.UpstreamTLSContext(nil, "", nil, nil, "h2"),
 				),
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
 					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
@@ -216,7 +220,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(s2)),
 			},
 		},
 		"externalName service healthcheckport": {
@@ -227,7 +231,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(healthcheckService(s3)),
+				LoadAssignment:       externalNameClusterLoadAssignment(healthcheckService(s3)),
 			},
 		},
 		"externalName service - dns-lookup-family v4": {
@@ -239,7 +243,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(s2)),
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_V4_ONLY,
 			},
 		},
@@ -252,7 +256,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(s2)),
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_V6_ONLY,
 			},
 		},
@@ -265,7 +269,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(s2)),
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 			},
 		},
@@ -278,7 +282,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_LOGICAL_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(s2)),
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_ALL,
 			},
 		},
@@ -291,7 +295,7 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/da39a3ee5e",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(s2)),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(s2)),
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 			},
 		},
@@ -305,11 +309,11 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", nil, nil),
+					envoyGen.UpstreamTLSContext(nil, "", nil, nil),
 				),
 			},
 		},
@@ -323,9 +327,9 @@ func TestCluster(t *testing.T) {
 				Name:                 "default/kuard/443/a996a742af",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
-				LoadAssignment:       ExternalNameClusterLoadAssignment(service(svcExternal, "tls")),
+				LoadAssignment:       externalNameClusterLoadAssignment(service(svcExternal, "tls")),
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "projectcontour.local", nil, nil),
+					envoyGen.UpstreamTLSContext(nil, "projectcontour.local", nil, nil),
 				),
 			},
 		},
@@ -345,11 +349,11 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(
+					envoyGen.UpstreamTLSContext(
 						&dag.PeerValidationContext{
 							CACertificates: []*dag.Secret{
 								secret,
@@ -382,11 +386,11 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(
+					envoyGen.UpstreamTLSContext(
 						&dag.PeerValidationContext{
 							CACertificates: []*dag.Secret{
 								secret,
@@ -423,7 +427,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -457,7 +461,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -491,7 +495,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -525,7 +529,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -559,7 +563,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				CircuitBreakers: &envoy_config_cluster_v3.CircuitBreakers{
@@ -583,7 +587,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RANDOM,
@@ -599,7 +603,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_RING_HASH,
@@ -615,7 +619,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 			},
@@ -635,7 +639,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				IgnoreHealthOnHostRemoval: true,
@@ -661,11 +665,11 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", clientSecret, nil),
+					envoyGen.UpstreamTLSContext(nil, "", clientSecret, nil),
 				),
 			},
 		},
@@ -679,7 +683,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				ConnectTimeout: durationpb.New(10 * time.Second),
@@ -695,7 +699,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
@@ -728,7 +732,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				LbConfig: &envoy_config_cluster_v3.Cluster_RoundRobinLbConfig_{
@@ -762,7 +766,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				LbPolicy: envoy_config_cluster_v3.Cluster_LEAST_REQUEST,
@@ -792,7 +796,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
@@ -808,7 +812,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
@@ -840,7 +844,7 @@ func TestCluster(t *testing.T) {
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
-					EdsConfig:   ConfigSource("contour"),
+					EdsConfig:   edsConfig,
 					ServiceName: "default/kuard/http",
 				},
 				TypedExtensionProtocolOptions: map[string]*anypb.Any{
@@ -864,7 +868,7 @@ func TestCluster(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Cluster(tc.cluster)
+			got := envoyGen.Cluster(tc.cluster)
 			want := clusterDefaults()
 
 			proto.Merge(want, tc.want)
@@ -875,6 +879,9 @@ func TestCluster(t *testing.T) {
 }
 
 func TestDNSNameCluster(t *testing.T) {
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: "notcontour",
+	})
 	tests := map[string]struct {
 		cluster *dag.DNSNameCluster
 		want    *envoy_config_cluster_v3.Cluster
@@ -993,7 +1000,7 @@ func TestDNSNameCluster(t *testing.T) {
 						},
 					},
 				},
-				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(nil, "foo.projectcontour.io", nil, nil)),
+				TransportSocket: UpstreamTLSTransportSocket(envoyGen.UpstreamTLSContext(nil, "foo.projectcontour.io", nil, nil)),
 			},
 		},
 		"HTTPS cluster with upstream validation": {
@@ -1035,7 +1042,7 @@ func TestDNSNameCluster(t *testing.T) {
 						},
 					},
 				},
-				TransportSocket: UpstreamTLSTransportSocket(UpstreamTLSContext(&dag.PeerValidationContext{
+				TransportSocket: UpstreamTLSTransportSocket(envoyGen.UpstreamTLSContext(&dag.PeerValidationContext{
 					CACertificates: []*dag.Secret{
 						{
 							Object: &core_v1.Secret{
@@ -1053,7 +1060,7 @@ func TestDNSNameCluster(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := DNSNameCluster(tc.cluster)
+			got := envoyGen.DNSNameCluster(tc.cluster)
 			want := clusterDefaults()
 
 			proto.Merge(want, tc.want)

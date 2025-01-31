@@ -2186,7 +2186,7 @@ func TestRouteMatch(t *testing.T) {
 					// is permitted to be a bare regex.
 					// We add an anchor since we should always have a / prefix to reduce
 					// complexity.
-					SafeRegex: SafeRegexMatch("^/v.1/*"),
+					SafeRegex: safeRegexMatch("^/v.1/*"),
 				},
 			},
 		},
@@ -2576,7 +2576,7 @@ func TestRouteMatch(t *testing.T) {
 						QueryParameterMatchSpecifier: &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
 							StringMatch: &envoy_matcher_v3.StringMatcher{
 								MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
-									SafeRegex: SafeRegexMatch("^query-.*"),
+									SafeRegex: safeRegexMatch("^query-.*"),
 								},
 							},
 						},
