@@ -9071,25 +9071,6 @@ NamespacedName
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>type</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.XDSServerType">
-XDSServerType
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Defines the XDSServer to use for <code>contour serve</code>.</p>
-<p>Values: <code>envoy</code> (default), <code>contour (deprecated)</code>.</p>
-<p>Other values will produce an error.</p>
-<p>Deprecated: this field will be removed in a future release when
-the <code>contour</code> xDS server implementation is removed.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>address</code>
 <br>
 <em>
@@ -9133,30 +9114,6 @@ TLS
 </td>
 </tr>
 </tbody>
-</table>
-<h3 id="projectcontour.io/v1alpha1.XDSServerType">XDSServerType
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig</a>)
-</p>
-<p>
-<p>XDSServerType is the type of xDS server implementation.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr><td><p>&#34;contour&#34;</p></td>
-<td><p>Use Contour&rsquo;s xDS server (deprecated).</p>
-</td>
-</tr><tr><td><p>&#34;envoy&#34;</p></td>
-<td><p>Use the upstream <code>go-control-plane</code>-based xDS server.</p>
-</td>
-</tr></tbody>
 </table>
 <hr/>
 <p><em>

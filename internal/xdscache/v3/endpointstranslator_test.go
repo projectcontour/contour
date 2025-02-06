@@ -63,62 +63,6 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 	}
 }
 
-func TestEndpointCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: clusterloadassignments(
-				envoy_v3.ClusterLoadAssignment("default/httpbin-org",
-					envoy_v3.SocketAddress("10.10.10.10", 80),
-				),
-			),
-			query: []string{"default/httpbin-org"},
-			want: []proto.Message{
-				envoy_v3.ClusterLoadAssignment("default/httpbin-org",
-					envoy_v3.SocketAddress("10.10.10.10", 80),
-				),
-			},
-		},
-		"partial match": {
-			contents: clusterloadassignments(
-				envoy_v3.ClusterLoadAssignment("default/httpbin-org",
-					envoy_v3.SocketAddress("10.10.10.10", 80),
-				),
-			),
-			query: []string{"default/kuard/8080", "default/httpbin-org"},
-			want: []proto.Message{
-				envoy_v3.ClusterLoadAssignment("default/httpbin-org",
-					envoy_v3.SocketAddress("10.10.10.10", 80),
-				),
-				envoy_v3.ClusterLoadAssignment("default/kuard/8080"),
-			},
-		},
-		"no match": {
-			contents: clusterloadassignments(
-				envoy_v3.ClusterLoadAssignment("default/httpbin-org",
-					envoy_v3.SocketAddress("10.10.10.10", 80),
-				),
-			),
-			query: []string{"default/kuard/8080"},
-			want: []proto.Message{
-				envoy_v3.ClusterLoadAssignment("default/kuard/8080"),
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
-			et.entries = tc.contents
-			got := et.Query(tc.query)
-			protobuf.ExpectEqual(t, tc.want, got)
-		})
-	}
-}
-
 func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 	clusters := []*dag.ServiceCluster{
 		{

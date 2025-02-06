@@ -97,16 +97,6 @@ type ContourConfigurationSpec struct {
 // to toggle new contour features.
 type FeatureFlags []string
 
-// XDSServerType is the type of xDS server implementation.
-type XDSServerType string
-
-const (
-	// Use Contour's xDS server (deprecated).
-	ContourServerType XDSServerType = "contour"
-	// Use the upstream `go-control-plane`-based xDS server.
-	EnvoyServerType XDSServerType = "envoy"
-)
-
 type CircuitBreakers struct {
 	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
@@ -128,17 +118,6 @@ type CircuitBreakers struct {
 
 // XDSServerConfig holds the config for the Contour xDS server.
 type XDSServerConfig struct {
-	// Defines the XDSServer to use for `contour serve`.
-	//
-	// Values: `envoy` (default), `contour (deprecated)`.
-	//
-	// Other values will produce an error.
-	//
-	// Deprecated: this field will be removed in a future release when
-	// the `contour` xDS server implementation is removed.
-	// +optional
-	Type XDSServerType `json:"type,omitempty"`
-
 	// Defines the xDS gRPC API address which Contour will serve.
 	//
 	// Contour's default is "0.0.0.0".

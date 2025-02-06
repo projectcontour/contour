@@ -83,66 +83,6 @@ func TestRouteCacheContents(t *testing.T) {
 	}
 }
 
-func TestRouteCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*envoy_config_route_v3.RouteConfiguration
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"ingress_http"},
-			want: []proto.Message{
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "ingress_http",
-				},
-			},
-		},
-		"partial match": {
-			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"stats-handler", "ingress_http"},
-			want: []proto.Message{
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "ingress_http",
-				},
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "stats-handler",
-				},
-			},
-		},
-		"no match": {
-			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"stats-handler"},
-			want: []proto.Message{
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "stats-handler",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var rc RouteCache
-			rc.Update(tc.contents)
-			got := rc.Query(tc.query)
-			protobuf.ExpectEqual(t, tc.want, got)
-		})
-	}
-}
-
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs                []any

@@ -77,43 +77,6 @@ func TestRuntimeCacheContents(t *testing.T) {
 	}
 }
 
-func TestRuntimeCacheQuery(t *testing.T) {
-	baseRuntimeLayers := []proto.Message{
-		&envoy_service_runtime_v3.Runtime{
-			Name: "dynamic",
-			Layer: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
-					"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
-				},
-			},
-		},
-	}
-	testCases := map[string]struct {
-		names    []string
-		expected []proto.Message
-	}{
-		"empty names": {
-			names:    []string{},
-			expected: []proto.Message{},
-		},
-		"names include dynamic": {
-			names:    []string{"foo", "dynamic", "bar"},
-			expected: baseRuntimeLayers,
-		},
-		"names excludes dynamic": {
-			names:    []string{"foo", "bar", "baz"},
-			expected: []proto.Message{},
-		},
-	}
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			rc := NewRuntimeCache(ConfigurableRuntimeSettings{})
-			protobuf.ExpectEqual(t, tc.expected, rc.Query(tc.names))
-		})
-	}
-}
-
 func TestRuntimeVisit(t *testing.T) {
 	service := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -247,7 +210,7 @@ func TestRuntimeVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			rc := NewRuntimeCache(tc.ConfigurableRuntimeSettings)
 			rc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
-			protobuf.ExpectEqual(t, tc.expected, rc.Query([]string{"dynamic"}))
+			protobuf.ExpectEqual(t, tc.expected, rc.Contents())
 		})
 	}
 }
@@ -305,7 +268,7 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 				},
 			},
 		},
-	}, rc.Query([]string{"dynamic"}))
+	}, rc.Contents())
 
 	rc.OnChange(buildDAGFallback(t, nil, nil))
 	protobuf.ExpectEqual(t, []proto.Message{
@@ -318,5 +281,5 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 				},
 			},
 		},
-	}, rc.Query([]string{"dynamic"}))
+	}, rc.Contents())
 }
