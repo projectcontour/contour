@@ -114,6 +114,7 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				ConnectionIdleTimeout:         nil,
 				StreamIdleTimeout:             nil,
 				MaxConnectionDuration:         nil,
+				MaxStreamDuration:             nil,
 				DelayedCloseTimeout:           nil,
 				ConnectionShutdownGracePeriod: nil,
 				ConnectTimeout:                nil,
@@ -157,6 +158,7 @@ type Timeouts struct {
 	ConnectionIdle                timeout.Setting
 	StreamIdle                    timeout.Setting
 	MaxConnectionDuration         timeout.Setting
+	MaxStreamDuration             timeout.Setting
 	DelayedClose                  timeout.Setting
 	ConnectionShutdownGracePeriod timeout.Setting
 	ConnectTimeout                time.Duration // Since "infinite" is not valid ConnectTimeout value, use time.Duration instead of timeout.Setting.
@@ -194,6 +196,12 @@ func ParseTimeoutPolicy(timeoutParameters *contour_v1alpha1.TimeoutParameters) (
 		timeouts.MaxConnectionDuration, err = timeout.Parse(*timeoutParameters.MaxConnectionDuration)
 		if err != nil {
 			return Timeouts{}, fmt.Errorf("failed to parse max connection duration: %s", err)
+		}
+	}
+	if timeoutParameters.MaxStreamDuration != nil {
+		timeouts.MaxStreamDuration, err = timeout.Parse(*timeoutParameters.MaxStreamDuration)
+		if err != nil {
+			return Timeouts{}, fmt.Errorf("failed to parse max stream duration: %s", err)
 		}
 	}
 	if timeoutParameters.DelayedCloseTimeout != nil {

@@ -585,6 +585,15 @@ type TimeoutParameters struct {
 	// +optional
 	MaxConnectionDuration *string `json:"maxConnectionDuration,omitempty"`
 
+	// MaxStreamDuration defines the maximum duration a HTTP stream is kept alive.
+	// The stream will be reset if the time limit is reached. Omit or set to "infinity" for
+	// no max duration.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-stream-duration
+	// for more information.
+	// +optional
+	MaxStreamDuration *string `json:"maxStreamDuration,omitempty"`
+
 	// DelayedCloseTimeout defines how long envoy will wait, once connection
 	// close processing has been initiated, for the downstream peer to close
 	// the connection before Envoy closes the socket associated with the connection.

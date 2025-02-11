@@ -433,6 +433,12 @@ func routeRoute(r *dag.Route) *envoy_config_route_v3.Route_Route {
 		}
 	}
 
+	if !r.TimeoutPolicy.MaxStreamDuration.UseDefault() {
+		ra.MaxStreamDuration = &envoy_config_route_v3.RouteAction_MaxStreamDuration{
+			MaxStreamDuration: envoy.Timeout(r.TimeoutPolicy.MaxStreamDuration),
+		}
+	}
+
 	if r.RateLimitPolicy != nil && r.RateLimitPolicy.Global != nil {
 		ra.RateLimits = GlobalRateLimits(r.RateLimitPolicy.Global.Descriptors)
 	}

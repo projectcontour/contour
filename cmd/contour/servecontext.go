@@ -358,6 +358,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 	if len(ctx.Config.Timeouts.MaxConnectionDuration) > 0 {
 		timeoutParams.MaxConnectionDuration = ptr.To(ctx.Config.Timeouts.MaxConnectionDuration)
 	}
+	if len(ctx.Config.Timeouts.MaxStreamDuration) > 0 {
+		timeoutParams.MaxStreamDuration = ptr.To(ctx.Config.Timeouts.MaxStreamDuration)
+	}
 	if len(ctx.Config.Timeouts.DelayedCloseTimeout) > 0 {
 		timeoutParams.DelayedCloseTimeout = ptr.To(ctx.Config.Timeouts.DelayedCloseTimeout)
 	}

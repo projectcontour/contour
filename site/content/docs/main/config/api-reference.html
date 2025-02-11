@@ -4696,6 +4696,20 @@ string
 If not supplied, Envoy&rsquo;s default value of 1h applies.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxStreamDuration</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Maximum allowed duration a streaming request can run for.
+If not supplied, the global setting is used.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.UpstreamValidation">UpstreamValidation
@@ -8882,6 +8896,23 @@ has been established from the client to the proxy before it is closed by the pro
 regardless of whether there has been activity or not. Omit or set to &ldquo;infinity&rdquo; for
 no max duration.</p>
 <p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration</a>
+for more information.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxStreamDuration</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxStreamDuration defines the maximum duration a HTTP stream is kept alive.
+The stream will be reset if the time limit is reached. Omit or set to &ldquo;infinity&rdquo; for
+no max duration.</p>
+<p>See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-stream-duration">https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-stream-duration</a>
 for more information.</p>
 </td>
 </tr>

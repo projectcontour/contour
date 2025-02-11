@@ -583,6 +583,14 @@ spec:
                           See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
                           for more information.
                         type: string
+                      maxStreamDuration:
+                        description: |-
+                          MaxStreamDuration defines the maximum duration a HTTP stream is kept alive.
+                          The stream will be reset if the time limit is reached. Omit or set to "infinity" for
+                          no max duration.
+                          See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-stream-duration
+                          for more information.
+                        type: string
                       requestTimeout:
                         description: |-
                           RequestTimeout sets the client request timeout globally for Contour. Note that
@@ -4399,6 +4407,14 @@ spec:
                               See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
                               for more information.
                             type: string
+                          maxStreamDuration:
+                            description: |-
+                              MaxStreamDuration defines the maximum duration a HTTP stream is kept alive.
+                              The stream will be reset if the time limit is reached. Omit or set to "infinity" for
+                              no max duration.
+                              See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-stream-duration
+                              for more information.
+                            type: string
                           requestTimeout:
                             description: |-
                               RequestTimeout sets the client request timeout globally for Contour. Note that
@@ -5272,6 +5288,12 @@ spec:
                     description: |-
                       Timeout for how long connection from the proxy to the upstream service is kept when there are no active requests.
                       If not supplied, Envoy's default value of 1h applies.
+                    pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                    type: string
+                  maxStreamDuration:
+                    description: |-
+                      Maximum allowed duration a streaming request can run for.
+                      If not supplied, the global setting is used.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                     type: string
                   response:
@@ -7019,6 +7041,12 @@ spec:
                           description: |-
                             Timeout for how long connection from the proxy to the upstream service is kept when there are no active requests.
                             If not supplied, Envoy's default value of 1h applies.
+                          pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                          type: string
+                        maxStreamDuration:
+                          description: |-
+                            Maximum allowed duration a streaming request can run for.
+                            If not supplied, the global setting is used.
                           pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                           type: string
                         response:

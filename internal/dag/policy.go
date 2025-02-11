@@ -452,6 +452,7 @@ func timeoutPolicy(tp *contour_v1.TimeoutPolicy, connectTimeout time.Duration) (
 		return RouteTimeoutPolicy{
 				ResponseTimeout:   timeout.DefaultSetting(),
 				IdleStreamTimeout: timeout.DefaultSetting(),
+				MaxStreamDuration: timeout.DefaultSetting(),
 			}, ClusterTimeoutPolicy{
 				IdleConnectionTimeout: timeout.DefaultSetting(),
 				ConnectTimeout:        connectTimeout,
@@ -474,9 +475,15 @@ func timeoutPolicy(tp *contour_v1.TimeoutPolicy, connectTimeout time.Duration) (
 		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle connection timeout: %w", err)
 	}
 
+	maxStreamDuration, err := timeout.Parse(tp.MaxStreamDuration)
+	if err != nil {
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing max stream duration: %w", err)
+	}
+
 	return RouteTimeoutPolicy{
 			ResponseTimeout:   responseTimeout,
 			IdleStreamTimeout: idleStreamTimeout,
+			MaxStreamDuration: maxStreamDuration,
 		}, ClusterTimeoutPolicy{
 			IdleConnectionTimeout: idleConnectionTimeout,
 			ConnectTimeout:        connectTimeout,

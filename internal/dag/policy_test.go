@@ -241,6 +241,28 @@ func TestTimeoutPolicy(t *testing.T) {
 				IdleStreamTimeout: timeout.DurationSetting(900 * time.Second),
 			},
 		},
+		"maximum stream duration": {
+			tp: &contour_v1.TimeoutPolicy{
+				MaxStreamDuration: "5m",
+			},
+			wantRouteTimeoutPolicy: RouteTimeoutPolicy{
+				MaxStreamDuration: timeout.DurationSetting(5 * time.Minute),
+			},
+		},
+		"infinite maximum stream duration": {
+			tp: &contour_v1.TimeoutPolicy{
+				MaxStreamDuration: "infinite",
+			},
+			wantRouteTimeoutPolicy: RouteTimeoutPolicy{
+				MaxStreamDuration: timeout.DisabledSetting(),
+			},
+		},
+		"invalid maximum stream duration": {
+			tp: &contour_v1.TimeoutPolicy{
+				MaxStreamDuration: "invalid value",
+			},
+			wantErr: true,
+		},
 		"idle connection timeout": {
 			tp: &contour_v1.TimeoutPolicy{
 				IdleConnection: "900s",
