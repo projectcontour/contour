@@ -149,6 +149,14 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 	case dagRoute.Redirect != nil:
 		// TODO request/response headers?
 		route.Action = routeRedirect(dagRoute.Redirect)
+
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+		// Apply per-route authorization policy modifications.
+		if dagRoute.AuthDisabled {
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
+		} else if len(dagRoute.AuthContext) > 0 {
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
+		}
 	default:
 		route.Action = routeRoute(dagRoute)
 
