@@ -76,7 +76,7 @@ func TestCompression(t *testing.T) {
 			rh.OnAdd(hp1)
 			httpListener := defaultHTTPListener()
 			httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-				SetDefaultFilterCompression(&contour_v1alpha1.EnvoyCompression{
+				Compression(&contour_v1alpha1.EnvoyCompression{
 					Algorithm: tc.want,
 				}).
 				RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
