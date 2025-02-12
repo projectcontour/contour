@@ -21,9 +21,9 @@ type CompressionAlgorithm string
 
 // EnvoyCompression defines configuration related to compression in the default HTTP Listener filter chain.
 type EnvoyCompression struct {
-	// Algorithm selects the compression type applied in the compression HTTP filter of the default Listener filters.
+	// Algorithm selects the response compression type applied in the compression HTTP filter of the default Listener filters.
 	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
 	// +kubebuilder:validation:Enum="gzip";"brotli";"zstd";"disabled"
 	// +optional
 	Algorithm CompressionAlgorithm `json:"algorithm,omitempty"`
