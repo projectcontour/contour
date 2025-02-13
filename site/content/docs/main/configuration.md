@@ -179,10 +179,11 @@ _This is Envoy's default setting value and is not explicitly configured by Conto
 
 The network configuration block can be used to configure various parameters network connections.
 
-| Field Name       | Type | Default | Description                                                                                                             |
-| ---------------- | ---- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
-| num-trusted-hops | int  | 0       | Configures the number of additional ingress proxy hops from the right side of the x-forwarded-for HTTP header to trust. |
-| admin-port       | int  | 9001    | Configures the Envoy Admin read-only listener on Envoy. Set to `0` to disable.                                          |
+| Field Name              | Type | Default | Description                                                                                                                                                                                                                                                                                                                                                                                    |
+|-------------------------|------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| num-trusted-hops        | int  | 0       | Configures the number of additional ingress proxy hops from the right side of the x-forwarded-for HTTP header to trust.                                                                                                                                                                                                                                                                        |
+| admin-port              | int  | 9001    | Configures the Envoy Admin read-only listener on Envoy. Set to `0` to disable.                                                                                                                                                                                                                                                                                                                 |
+| strip-trailing-host-dot | bool | false   | Defines if trailing dot of the host should be removed from host/authority header before any processing of request by HTTP filters or routing. This affects the upstream host header. Without setting this option to true, incoming requests with host example.com. will not match against route with domains match set to example.com. See [the Envoy documentation][15] for more information. |
 
 ### Listener Configuration
 
@@ -525,3 +526,4 @@ connects to Contour:
 [12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
 [13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
 [14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#config-listener-v3-listener-connectionbalanceconfig
+[15]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot

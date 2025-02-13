@@ -1234,6 +1234,9 @@ func TestHTTPProxyStripTrailingHostDot(t *testing.T) {
 	})
 
 	defer done()
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
 
 	rh.OnAdd(fixture.NewService("backend").
 		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
@@ -1264,7 +1267,7 @@ func TestHTTPProxyStripTrailingHostDot(t *testing.T) {
 	// verify that the xff-num-trusted-hops have been set to 1.
 	httpListener := defaultHTTPListener()
 
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).

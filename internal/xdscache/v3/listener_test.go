@@ -2148,7 +2148,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManagerBuilder().
+					envoyGen.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
