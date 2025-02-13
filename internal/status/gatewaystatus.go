@@ -80,7 +80,7 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName
 	}
 }
 
-func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, numRoutes int) {
+func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, numRoutes int32) {
 	if gatewayUpdate.ListenerStatus == nil {
 		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1.ListenerStatus{}
 	}
@@ -90,7 +90,7 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName
 		}
 	}
 
-	gatewayUpdate.ListenerStatus[listenerName].AttachedRoutes = int32(numRoutes)
+	gatewayUpdate.ListenerStatus[listenerName].AttachedRoutes = numRoutes
 }
 
 // AddListenerCondition adds a Condition for the specified listener.

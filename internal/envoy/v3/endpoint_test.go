@@ -144,7 +144,7 @@ func TestExternalNameClusterLoadAssignment(t *testing.T) {
 		ExternalName: "foo.io",
 	}
 
-	got := ExternalNameClusterLoadAssignment(s1)
+	got := externalNameClusterLoadAssignment(s1)
 	want := &envoy_config_endpoint_v3.ClusterLoadAssignment{
 		ClusterName: "default/kuard/http",
 		Endpoints: Endpoints(
@@ -153,7 +153,7 @@ func TestExternalNameClusterLoadAssignment(t *testing.T) {
 	}
 	protobuf.RequireEqual(t, want, got)
 
-	got = ExternalNameClusterLoadAssignment(s2)
+	got = externalNameClusterLoadAssignment(s2)
 	want = &envoy_config_endpoint_v3.ClusterLoadAssignment{
 		ClusterName: "default/kuard/http",
 		Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{

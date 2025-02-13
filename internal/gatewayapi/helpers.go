@@ -47,7 +47,7 @@ func GatewayParentRef(namespace, name string) gatewayapi_v1.ParentReference {
 	return parentRef
 }
 
-func GatewayListenerParentRef(namespace, name, listener string, port int) gatewayapi_v1.ParentReference {
+func GatewayListenerParentRef(namespace, name, listener string, port uint16) gatewayapi_v1.ParentReference {
 	parentRef := GatewayParentRef(namespace, name)
 
 	if listener != "" {
@@ -61,7 +61,7 @@ func GatewayListenerParentRef(namespace, name, listener string, port int) gatewa
 	return parentRef
 }
 
-func ServiceBackendObjectRef(name string, port int) gatewayapi_v1.BackendObjectReference {
+func ServiceBackendObjectRef(name string, port uint16) gatewayapi_v1.BackendObjectReference {
 	return gatewayapi_v1.BackendObjectReference{
 		Group: ptr.To(gatewayapi_v1.Group("")),
 		Kind:  ptr.To(gatewayapi_v1.Kind("Service")),
@@ -114,7 +114,7 @@ func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1.HTTPBackendRef) []gatewayapi
 	return res
 }
 
-func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1.HTTPBackendRef {
+func HTTPBackendRef(serviceName string, port uint16, weight int32) []gatewayapi_v1.HTTPBackendRef {
 	return []gatewayapi_v1.HTTPBackendRef{
 		{
 			BackendRef: gatewayapi_v1.BackendRef{
@@ -134,7 +134,7 @@ func TLSRouteBackendRefs(backendRefs ...[]gatewayapi_v1.BackendRef) []gatewayapi
 	return res
 }
 
-func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayapi_v1.BackendRef {
+func TLSRouteBackendRef(serviceName string, port uint16, weight *int32) []gatewayapi_v1.BackendRef {
 	return []gatewayapi_v1.BackendRef{
 		{
 			BackendObjectReference: gatewayapi_v1.BackendObjectReference{
@@ -148,7 +148,7 @@ func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayap
 	}
 }
 
-func GRPCRouteBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1.GRPCBackendRef {
+func GRPCRouteBackendRef(serviceName string, port uint16, weight int32) []gatewayapi_v1.GRPCBackendRef {
 	return []gatewayapi_v1.GRPCBackendRef{
 		{
 			BackendRef: gatewayapi_v1.BackendRef{
@@ -173,7 +173,7 @@ func GRPCMethodMatch(matchType gatewayapi_v1.GRPCMethodMatchType, service, metho
 	}
 }
 
-func GRPCHeaderMatch(matchType gatewayapi_v1.HeaderMatchType, name, value string) []gatewayapi_v1.GRPCHeaderMatch {
+func GRPCHeaderMatch(matchType gatewayapi_v1.GRPCHeaderMatchType, name, value string) []gatewayapi_v1.GRPCHeaderMatch {
 	return []gatewayapi_v1.GRPCHeaderMatch{
 		{
 			Type:  ptr.To(matchType),

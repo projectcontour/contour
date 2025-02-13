@@ -22,7 +22,6 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -33,7 +32,6 @@ import (
 type RouteCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_config_route_v3.RouteConfiguration
-	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -42,7 +40,6 @@ func (c *RouteCache) Update(v map[string]*envoy_config_route_v3.RouteConfigurati
 	defer c.mu.Unlock()
 
 	c.values = v
-	c.Cond.Notify()
 }
 
 // Contents returns a copy of the cache's contents.
@@ -52,31 +49,6 @@ func (c *RouteCache) Contents() []proto.Message {
 
 	var values []*envoy_config_route_v3.RouteConfiguration
 	for _, v := range c.values {
-		values = append(values, v)
-	}
-
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-// Query searches the RouteCache for the named RouteConfiguration entries.
-func (c *RouteCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	var values []*envoy_config_route_v3.RouteConfiguration
-	for _, n := range names {
-		v, ok := c.values[n]
-		if !ok {
-			// if there is no route registered with the cache
-			// we return a blank route configuration. This is
-			// not the same as returning nil, we're choosing to
-			// say "the configuration you asked for _does exists_,
-			// but it contains no useful information.
-			v = &envoy_config_route_v3.RouteConfiguration{
-				Name: n,
-			}
-		}
 		values = append(values, v)
 	}
 

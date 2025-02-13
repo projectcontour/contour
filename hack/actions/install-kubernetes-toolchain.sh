@@ -4,8 +4,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly KUBECTL_VERS="v1.31.0"
-readonly KIND_VERS="v0.24.0"
+readonly KUBECTL_VERS="v1.32.0"
+readonly KIND_VERS="v0.26.0"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
@@ -45,7 +45,7 @@ download \
 chmod +x  "${DESTDIR}/kind"
 
 download \
-    "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERS}/bin/${OS}/amd64/kubectl" \
+    "https://dl.k8s.io/release/${KUBECTL_VERS}/bin/${OS}/amd64/kubectl" \
     "${DESTDIR}/kubectl"
 
 chmod +x "${DESTDIR}/kubectl"

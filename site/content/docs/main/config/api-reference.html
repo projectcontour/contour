@@ -1767,7 +1767,9 @@ When empty, port (if specified) of the request is used.</p>
 <code>statusCode</code>
 <br>
 <em>
-int
+<a href="#projectcontour.io/v1.RedirectResponseCode">
+RedirectResponseCode
+</a>
 </em>
 </td>
 <td>
@@ -3085,7 +3087,8 @@ service (RLS) for a rate limit decision on each request.</p>
 (<code>uint32</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy</a>)
+<a href="#projectcontour.io/v1.HTTPInternalRedirectPolicy">HTTPInternalRedirectPolicy</a>, 
+<a href="#projectcontour.io/v1.HTTPRequestRedirectPolicy">HTTPRequestRedirectPolicy</a>)
 </p>
 <p>
 <p>RedirectResponseCode is a uint32 type alias with validation to ensure that the value is valid.</p>
@@ -3518,11 +3521,14 @@ Ignored if NumRetries is not supplied.</p>
 <li><code>5xx</code></li>
 <li><code>gateway-error</code></li>
 <li><code>reset</code></li>
+<li><code>reset-before-request</code></li>
 <li><code>connect-failure</code></li>
+<li><code>envoy-ratelimited</code></li>
 <li><code>retriable-4xx</code></li>
 <li><code>refused-stream</code></li>
 <li><code>retriable-status-codes</code></li>
 <li><code>retriable-headers</code></li>
+<li><code>http3-post-connect-failure</code></li>
 </ul>
 <p>Supported <a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on">gRPC conditions</a>:</p>
 <ul>
@@ -6444,6 +6450,10 @@ contour reconciler.</p>
 <h3 id="projectcontour.io/v1alpha1.CustomTag">CustomTag
 </h3>
 <p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.TracingConfig">TracingConfig</a>)
+</p>
+<p>
 <p>CustomTag defines custom tags with unique tag name
 to create tags for the active span.</p>
 </p>
@@ -9092,8 +9102,8 @@ contour&rsquo;s default is 256.</p>
 <code>customTags</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.*github.com/projectcontour/contour/apis/projectcontour/v1alpha1.CustomTag">
-[]*github.com/projectcontour/contour/apis/projectcontour/v1alpha1.CustomTag
+<a href="#projectcontour.io/v1alpha1.CustomTag">
+[]CustomTag
 </a>
 </em>
 </td>
@@ -9146,25 +9156,6 @@ NamespacedName
 <tbody>
 <tr>
 <td style="white-space:nowrap">
-<code>type</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.XDSServerType">
-XDSServerType
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Defines the XDSServer to use for <code>contour serve</code>.</p>
-<p>Values: <code>envoy</code> (default), <code>contour (deprecated)</code>.</p>
-<p>Other values will produce an error.</p>
-<p>Deprecated: this field will be removed in a future release when
-the <code>contour</code> xDS server implementation is removed.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>address</code>
 <br>
 <em>
@@ -9208,30 +9199,6 @@ TLS
 </td>
 </tr>
 </tbody>
-</table>
-<h3 id="projectcontour.io/v1alpha1.XDSServerType">XDSServerType
-(<code>string</code> alias)</p></h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig</a>)
-</p>
-<p>
-<p>XDSServerType is the type of xDS server implementation.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr><td><p>&#34;contour&#34;</p></td>
-<td><p>Use Contour&rsquo;s xDS server (deprecated).</p>
-</td>
-</tr><tr><td><p>&#34;envoy&#34;</p></td>
-<td><p>Use the upstream <code>go-control-plane</code>-based xDS server.</p>
-</td>
-</tr></tbody>
 </table>
 <hr/>
 <p><em>

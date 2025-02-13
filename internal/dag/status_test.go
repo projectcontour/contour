@@ -5168,7 +5168,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 }
 
-func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v1.ProtocolType, attachedRoutes int) []*status.GatewayStatusUpdate {
+func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v1.ProtocolType, attachedRoutes int32) []*status.GatewayStatusUpdate {
 	var supportedKinds []gatewayapi_v1.RouteGroupKind
 
 	switch listenerProtocol {
@@ -5218,7 +5218,7 @@ func validGatewayStatusUpdate(listenerName string, listenerProtocol gatewayapi_v
 			ListenerStatus: map[string]*gatewayapi_v1.ListenerStatus{
 				listenerName: {
 					Name:           gatewayapi_v1.SectionName(listenerName),
-					AttachedRoutes: int32(attachedRoutes),
+					AttachedRoutes: attachedRoutes,
 					SupportedKinds: supportedKinds,
 					Conditions:     listenerValidConditions(),
 				},
@@ -10754,7 +10754,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1.GRPCHeaderMatch{
 								{
-									Type:  ptr.To(gatewayapi_v1.HeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
+									Type:  ptr.To(gatewayapi_v1.GRPCHeaderMatchType("UNKNOWN")), // <---- unknown type to break the test
 									Name:  gatewayapi_v1.GRPCHeaderName("foo"),
 									Value: "bar",
 								},
@@ -10809,7 +10809,7 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 							},
 							Headers: []gatewayapi_v1.GRPCHeaderMatch{
 								{
-									Type:  ptr.To(gatewayapi_v1.HeaderMatchRegularExpression),
+									Type:  ptr.To(gatewayapi_v1.GRPCHeaderMatchRegularExpression),
 									Name:  gatewayapi_v1.GRPCHeaderName("foo"),
 									Value: "invalid(-)regex)",
 								},

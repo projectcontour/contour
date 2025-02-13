@@ -67,6 +67,7 @@ func TestGatewayConformance(t *testing.T) {
 		// This clientset is needed in addition to the client only because
 		// controller-runtime client doesn't support non CRUD sub-resources yet (https://github.com/kubernetes-sigs/controller-runtime/issues/452).
 		Clientset:                  clientset,
+		RestConfig:                 cfg,
 		GatewayClassName:           *flags.GatewayClassName,
 		Debug:                      *flags.ShowDebug,
 		CleanupBaseResources:       *flags.CleanupBaseResources,
@@ -138,7 +139,18 @@ func TestGatewayConformance(t *testing.T) {
 		// exclude tests we don't want to run using the ExemptFeatures
 		// field.
 		options.EnableAllSupportedFeatures = false
-		options.SupportedFeatures = features.AllFeatures.Delete(append(features.MeshCoreFeatures.UnsortedList(), features.UDPRouteFeatures.UnsortedList()...)...)
+
+		supportedFeatures := features.AllFeatures
+		supportedFeatures.Delete(features.MeshCoreFeatures.UnsortedList()...)
+		// As of GWAPI 1.2.1 UDPRouteFeatures is a different
+		// type than AllFeatures/MeshCoreFeatures hence the
+		// slightly different deletion syntax.
+		for _, f := range features.UDPRouteFeatures {
+			supportedFeatures.Delete(f)
+		}
+		for f := range supportedFeatures {
+			options.SupportedFeatures.Insert(f.Name)
+		}
 	}
 
 	conformance.RunConformanceWithOptions(t, options)

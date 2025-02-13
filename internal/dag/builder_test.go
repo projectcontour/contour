@@ -5064,7 +5064,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
 								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
-								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.HeaderMatchExact, "version", "2"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.GRPCHeaderMatchExact, "version", "2"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -5106,7 +5106,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
 								Method:  gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
-								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.HeaderMatchRegularExpression, "version", "2+"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.GRPCHeaderMatchRegularExpression, "version", "2+"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -5147,7 +5147,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1.GRPCRouteRule{{
 							Matches: []gatewayapi_v1.GRPCRouteMatch{{
-								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.HeaderMatchExact, "version", "2"),
+								Headers: gatewayapi.GRPCHeaderMatch(gatewayapi_v1.GRPCHeaderMatchExact, "version", "2"),
 							}},
 							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
 						}},
@@ -12395,7 +12395,7 @@ func TestDAGInsert(t *testing.T) {
 								Scheme:     ptr.To("https"),
 								Hostname:   ptr.To("envoyproxy.io"),
 								Port:       ptr.To(int32(443)),
-								StatusCode: ptr.To(301),
+								StatusCode: ptr.To(contour_v1.RedirectResponseCode(301)),
 							},
 						}},
 					},
@@ -12438,7 +12438,7 @@ func TestDAGInsert(t *testing.T) {
 								Scheme:     ptr.To("https"),
 								Hostname:   ptr.To("envoyproxy.io"),
 								Port:       ptr.To(int32(443)),
-								StatusCode: ptr.To(301),
+								StatusCode: ptr.To(contour_v1.RedirectResponseCode(301)),
 							},
 						}},
 					},
@@ -12490,7 +12490,7 @@ func TestDAGInsert(t *testing.T) {
 								Scheme:     ptr.To("https"),
 								Hostname:   ptr.To("envoyproxy.io"),
 								Port:       ptr.To(int32(443)),
-								StatusCode: ptr.To(301),
+								StatusCode: ptr.To(contour_v1.RedirectResponseCode(301)),
 							},
 						}},
 					},
@@ -12643,7 +12643,7 @@ func TestDAGInsert(t *testing.T) {
 									Scheme:     ptr.To("https"),
 									Hostname:   ptr.To("envoyproxy.io"),
 									Port:       ptr.To(int32(443)),
-									StatusCode: ptr.To(301),
+									StatusCode: ptr.To(contour_v1.RedirectResponseCode(301)),
 								},
 							},
 						},
@@ -16164,7 +16164,7 @@ func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1.HTT
 	}
 }
 
-func makeHTTPRouteRule(pathType gatewayapi_v1.PathMatchType, pathValue, serviceName string, port int, weight int32) gatewayapi_v1.HTTPRouteRule {
+func makeHTTPRouteRule(pathType gatewayapi_v1.PathMatchType, pathValue, serviceName string, port uint16, weight int32) gatewayapi_v1.HTTPRouteRule {
 	return gatewayapi_v1.HTTPRouteRule{
 		Matches:     gatewayapi.HTTPRouteMatch(pathType, pathValue),
 		BackendRefs: gatewayapi.HTTPBackendRef(serviceName, port, weight),

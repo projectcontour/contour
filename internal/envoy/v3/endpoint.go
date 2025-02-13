@@ -40,7 +40,7 @@ func HealthCheckConfig(healthCheckPort int32) *envoy_config_endpoint_v3.Endpoint
 		return nil
 	}
 	return &envoy_config_endpoint_v3.Endpoint_HealthCheckConfig{
-		PortValue: uint32(healthCheckPort),
+		PortValue: uint32(healthCheckPort), //nolint:gosec // disable G115
 	}
 }
 
@@ -75,8 +75,8 @@ func ClusterLoadAssignment(name string, addrs ...*envoy_config_core_v3.Address) 
 	}
 }
 
-// ExternalNameClusterLoadAssignment creates a *envoy_config_endpoint_v3.ClusterLoadAssignment pointing to service's ExternalName DNS address.
-func ExternalNameClusterLoadAssignment(service *dag.Service) *envoy_config_endpoint_v3.ClusterLoadAssignment {
+// externalNameClusterLoadAssignment creates a *envoy_config_endpoint_v3.ClusterLoadAssignment pointing to service's ExternalName DNS address.
+func externalNameClusterLoadAssignment(service *dag.Service) *envoy_config_endpoint_v3.ClusterLoadAssignment {
 	cla := ClusterLoadAssignment(
 		xds.ClusterLoadAssignmentName(
 			types.NamespacedName{Name: service.Weighted.ServiceName, Namespace: service.Weighted.ServiceNamespace},

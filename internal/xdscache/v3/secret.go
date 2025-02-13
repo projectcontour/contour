@@ -21,7 +21,6 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -34,7 +33,6 @@ type SecretCache struct {
 	mu           sync.Mutex
 	values       map[string]*envoy_transport_socket_tls_v3.Secret
 	staticValues map[string]*envoy_transport_socket_tls_v3.Secret
-	contour.Cond
 }
 
 func NewSecretsCache(secrets []*envoy_transport_socket_tls_v3.Secret) *SecretCache {
@@ -54,7 +52,6 @@ func (c *SecretCache) Update(v map[string]*envoy_transport_socket_tls_v3.Secret)
 	defer c.mu.Unlock()
 
 	c.values = v
-	c.Cond.Notify()
 }
 
 // Contents returns a copy of the cache's contents.
@@ -66,27 +63,6 @@ func (c *SecretCache) Contents() []proto.Message {
 		values = append(values, v)
 	}
 	for _, v := range c.staticValues {
-		values = append(values, v)
-	}
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
-func (c *SecretCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	var values []*envoy_transport_socket_tls_v3.Secret
-	for _, n := range names {
-		// we can only return secrets where their value is
-		// known. if the secret is not registered in the cache
-		// we return nothing.
-		v, ok := c.values[n]
-		if !ok {
-			v, ok = c.staticValues[n]
-			if !ok {
-				continue
-			}
-		}
 		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))

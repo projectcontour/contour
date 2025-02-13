@@ -172,6 +172,7 @@ const (
 
 type httpConnectionManagerBuilder struct {
 	routeConfigName               string
+	routeConfigSource             *envoy_config_core_v3.ConfigSource
 	metricsPrefix                 string
 	accessLoggers                 []*envoy_config_accesslog_v3.AccessLog
 	requestTimeout                timeout.Setting
@@ -527,7 +528,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		RouteSpecifier: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Rds{
 			Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
 				RouteConfigName: b.routeConfigName,
-				ConfigSource:    ConfigSource("contour"),
+				ConfigSource:    b.routeConfigSource,
 			},
 		},
 		Tracing:     b.tracingConfig,
@@ -617,8 +618,8 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*envoy_config_accesslog_v3.AccessLog, requestTimeout time.Duration) *envoy_config_listener_v3.Filter {
-	return HTTPConnectionManagerBuilder().
+func (e *EnvoyGen) HTTPConnectionManager(routename string, accesslogger []*envoy_config_accesslog_v3.AccessLog, requestTimeout time.Duration) *envoy_config_listener_v3.Filter {
+	return e.HTTPConnectionManagerBuilder().
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
 		AccessLoggers(accesslogger).
@@ -629,8 +630,10 @@ func HTTPConnectionManager(routename string, accesslogger []*envoy_config_access
 
 // HTTPConnectionManagerBuilder creates a new HTTP connection manager builder.
 // nolint:revive
-func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
-	return &httpConnectionManagerBuilder{}
+func (e *EnvoyGen) HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
+	return &httpConnectionManagerBuilder{
+		routeConfigSource: e.GetConfigSource(),
+	}
 }
 
 // TCPProxy creates a new TCPProxy filter.
@@ -708,8 +711,8 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*envoy_conf
 	}
 }
 
-// UnixSocketAddress creates a new Unix Socket envoy_config_core_v3.Address.
-func UnixSocketAddress(address string) *envoy_config_core_v3.Address {
+// unixSocketAddress creates a new Unix Socket envoy_config_core_v3.Address.
+func unixSocketAddress(address string) *envoy_config_core_v3.Address {
 	return &envoy_config_core_v3.Address{
 		Address: &envoy_config_core_v3.Address_Pipe{
 			Pipe: &envoy_config_core_v3.Pipe{
@@ -722,6 +725,7 @@ func UnixSocketAddress(address string) *envoy_config_core_v3.Address {
 
 // SocketAddress creates a new TCP envoy_config_core_v3.Address.
 func SocketAddress(address string, port int) *envoy_config_core_v3.Address {
+	portValue := uint32(port) //nolint:gosec // disable G115
 	if address == "::" {
 		return &envoy_config_core_v3.Address{
 			Address: &envoy_config_core_v3.Address_SocketAddress{
@@ -730,7 +734,7 @@ func SocketAddress(address string, port int) *envoy_config_core_v3.Address {
 					Address:    address,
 					Ipv4Compat: true,
 					PortSpecifier: &envoy_config_core_v3.SocketAddress_PortValue{
-						PortValue: uint32(port),
+						PortValue: portValue,
 					},
 				},
 			},
@@ -742,7 +746,7 @@ func SocketAddress(address string, port int) *envoy_config_core_v3.Address {
 				Protocol: envoy_config_core_v3.SocketAddress_TCP,
 				Address:  address,
 				PortSpecifier: &envoy_config_core_v3.SocketAddress_PortValue{
-					PortValue: uint32(port),
+					PortValue: portValue,
 				},
 			},
 		},
@@ -830,7 +834,7 @@ end
 func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	authConfig := envoy_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: GrpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
+			GrpcService: grpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
 		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
@@ -963,8 +967,8 @@ func FilterChainTLSFallback(downstream *envoy_transport_socket_tls_v3.Downstream
 	return fc
 }
 
-// GRPCService returns a envoy_config_core_v3.GrpcService for the given parameters.
-func GrpcService(clusterName, sni string, timeout timeout.Setting) *envoy_config_core_v3.GrpcService {
+// grpcService returns a envoy_config_core_v3.GrpcService for the given parameters.
+func grpcService(clusterName, sni string, timeout timeout.Setting) *envoy_config_core_v3.GrpcService {
 	authority := strings.ReplaceAll(clusterName, "/", ".")
 	if sni != "" {
 		authority = sni

@@ -235,7 +235,6 @@ type ExtensionServiceReference struct {
 	//
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 	//
-	// +required
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }
@@ -715,8 +714,7 @@ type HTTPRequestRedirectPolicy struct {
 	// StatusCode is the HTTP status code to be used in response.
 	// +optional
 	// +kubebuilder:default=302
-	// +kubebuilder:validation:Enum=301;302
-	StatusCode *int `json:"statusCode,omitempty"`
+	StatusCode *RedirectResponseCode `json:"statusCode,omitempty"`
 
 	// Path allows for redirection to a different path from the
 	// original on the request. The path must start with a
@@ -1147,7 +1145,7 @@ type TimeoutPolicy struct {
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.
-// +kubebuilder:validation:Enum="5xx";gateway-error;reset;connect-failure;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers;cancelled;deadline-exceeded;internal;resource-exhausted;unavailable
+// +kubebuilder:validation:Enum="5xx";gateway-error;reset;reset-before-request;connect-failure;envoy-ratelimited;retriable-4xx;refused-stream;retriable-status-codes;retriable-headers;http3-post-connect-failure;cancelled;deadline-exceeded;internal;resource-exhausted;unavailable
 type RetryOn string
 
 // RetryPolicy defines the attributes associated with retrying policy.
@@ -1172,11 +1170,14 @@ type RetryPolicy struct {
 	// - `5xx`
 	// - `gateway-error`
 	// - `reset`
+	// - `reset-before-request`
 	// - `connect-failure`
+	// - `envoy-ratelimited`
 	// - `retriable-4xx`
 	// - `refused-stream`
 	// - `retriable-status-codes`
 	// - `retriable-headers`
+	// - `http3-post-connect-failure`
 	//
 	// Supported [gRPC conditions](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#x-envoy-retry-grpc-on):
 	//

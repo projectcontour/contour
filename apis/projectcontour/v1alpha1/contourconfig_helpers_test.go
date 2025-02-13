@@ -25,21 +25,6 @@ import (
 )
 
 func TestContourConfigurationSpecValidate(t *testing.T) {
-	t.Run("xds server type validation", func(t *testing.T) {
-		c := contour_v1alpha1.ContourConfigurationSpec{
-			XDSServer: &contour_v1alpha1.XDSServerConfig{},
-		}
-
-		c.XDSServer.Type = contour_v1alpha1.ContourServerType
-		require.NoError(t, c.Validate())
-
-		c.XDSServer.Type = contour_v1alpha1.EnvoyServerType
-		require.NoError(t, c.Validate())
-
-		c.XDSServer.Type = "foo"
-		require.Error(t, c.Validate())
-	})
-
 	t.Run("envoy validation", func(t *testing.T) {
 		c := contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{

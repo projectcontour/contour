@@ -48,6 +48,8 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -91,16 +93,21 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		}
 	}
 
+	envoyGen := v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
 	resources := []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(
 			conf,
 			contour_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
 			contour_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
 			0,
+			envoyGen,
 		),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
-		&xdscache_v3.ClusterCache{},
+		xdscache_v3.NewClusterCache(envoyGen),
 		et,
 	}
 
@@ -321,7 +328,7 @@ func (s *StatusResult) Equals(want contour_v1.HTTPProxyStatus) *Contour {
 	// We should never get an error fetching the status for an
 	// object, so make it fatal if we do.
 	if s.Err != nil {
-		s.T.Fatalf(s.Err.Error())
+		s.T.Fatal(s.Err.Error())
 	}
 
 	assert.Equal(s.T, want, *s.Have)
@@ -336,7 +343,7 @@ func (s *StatusResult) Like(want contour_v1.HTTPProxyStatus) *Contour {
 	// We should never get an error fetching the status for an
 	// object, so make it fatal if we do.
 	if s.Err != nil {
-		s.T.Fatalf(s.Err.Error())
+		s.T.Fatal(s.Err.Error())
 	}
 
 	if len(want.CurrentStatus) > 0 {

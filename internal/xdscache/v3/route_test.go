@@ -83,66 +83,6 @@ func TestRouteCacheContents(t *testing.T) {
 	}
 }
 
-func TestRouteCacheQuery(t *testing.T) {
-	tests := map[string]struct {
-		contents map[string]*envoy_config_route_v3.RouteConfiguration
-		query    []string
-		want     []proto.Message
-	}{
-		"exact match": {
-			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"ingress_http"},
-			want: []proto.Message{
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "ingress_http",
-				},
-			},
-		},
-		"partial match": {
-			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"stats-handler", "ingress_http"},
-			want: []proto.Message{
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "ingress_http",
-				},
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "stats-handler",
-				},
-			},
-		},
-		"no match": {
-			contents: map[string]*envoy_config_route_v3.RouteConfiguration{
-				"ingress_http": {
-					Name: "ingress_http",
-				},
-			},
-			query: []string{"stats-handler"},
-			want: []proto.Message{
-				&envoy_config_route_v3.RouteConfiguration{
-					Name: "stats-handler",
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var rc RouteCache
-			rc.Update(tc.contents)
-			got := rc.Query(tc.query)
-			protobuf.ExpectEqual(t, tc.want, got)
-		})
-	}
-}
-
 func TestRouteVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs                []any
@@ -451,14 +391,9 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -598,14 +533,9 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -1627,14 +1557,9 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -1895,14 +1820,9 @@ func TestRouteVisit(t *testing.T) {
 							AllowMethods: "GET, PUT, POST",
 						},
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -2787,14 +2707,9 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -2943,14 +2858,9 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("projectcontour.io",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 					envoy_v3.VirtualHost("www.example.com",
@@ -2963,6 +2873,7 @@ func TestRouteVisit(t *testing.T) {
 									},
 								},
 							},
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -3137,18 +3048,14 @@ func TestRouteVisit(t *testing.T) {
 									},
 								},
 							},
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -3382,14 +3289,9 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -3654,14 +3556,9 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match: routePrefix("/"),
-							Action: &envoy_config_route_v3.Route_Redirect{
-								Redirect: &envoy_config_route_v3.RedirectAction{
-									SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
-										HttpsRedirect: true,
-									},
-								},
-							},
+							Match:                routePrefix("/"),
+							Action:               withRedirect(),
+							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
 				),
@@ -4094,6 +3991,16 @@ func withMirrorPolicy(route *envoy_config_route_v3.Route_Route, mirror string) *
 		},
 	}}
 	return route
+}
+
+func withRedirect() *envoy_config_route_v3.Route_Redirect {
+	return &envoy_config_route_v3.Route_Redirect{
+		Redirect: &envoy_config_route_v3.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_config_route_v3.RedirectAction_HttpsRedirect{
+				HttpsRedirect: true,
+			},
+		},
+	}
 }
 
 // buildDAGGlobalExtAuth produces a dag.DAG from the supplied objects with global external authorization configured.

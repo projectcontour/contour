@@ -362,7 +362,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, envoyInitContainerName, envoyNsEnvVar)
 	checkDaemonSetHasLabels(t, ds, cntr.WorkloadLabels())
-	checkContainerHasPort(t, ds, int32(cntr.Spec.RuntimeSettings.Envoy.Metrics.Port))
+	checkContainerHasPort(t, ds, int32(cntr.Spec.RuntimeSettings.Envoy.Metrics.Port)) //nolint:gosec // disable G115
 
 	checkDaemonSetHasNodeSelector(t, ds, nil)
 	checkDaemonSetHasTolerations(t, ds, nil)

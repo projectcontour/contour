@@ -149,12 +149,12 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 
 		if contour.Spec.RuntimeSettings.Envoy.Metrics != nil &&
 			contour.Spec.RuntimeSettings.Envoy.Metrics.Port > 0 {
-			metricsPort = int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port)
+			metricsPort = int32(contour.Spec.RuntimeSettings.Envoy.Metrics.Port) //nolint:gosec // disable G115
 		}
 
 		if contour.Spec.RuntimeSettings.Envoy.Health != nil &&
 			contour.Spec.RuntimeSettings.Envoy.Health.Port > 0 {
-			healthPort = contour.Spec.RuntimeSettings.Envoy.Health.Port
+			healthPort = int32(contour.Spec.RuntimeSettings.Envoy.Health.Port) //nolint:gosec // disable G115
 		}
 	}
 
@@ -235,7 +235,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 					HTTPGet: &core_v1.HTTPGetAction{
 						Scheme: core_v1.URISchemeHTTP,
 						Path:   "/ready",
-						Port:   intstr.IntOrString{IntVal: int32(healthPort)},
+						Port:   intstr.IntOrString{IntVal: healthPort},
 					},
 				},
 				InitialDelaySeconds: int32(3),

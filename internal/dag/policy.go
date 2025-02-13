@@ -93,6 +93,7 @@ func retryPolicy(rp *contour_v1.RetryPolicy) *RetryPolicy {
 	// If set to -1, then retries set to 0. If set to 0 or
 	// not supplied, the value is set to the Envoy default of 1.
 	// Otherwise the value supplied is returned.
+	// CRD validation guarantees -1 is the minimum value.
 	switch rp.NumRetries {
 	case -1:
 		numRetries = 0
@@ -103,7 +104,7 @@ func retryPolicy(rp *contour_v1.RetryPolicy) *RetryPolicy {
 	return &RetryPolicy{
 		RetryOn:              retryOn(rp.RetryOn),
 		RetriableStatusCodes: rp.RetriableStatusCodes,
-		NumRetries:           uint32(numRetries),
+		NumRetries:           uint32(numRetries), //nolint:gosec // disable G115
 		PerTryTimeout:        perTryTimeout,
 	}
 }
@@ -512,8 +513,8 @@ func httpHealthCheckPolicy(hc *contour_v1.HTTPHealthCheckPolicy) (*HTTPHealthChe
 		Host:               hc.Host,
 		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
-		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount),
-		HealthyThreshold:   uint32(hc.HealthyThresholdCount),
+		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount), //nolint:gosec // disable G115
+		HealthyThreshold:   uint32(hc.HealthyThresholdCount),   //nolint:gosec // disable G115
 		ExpectedStatuses:   expectedStatuses,
 	}, nil
 }

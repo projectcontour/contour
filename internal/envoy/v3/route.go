@@ -63,7 +63,7 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
-		evh.TypedPerFilterConfig[LocalRateLimitFilterName] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
+		evh.TypedPerFilterConfig[LocalRateLimitFilterName] = localRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 	}
 
 	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
@@ -121,14 +121,18 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		// envoy.RouteRoute. Currently the DAG processor adds any HTTP->HTTPS
 		// redirect routes to *both* the insecure and secure vhosts.
 		route.Action = UpgradeHTTPS()
+
+		// Disable External Authorization it is being redirected to HTTPS route
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+		route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 	case dagRoute.DirectResponse != nil:
 		route.TypedPerFilterConfig = map[string]*anypb.Any{}
 
 		// Apply per-route authorization policy modifications.
 		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
 		}
 
 		route.Action = routeDirectResponse(dagRoute.DirectResponse)
@@ -151,7 +155,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 
 		// Apply per-route local rate limit policy.
 		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
-			route.TypedPerFilterConfig[LocalRateLimitFilterName] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
+			route.TypedPerFilterConfig[LocalRateLimitFilterName] = localRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
 		}
 
 		if dagRoute.RateLimitPerRoute != nil {
@@ -229,7 +233,7 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rba
 		prefixLen, _ := f.CIDR.Mask.Size()
 		cidr := &envoy_config_core_v3.CidrRange{
 			AddressPrefix: f.CIDR.IP.String(),
-			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)),
+			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)), //nolint:gosec // disable G115
 		}
 
 		if f.Remote {
@@ -288,7 +292,7 @@ func PathRouteMatch(pathMatchCondition dag.MatchCondition) *envoy_config_route_v
 			PathSpecifier: &envoy_config_route_v3.RouteMatch_SafeRegex{
 				// Add an anchor since we at the very least have a / as a string literal prefix.
 				// Reduces regex program size so Envoy doesn't reject long prefix matches.
-				SafeRegex: SafeRegexMatch("^" + c.Regex),
+				SafeRegex: safeRegexMatch("^" + c.Regex),
 			},
 		}
 	case *dag.PrefixMatchCondition:
@@ -375,7 +379,7 @@ func routeRedirect(redirect *dag.Redirect) *envoy_config_route_v3.Route_Redirect
 		case len(redirect.PathRewritePolicy.PrefixRegexRemove) > 0:
 			r.Redirect.PathRewriteSpecifier = &envoy_config_route_v3.RedirectAction_RegexRewrite{
 				RegexRewrite: &envoy_matcher_v3.RegexMatchAndSubstitute{
-					Pattern:      SafeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
+					Pattern:      safeRegexMatch(redirect.PathRewritePolicy.PrefixRegexRemove),
 					Substitution: "/",
 				},
 			}
@@ -388,6 +392,12 @@ func routeRedirect(redirect *dag.Redirect) *envoy_config_route_v3.Route_Redirect
 		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_MOVED_PERMANENTLY
 	case http.StatusFound:
 		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_FOUND
+	case http.StatusSeeOther:
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_SEE_OTHER
+	case http.StatusTemporaryRedirect:
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_TEMPORARY_REDIRECT
+	case http.StatusPermanentRedirect:
+		r.Redirect.ResponseCode = envoy_config_route_v3.RedirectAction_PERMANENT_REDIRECT
 	}
 
 	return r
@@ -412,12 +422,12 @@ func routeRoute(r *dag.Route) *envoy_config_route_v3.Route_Route {
 			ra.PrefixRewrite = r.PathRewritePolicy.PrefixRewrite
 		case len(r.PathRewritePolicy.FullPathRewrite) > 0:
 			ra.RegexRewrite = &envoy_matcher_v3.RegexMatchAndSubstitute{
-				Pattern:      SafeRegexMatch("^/.*$"), // match the entire path
+				Pattern:      safeRegexMatch("^/.*$"), // match the entire path
 				Substitution: r.PathRewritePolicy.FullPathRewrite,
 			}
 		case len(r.PathRewritePolicy.PrefixRegexRemove) > 0:
 			ra.RegexRewrite = &envoy_matcher_v3.RegexMatchAndSubstitute{
-				Pattern:      SafeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
+				Pattern:      safeRegexMatch(r.PathRewritePolicy.PrefixRegexRemove),
 				Substitution: "/",
 			}
 		}
@@ -518,7 +528,7 @@ func mirrorPolicy(r *dag.Route) []*envoy_config_route_v3.RouteAction_RequestMirr
 			Cluster: envoy.Clustername(mp.Cluster),
 			RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
 				DefaultValue: &envoy_type_v3.FractionalPercent{
-					Numerator:   uint32(mp.Weight),
+					Numerator:   uint32(mp.Weight), //nolint:gosec // disable G115
 					Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
 				},
 			},
@@ -589,6 +599,19 @@ func UpgradeHTTPS() *envoy_config_route_v3.Route_Redirect {
 				HttpsRedirect: true,
 			},
 		},
+	}
+}
+
+// DisabledExtAuthConfig returns a route TypedPerFilterConfig that disables ExtAuth
+func DisabledExtAuthConfig() map[string]*anypb.Any {
+	return map[string]*anypb.Any{
+		ExtAuthzFilterName: protobuf.MustMarshalAny(
+			&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+					Disabled: true,
+				},
+			},
+		),
 	}
 }
 
@@ -728,7 +751,7 @@ func corsPolicy(cp *dag.CORSPolicy) *envoy_filter_http_cors_v3.CorsPolicy {
 			m.IgnoreCase = true
 		case dag.CORSAllowOriginMatchRegex:
 			m.MatchPattern = &envoy_matcher_v3.StringMatcher_SafeRegex{
-				SafeRegex: SafeRegexMatch(ao.Value),
+				SafeRegex: safeRegexMatch(ao.Value),
 			}
 		}
 		ecp.AllowOriginStringMatch = append(ecp.AllowOriginStringMatch, m)
@@ -777,7 +800,7 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_config_route_v3.
 			header.HeaderMatchSpecifier = &envoy_config_route_v3.HeaderMatcher_StringMatch{
 				StringMatch: &envoy_matcher_v3.StringMatcher{
 					MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
-						SafeRegex: SafeRegexMatch(h.Value),
+						SafeRegex: safeRegexMatch(h.Value),
 					},
 				},
 			}
@@ -821,7 +844,7 @@ func queryParamMatcher(queryParams []dag.QueryParamMatchCondition) []*envoy_conf
 			queryParam.QueryParameterMatchSpecifier = &envoy_config_route_v3.QueryParameterMatcher_StringMatch{
 				StringMatch: &envoy_matcher_v3.StringMatcher{
 					MatchPattern: &envoy_matcher_v3.StringMatcher_SafeRegex{
-						SafeRegex: SafeRegexMatch(q.Value),
+						SafeRegex: safeRegexMatch(q.Value),
 					},
 				},
 			}

@@ -29,24 +29,6 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
-// ServerType is the name of a xDS server implementation.
-type ServerType string
-
-const (
-	ContourServerType ServerType = "contour"
-	EnvoyServerType   ServerType = "envoy"
-)
-
-// Validate the xDS server type.
-func (s ServerType) Validate() error {
-	switch s {
-	case ContourServerType, EnvoyServerType:
-		return nil
-	default:
-		return fmt.Errorf("invalid xDS server type %q", s)
-	}
-}
-
 // Validate ensures that GatewayRef namespace/name is specified.
 func (g *GatewayParameters) Validate() error {
 	if g != nil && (g.GatewayRef.Namespace == "" || g.GatewayRef.Name == "") {
@@ -239,13 +221,7 @@ func (t ProtocolParameters) Validate() error {
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
-type ServerParameters struct {
-	// Defines the XDSServer to use for `contour serve`.
-	// Defaults to "envoy"
-	// Deprecated: this field will be removed in a future release when
-	// the `contour` xDS server implementation is removed.
-	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
-}
+type ServerParameters struct{}
 
 // GatewayParameters holds the configuration for Gateway API controllers.
 type GatewayParameters struct {
@@ -1003,10 +979,6 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	if err := p.Server.XDSServerType.Validate(); err != nil {
-		return err
-	}
-
 	if err := p.GatewayConfig.Validate(); err != nil {
 		return err
 	}
@@ -1072,12 +1044,10 @@ func Defaults() Parameters {
 	contourNamespace := GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
 
 	return Parameters{
-		Debug:      false,
-		InCluster:  false,
-		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		Server: ServerParameters{
-			XDSServerType: EnvoyServerType,
-		},
+		Debug:                      false,
+		InCluster:                  false,
+		Kubeconfig:                 filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+		Server:                     ServerParameters{},
 		IngressStatusAddress:       "",
 		AccessLogFormat:            DEFAULT_ACCESS_LOG_TYPE,
 		AccessLogFields:            DefaultFields,

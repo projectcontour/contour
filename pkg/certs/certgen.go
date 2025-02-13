@@ -95,7 +95,7 @@ func GenerateCerts(config *Configuration) (*Certificates, error) {
 	}
 
 	now := time.Now()
-	expiry := now.Add(24 * time.Duration(uint32OrDefault(config.Lifetime, DefaultCertificateLifetime)) * time.Hour)
+	expiry := now.Add(24 * time.Duration(uint32OrDefault(config.Lifetime, DefaultCertificateLifetime)) * time.Hour) //nolint:gosec // disable G115
 	caCertPEM, caKeyPEM, err := newCA("Project Contour", expiry)
 	if err != nil {
 		return nil, err

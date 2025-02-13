@@ -1,0 +1,1 @@
+Updates kind node image for e2e tests to Kubernetes 1.32. Supported/tested Kubernetes versions are now 1.32, 1.31 and 1.30.

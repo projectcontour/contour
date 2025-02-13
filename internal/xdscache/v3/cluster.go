@@ -21,7 +21,6 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -33,7 +32,15 @@ import (
 type ClusterCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_config_cluster_v3.Cluster
-	contour.Cond
+
+	envoyGen *envoy_v3.EnvoyGen
+}
+
+func NewClusterCache(envoyGen *envoy_v3.EnvoyGen) *ClusterCache {
+	return &ClusterCache{
+		values:   make(map[string]*envoy_config_cluster_v3.Cluster),
+		envoyGen: envoyGen,
+	}
 }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -42,7 +49,6 @@ func (c *ClusterCache) Update(v map[string]*envoy_config_cluster_v3.Cluster) {
 	defer c.mu.Unlock()
 
 	c.values = v
-	c.Cond.Notify()
 }
 
 // Contents returns a copy of the cache's contents.
@@ -57,24 +63,6 @@ func (c *ClusterCache) Contents() []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (c *ClusterCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	var values []*envoy_config_cluster_v3.Cluster
-	for _, n := range names {
-		// if the cluster is not registered we cannot return
-		// a blank cluster because each cluster has a required
-		// discovery type; DNS, EDS, etc. We cannot determine the
-		// correct value for this property from the cluster's name
-		// provided by the query so we must not return a blank cluster.
-		if v, ok := c.values[n]; ok {
-			values = append(values, v)
-		}
-	}
-	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
-}
-
 func (*ClusterCache) TypeURL() string { return resource.ClusterType }
 
 func (c *ClusterCache) OnChange(root *dag.DAG) {
@@ -83,20 +71,20 @@ func (c *ClusterCache) OnChange(root *dag.DAG) {
 	for _, cluster := range root.GetClusters() {
 		name := envoy.Clustername(cluster)
 		if _, ok := clusters[name]; !ok {
-			clusters[name] = envoy_v3.Cluster(cluster)
+			clusters[name] = c.envoyGen.Cluster(cluster)
 		}
 	}
 
 	for name, ec := range root.GetExtensionClusters() {
 		if _, ok := clusters[name]; !ok {
-			clusters[name] = envoy_v3.ExtensionCluster(ec)
+			clusters[name] = c.envoyGen.ExtensionCluster(ec)
 		}
 	}
 
 	for _, cluster := range root.GetDNSNameClusters() {
 		name := envoy.DNSNameClusterName(cluster)
 		if _, ok := clusters[name]; !ok {
-			clusters[name] = envoy_v3.DNSNameCluster(cluster)
+			clusters[name] = c.envoyGen.DNSNameCluster(cluster)
 		}
 	}
 

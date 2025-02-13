@@ -188,6 +188,11 @@ func NumRetries(i *networking_v1.Ingress) uint32 {
 		return 1
 	}
 
+	// If set to other negative value than 1, then fall back to Envoy default.
+	if val < 0 {
+		return 1
+	}
+
 	return uint32(val)
 }
 

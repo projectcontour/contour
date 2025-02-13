@@ -47,8 +47,6 @@ func TestParseDefaults(t *testing.T) {
 	expected := `
 debug: false
 kubeconfig: TestParseDefaults/.kube/config
-server:
-    xds-server-type: envoy
 accesslog-format: envoy
 json-fields:
     - '@timestamp'
@@ -177,14 +175,6 @@ func TestValidateNamespacedName(t *testing.T) {
 
 	require.Error(t, NamespacedName{Name: "name"}.Validate())
 	require.Error(t, NamespacedName{Namespace: "ns"}.Validate())
-}
-
-func TestValidateServerType(t *testing.T) {
-	require.Error(t, ServerType("").Validate())
-	require.Error(t, ServerType("foo").Validate())
-
-	require.NoError(t, EnvoyServerType.Validate())
-	require.NoError(t, ContourServerType.Validate())
 }
 
 func TestValidateGatewayParameters(t *testing.T) {
@@ -346,11 +336,6 @@ func TestConfigFileValidation(t *testing.T) {
 	check(`
 cluster:
   dns-lookup-family: stone
-`)
-
-	check(`
-server:
-  xds-server-type: magic
 `)
 
 	check(`

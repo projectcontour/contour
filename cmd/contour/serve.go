@@ -495,11 +495,15 @@ func (s *Server) doServe() error {
 		endpointHandler = xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
 	}
 
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort),
+		xdscache_v3.NewListenerCache(listenerConfig, *contourConfiguration.Envoy.Metrics, *contourConfiguration.Envoy.Health, *contourConfiguration.Envoy.Network.EnvoyAdminPort, envoyGen),
 		xdscache_v3.NewSecretsCache(envoy_v3.StatsSecrets(contourConfiguration.Envoy.Metrics.TLS)),
 		&xdscache_v3.RouteCache{},
-		&xdscache_v3.ClusterCache{},
+		xdscache_v3.NewClusterCache(envoyGen),
 		endpointHandler,
 		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
 			MaxRequestsPerIOCycle:     contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
@@ -509,15 +513,10 @@ func (s *Server) doServe() error {
 
 	// snapshotHandler triggers go-control-plane Snapshots based on
 	// the contents of the Contour xDS caches after the DAG is built.
-	var snapshotHandler *xdscache_v3.SnapshotHandler
+	snapshotHandler := xdscache_v3.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
 
-	// nolint:staticcheck
-	if contourConfiguration.XDSServer.Type == contour_v1alpha1.EnvoyServerType {
-		snapshotHandler = xdscache_v3.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
-
-		// register observer for endpoints updates.
-		endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
-	}
+	// register observer for endpoints updates.
+	endpointHandler.SetObserver(contour.ComposeObservers(snapshotHandler))
 
 	// Log that we're using the fallback certificate if configured.
 	if contourConfiguration.HTTPProxy.FallbackCertificate != nil {
@@ -925,18 +924,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 	log.Info("the initial dag is built")
 
 	grpcServer := xds.NewServer(x.registry, grpcOptions(log, x.config.TLS)...)
-
-	// nolint:staticcheck
-	switch x.config.Type {
-	case contour_v1alpha1.EnvoyServerType:
-		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.GetCache(), contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
-	case contour_v1alpha1.ContourServerType:
-		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
-	default:
-		// This can't happen due to config validation.
-		// nolint:staticcheck
-		log.Fatalf("invalid xDS server type %q", x.config.Type)
-	}
+	contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, x.snapshotHandler.GetCache(), contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 
 	addr := net.JoinHostPort(x.config.Address, strconv.Itoa(x.config.Port))
 	l, err := net.Listen("tcp", addr)
@@ -949,8 +937,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 		log = log.WithField("insecure", true)
 	}
 
-	// nolint:staticcheck
-	log.Infof("started xDS server type: %q", x.config.Type)
+	log.Info("started xDS server")
 	defer log.Info("stopped xDS server")
 
 	go func() {

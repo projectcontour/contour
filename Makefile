@@ -40,7 +40,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.22.5@sha256:829eff99a4b2abffe68f6a3847337bf6455d69d17e49ec1a97dac78834754bd6
+BUILD_BASE_IMAGE ?= golang:1.23.4@sha256:7ea4c9dcb2b97ff8ee80a67db3d44f98c8ffa0d191399197007d8459c1453041
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -194,7 +194,7 @@ lint-codespell:
 .PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --build-tags=e2e,conformance,tools,gcp,oidc,none
+	@./hack/golangci-lint run --build-tags=e2e,conformance,gcp,oidc,none
 
 .PHONY: lint-yamllint
 lint-yamllint:
