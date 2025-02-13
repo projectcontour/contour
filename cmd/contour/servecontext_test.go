@@ -483,8 +483,9 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Network: &contour_v1alpha1.NetworkParameters{
-					EnvoyAdminPort:    ptr.To(9001),
-					XffNumTrustedHops: ptr.To(uint32(0)),
+					EnvoyAdminPort:            ptr.To(9001),
+					XffNumTrustedHops:         ptr.To(uint32(0)),
+					EnvoyStripTrailingHostDot: ptr.To(false),
 				},
 			},
 			Gateway: nil,

@@ -119,6 +119,10 @@ type ListenerConfig struct {
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
 
+	// StripTrailingHostDot sets  if trailing dot of the host should be removed from host/authority header before any
+	// processing of request by HTTP filters or routing.
+	StripTrailingHostDot bool
+
 	// ConnectionBalancer
 	// The validated value is 'exact'.
 	// If no configuration is specified, Envoy will not attempt to balance active connections between worker threads
@@ -383,6 +387,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				MergeSlashes(cfg.MergeSlashes).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
+				StripTrailingHostDot(cfg.StripTrailingHostDot).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 				HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
@@ -458,6 +463,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					StripTrailingHostDot(cfg.StripTrailingHostDot).
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
@@ -539,6 +545,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MergeSlashes(cfg.MergeSlashes).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
+					StripTrailingHostDot(cfg.StripTrailingHostDot).
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).

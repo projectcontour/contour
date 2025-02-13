@@ -580,8 +580,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				},
 			},
 			Network: &contour_v1alpha1.NetworkParameters{
-				XffNumTrustedHops: &ctx.Config.Network.XffNumTrustedHops,
-				EnvoyAdminPort:    &ctx.Config.Network.EnvoyAdminPort,
+				XffNumTrustedHops:         &ctx.Config.Network.XffNumTrustedHops,
+				EnvoyAdminPort:            &ctx.Config.Network.EnvoyAdminPort,
+				EnvoyStripTrailingHostDot: &ctx.Config.Network.EnvoyStripTrailingHostDot,
 			},
 		},
 		Gateway: gatewayConfig,

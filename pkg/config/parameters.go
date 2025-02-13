@@ -458,6 +458,16 @@ type NetworkParameters struct {
 	// Configure the port used to access the Envoy Admin interface.
 	// If configured to port "0" then the admin interface is disabled.
 	EnvoyAdminPort int `yaml:"admin-port,omitempty"`
+
+	// EnvoyStripTrailingHostDot defines if trailing dot of the host should be removed from host/authority header
+	// before any processing of request by HTTP filters or routing. This
+	// affects the upstream host header. Without setting this option to true, incoming
+	// requests with host example.com. will not match against route with domains
+	// match set to example.com.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
+	// for more information.
+	EnvoyStripTrailingHostDot bool `yaml:"strip-trailing-host-dot,omitempty"`
 }
 
 // ListenerParameters hold various configurable listener values.
@@ -1037,8 +1047,9 @@ func Defaults() Parameters {
 			DNSLookupFamily: AutoClusterDNSFamily,
 		},
 		Network: NetworkParameters{
-			XffNumTrustedHops: 0,
-			EnvoyAdminPort:    9001,
+			XffNumTrustedHops:         0,
+			EnvoyStripTrailingHostDot: false,
+			EnvoyAdminPort:            9001,
 		},
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",
