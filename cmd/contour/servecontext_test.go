@@ -686,6 +686,34 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"timeout parameters": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Timeouts = config.TimeoutParameters{
+					RequestTimeout:                "1",
+					ConnectionIdleTimeout:         "2",
+					StreamIdleTimeout:             "3",
+					MaxConnectionDuration:         "4",
+					MaxStreamDuration:             "5",
+					DelayedCloseTimeout:           "6",
+					ConnectionShutdownGracePeriod: "7",
+					ConnectTimeout:                "8",
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Timeouts = &contour_v1alpha1.TimeoutParameters{
+					RequestTimeout:                ptr.To("1"),
+					ConnectionIdleTimeout:         ptr.To("2"),
+					StreamIdleTimeout:             ptr.To("3"),
+					MaxConnectionDuration:         ptr.To("4"),
+					MaxStreamDuration:             ptr.To("5"),
+					DelayedCloseTimeout:           ptr.To("6"),
+					ConnectionShutdownGracePeriod: ptr.To("7"),
+					ConnectTimeout:                ptr.To("8"),
+				}
+				return cfg
+			},
+		},
 		"access log": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.AccessLogFormat = config.JSONAccessLog
