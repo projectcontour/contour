@@ -455,6 +455,15 @@ network:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
+		assert.True(t, conf.Network.EnvoyStripTrailingHostDot)
+	}, `
+network:
+  strip-trailing-host-dot: true
+  num-trusted-hops: 0
+  admin-port: 9001
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
 		assert.Equal(t, ptr.To(uint32(1)), conf.Listener.MaxRequestsPerConnection)
 	}, `
 listener:

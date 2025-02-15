@@ -1,0 +1,1 @@
+Adds a new configuration option `strip-trailing-host-dot` which defines if trailing dot of the host should be removed from host/authority header before any processing of request by HTTP filters or routing.

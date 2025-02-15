@@ -740,6 +740,19 @@ type NetworkParameters struct {
 	// Contour's default is 9001.
 	// +optional
 	EnvoyAdminPort *int `json:"adminPort,omitempty"`
+
+	// EnvoyStripTrailingHostDot defines if trailing dot of the host should be removed from host/authority header
+	// before any processing of request by HTTP filters or routing. This
+	// affects the upstream host header. Without setting this option to true, incoming
+	// requests with host example.com. will not match against route with domains
+	// match set to example.com.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
+	// for more information.
+	//
+	// Contour's default is false.
+	// +optional
+	EnvoyStripTrailingHostDot *bool `json:"stripTrailingHostDot,omitempty"`
 }
 
 // RateLimitServiceConfig defines properties of a global Rate Limit Service.

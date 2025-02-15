@@ -466,6 +466,7 @@ func (s *Server) doServe() error {
 		MergeSlashes:                  !*contourConfiguration.Envoy.Listener.DisableMergeSlashes,
 		ServerHeaderTransformation:    contourConfiguration.Envoy.Listener.ServerHeaderTransformation,
 		XffNumTrustedHops:             *contourConfiguration.Envoy.Network.XffNumTrustedHops,
+		StripTrailingHostDot:          *contourConfiguration.Envoy.Network.EnvoyStripTrailingHostDot,
 		ConnectionBalancer:            contourConfiguration.Envoy.Listener.ConnectionBalancer,
 		MaxRequestsPerConnection:      contourConfiguration.Envoy.Listener.MaxRequestsPerConnection,
 		HTTP2MaxConcurrentStreams:     contourConfiguration.Envoy.Listener.HTTP2MaxConcurrentStreams,
