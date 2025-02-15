@@ -3093,7 +3093,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManagerBuilder().
+					envoyGen.HTTPConnectionManagerBuilder().
 						Compression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.DisabledCompression,
 						}).
@@ -3139,7 +3139,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManagerBuilder().
+					envoyGen.HTTPConnectionManagerBuilder().
 						Compression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.GzipCompression,
 						}).
@@ -3185,7 +3185,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManagerBuilder().
+					envoyGen.HTTPConnectionManagerBuilder().
 						Compression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.BrotliCompression,
 						}).
@@ -3231,7 +3231,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManagerBuilder().
+					envoyGen.HTTPConnectionManagerBuilder().
 						Compression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.ZstdCompression,
 						}).
@@ -3277,7 +3277,7 @@ func TestListenerVisit(t *testing.T) {
 				Name:    ENVOY_HTTP_LISTENER,
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManagerBuilder().
+					envoyGen.HTTPConnectionManagerBuilder().
 						Compression(&contour_v1alpha1.EnvoyCompression{
 							Algorithm: contour_v1alpha1.GzipCompression,
 						}).

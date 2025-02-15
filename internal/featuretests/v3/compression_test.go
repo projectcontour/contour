@@ -75,7 +75,10 @@ func TestCompression(t *testing.T) {
 			rh.OnAdd(s1)
 			rh.OnAdd(hp1)
 			httpListener := defaultHTTPListener()
-			httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+			envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+				XDSClusterName: envoy_v3.DefaultXDSClusterName,
+			})
+			httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
 				Compression(&contour_v1alpha1.EnvoyCompression{
 					Algorithm: tc.want,
 				}).
