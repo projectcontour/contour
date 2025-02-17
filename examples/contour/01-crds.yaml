@@ -287,9 +287,9 @@ spec:
                         properties:
                           algorithm:
                             description: |-
-                              Algorithm selects the compression type applied in the compression HTTP filter of the default Listener filters.
+                              Algorithm selects the response compression type applied in the compression HTTP filter of the default Listener filters.
                               Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-                              Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+                              Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
                             enum:
                             - gzip
                             - brotli
@@ -4130,9 +4130,9 @@ spec:
                             properties:
                               algorithm:
                                 description: |-
-                                  Algorithm selects the compression type applied in the compression HTTP filter of the default Listener filters.
+                                  Algorithm selects the response compression type applied in the compression HTTP filter of the default Listener filters.
                                   Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-                                  Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response
+                                  Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
                                 enum:
                                 - gzip
                                 - brotli
