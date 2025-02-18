@@ -212,6 +212,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 		ConnectionIdleTimeout:         "infinite",
 		StreamIdleTimeout:             "infinite",
 		MaxConnectionDuration:         "infinite",
+		MaxStreamDuration:             "infinite",
 		DelayedCloseTimeout:           "infinite",
 		ConnectionShutdownGracePeriod: "infinite",
 		ConnectTimeout:                "2s",
@@ -221,6 +222,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 		ConnectionIdleTimeout:         "infinity",
 		StreamIdleTimeout:             "infinity",
 		MaxConnectionDuration:         "infinity",
+		MaxStreamDuration:             "infinity",
 		DelayedCloseTimeout:           "infinity",
 		ConnectionShutdownGracePeriod: "infinity",
 		ConnectTimeout:                "2s",
@@ -230,6 +232,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 	require.Error(t, TimeoutParameters{ConnectionIdleTimeout: "bar"}.Validate())
 	require.Error(t, TimeoutParameters{StreamIdleTimeout: "baz"}.Validate())
 	require.Error(t, TimeoutParameters{MaxConnectionDuration: "boop"}.Validate())
+	require.Error(t, TimeoutParameters{MaxStreamDuration: "bleep"}.Validate())
 	require.Error(t, TimeoutParameters{DelayedCloseTimeout: "bebop"}.Validate())
 	require.Error(t, TimeoutParameters{ConnectionShutdownGracePeriod: "bong"}.Validate())
 	require.Error(t, TimeoutParameters{ConnectTimeout: "infinite"}.Validate())

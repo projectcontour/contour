@@ -1269,6 +1269,11 @@ func (in *TimeoutParameters) DeepCopyInto(out *TimeoutParameters) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.MaxStreamDuration != nil {
+		in, out := &in.MaxStreamDuration, &out.MaxStreamDuration
+		*out = new(string)
+		**out = **in
+	}
 	if in.DelayedCloseTimeout != nil {
 		in, out := &in.DelayedCloseTimeout, &out.DelayedCloseTimeout
 		*out = new(string)
