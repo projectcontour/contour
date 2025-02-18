@@ -1,0 +1,1 @@
+The HTTP compression algorithm can now be configured using the `compression.algorithm` field in the configuration file or the `spec.envoy.listener.compression.algorithm` field in the `ContourConfiguration` CRD. The available values are `gzip` (default), `brotli`, `zstd`, and `disabled`.
