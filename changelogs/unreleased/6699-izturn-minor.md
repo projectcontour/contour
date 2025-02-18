@@ -1,0 +1,1 @@
+Customize the DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Allowed values are "v4", "v6", "all" or "auto".defaults to "auto".
