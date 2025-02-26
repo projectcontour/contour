@@ -145,7 +145,7 @@ func (e *EnvoyConfig) Validate() error {
 	return nil
 }
 
-func ValidateTLSProtocolVersions(min, max string) error {
+func ValidateTLSProtocolVersions(minVersion, maxVersion string) error {
 	parseVersion := func(version, tip, defVal string) (string, error) {
 		switch version {
 		case "":
@@ -157,12 +157,12 @@ func ValidateTLSProtocolVersions(min, max string) error {
 		}
 	}
 
-	minVer, err := parseVersion(min, "minimum", "1.2")
+	minVer, err := parseVersion(minVersion, "minimum", "1.2")
 	if err != nil {
 		return err
 	}
 
-	maxVer, err := parseVersion(max, "maximum", "1.3")
+	maxVer, err := parseVersion(maxVersion, "maximum", "1.3")
 	if err != nil {
 		return err
 	}
