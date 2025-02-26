@@ -108,22 +108,22 @@ func (p *Provisioner) UnmarshalResources() error {
 }
 
 // Common case of updating object if exists, create otherwise.
-func (p *Provisioner) ensureResource(new, existing client.Object) error {
-	if err := p.client.Get(context.TODO(), client.ObjectKeyFromObject(new), existing); err != nil {
+func (p *Provisioner) ensureResource(newResource, existingResource client.Object) error {
+	if err := p.client.Get(context.TODO(), client.ObjectKeyFromObject(newResource), existingResource); err != nil {
 		if api_errors.IsNotFound(err) {
-			return p.client.Create(context.TODO(), new)
+			return p.client.Create(context.TODO(), newResource)
 		}
 		return err
 	}
-	new.SetResourceVersion(existing.GetResourceVersion())
+	newResource.SetResourceVersion(existingResource.GetResourceVersion())
 	// If a core_v1.Service, pass along existing cluster IP and healthcheck node port.
-	if newS, ok := new.(*core_v1.Service); ok {
-		existingS := existing.(*core_v1.Service)
+	if newS, ok := newResource.(*core_v1.Service); ok {
+		existingS := existingResource.(*core_v1.Service)
 		newS.Spec.ClusterIP = existingS.Spec.ClusterIP
 		newS.Spec.ClusterIPs = existingS.Spec.ClusterIPs
 		newS.Spec.HealthCheckNodePort = existingS.Spec.HealthCheckNodePort
 	}
-	return p.client.Update(context.TODO(), new)
+	return p.client.Update(context.TODO(), newResource)
 }
 
 // Convenience method for deploying the pieces of the deployment needed for
