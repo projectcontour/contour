@@ -17,13 +17,11 @@ package httpproxy
 
 import (
 	"fmt"
-	"net/http"
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -79,6 +77,6 @@ func testEnvoyDisableCompression(namespace, acceptEncoding, contentEncoding stri
 				return
 			}
 			assert.Equal(c, contentEncoding, contentEncodingHeaderValue, "expected plain text")
-		}, 20*time.Second, f.RetryInterval)
+		}, f.RetryTimeout, f.RetryInterval)
 	})
 }
