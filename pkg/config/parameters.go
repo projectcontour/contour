@@ -266,6 +266,15 @@ type TimeoutParameters struct {
 	// for more information.
 	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
+	// MaxStreamDuration defines the maximum duration a HTTP stream is kept alive.
+	// The stream will be reset if the time limit is reached. Omit or set to "infinity" for
+	// no max duration.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-stream-duration
+	// for more information.
+	// +optional
+	MaxStreamDuration string `yaml:"max-stream-duration,omitempty"`
+
 	// DelayedCloseTimeout defines how long envoy will wait, once connection
 	// close processing has been initiated, for the downstream peer to close
 	// the connection before Envoy closes the socket associated with the connection.
@@ -324,6 +333,10 @@ func (t TimeoutParameters) Validate() error {
 
 	if err := v(t.MaxConnectionDuration); err != nil {
 		return fmt.Errorf("max connection duration %q: %w", t.MaxConnectionDuration, err)
+	}
+
+	if err := v(t.MaxStreamDuration); err != nil {
+		return fmt.Errorf("max stream duration %q: %w", t.MaxStreamDuration, err)
 	}
 
 	if err := v(t.DelayedCloseTimeout); err != nil {

@@ -115,9 +115,10 @@ func TestOverlayOnDefaults(t *testing.T) {
 				ConnectionIdleTimeout:         ptr.To("2s"),
 				StreamIdleTimeout:             ptr.To("3s"),
 				MaxConnectionDuration:         ptr.To("4s"),
-				DelayedCloseTimeout:           ptr.To("5s"),
-				ConnectionShutdownGracePeriod: ptr.To("6s"),
-				ConnectTimeout:                ptr.To("7s"),
+				MaxStreamDuration:             ptr.To("5s"),
+				DelayedCloseTimeout:           ptr.To("6s"),
+				ConnectionShutdownGracePeriod: ptr.To("7s"),
+				ConnectTimeout:                ptr.To("8s"),
 			},
 			Cluster: &contour_v1alpha1.ClusterParameters{
 				DNSLookupFamily: contour_v1alpha1.IPv4ClusterDNSFamily,
@@ -245,6 +246,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				ConnectionIdle:                timeout.DefaultSetting(),
 				StreamIdle:                    timeout.DefaultSetting(),
 				MaxConnectionDuration:         timeout.DefaultSetting(),
+				MaxStreamDuration:             timeout.DefaultSetting(),
 				DelayedClose:                  timeout.DefaultSetting(),
 				ConnectionShutdownGracePeriod: timeout.DefaultSetting(),
 				ConnectTimeout:                0,
@@ -257,6 +259,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				ConnectionIdle:                timeout.DefaultSetting(),
 				StreamIdle:                    timeout.DefaultSetting(),
 				MaxConnectionDuration:         timeout.DefaultSetting(),
+				MaxStreamDuration:             timeout.DefaultSetting(),
 				DelayedClose:                  timeout.DefaultSetting(),
 				ConnectionShutdownGracePeriod: timeout.DefaultSetting(),
 				ConnectTimeout:                0,
@@ -268,6 +271,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				ConnectionIdleTimeout:         ptr.To("2s"),
 				StreamIdleTimeout:             ptr.To("3s"),
 				MaxConnectionDuration:         ptr.To("infinity"),
+				MaxStreamDuration:             ptr.To("infinity"),
 				DelayedCloseTimeout:           ptr.To("5s"),
 				ConnectionShutdownGracePeriod: ptr.To("6s"),
 				ConnectTimeout:                ptr.To("8s"),
@@ -277,6 +281,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				ConnectionIdle:                timeout.DurationSetting(time.Second * 2),
 				StreamIdle:                    timeout.DurationSetting(time.Second * 3),
 				MaxConnectionDuration:         timeout.DisabledSetting(),
+				MaxStreamDuration:             timeout.DisabledSetting(),
 				DelayedClose:                  timeout.DurationSetting(time.Second * 5),
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(time.Second * 6),
 				ConnectTimeout:                8 * time.Second,
@@ -305,6 +310,12 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				MaxConnectionDuration: ptr.To("xxx"),
 			},
 			errorMsg: "failed to parse max connection duration",
+		},
+		"max stream duration invalid": {
+			config: &contour_v1alpha1.TimeoutParameters{
+				MaxStreamDuration: ptr.To("xxx"),
+			},
+			errorMsg: "failed to parse max stream duration",
 		},
 		"delayed close timeout invalid": {
 			config: &contour_v1alpha1.TimeoutParameters{
