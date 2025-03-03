@@ -3060,6 +3060,236 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			}),
 		},
+		"httpproxy with disabled compression set in listener config": {
+			ListenerConfig: ListenerConfig{
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.DisabledCompression,
+				},
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.DisabledCompression,
+						}).
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
+		"httpproxy with gzip compression set in listener config": {
+			ListenerConfig: ListenerConfig{
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.GzipCompression,
+				},
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.GzipCompression,
+						}).
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
+		"httpproxy with brotli compression set in listener config": {
+			ListenerConfig: ListenerConfig{
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.BrotliCompression,
+				},
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.BrotliCompression,
+						}).
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
+		"httpproxy with zstd compression set in listener config": {
+			ListenerConfig: ListenerConfig{
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.ZstdCompression,
+				},
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.ZstdCompression,
+						}).
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
+		"httpproxy with invalid compression set in listener config": {
+			ListenerConfig: ListenerConfig{
+				Compression: &contour_v1alpha1.EnvoyCompression{
+					Algorithm: "invalid value",
+				},
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						Compression(&contour_v1alpha1.EnvoyCompression{
+							Algorithm: contour_v1alpha1.GzipCompression,
+						}).
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
 		"httpsproxy with PerConnectionBufferLimitBytes set in listener config": {
 			ListenerConfig: ListenerConfig{
 				PerConnectionBufferLimitBytes: ptr.To(uint32(32768)),
