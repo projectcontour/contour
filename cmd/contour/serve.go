@@ -123,6 +123,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 		return nil
 	}
+
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").PlaceHolder("<envoy|json>").StringVar((*string)(&ctx.Config.AccessLogFormat))
 
 	serve.Flag("config-path", "Path to base configuration.").Short('c').PlaceHolder("/path/to/file").Action(parseConfig).ExistingFileVar(&configFile)
@@ -447,6 +448,7 @@ func (s *Server) doServe() error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
+		Compression:                   contourConfiguration.Envoy.Listener.Compression,
 		UseProxyProto:                 *contourConfiguration.Envoy.Listener.UseProxyProto,
 		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,

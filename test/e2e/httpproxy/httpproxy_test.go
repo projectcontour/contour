@@ -388,6 +388,52 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	f.NamespacedTest("httpproxy-default-compression", func(namespace string) {
+		testEnvoyDisableCompression(namespace, "gzip", "gzip", false)
+	})
+
+	f.NamespacedTest("httpproxy-disable-compression", func(namespace string) {
+		Context("with compression disabled", func() {
+			BeforeEach(func() {
+				contourConfig.Compression = config.CompressionParameters{
+					Algorithm: config.CompressionDisabled,
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.DisabledCompression,
+				}
+			})
+			testEnvoyDisableCompression(namespace, "gzip", "gzip", true)
+		})
+	})
+
+	f.NamespacedTest("httpproxy-brotli-compression", func(namespace string) {
+		Context("with brotli compression", func() {
+			BeforeEach(func() {
+				contourConfig.Compression = config.CompressionParameters{
+					Algorithm: config.CompressionBrotli,
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.BrotliCompression,
+				}
+			})
+			testEnvoyDisableCompression(namespace, "br", "br", false)
+		})
+	})
+
+	f.NamespacedTest("httpproxy-zstd-compression", func(namespace string) {
+		Context("with zstd compression", func() {
+			BeforeEach(func() {
+				contourConfig.Compression = config.CompressionParameters{
+					Algorithm: config.CompressionZstd,
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithm: contour_v1alpha1.ZstdCompression,
+				}
+			})
+			testEnvoyDisableCompression(namespace, "zstd", "zstd", false)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
 
 	f.NamespacedTest("httpproxy-http-health-checks", testHTTPHealthChecks)

@@ -315,6 +315,15 @@ func TestTLSParametersValidation(t *testing.T) {
 	}.Validate())
 }
 
+func TestCompressionValidation(t *testing.T) {
+	require.NoError(t, CompressionParameters{""}.Validate())
+	require.NoError(t, CompressionParameters{CompressionBrotli}.Validate())
+	require.NoError(t, CompressionParameters{CompressionDisabled}.Validate())
+	require.NoError(t, CompressionParameters{CompressionGzip}.Validate())
+	require.NoError(t, CompressionParameters{CompressionZstd}.Validate())
+	require.Contains(t, CompressionParameters{"bogus"}.Validate().Error(), "invalid compression type")
+}
+
 func TestConfigFileValidation(t *testing.T) {
 	check := func(yamlIn string) {
 		t.Helper()

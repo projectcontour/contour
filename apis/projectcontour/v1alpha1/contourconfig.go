@@ -327,6 +327,10 @@ type EnvoyListenerConfig struct {
 	// +optional
 	UseProxyProto *bool `json:"useProxyProtocol,omitempty"`
 
+	// Compression defines configuration related to compression in the default HTTP Listener filters.
+	// +optional
+	Compression *EnvoyCompression `json:"compression,omitempty"`
+
 	// DisableAllowChunkedLength disables the RFC-compliant Envoy behavior to
 	// strip the "Content-Length" header if "Transfer-Encoding: chunked" is
 	// also set. This is an emergency off-switch to revert back to Envoy's
