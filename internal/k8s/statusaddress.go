@@ -16,6 +16,7 @@ package k8s
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/sirupsen/logrus"
 	core_v1 "k8s.io/api/core/v1"
@@ -186,6 +187,7 @@ type ServiceStatusLoadBalancerWatcher struct {
 	ServiceName string
 	LBStatus    chan core_v1.LoadBalancerStatus
 	Log         logrus.FieldLogger
+	leader      atomic.Bool
 }
 
 func (s *ServiceStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
@@ -234,8 +236,14 @@ func (s *ServiceStatusLoadBalancerWatcher) OnDelete(obj any) {
 	})
 }
 
+func (s *ServiceStatusLoadBalancerWatcher) OnElectedLeader() {
+	s.leader.Store(true)
+}
+
 func (s *ServiceStatusLoadBalancerWatcher) notify(lbstatus core_v1.LoadBalancerStatus) {
-	s.LBStatus <- lbstatus
+	if s.leader.Load() {
+		s.LBStatus <- lbstatus
+	}
 }
 
 func coreToNetworkingLBStatus(lbs core_v1.LoadBalancerStatus) networking_v1.IngressLoadBalancerStatus {
