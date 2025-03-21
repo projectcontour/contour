@@ -16,12 +16,12 @@ trap 'rm -rf "$TEMPDIR"; exit' 0 1 2 15
 cd "${REPO}"
 
 echo "controller-gen version: "
-go run sigs.k8s.io/controller-tools/cmd/controller-gen --version
+go tool sigs.k8s.io/controller-tools/cmd/controller-gen --version
 
 # Controller-gen seems to use an unstable sort for the order of output of the CRDs
 # so, output them to separate files, then concatenate those files.
 # That should give a stable sort.
-go run sigs.k8s.io/controller-tools/cmd/controller-gen \
+go tool sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd:crdVersions=v1 "paths=${PATHS}" "output:dir=${TEMPDIR}"
 
 # Explicitly add "preserveUnknownFields: false" to CRD specs since any CRDs created

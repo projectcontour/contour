@@ -18,9 +18,9 @@ cat > "${REPO}/examples/contour/02-role-contour.yaml" <<EOF
 EOF
 
 echo "controller-gen version: "
-go run sigs.k8s.io/controller-tools/cmd/controller-gen --version
+go tool sigs.k8s.io/controller-tools/cmd/controller-gen --version
 
-go run sigs.k8s.io/controller-tools/cmd/controller-gen \
+go tool sigs.k8s.io/controller-tools/cmd/controller-gen \
     rbac:roleName=contour \
     output:stdout \
     paths="./internal/k8s" \
@@ -34,7 +34,7 @@ cat > "${REPO}/examples/gateway-provisioner/01-roles.yaml" <<EOF
 # files and re-render.
 EOF
 
-go run sigs.k8s.io/controller-tools/cmd/controller-gen \
+go tool sigs.k8s.io/controller-tools/cmd/controller-gen \
     rbac:roleName=contour-gateway-provisioner \
     output:stdout \
     paths="./internal/provisioner/rbac;./internal/k8s" \

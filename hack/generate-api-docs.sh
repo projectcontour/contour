@@ -17,7 +17,7 @@ readonly PKGROOT="${1:-github.com/projectcontour/contour/apis/projectcontour}"
 gendoc::exec() {
     local -r confdir="${REPO}/hack/api-docs-config/refdocs"
 
-    go run github.com/ahmetb/gen-crd-api-reference-docs \
+    go tool github.com/ahmetb/gen-crd-api-reference-docs \
         -template-dir "${confdir}" \
         -config "${confdir}/config.json" \
         "$@"

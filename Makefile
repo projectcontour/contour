@@ -220,9 +220,9 @@ lint-flags:
 .PHONY: format
 format: ## Run gofumpt to format the codebase.
 	@echo Running gofumpt...
-	@go run mvdan.cc/gofumpt@v0.5.0 -l -w -extra .
+	@go tool mvdan.cc/gofumpt -l -w -extra .
 	@echo Running gci...
-	@go run github.com/daixiang0/gci@v0.12.1 write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
+	@go tool github.com/daixiang0/gci write . --skip-generated -s standard -s default -s "prefix(github.com/projectcontour/contour)" --custom-order
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
@@ -270,7 +270,7 @@ generate-metrics-docs:
 .PHONY: generate-go
 generate-go:
 	@echo "Generating mocks..."
-	@go run github.com/vektra/mockery/v2
+	@go tool github.com/vektra/mockery/v2
 
 .PHONY: check-generate
 check-generate: generate
@@ -325,7 +325,7 @@ e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
 	CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-	go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s --focus '$(CONTOUR_E2E_TEST_FOCUS)' -r $(CONTOUR_E2E_PACKAGE_FOCUS)
+	go tool github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -poll-progress-after=120s --focus '$(CONTOUR_E2E_TEST_FOCUS)' -r $(CONTOUR_E2E_PACKAGE_FOCUS)
 
 .PHONY: cleanup-kind
 cleanup-kind:
@@ -349,7 +349,7 @@ upgrade: | setup-kind-cluster load-contour-image-kind run-upgrade cleanup-kind #
 run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-		go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -randomize-all -poll-progress-after=300s -v ./test/e2e/upgrade
+		go tool github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -randomize-all -poll-progress-after=300s -v ./test/e2e/upgrade
 
 .PHONY: check-ingress-conformance
 check-ingress-conformance: | install-contour-working run-ingress-conformance cleanup-kind ## Run Ingress controller conformance
@@ -375,7 +375,7 @@ teardown-gcp-bench-cluster:
 
 .PHONY: run-bench
 run-bench:
-	go run github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -keep-going -randomize-suites -randomize-all -poll-progress-after=4h -timeout=5h -r -v ./test/e2e/bench
+	go tool github.com/onsi/ginkgo/v2/ginkgo -tags=e2e -mod=readonly -keep-going -randomize-suites -randomize-all -poll-progress-after=4h -timeout=5h -r -v ./test/e2e/bench
 
 .PHONY: bench
 bench: deploy-gcp-bench-cluster run-bench teardown-gcp-bench-cluster
