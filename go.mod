@@ -1,6 +1,7 @@
 module github.com/projectcontour/contour
 
 go 1.24.0
+
 require (
 	dario.cat/mergo v1.0.1
 	github.com/Masterminds/semver/v3 v3.3.1
@@ -24,7 +25,7 @@ require (
 	github.com/projectcontour/yages v0.1.0
 	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/client_model v0.6.1
-	github.com/prometheus/common v0.62.0
+	github.com/prometheus/common v0.63.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	github.com/tsaarni/certyaml v0.10.0
