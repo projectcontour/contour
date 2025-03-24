@@ -10,7 +10,7 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
 | --------------- | :------------------- | ------------------- | --------------------|
-| main            | [1.32.3][66]         | 1.32, 1.31, 1.30    | [1.2.1][112]        |
+| main            | [1.33.1][66]         | 1.32, 1.31, 1.30    | [1.2.1][112]        |
 | 1.30.2          | [1.31.5][69]         | 1.30, 1.29, 1.28    | [1.1.0][111]        |
 | 1.30.1          | [1.31.3][64]         | 1.30, 1.29, 1.28    | [1.1.0][111]        |
 | 1.30.0          | [1.31.0][60]         | 1.30, 1.29, 1.28    | [1.1.0][111]        |
@@ -217,7 +217,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [63]: https://www.envoyproxy.io/docs/envoy/v1.30.7/version_history/v1.30/v1.30
 [64]: https://www.envoyproxy.io/docs/envoy/v1.31.3/version_history/v1.31/v1.31
 [65]: https://www.envoyproxy.io/docs/envoy/v1.32.0/version_history/v1.32/v1.32
-[66]: https://www.envoyproxy.io/docs/envoy/v1.32.3/version_history/v1.32/v1.32.3
+[66]: https://www.envoyproxy.io/docs/envoy/v1.33.1/version_history/v1.33/v1.33.1
 [67]: https://www.envoyproxy.io/docs/envoy/v1.29.12/version_history/v1.29/v1.29.12
 [68]: https://www.envoyproxy.io/docs/envoy/v1.30.9/version_history/v1.30/v1.30.9
 [69]: https://www.envoyproxy.io/docs/envoy/v1.31.5/version_history/v1.31/v1.31.5
