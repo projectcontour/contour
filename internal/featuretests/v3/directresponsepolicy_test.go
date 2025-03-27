@@ -25,6 +25,7 @@ import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
@@ -125,4 +126,72 @@ func TestDirectResponsePolicy_HTTProxy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
+}
+
+func TestCustomErrorPagePolicy_HTTPProxy(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+
+	// Create an HTTPProxy with a DirectResponsePolicy marked as an error page
+	errorPageProxy := fixture.NewProxy("custom-error-page").WithSpec(
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "errorpage.projectcontour.io"},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+			}, {
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/error-503",
+				}},
+				DirectResponsePolicy: &contour_v1.HTTPDirectResponsePolicy{
+					StatusCode: 503,
+					Body:       "<html><body><h1>Custom 503 error page</h1></body></html>",
+					ErrorPage:  true,
+				},
+			}},
+		})
+
+	rh.OnAdd(errorPageProxy)
+
+	// The filter should be set with a local_reply_config on the VirtualHost
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("errorpage.projectcontour.io",
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+					},
+					&envoy_config_route_v3.Route{
+						Match: routePrefix("/error-503"),
+						Action: &envoy_config_route_v3.Route_DirectResponse{
+							DirectResponse: &envoy_config_route_v3.DirectResponseAction{
+								Status: 503,
+								Body: &envoy_config_core_v3.DataSource{
+									Specifier: &envoy_config_core_v3.DataSource_InlineString{
+										InlineString: "<html><body><h1>Custom 503 error page</h1></body></html>",
+									},
+								},
+							},
+						},
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Check that a local_reply_config is added to the virtual host TypedPerFilterConfig
+	vh := c.DiscoveryResponse().GetResources()[0].GetValue().GetStructValue().GetFields()["virtual_hosts"].GetListValue().GetValues()[0].GetStructValue()
+	require.NotNil(t, vh.GetFields()["typed_per_filter_config"], "virtual host should have typed_per_filter_config")
+
+	// The HTTP connection manager filter should have a LocalReplyConfig
+	require.NotNil(t, vh.GetFields()["typed_per_filter_config"].GetStructValue().GetFields()["envoy.filters.network.http_connection_manager"],
+		"typed_per_filter_config should have HTTP connection manager filter config")
 }

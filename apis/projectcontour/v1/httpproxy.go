@@ -625,6 +625,10 @@ type Route struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// ResponseOverridePolicy defines how to override responses from backends based on status codes.
+	// +optional
+	ResponseOverridePolicy []HTTPResponseOverridePolicy `json:"responseOverridePolicy,omitempty"`
 }
 
 type JWTVerificationPolicy struct {
@@ -682,6 +686,92 @@ type HTTPDirectResponsePolicy struct {
 	//
 	// +optional
 	Body string `json:"body,omitempty"`
+}
+
+// StatusCodeType defines the type of status code match in HTTPResponseOverridePolicy
+// +kubebuilder:validation:Enum=Value;Range
+type StatusCodeType string
+
+// StatusCodeValue defines a single status code to match
+type StatusCodeValue struct {
+	// Value is the exact status code to match
+	// +kubebuilder:validation:Minimum=100
+	// +kubebuilder:validation:Maximum=599
+	// +required
+	Value int `json:"value"`
+}
+
+// StatusCodeRange defines a range of status codes to match
+type StatusCodeRange struct {
+	// Start is the beginning of the status code range (inclusive)
+	// +kubebuilder:validation:Minimum=100
+	// +kubebuilder:validation:Maximum=599
+	// +required
+	Start int `json:"start"`
+
+	// End is the end of the status code range (inclusive)
+	// +kubebuilder:validation:Minimum=100
+	// +kubebuilder:validation:Maximum=599
+	// +required
+	End int `json:"end"`
+}
+
+// StatusCodeMatch defines a status code match condition
+type StatusCodeMatch struct {
+	// Type specifies how to match the status code
+	// +required
+	Type StatusCodeType `json:"type"`
+
+	// Value is used when Type is Value to specify an exact status code
+	// +optional
+	Value int `json:"value,omitempty"`
+
+	// Range is used when Type is Range to specify a range of status codes
+	// +optional
+	Range *StatusCodeRange `json:"range,omitempty"`
+}
+
+// ResponseBodyConfig defines the response body to use in response override
+type ResponseBodyConfig struct {
+	// Type specifies the type of body content to be used
+	// +kubebuilder:validation:Enum=Inline
+	// +required
+	Type string `json:"type"`
+
+	// Inline provides the content directly in the HTTPProxy resource
+	// +optional
+	Inline string `json:"inline,omitempty"`
+}
+
+// ResponseOverrideMatch defines the conditions under which responses should be modified
+type ResponseOverrideMatch struct {
+	// StatusCodes defines the HTTP status codes to match
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	StatusCodes []StatusCodeMatch `json:"statusCodes"`
+}
+
+// ResponseOverrideResponse defines how the response should be modified
+type ResponseOverrideResponse struct {
+	// ContentType defines the Content-Type header value
+	// If not specified, "text/plain" is used by default
+	// +optional
+	ContentType string `json:"contentType,omitempty"`
+
+	// Body defines the content of the response body
+	// +required
+	Body ResponseBodyConfig `json:"body"`
+}
+
+// HTTPResponseOverridePolicy defines configuration for overriding responses from backends based on status codes
+type HTTPResponseOverridePolicy struct {
+	// Match defines the conditions under which the response should be overridden
+	// +required
+	Match ResponseOverrideMatch `json:"match"`
+
+	// Response defines how to override the response
+	// +required
+	Response ResponseOverrideResponse `json:"response"`
 }
 
 // HTTPRequestRedirectPolicy defines configuration for redirecting a request.

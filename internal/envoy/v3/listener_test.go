@@ -2001,3 +2001,413 @@ func authzFilter(extras ...any) *envoy_filter_network_http_connection_manager_v3
 		AuthorizationServerWithRequestBody: body,
 	})
 }
+
+func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
+	tests := map[string]struct {
+		overrides []*dag.ResponseOverride
+		want      *envoy_filter_network_http_connection_manager_v3.LocalReplyConfig
+		wantNil   bool
+	}{
+		"nil overrides": {
+			overrides: nil,
+			wantNil:   true,
+		},
+		"empty overrides": {
+			overrides: []*dag.ResponseOverride{},
+			wantNil:   true,
+		},
+		"basic value match override": {
+			overrides: []*dag.ResponseOverride{
+				{
+					StatusCodeMatches: []dag.StatusCodeMatch{
+						{
+							Type:  "Value",
+							Value: 404,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Custom Not Found Page</body></html>",
+				},
+			},
+			want: &envoy_filter_network_http_connection_manager_v3.LocalReplyConfig{
+				Mappers: []*envoy_filter_network_http_connection_manager_v3.ResponseMapper{
+					{
+						Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+							FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+								StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+									Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+										Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
+										Value: &envoy_config_core_v3.RuntimeUInt32{
+											DefaultValue: 404,
+											RuntimeKey:   "unused",
+										},
+									},
+								},
+							},
+						},
+						Body: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineString{
+								InlineString: "<html><body>Custom Not Found Page</body></html>",
+							},
+						},
+						BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+							Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+								TextFormat: "%LOCAL_REPLY_BODY%",
+							},
+							ContentType: "text/html",
+						},
+					},
+				},
+			},
+			wantNil: false,
+		},
+		"range match override": {
+			overrides: []*dag.ResponseOverride{
+				{
+					StatusCodeMatches: []dag.StatusCodeMatch{
+						{
+							Type:  "Range",
+							Start: 500,
+							End:   599,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Server Error</body></html>",
+				},
+			},
+			want: &envoy_filter_network_http_connection_manager_v3.LocalReplyConfig{
+				Mappers: []*envoy_filter_network_http_connection_manager_v3.ResponseMapper{
+					{
+						Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+							FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_AndFilter{
+								AndFilter: &envoy_config_accesslog_v3.AndFilter{
+									Filters: []*envoy_config_accesslog_v3.AccessLogFilter{
+										{
+											FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+												StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+													Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+														Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
+														Value: &envoy_config_core_v3.RuntimeUInt32{
+															DefaultValue: 500,
+															RuntimeKey:   "unused",
+														},
+													},
+												},
+											},
+										},
+										{
+											FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+												StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+													Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+														Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
+														Value: &envoy_config_core_v3.RuntimeUInt32{
+															DefaultValue: 599,
+															RuntimeKey:   "unused",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						Body: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineString{
+								InlineString: "<html><body>Server Error</body></html>",
+							},
+						},
+						BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+							Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+								TextFormat: "%LOCAL_REPLY_BODY%",
+							},
+							ContentType: "text/html",
+						},
+					},
+				},
+			},
+			wantNil: false,
+		},
+		"multiple overrides": {
+			overrides: []*dag.ResponseOverride{
+				{
+					StatusCodeMatches: []dag.StatusCodeMatch{
+						{
+							Type:  "Value",
+							Value: 404,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Custom Not Found Page</body></html>",
+				},
+				{
+					StatusCodeMatches: []dag.StatusCodeMatch{
+						{
+							Type:  "Range",
+							Start: 500,
+							End:   599,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Server Error</body></html>",
+				},
+			},
+			want: &envoy_filter_network_http_connection_manager_v3.LocalReplyConfig{
+				Mappers: []*envoy_filter_network_http_connection_manager_v3.ResponseMapper{
+					{
+						Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+							FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+								StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+									Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+										Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
+										Value: &envoy_config_core_v3.RuntimeUInt32{
+											DefaultValue: 404,
+											RuntimeKey:   "unused",
+										},
+									},
+								},
+							},
+						},
+						Body: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineString{
+								InlineString: "<html><body>Custom Not Found Page</body></html>",
+							},
+						},
+						BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+							Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+								TextFormat: "%LOCAL_REPLY_BODY%",
+							},
+							ContentType: "text/html",
+						},
+					},
+					{
+						Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+							FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_AndFilter{
+								AndFilter: &envoy_config_accesslog_v3.AndFilter{
+									Filters: []*envoy_config_accesslog_v3.AccessLogFilter{
+										{
+											FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+												StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+													Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+														Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
+														Value: &envoy_config_core_v3.RuntimeUInt32{
+															DefaultValue: 500,
+															RuntimeKey:   "unused",
+														},
+													},
+												},
+											},
+										},
+										{
+											FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+												StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+													Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+														Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
+														Value: &envoy_config_core_v3.RuntimeUInt32{
+															DefaultValue: 599,
+															RuntimeKey:   "unused",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						Body: &envoy_config_core_v3.DataSource{
+							Specifier: &envoy_config_core_v3.DataSource_InlineString{
+								InlineString: "<html><body>Server Error</body></html>",
+							},
+						},
+						BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+							Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+								TextFormat: "%LOCAL_REPLY_BODY%",
+							},
+							ContentType: "text/html",
+						},
+					},
+				},
+			},
+			wantNil: false,
+		},
+		"override with no status code matches": {
+			overrides: []*dag.ResponseOverride{
+				{
+					StatusCodeMatches: []dag.StatusCodeMatch{},
+					ContentType:       "text/html",
+					Body:              "<html><body>Custom Error Page</body></html>",
+				},
+			},
+			want:    &envoy_filter_network_http_connection_manager_v3.LocalReplyConfig{},
+			wantNil: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := LocalReplyConfigFromOverridePolicy(tc.overrides)
+			switch {
+			case tc.wantNil && got != nil:
+				t.Fatalf("wanted nil, got: %v", got)
+			case !tc.wantNil && got == nil:
+				t.Fatalf("wanted non-nil, got nil")
+			case tc.wantNil:
+				// We're expecting nil and we got it. Nothing more to do.
+			default:
+				assert.Equal(t, tc.want, got)
+			}
+		})
+	}
+}
+
+func TestResponseMapperFromOverridePolicy(t *testing.T) {
+	tests := map[string]struct {
+		override *dag.ResponseOverride
+		want     *envoy_filter_network_http_connection_manager_v3.ResponseMapper
+		wantNil  bool
+	}{
+		"nil override": {
+			override: nil,
+			want:     &envoy_filter_network_http_connection_manager_v3.ResponseMapper{},
+			wantNil:  false,
+		},
+		"value match": {
+			override: &dag.ResponseOverride{
+				StatusCodeMatches: []dag.StatusCodeMatch{
+					{
+						Type:  "Value",
+						Value: 404,
+					},
+				},
+				ContentType: "text/html",
+				Body:        "<html><body>Custom Not Found Page</body></html>",
+			},
+			want: &envoy_filter_network_http_connection_manager_v3.ResponseMapper{
+				Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+					FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+						StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+							Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+								Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
+								Value: &envoy_config_core_v3.RuntimeUInt32{
+									DefaultValue: 404,
+									RuntimeKey:   "",
+								},
+							},
+						},
+					},
+				},
+				Body: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: "<html><body>Custom Not Found Page</body></html>",
+					},
+				},
+				BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+					Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+						TextFormat: "%LOCAL_REPLY_BODY%",
+					},
+					ContentType: "text/html",
+				},
+			},
+			wantNil: false,
+		},
+		"range match": {
+			override: &dag.ResponseOverride{
+				StatusCodeMatches: []dag.StatusCodeMatch{
+					{
+						Type:  "Range",
+						Start: 500,
+						End:   599,
+					},
+				},
+				ContentType: "application/json",
+				Body:        `{"error":"Server Error","code":500}`,
+			},
+			want: &envoy_filter_network_http_connection_manager_v3.ResponseMapper{
+				Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+					FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_AndFilter{
+						AndFilter: &envoy_config_accesslog_v3.AndFilter{
+							Filters: []*envoy_config_accesslog_v3.AccessLogFilter{
+								{
+									FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+										StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+											Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+												Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
+												Value: &envoy_config_core_v3.RuntimeUInt32{
+													DefaultValue: 500,
+													RuntimeKey:   "unused",
+												},
+											},
+										},
+									},
+								},
+								{
+									FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+										StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+											Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+												Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
+												Value: &envoy_config_core_v3.RuntimeUInt32{
+													DefaultValue: 599,
+													RuntimeKey:   "unused",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Body: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: `{"error":"Server Error","code":500}`,
+					},
+				},
+				BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+					Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+						TextFormat: "%LOCAL_REPLY_BODY%",
+					},
+					ContentType: "application/json",
+				},
+			},
+			wantNil: false,
+		},
+		"no status code matches": {
+			override: &dag.ResponseOverride{
+				StatusCodeMatches: []dag.StatusCodeMatch{},
+				ContentType:       "text/html",
+				Body:              "<html><body>Custom Error Page</body></html>",
+			},
+			want: &envoy_filter_network_http_connection_manager_v3.ResponseMapper{
+				Body: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: "<html><body>Custom Error Page</body></html>",
+					},
+				},
+				BodyFormatOverride: &envoy_config_core_v3.SubstitutionFormatString{
+					Format: &envoy_config_core_v3.SubstitutionFormatString_TextFormat{
+						TextFormat: "%LOCAL_REPLY_BODY%",
+					},
+					ContentType: "text/html",
+				},
+			},
+			wantNil: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := ResponseMapperFromOverridePolicy(tc.override)
+			switch {
+			case tc.wantNil && got != nil:
+				t.Fatalf("wanted nil, got: %v", got)
+			case !tc.wantNil && got == nil:
+				t.Fatalf("wanted non-nil, got nil")
+			case tc.wantNil:
+				// We're expecting nil and we got it. Nothing more to do.
+			default:
+				assert.Equal(t, tc.want, got)
+			}
+		})
+	}
+}

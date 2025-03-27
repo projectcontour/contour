@@ -101,7 +101,7 @@ type HTTPProxyProcessor struct {
 	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
 	MaxRequestsPerConnection *uint32
 
-	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener's new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
 
 	// GlobalRateLimitService defines Envoy's Global RateLimit Service configuration.
@@ -823,6 +823,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
+		respOverridePolicy := responseOverridePolicy(route.ResponseOverridePolicy)
+
 		r := &Route{
 			PathMatchCondition:        mergePathMatchConditions(routeConditions),
 			HeaderMatchConditions:     mergeHeaderMatchConditions(routeConditions),
@@ -840,6 +842,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
 			InternalRedirectPolicy:    irp,
+			ResponseOverridePolicy:    respOverridePolicy,
 		}
 
 		if p.SetSourceMetadataOnRoutes {
@@ -1989,6 +1992,50 @@ func directResponsePolicy(direct *contour_v1.HTTPDirectResponsePolicy) *DirectRe
 	return directResponse(uint32(direct.StatusCode), direct.Body) //nolint:gosec // disable G115
 }
 
+// responseOverridePolicy converts HTTPResponseOverridePolicy to the internal representation.
+func responseOverridePolicy(policies []contour_v1.HTTPResponseOverridePolicy) []*ResponseOverride {
+	if len(policies) == 0 {
+		return nil
+	}
+
+	var overrides []*ResponseOverride
+	for _, policy := range policies {
+		override := &ResponseOverride{
+			ContentType: policy.Response.ContentType,
+		}
+
+		// Set the body from inline content
+		if policy.Response.Body.Type == "Inline" {
+			override.Body = policy.Response.Body.Inline
+		}
+
+		// Process status code matches
+		for _, statusCode := range policy.Match.StatusCodes {
+			statusMatch := StatusCodeMatch{
+				Type: string(statusCode.Type),
+			}
+
+			// Set the match values based on type
+			if statusCode.Type == "Value" {
+				statusMatch.Value = uint32(statusCode.Value)
+			} else if statusCode.Type == "Range" && statusCode.Range != nil {
+				statusMatch.Start = uint32(statusCode.Range.Start)
+				statusMatch.End = uint32(statusCode.Range.End)
+			}
+
+			override.StatusCodeMatches = append(override.StatusCodeMatches, statusMatch)
+		}
+
+		// Only add the override if it has at least one status code match
+		if len(override.StatusCodeMatches) > 0 {
+			overrides = append(overrides, override)
+		}
+	}
+
+	return overrides
+}
+
+// internalRedirectPolicy builds a *dag.InternalRedirectPolicy for the supplied policy.
 func internalRedirectPolicy(internal *contour_v1.HTTPInternalRedirectPolicy) *InternalRedirectPolicy {
 	if internal == nil {
 		return nil

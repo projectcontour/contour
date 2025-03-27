@@ -138,7 +138,7 @@ type ListenerConfig struct {
 
 	HTTP2MaxConcurrentStreams *uint32
 
-	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener's new connection read and write buffers
 	// If unspecified, an implementation defined default is applied (1MiB).
 	PerConnectionBufferLimitBytes *uint32
 
@@ -353,6 +353,31 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 		socketOptions = socketOptions.TOS(cfg.SocketOptions.TOS).TrafficClass(cfg.SocketOptions.TrafficClass)
 	}
 
+	// Collect response override policies from all routes
+	var responseOverridePolicies []*dag.ResponseOverride
+	for _, listener := range root.Listeners {
+		for _, vh := range listener.VirtualHosts {
+			for _, route := range vh.Routes {
+				if len(route.ResponseOverridePolicy) > 0 {
+					responseOverridePolicies = append(responseOverridePolicies, route.ResponseOverridePolicy...)
+				}
+			}
+		}
+		for _, svh := range listener.SecureVirtualHosts {
+			for _, route := range svh.Routes {
+				if len(route.ResponseOverridePolicy) > 0 {
+					responseOverridePolicies = append(responseOverridePolicies, route.ResponseOverridePolicy...)
+				}
+			}
+		}
+	}
+
+	// Create LocalReplyConfig from collected response override policies
+	var localReplyConfig *envoy_filter_network_http_connection_manager_v3.LocalReplyConfig
+	if len(responseOverridePolicies) > 0 {
+		localReplyConfig = envoy_v3.LocalReplyConfigFromOverridePolicy(responseOverridePolicies)
+	}
+
 	for _, listener := range root.Listeners {
 		// A Listener-level TCPProxy proxies all traffic for
 		// the Listener port, i.e. no filter chain match.
@@ -398,6 +423,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 				EnableWebsockets(listener.EnableWebsockets).
+				LocalReplyConfig(localReplyConfig).
 				Get()
 
 			listeners[listener.Name] = envoy_v3.Listener(
@@ -475,6 +501,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
+					LocalReplyConfig(localReplyConfig).
 					Get()
 
 				filters = envoy_v3.Filters(cm)
@@ -558,6 +585,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 					EnableWebsockets(listener.EnableWebsockets).
+					LocalReplyConfig(localReplyConfig).
 					Get()
 
 				// Default filter chain

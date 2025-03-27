@@ -274,6 +274,28 @@ type InternalRedirectPolicy struct {
 	DenyRepeatedRouteRedirect bool
 }
 
+// StatusCodeMatch defines how to match HTTP response status codes for local reply overrides
+type StatusCodeMatch struct {
+	// Type specifies the type of match (exact value or range)
+	Type string
+	// Value is used for exact status code matching
+	Value uint32
+	// Start is the beginning of the status code range (inclusive)
+	Start uint32
+	// End is the end of the status code range (inclusive)
+	End uint32
+}
+
+// ResponseOverride defines how to override responses from backends
+type ResponseOverride struct {
+	// StatusCodeMatches is the list of status code conditions to match
+	StatusCodeMatches []StatusCodeMatch
+	// ContentType is the content type of the response
+	ContentType string
+	// Body is the content of the response body
+	Body string
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 	// PathMatchCondition specifies a MatchCondition to match on the request path.
@@ -359,6 +381,10 @@ type Route struct {
 	// InternalRedirectPolicy defines if envoy should handle redirect
 	// response internally instead of sending it downstream.
 	InternalRedirectPolicy *InternalRedirectPolicy
+
+	// ResponseOverridePolicy defines how to override responses from backends
+	// based on status codes.
+	ResponseOverridePolicy []*ResponseOverride
 
 	// IPFilterAllow determines how the IPFilterRules should be applied.
 	// If true, traffic is allowed only if it matches a rule.
@@ -1045,7 +1071,7 @@ type Cluster struct {
 	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
 	MaxRequestsPerConnection *uint32
 
-	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster’s new connection read and write buffers.
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the cluster's new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
 
 	// UpstreamTLS contains the TLS version and cipher suite configurations for upstream connections
