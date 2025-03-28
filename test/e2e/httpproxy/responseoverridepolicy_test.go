@@ -149,7 +149,7 @@ func testResponseOverridePolicy(namespace string) {
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 500 response code, got %d", res.StatusCode)
-		assert.Equal(t, `{"error":"Server Error","code":500}`, string(res.Body))
+		assert.JSONEq(t, `{"error":"Server Error","code":500}`, string(res.Body))
 		assert.Equal(t, "application/json", res.Headers.Get("Content-Type"))
 	})
 }

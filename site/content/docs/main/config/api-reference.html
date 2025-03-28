@@ -1810,6 +1810,53 @@ The prefix must start with a leading slash.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HTTPResponseOverridePolicy">HTTPResponseOverridePolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>HTTPResponseOverridePolicy defines configuration for overriding responses from backends based on status codes</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>match</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ResponseOverrideMatch">
+ResponseOverrideMatch
+</a>
+</em>
+</td>
+<td>
+<p>Match defines the conditions under which the response should be overridden</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>response</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ResponseOverrideResponse">
+ResponseOverrideResponse
+</a>
+</em>
+</td>
+<td>
+<p>Response defines how to override the response</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.HTTPStatusRange">HTTPStatusRange
 </h3>
 <p>
@@ -3447,6 +3494,130 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.ResponseBodyConfig">ResponseBodyConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ResponseOverrideResponse">ResponseOverrideResponse</a>)
+</p>
+<p>
+<p>ResponseBodyConfig defines the response body to use in response override</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>type</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Type specifies the type of body content to be used</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>inline</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Inline provides the content directly in the HTTPProxy resource</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ResponseOverrideMatch">ResponseOverrideMatch
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPResponseOverridePolicy">HTTPResponseOverridePolicy</a>)
+</p>
+<p>
+<p>ResponseOverrideMatch defines the conditions under which responses should be modified</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>statusCodes</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.StatusCodeMatch">
+[]StatusCodeMatch
+</a>
+</em>
+</td>
+<td>
+<p>StatusCodes defines the HTTP status codes to match</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ResponseOverrideResponse">ResponseOverrideResponse
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPResponseOverridePolicy">HTTPResponseOverridePolicy</a>)
+</p>
+<p>
+<p>ResponseOverrideResponse defines how the response should be modified</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>contentType</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ContentType defines the Content-Type header value
+If not specified, &ldquo;text/plain&rdquo; is used by default</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>body</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ResponseBodyConfig">
+ResponseBodyConfig
+</a>
+</em>
+</td>
+<td>
+<p>Body defines the content of the response body</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.RetryOn">RetryOn
 (<code>string</code> alias)</p></h3>
 <p>
@@ -3892,6 +4063,21 @@ Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here override any rules set on the root HTTPProxy.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseOverridePolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPResponseOverridePolicy">
+[]HTTPResponseOverridePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseOverridePolicy defines how to override responses from backends based on status codes.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.Service">Service
@@ -4135,6 +4321,146 @@ uint32
 <p>The minimum or starting percentage of traffic to send to new endpoints.
 A non-zero value helps avoid a too small initial weight, which may cause endpoints in slow start mode to receive no traffic in the beginning of the slow start window.
 If not specified, the default is 10%.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.StatusCodeMatch">StatusCodeMatch
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.ResponseOverrideMatch">ResponseOverrideMatch</a>)
+</p>
+<p>
+<p>StatusCodeMatch defines a status code match condition</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>type</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.StatusCodeType">
+StatusCodeType
+</a>
+</em>
+</td>
+<td>
+<p>Type specifies how to match the status code</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Value is used when Type is Value to specify an exact status code</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>range</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.StatusCodeRange">
+StatusCodeRange
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Range is used when Type is Range to specify a range of status codes</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.StatusCodeRange">StatusCodeRange
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.StatusCodeMatch">StatusCodeMatch</a>)
+</p>
+<p>
+<p>StatusCodeRange defines a range of status codes to match</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>start</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>Start is the beginning of the status code range (inclusive)</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>end</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>End is the end of the status code range (inclusive)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.StatusCodeType">StatusCodeType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.StatusCodeMatch">StatusCodeMatch</a>)
+</p>
+<p>
+<p>StatusCodeType defines the type of status code match in HTTPResponseOverridePolicy</p>
+</p>
+<h3 id="projectcontour.io/v1.StatusCodeValue">StatusCodeValue
+</h3>
+<p>
+<p>StatusCodeValue defines a single status code to match</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>Value is the exact status code to match</p>
 </td>
 </tr>
 </tbody>

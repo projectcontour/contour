@@ -32,6 +32,7 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -1944,7 +1945,9 @@ func redirectRoutePolicy(redirect *contour_v1.HTTPRequestRedirectPolicy) (*Redir
 
 	var portNumber uint32
 	if redirect.Port != nil {
-		portNumber = uint32(*redirect.Port) //nolint:gosec // disable G115
+		// Port is guaranteed to be between 1-65535 by validation in the CRD,
+		// but we still use SafeIntToUint32 for proper bounds checking
+		portNumber = protobuf.SafeIntToUint32(int(*redirect.Port))
 	}
 
 	var scheme string
@@ -1989,7 +1992,9 @@ func directResponsePolicy(direct *contour_v1.HTTPDirectResponsePolicy) *DirectRe
 		return nil
 	}
 
-	return directResponse(uint32(direct.StatusCode), direct.Body) //nolint:gosec // disable G115
+	// StatusCode is guaranteed to be between 200-599 by validation in the CRD,
+	// but we still use SafeIntToUint32 for proper bounds checking
+	return directResponse(protobuf.SafeIntToUint32(direct.StatusCode), direct.Body)
 }
 
 // responseOverridePolicy converts HTTPResponseOverridePolicy to the internal representation.
@@ -2017,10 +2022,14 @@ func responseOverridePolicy(policies []contour_v1.HTTPResponseOverridePolicy) []
 
 			// Set the match values based on type
 			if statusCode.Type == "Value" {
-				statusMatch.Value = uint32(statusCode.Value)
+				// StatusCodeValue is guaranteed to be between 100-599 by the validation
+				// in the CRD, but we still use SafeIntToUint32 for proper bounds checking
+				statusMatch.Value = protobuf.SafeIntToUint32(statusCode.Value)
 			} else if statusCode.Type == "Range" && statusCode.Range != nil {
-				statusMatch.Start = uint32(statusCode.Range.Start)
-				statusMatch.End = uint32(statusCode.Range.End)
+				// The StatusCodeRange values are guaranteed to be between 100-599 by the validation
+				// in the CRD, but we still use SafeIntToUint32 for proper bounds checking
+				statusMatch.Start = protobuf.SafeIntToUint32(statusCode.Range.Start)
+				statusMatch.End = protobuf.SafeIntToUint32(statusCode.Range.End)
 			}
 
 			override.StatusCodeMatches = append(override.StatusCodeMatches, statusMatch)
@@ -2043,7 +2052,9 @@ func internalRedirectPolicy(internal *contour_v1.HTTPInternalRedirectPolicy) *In
 
 	redirectResponseCodes := make([]uint32, len(internal.RedirectResponseCodes))
 	for i, responseCode := range internal.RedirectResponseCodes {
-		redirectResponseCodes[i] = uint32(responseCode)
+		// The RedirectResponseCode values are guaranteed to be valid by the validation
+		// in the CRD (301, 302, 303, 307, 308) but we still use SafeIntToUint32 for proper bounds checking
+		redirectResponseCodes[i] = protobuf.SafeIntToUint32(int(responseCode))
 	}
 
 	policy := &InternalRedirectPolicy{

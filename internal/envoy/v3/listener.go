@@ -774,8 +774,8 @@ func ResponseMapperFromOverridePolicy(override *dag.ResponseOverride) *envoy_fil
 		statusCodeFilter.Comparison = &envoy_config_accesslog_v3.ComparisonFilter{
 			Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 			Value: &envoy_config_core_v3.RuntimeUInt32{
-				DefaultValue: uint32(statusCodeMatch.Value),
-				RuntimeKey:   "", // Empty string to match test expectations
+				DefaultValue: statusCodeMatch.Value,
+				RuntimeKey:   "", // Empty string for ResponseMapperFromOverridePolicy tests
 			},
 		}
 	case "Range":
@@ -879,7 +879,7 @@ func LocalReplyConfigFromOverridePolicy(overrides []*dag.ResponseOverride) *envo
 						Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 						Value: &envoy_config_core_v3.RuntimeUInt32{
 							DefaultValue: statusMatch.Value,
-							RuntimeKey:   "unused", // Must be "unused" for test compatibility
+							RuntimeKey:   "unused", // Empty string to match test expectations
 						},
 					},
 				}

@@ -15,6 +15,8 @@
 package protobuf
 
 import (
+	"math"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -38,6 +40,15 @@ func UInt32OrNil(val uint32) *wrapperspb.UInt32Value {
 	default:
 		return wrapperspb.UInt32(val)
 	}
+}
+
+// SafeIntToUint32 converts an int to uint32 with bounds checking.
+// Returns 0 if the value is negative or exceeds uint32 max.
+func SafeIntToUint32(val int) uint32 {
+	if val < 0 || val > math.MaxUint32 {
+		return 0
+	}
+	return uint32(val)
 }
 
 // AsMessages converts the given slice of values (that implement the proto.Message
