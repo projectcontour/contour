@@ -192,6 +192,10 @@ spec:
   services:
   - name: htpasswd
     port: 9443
+  timeoutPolicy:
+    response: 30s
+    idle: 60s 
+    idleConnection: 10m
 ```
 
 The `ExtensionService` resource must be created in the same namespace
