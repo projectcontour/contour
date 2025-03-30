@@ -1,7 +1,6 @@
 module github.com/projectcontour/contour
 
 go 1.24.0
-
 require (
 	dario.cat/mergo v1.0.1
 	github.com/Masterminds/semver/v3 v3.3.1
@@ -31,7 +30,7 @@ require (
 	github.com/tsaarni/certyaml v0.10.0
 	github.com/vektra/mockery/v2 v2.53.3
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/net v0.37.0
+	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.28.0
 	gonum.org/v1/plot v0.15.2
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f
