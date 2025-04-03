@@ -1142,6 +1142,12 @@ type TimeoutPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	IdleConnection string `json:"idleConnection,omitempty"`
+
+	// Maximum allowed duration a streaming request can run for.
+	// If not supplied, the global setting is used.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	MaxStreamDuration string `json:"maxStreamDuration,omitempty"`
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.
