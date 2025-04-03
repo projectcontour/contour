@@ -41,6 +41,7 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 		LBStatus:    lbstatus,
 		Log:         fixture.NewTestLogger(t),
 	}
+	sw.OnElectedLeader()
 
 	recv := func() (core_v1.LoadBalancerStatus, bool) {
 		select {
@@ -89,6 +90,7 @@ func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
 		LBStatus:    lbstatus,
 		Log:         fixture.NewTestLogger(t),
 	}
+	sw.OnElectedLeader()
 
 	recv := func() (core_v1.LoadBalancerStatus, bool) {
 		select {
@@ -139,6 +141,7 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 		LBStatus:    lbstatus,
 		Log:         fixture.NewTestLogger(t),
 	}
+	sw.OnElectedLeader()
 
 	recv := func() (core_v1.LoadBalancerStatus, bool) {
 		select {
@@ -177,6 +180,31 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 		Ingress: nil,
 	}
 	assert.Equal(t, want, got)
+}
+
+func TestServiceStatusLoadBalancerWatcherNoNotificationsOnFollower(t *testing.T) {
+	lbstatus := make(chan core_v1.LoadBalancerStatus, 1)
+
+	sw := ServiceStatusLoadBalancerWatcher{
+		ServiceName: "envoy",
+		LBStatus:    lbstatus,
+		Log:         fixture.NewTestLogger(t),
+	}
+
+	recv := func() bool {
+		select {
+		case <-sw.LBStatus:
+			return true
+		default:
+			return false
+		}
+	}
+
+	// assert that when not elected leader, no notifications are sent.
+	var svc core_v1.Service
+	svc.Name = "envoy"
+	sw.OnAdd(&svc, false)
+	assert.False(t, recv())
 }
 
 func TestStatusAddressUpdater(t *testing.T) {
