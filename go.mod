@@ -1,6 +1,7 @@
 module github.com/projectcontour/contour
 
 go 1.24.0
+
 require (
 	dario.cat/mergo v1.0.1
 	github.com/Masterminds/semver/v3 v3.3.1
@@ -44,7 +45,7 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.20.4
-	sigs.k8s.io/controller-tools v0.17.2
+	sigs.k8s.io/controller-tools v0.17.3
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/kustomize/kyaml v0.19.0
 )
@@ -115,7 +116,7 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
-	github.com/spf13/cobra v1.8.1 // indirect
+	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/spf13/viper v1.20.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
