@@ -14,7 +14,7 @@ permissions:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.22.12
+  GO_VERSION: 1.24.2
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -29,8 +29,8 @@ jobs:
     - name: golangci-lint
       uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
       with:
-        version: v1.56.2
-        args: --build-tags=e2e,conformance,tools,gcp,oidc,none --out-format=colored-line-number
+        version: v1.64.8
+        args: --build-tags=e2e,conformance,gcp,oidc,none --out-format=colored-line-number
     - uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
       with:
         status: ${{ job.status }}

@@ -13,7 +13,7 @@ type DagBuilder struct {
 	mock.Mock
 }
 
-// Build provides a mock function with given fields:
+// Build provides a mock function with no fields
 func (_m *DagBuilder) Build() *dag.DAG {
 	ret := _m.Called()
 
