@@ -854,6 +854,8 @@ descriptors:
 		f.NamespacedTest("grpc-upstream-plaintext", testGRPCServicePlaintext)
 
 		f.NamespacedTest("grpc-web", testGRPCWeb)
+
+		f.NamespacedTest("grpc-cswrr", testGRPCClientSideWRR)
 	})
 
 	Context("global external auth", func() {

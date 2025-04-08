@@ -997,6 +997,9 @@ type Cluster struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#enum-config-cluster-v3-cluster-lbpolicy
 	LoadBalancerPolicy string
 
+	// LoadBalancerPolicyConfig holds LB strategy specific configurations.
+	LoadBalancerPolicyConfig *LoadBalancerPolicyConfig
+
 	// Cluster http health check policy
 	*HTTPHealthCheckPolicy
 
@@ -1227,6 +1230,9 @@ type ExtensionCluster struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#enum-config-cluster-v3-cluster-lbpolicy
 	LoadBalancerPolicy string
 
+	// LoadBalancerPolicyConfig holds LB strategy specific configurations.
+	LoadBalancerPolicyConfig *LoadBalancerPolicyConfig
+
 	// RouteTimeoutPolicy specifies how to handle timeouts to this extension.
 	RouteTimeoutPolicy RouteTimeoutPolicy
 
@@ -1305,4 +1311,50 @@ type CircuitBreakers struct {
 	// PerHostMaxConnections is the maximum number of connections
 	// that Envoy will allow to each individual host in a cluster.
 	PerHostMaxConnections uint32
+}
+
+// LoadBalancerPolicyConfig holds configuration specific for each underlying lb strategy.
+type LoadBalancerPolicyConfig struct {
+	// ClientSideWeightedRoundRobin holds configuration parameters used for client side WRR.
+	ClientSideWeightedRoundRobin *LoadBalancerPolicyConfigClientSideWeightedRoundRobin
+}
+
+// LoadBalancerPolicyConfigClientSideWeightedRoundRobin holds configuration for a client side wrr lb policy.
+// For default values, constraints and behavior patterns refer to the envoy doc.
+type LoadBalancerPolicyConfigClientSideWeightedRoundRobin struct {
+	// Whether to enable out-of-band utilization reporting collection from the endpoints.
+	EnableOOBLoadReport *bool
+
+	// Load reporting interval to request from the server. Note that the
+	// server may not provide reports as frequently as the client requests.
+	// Used only when enable_oob_load_report is true.
+	OOBReportingPeriod *time.Duration
+
+	// A given endpoint must report load metrics continuously for at least
+	// this long before the endpoint weight will be used. This avoids
+	// churn when the set of endpoint addresses changes. Takes effect
+	// both immediately after we establish a connection to an endpoint and
+	// after weight_expiration_period has caused us to stop using the most
+	// recent load metrics.
+	BlackoutPeriod *time.Duration
+
+	// If a given endpoint has not reported load metrics in this long,
+	// then we stop using the reported weight. This ensures that we do
+	// not continue to use very stale weights. Once we stop using a stale
+	// value, if we later start seeing fresh reports again, the
+	// blackout_period applies.
+	WeightExpirationPeriod *time.Duration
+
+	// How often endpoint weights are recalculated.
+	WeightUpdatePeriod *time.Duration
+
+	// The multiplier used to adjust endpoint weights with the error rate
+	// calculated as eps/qps.
+	ErrorUtilizationPenalty *float32
+
+	// By default, endpoint weight is computed based on the :ref:`application_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.application_utilization>` field reported by the endpoint.
+	// If that field is not set, then utilization will instead be computed by taking the max of the values of the metrics specified here.
+	// For map fields in the ORCA proto, the string will be of the form “<map_field_name>.<map_key>“. For example, the string “named_metrics.foo“ will mean to look for the key “foo“ in the ORCA :ref:`named_metrics <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.named_metrics>` field.
+	// If none of the specified metrics are present in the load report, then :ref:`cpu_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.cpu_utilization>` is used instead.
+	MetricNamesForComputingUtilization []string
 }

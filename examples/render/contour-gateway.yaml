@@ -5224,6 +5224,55 @@ spec:
                   `Cookie` and `RequestHash` load balancing strategies cannot be used
                   here.
                 properties:
+                  clientSideWeightedRoundRobinPolicy:
+                    description: ClientSideWeightedRoundRobinPolicy contains configuration
+                      for a client side WRR LB policy.
+                    properties:
+                      blackoutPeriod:
+                        description: |-
+                          A given endpoint must report load metrics continuously for at least
+                          this long before the endpoint weight will be used. This avoids
+                          churn when the set of endpoint addresses changes. Takes effect
+                          both immediately after we establish a connection to an endpoint and
+                          after weight_expiration_period has caused us to stop using the most
+                          recent load metrics.
+                        type: string
+                      enableOobLoadReport:
+                        description: Whether to enable out-of-band utilization reporting
+                          collection from the endpoints.
+                        type: boolean
+                      errorUtilizationPenalty:
+                        description: |-
+                          The multiplier used to adjust endpoint weights with the error rate
+                          calculated as eps/qps.
+                        type: string
+                      metricNamesForComputingUtilization:
+                        description: |-
+                          By default, endpoint weight is computed based on the :ref:`application_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.application_utilization>` field reported by the endpoint.
+                          If that field is not set, then utilization will instead be computed by taking the max of the values of the metrics specified here.
+                          For map fields in the ORCA proto, the string will be of the form “<map_field_name>.<map_key>“. For example, the string “named_metrics.foo“ will mean to look for the key “foo“ in the ORCA :ref:`named_metrics <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.named_metrics>` field.
+                          If none of the specified metrics are present in the load report, then :ref:`cpu_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.cpu_utilization>` is used instead.
+                        items:
+                          type: string
+                        type: array
+                      oobReportingPeriod:
+                        description: |-
+                          Load reporting interval to request from the server. Note that the
+                          server may not provide reports as frequently as the client requests.
+                          Used only when enable_oob_load_report is true.
+                        type: string
+                      weightExpirationPeriod:
+                        description: |-
+                          If a given endpoint has not reported load metrics in this long,
+                          then we stop using the reported weight. This ensures that we do
+                          not continue to use very stale weights. Once we stop using a stale
+                          value, if we later start seeing fresh reports again, the
+                          blackout_period applies.
+                        type: string
+                      weightUpdatePeriod:
+                        description: How often endpoint weights are recalculated.
+                        type: string
+                    type: object
                   requestHashPolicies:
                     description: |-
                       RequestHashPolicies contains a list of hash policies to apply when the
@@ -6281,6 +6330,55 @@ spec:
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
+                        clientSideWeightedRoundRobinPolicy:
+                          description: ClientSideWeightedRoundRobinPolicy contains
+                            configuration for a client side WRR LB policy.
+                          properties:
+                            blackoutPeriod:
+                              description: |-
+                                A given endpoint must report load metrics continuously for at least
+                                this long before the endpoint weight will be used. This avoids
+                                churn when the set of endpoint addresses changes. Takes effect
+                                both immediately after we establish a connection to an endpoint and
+                                after weight_expiration_period has caused us to stop using the most
+                                recent load metrics.
+                              type: string
+                            enableOobLoadReport:
+                              description: Whether to enable out-of-band utilization
+                                reporting collection from the endpoints.
+                              type: boolean
+                            errorUtilizationPenalty:
+                              description: |-
+                                The multiplier used to adjust endpoint weights with the error rate
+                                calculated as eps/qps.
+                              type: string
+                            metricNamesForComputingUtilization:
+                              description: |-
+                                By default, endpoint weight is computed based on the :ref:`application_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.application_utilization>` field reported by the endpoint.
+                                If that field is not set, then utilization will instead be computed by taking the max of the values of the metrics specified here.
+                                For map fields in the ORCA proto, the string will be of the form “<map_field_name>.<map_key>“. For example, the string “named_metrics.foo“ will mean to look for the key “foo“ in the ORCA :ref:`named_metrics <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.named_metrics>` field.
+                                If none of the specified metrics are present in the load report, then :ref:`cpu_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.cpu_utilization>` is used instead.
+                              items:
+                                type: string
+                              type: array
+                            oobReportingPeriod:
+                              description: |-
+                                Load reporting interval to request from the server. Note that the
+                                server may not provide reports as frequently as the client requests.
+                                Used only when enable_oob_load_report is true.
+                              type: string
+                            weightExpirationPeriod:
+                              description: |-
+                                If a given endpoint has not reported load metrics in this long,
+                                then we stop using the reported weight. This ensures that we do
+                                not continue to use very stale weights. Once we stop using a stale
+                                value, if we later start seeing fresh reports again, the
+                                blackout_period applies.
+                              type: string
+                            weightUpdatePeriod:
+                              description: How often endpoint weights are recalculated.
+                              type: string
+                          type: object
                         requestHashPolicies:
                           description: |-
                             RequestHashPolicies contains a list of hash policies to apply when the
@@ -7182,6 +7280,55 @@ spec:
                       `Cookie` and `RequestHash` load balancing strategies cannot be used
                       here.
                     properties:
+                      clientSideWeightedRoundRobinPolicy:
+                        description: ClientSideWeightedRoundRobinPolicy contains configuration
+                          for a client side WRR LB policy.
+                        properties:
+                          blackoutPeriod:
+                            description: |-
+                              A given endpoint must report load metrics continuously for at least
+                              this long before the endpoint weight will be used. This avoids
+                              churn when the set of endpoint addresses changes. Takes effect
+                              both immediately after we establish a connection to an endpoint and
+                              after weight_expiration_period has caused us to stop using the most
+                              recent load metrics.
+                            type: string
+                          enableOobLoadReport:
+                            description: Whether to enable out-of-band utilization
+                              reporting collection from the endpoints.
+                            type: boolean
+                          errorUtilizationPenalty:
+                            description: |-
+                              The multiplier used to adjust endpoint weights with the error rate
+                              calculated as eps/qps.
+                            type: string
+                          metricNamesForComputingUtilization:
+                            description: |-
+                              By default, endpoint weight is computed based on the :ref:`application_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.application_utilization>` field reported by the endpoint.
+                              If that field is not set, then utilization will instead be computed by taking the max of the values of the metrics specified here.
+                              For map fields in the ORCA proto, the string will be of the form “<map_field_name>.<map_key>“. For example, the string “named_metrics.foo“ will mean to look for the key “foo“ in the ORCA :ref:`named_metrics <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.named_metrics>` field.
+                              If none of the specified metrics are present in the load report, then :ref:`cpu_utilization <envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.cpu_utilization>` is used instead.
+                            items:
+                              type: string
+                            type: array
+                          oobReportingPeriod:
+                            description: |-
+                              Load reporting interval to request from the server. Note that the
+                              server may not provide reports as frequently as the client requests.
+                              Used only when enable_oob_load_report is true.
+                            type: string
+                          weightExpirationPeriod:
+                            description: |-
+                              If a given endpoint has not reported load metrics in this long,
+                              then we stop using the reported weight. This ensures that we do
+                              not continue to use very stale weights. Once we stop using a stale
+                              value, if we later start seeing fresh reports again, the
+                              blackout_period applies.
+                            type: string
+                          weightUpdatePeriod:
+                            description: How often endpoint weights are recalculated.
+                            type: string
+                        type: object
                       requestHashPolicies:
                         description: |-
                           RequestHashPolicies contains a list of hash policies to apply when the

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -55,6 +56,10 @@ const (
 	// LoadBalancerPolicyRequestHash denotes request attribute hashing is used
 	// to make load balancing decisions.
 	LoadBalancerPolicyRequestHash = "RequestHash"
+
+	// LoadBalancerPolicyClientSideWeightedRoundRobin denotes load balancing will be performed based on
+	// ORCA metrics returned in responses.
+	LoadBalancerPolicyClientSideWeightedRoundRobin = "ClientSideWeightedRoundRobin"
 )
 
 // match "%REQ(<X-Foo-Bar>)%"
@@ -538,7 +543,7 @@ func loadBalancerPolicy(lbp *contour_v1.LoadBalancerPolicy) string {
 		return ""
 	}
 	switch lbp.Strategy {
-	case LoadBalancerPolicyWeightedLeastRequest, LoadBalancerPolicyRandom, LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+	case LoadBalancerPolicyWeightedLeastRequest, LoadBalancerPolicyRandom, LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash, LoadBalancerPolicyClientSideWeightedRoundRobin:
 		return lbp.Strategy
 	default:
 		return ""
@@ -835,4 +840,65 @@ func serviceCircuitBreakerPolicy(s *Service, cb *contour_v1alpha1.CircuitBreaker
 	}
 
 	return s
+}
+
+func loadBalancerPolicyConfig(strategy string, policy *contour_v1.LoadBalancerPolicy) (*LoadBalancerPolicyConfig, error) {
+	if policy == nil {
+		return nil, nil
+	}
+	switch strategy {
+	case LoadBalancerPolicyClientSideWeightedRoundRobin:
+		if policy.ClientSideWeightedRoundRobinPolicy == nil {
+			return nil, nil
+		}
+		oobReportingPeriod, err := parseDurationPtr(policy.ClientSideWeightedRoundRobinPolicy.OOBReportingPeriod)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing OOBReportingPeriod: %v", err)
+		}
+		blackoutPeriod, err := parseDurationPtr(policy.ClientSideWeightedRoundRobinPolicy.BlackoutPeriod)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing blackout period: %v", err)
+		}
+		weightExpirationPeriod, err := parseDurationPtr(policy.ClientSideWeightedRoundRobinPolicy.WeightExpirationPeriod)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing weight expiration period: %v", err)
+		}
+		weightUpdatePeriod, err := parseDurationPtr(policy.ClientSideWeightedRoundRobinPolicy.WeightUpdatePeriod)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing weight update period: %v", err)
+		}
+		var errorUtilizationPenalty *float32
+		if policy.ClientSideWeightedRoundRobinPolicy.ErrorUtilizationPenalty != "" {
+			fPenalty, err := strconv.ParseFloat(policy.ClientSideWeightedRoundRobinPolicy.ErrorUtilizationPenalty, 32)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing error utilization penalty: %v", err)
+			}
+			fPenalty32 := float32(fPenalty)
+			errorUtilizationPenalty = &fPenalty32
+		}
+		return &LoadBalancerPolicyConfig{
+			ClientSideWeightedRoundRobin: &LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				EnableOOBLoadReport:                policy.ClientSideWeightedRoundRobinPolicy.EnableOOBLoadReport,
+				OOBReportingPeriod:                 oobReportingPeriod,
+				BlackoutPeriod:                     blackoutPeriod,
+				WeightExpirationPeriod:             weightExpirationPeriod,
+				WeightUpdatePeriod:                 weightUpdatePeriod,
+				ErrorUtilizationPenalty:            errorUtilizationPenalty,
+				MetricNamesForComputingUtilization: policy.ClientSideWeightedRoundRobinPolicy.MetricNamesForComputingUtilization,
+			},
+		}, nil
+	default:
+		return nil, nil
+	}
+}
+
+func parseDurationPtr(val string) (*time.Duration, error) {
+	if val == "" {
+		return nil, nil
+	}
+	duration, err := time.ParseDuration(val)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing duration: %v", err)
+	}
+	return &duration, nil
 }

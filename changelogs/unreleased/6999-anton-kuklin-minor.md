@@ -1,0 +1,1 @@
+Adds support for `ClientSideWeightedRoundRobin` LB policy in HTTPProxy and Extension service.

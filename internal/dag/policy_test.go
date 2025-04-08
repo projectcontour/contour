@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -323,6 +324,12 @@ func TestLoadBalancerPolicy(t *testing.T) {
 				Strategy: "RequestHash",
 			},
 			want: "RequestHash",
+		},
+		"ClientSideWeightedRoundRobin": {
+			lbp: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+			},
+			want: "ClientSideWeightedRoundRobin",
 		},
 		"unknown": {
 			lbp: &contour_v1.LoadBalancerPolicy{
@@ -1474,6 +1481,149 @@ func TestHeadersPolicyRoute(t *testing.T) {
 			result, err := headersPolicyRoute(tc.policy, tc.allowRewrite, tc.dynHeaders)
 			assert.Equal(t, tc.expected, result)
 			assert.Equal(t, tc.expectedErr, err)
+		})
+	}
+}
+
+func TestLoadBalancerPolicyConfig(t *testing.T) {
+	tests := []struct {
+		name           string
+		strategy       string
+		policy         *contour_v1.LoadBalancerPolicy
+		expectedConfig *LoadBalancerPolicyConfig
+		expectedErr    bool
+	}{
+		{
+			name:           "nil policy",
+			strategy:       "ClientSideWeightedRoundRobin",
+			policy:         nil,
+			expectedConfig: nil,
+			expectedErr:    false,
+		},
+		{
+			name:           "unhandled strategy",
+			strategy:       "unhandled strategy",
+			policy:         &contour_v1.LoadBalancerPolicy{},
+			expectedConfig: nil,
+			expectedErr:    false,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: nil config",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy:                           "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: nil,
+			},
+			expectedConfig: nil,
+			expectedErr:    false,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: empty config",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy:                           "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{},
+			},
+			expectedConfig: &LoadBalancerPolicyConfig{
+				ClientSideWeightedRoundRobin: &LoadBalancerPolicyConfigClientSideWeightedRoundRobin{},
+			},
+			expectedErr: false,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: invalid oobReportingPeriod",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{
+					OOBReportingPeriod: "invalid value",
+				},
+			},
+			expectedConfig: nil,
+			expectedErr:    true,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: invalid blackoutPeriod",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{
+					BlackoutPeriod: "invalid value",
+				},
+			},
+			expectedConfig: nil,
+			expectedErr:    true,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: invalid weightExpirationPeriod",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{
+					WeightExpirationPeriod: "invalid value",
+				},
+			},
+			expectedConfig: nil,
+			expectedErr:    true,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: invalid weightUpdatePeriod",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{
+					WeightUpdatePeriod: "invalid value",
+				},
+			},
+			expectedConfig: nil,
+			expectedErr:    true,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: invalid errorUtilizationPenalty",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{
+					ErrorUtilizationPenalty: "invalid value",
+				},
+			},
+			expectedConfig: nil,
+			expectedErr:    true,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: full valid config",
+			strategy: "ClientSideWeightedRoundRobin",
+			policy: &contour_v1.LoadBalancerPolicy{
+				Strategy: "ClientSideWeightedRoundRobin",
+				ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{
+					EnableOOBLoadReport:                ptr.To(true),
+					OOBReportingPeriod:                 "30s",
+					BlackoutPeriod:                     "40s",
+					WeightExpirationPeriod:             "50s",
+					WeightUpdatePeriod:                 "1m",
+					ErrorUtilizationPenalty:            "0.5",
+					MetricNamesForComputingUtilization: []string{"extra_name"},
+				},
+			},
+			expectedConfig: &LoadBalancerPolicyConfig{
+				ClientSideWeightedRoundRobin: &LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+					EnableOOBLoadReport:                ptr.To(true),
+					OOBReportingPeriod:                 ptr.To(30 * time.Second),
+					BlackoutPeriod:                     ptr.To(40 * time.Second),
+					WeightExpirationPeriod:             ptr.To(50 * time.Second),
+					WeightUpdatePeriod:                 ptr.To(1 * time.Minute),
+					ErrorUtilizationPenalty:            ptr.To(float32(0.5)),
+					MetricNamesForComputingUtilization: []string{"extra_name"},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := loadBalancerPolicyConfig(tc.strategy, tc.policy)
+			assert.Equal(t, tc.expectedConfig, config)
+			assert.Equal(t, tc.expectedErr, err != nil)
 		})
 	}
 }

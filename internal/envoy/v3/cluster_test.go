@@ -20,6 +20,8 @@ import (
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	client_side_weighted_round_robin_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3"
+	round_robin_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/round_robin/v3"
 	envoy_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/stretchr/testify/assert"
@@ -864,6 +866,51 @@ func TestCluster(t *testing.T) {
 				},
 			},
 		},
+		"cluster with client side wrr lb policy": {
+			cluster: &dag.Cluster{
+				Upstream:           service(s1),
+				LoadBalancerPolicy: dag.LoadBalancerPolicyClientSideWeightedRoundRobin,
+				LoadBalancerPolicyConfig: &dag.LoadBalancerPolicyConfig{
+					ClientSideWeightedRoundRobin: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+						MetricNamesForComputingUtilization: []string{
+							"extra_field",
+						},
+					},
+				},
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/2401dd8c4c",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   edsConfig,
+					ServiceName: "default/kuard/http",
+				},
+				LoadBalancingPolicy: &envoy_config_cluster_v3.LoadBalancingPolicy{
+					Policies: []*envoy_config_cluster_v3.LoadBalancingPolicy_Policy{
+						{
+							TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+								Name: "envoy.load_balancing_policies.client_side_weighted_round_robin",
+								TypedConfig: protobuf.MustMarshalAny(
+									&client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+										MetricNamesForComputingUtilization: []string{
+											"extra_field",
+										},
+									}),
+							},
+						},
+						{
+							TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+								Name: "envoy.load_balancing_policies.round_robin",
+								TypedConfig: protobuf.MustMarshalAny(
+									&round_robin_v3.RoundRobin{},
+								),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -1239,6 +1286,176 @@ func TestClusterCommonLBConfig(t *testing.T) {
 		},
 	}
 	assert.Equal(t, want, got)
+}
+
+func TestLoadBalancingPolicy(t *testing.T) {
+	tests := []struct {
+		name           string
+		strategy       string
+		config         *dag.LoadBalancerPolicyConfig
+		expectedPolicy *envoy_config_cluster_v3.LoadBalancingPolicy
+		expectedOk     bool
+	}{
+		{
+			name:           "unhandled strategy",
+			strategy:       "unhandled strategy",
+			config:         nil,
+			expectedPolicy: nil,
+			expectedOk:     false,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: nil policy",
+			strategy: "ClientSideWeightedRoundRobin",
+			config: &dag.LoadBalancerPolicyConfig{
+				ClientSideWeightedRoundRobin: nil,
+			},
+			expectedPolicy: &envoy_config_cluster_v3.LoadBalancingPolicy{
+				Policies: []*envoy_config_cluster_v3.LoadBalancingPolicy_Policy{
+					{
+						TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+							Name: "envoy.load_balancing_policies.client_side_weighted_round_robin",
+							TypedConfig: protobuf.MustMarshalAny(
+								&client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{},
+							),
+						},
+					},
+					{
+						TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+							Name: "envoy.load_balancing_policies.round_robin",
+							TypedConfig: protobuf.MustMarshalAny(
+								&round_robin_v3.RoundRobin{},
+							),
+						},
+					},
+				},
+			},
+			expectedOk: true,
+		},
+		{
+			name:     "ClientSideWeightedRoundRobin: non empty policy",
+			strategy: "ClientSideWeightedRoundRobin",
+			config: &dag.LoadBalancerPolicyConfig{
+				ClientSideWeightedRoundRobin: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+					EnableOOBLoadReport: ptr.To(true),
+				},
+			},
+			expectedPolicy: &envoy_config_cluster_v3.LoadBalancingPolicy{
+				Policies: []*envoy_config_cluster_v3.LoadBalancingPolicy_Policy{
+					{
+						TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+							Name: "envoy.load_balancing_policies.client_side_weighted_round_robin",
+							TypedConfig: protobuf.MustMarshalAny(
+								&client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+									EnableOobLoadReport: wrapperspb.Bool(true),
+								},
+							),
+						},
+					},
+					{
+						TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+							Name: "envoy.load_balancing_policies.round_robin",
+							TypedConfig: protobuf.MustMarshalAny(
+								&round_robin_v3.RoundRobin{},
+							),
+						},
+					},
+				},
+			},
+			expectedOk: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			policy, ok := loadBalancingPolicy(tt.strategy, tt.config)
+			assert.Equal(t, tt.expectedPolicy, policy)
+			assert.Equal(t, tt.expectedOk, ok)
+		})
+	}
+}
+
+func TestLoadBalancerPolicyConfigClientSideWeightedRoundRobinToPB(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      *dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin
+		expectedWRR *client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin
+	}{
+		{
+			name:        "nil config",
+			config:      nil,
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{},
+		},
+		{
+			name: "non empty EnableOOBLoadReport",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				EnableOOBLoadReport: ptr.To(true),
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				EnableOobLoadReport: wrapperspb.Bool(true),
+			},
+		},
+		{
+			name: "non empty OOBReportingPeriod",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				OOBReportingPeriod: ptr.To(30 * time.Second),
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				OobReportingPeriod: durationpb.New(30 * time.Second),
+			},
+		},
+		{
+			name: "non empty BlackoutPeriod",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				BlackoutPeriod: ptr.To(40 * time.Second),
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				BlackoutPeriod: durationpb.New(40 * time.Second),
+			},
+		},
+		{
+			name: "non empty WeightExpirationPeriod",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				WeightExpirationPeriod: ptr.To(50 * time.Second),
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				WeightExpirationPeriod: durationpb.New(50 * time.Second),
+			},
+		},
+		{
+			name: "non empty WeightUpdatePeriod",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				WeightUpdatePeriod: ptr.To(time.Minute),
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				WeightUpdatePeriod: durationpb.New(time.Minute),
+			},
+		},
+		{
+			name: "non empty ErrorUtilizationPenalty",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				ErrorUtilizationPenalty: proto.Float32(0.5),
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				ErrorUtilizationPenalty: wrapperspb.Float(0.5),
+			},
+		},
+		{
+			name: "non empty MetricNamesForComputingUtilization",
+			config: &dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin{
+				MetricNamesForComputingUtilization: []string{"extra_field"},
+			},
+			expectedWRR: &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{
+				MetricNamesForComputingUtilization: []string{"extra_field"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wrr := loadBalancerPolicyConfigClientSideWeightedRoundRobinToPB(tt.config)
+			assert.Equal(t, tt.expectedWRR, wrr)
+		})
+	}
 }
 
 func service(s *core_v1.Service, protocols ...string) *dag.Service {
