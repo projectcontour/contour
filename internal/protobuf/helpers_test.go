@@ -14,6 +14,7 @@
 package protobuf
 
 import (
+	"math"
 	"testing"
 
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -30,6 +31,41 @@ func TestU32Nil(t *testing.T) {
 func TestU32Default(t *testing.T) {
 	assert.Equal(t, wrapperspb.UInt32(99), UInt32OrDefault(0, 99))
 	assert.Equal(t, wrapperspb.UInt32(1), UInt32OrDefault(1, 99))
+}
+
+func TestSafeIntToUint32(t *testing.T) {
+	tests := map[string]struct {
+		input    int
+		expected uint32
+	}{
+		"zero": {
+			input:    0,
+			expected: 0,
+		},
+		"positive within range": {
+			input:    42,
+			expected: 42,
+		},
+		"max uint32": {
+			input:    math.MaxUint32,
+			expected: math.MaxUint32,
+		},
+		"negative": {
+			input:    -1,
+			expected: 0,
+		},
+		"greater than max uint32": {
+			input:    math.MaxUint32 + 1,
+			expected: 0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := SafeIntToUint32(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }
 
 func TestAsMessages(t *testing.T) {
