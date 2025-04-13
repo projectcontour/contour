@@ -22,7 +22,7 @@ require (
 	github.com/onsi/gomega v1.33.1
 	github.com/projectcontour/yages v0.1.0
 	github.com/prometheus/client_golang v1.19.1
-	github.com/prometheus/client_model v0.6.1
+	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.53.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
@@ -33,7 +33,7 @@ require (
 	gonum.org/v1/plot v0.14.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de
 	google.golang.org/grpc v1.63.3
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.30.11
 	k8s.io/apiextensions-apiserver v0.30.11
