@@ -1595,7 +1595,19 @@ func TestBootstrap(t *testing.T) {
                   "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
                   "common_tls_context": {
                     "tls_params": {
-                      "tls_maximum_protocol_version": "TLSv1_3"
+                      "tls_maximum_protocol_version": "TLSv1_3",
+                      "signature_algorithms": [
+                        "ecdsa_secp256r1_sha256",
+                        "rsa_pss_rsae_sha256",
+                        "rsa_pkcs1_sha256",
+                        "ecdsa_secp384r1_sha384",
+                        "rsa_pss_rsae_sha384",
+                        "rsa_pkcs1_sha384",
+                        "ecdsa_secp521r1_sha512",
+                        "rsa_pss_rsae_sha512",
+                        "rsa_pkcs1_sha512",
+                        "rsa_pkcs1_sha1"
+                      ]
                     },
                     "tls_certificate_sds_secret_configs": [
                       {
