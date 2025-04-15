@@ -360,6 +360,22 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
 				TlsMaximumProtocolVersion: envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+				// To allow use of ECDSA P-521 certs for xDS the default signature algorithms list is overridden.
+				// This override is a temporary workaround until BoringSSL includes "ecdsa_secp521r1_sha512" in the default list.
+				// The default list can be found here:
+				// https://github.com/google/boringssl/blob/45a865d6682a7bc989143d73466ade7728959324/ssl/extensions.cc#L275-L293
+				SignatureAlgorithms: []string{
+					"ecdsa_secp256r1_sha256",
+					"rsa_pss_rsae_sha256",
+					"rsa_pkcs1_sha256",
+					"ecdsa_secp384r1_sha384",
+					"rsa_pss_rsae_sha384",
+					"rsa_pkcs1_sha384",
+					"ecdsa_secp521r1_sha512",
+					"rsa_pss_rsae_sha512",
+					"rsa_pkcs1_sha512",
+					"rsa_pkcs1_sha1",
+				},
 			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name: "contour_xds_tls_certificate",
