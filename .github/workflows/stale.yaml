@@ -21,16 +21,16 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         exempt-all-milestones: true
-        days-before-pr-stale: 14
-        days-before-pr-close: 30
+        days-before-pr-stale: 30
+        days-before-pr-close: 60
         stale-pr-label: 'lifecycle/stale'
         stale-pr-message: |
           The Contour project currently lacks enough contributors to adequately respond to all PRs.
 
           This bot triages PRs according to the following rules:
 
-          - After 14d of inactivity, lifecycle/stale is applied
-          - After 30d of inactivity since lifecycle/stale was applied, the PR is closed
+          - After 30d of inactivity, lifecycle/stale is applied
+          - After 60d of inactivity since lifecycle/stale was applied, the PR is closed
 
           You can:
 
