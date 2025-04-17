@@ -6768,6 +6768,96 @@ spec:
                             type: object
                           type: array
                       type: object
+                    responseOverridePolicy:
+                      description: ResponseOverridePolicy defines how to override
+                        responses from backends based on status codes.
+                      items:
+                        description: HTTPResponseOverridePolicy defines configuration
+                          for overriding responses from backends based on status codes
+                        properties:
+                          match:
+                            description: Match defines the conditions under which
+                              the response should be overridden
+                            properties:
+                              statusCodes:
+                                description: StatusCodes defines the HTTP status codes
+                                  to match
+                                items:
+                                  description: StatusCodeMatch defines a status code
+                                    match condition
+                                  properties:
+                                    range:
+                                      description: Range is used when Type is Range
+                                        to specify a range of status codes
+                                      properties:
+                                        end:
+                                          description: End is the end of the status
+                                            code range (inclusive)
+                                          maximum: 599
+                                          minimum: 100
+                                          type: integer
+                                        start:
+                                          description: Start is the beginning of the
+                                            status code range (inclusive)
+                                          maximum: 599
+                                          minimum: 100
+                                          type: integer
+                                      required:
+                                      - end
+                                      - start
+                                      type: object
+                                    type:
+                                      description: Type specifies how to match the
+                                        status code
+                                      enum:
+                                      - Value
+                                      - Range
+                                      type: string
+                                    value:
+                                      description: Value is used when Type is Value
+                                        to specify an exact status code
+                                      type: integer
+                                  required:
+                                  - type
+                                  type: object
+                                minItems: 1
+                                type: array
+                            required:
+                            - statusCodes
+                            type: object
+                          response:
+                            description: Response defines how to override the response
+                            properties:
+                              body:
+                                description: Body defines the content of the response
+                                  body
+                                properties:
+                                  inline:
+                                    description: Inline provides the content directly
+                                      in the HTTPProxy resource
+                                    type: string
+                                  type:
+                                    description: Type specifies the type of body content
+                                      to be used
+                                    enum:
+                                    - Inline
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                              contentType:
+                                description: |-
+                                  ContentType defines the Content-Type header value
+                                  If not specified, "text/plain" is used by default
+                                type: string
+                            required:
+                            - body
+                            type: object
+                        required:
+                        - match
+                        - response
+                        type: object
+                      type: array
                     retryPolicy:
                       description: The retry policy for this route.
                       properties:
