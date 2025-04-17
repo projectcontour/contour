@@ -17,6 +17,7 @@ import (
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_filter_http_health_check_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
 	envoy_filter_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
@@ -117,25 +118,51 @@ func AdminListener(port int) *envoy_config_listener_v3.Listener {
 
 // filterChain returns a filter chain used by static listeners.
 func filterChain(statsPrefix string, transportSocket *envoy_config_core_v3.TransportSocket, routes *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_RouteConfig) []*envoy_config_listener_v3.FilterChain {
-	return []*envoy_config_listener_v3.FilterChain{{
-		Filters: []*envoy_config_listener_v3.Filter{{
-			Name: wellknown.HTTPConnectionManager,
-			ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{
-					StatPrefix:     statsPrefix,
-					RouteSpecifier: routes,
-					HttpFilters: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{{
-						Name: wellknown.Router,
-						ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-							TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_router_v3.Router{}),
-						},
-					}},
-					NormalizePath: wrapperspb.Bool(true),
-				}),
+	return []*envoy_config_listener_v3.FilterChain{
+		{
+			Filters: []*envoy_config_listener_v3.Filter{
+				{
+					Name: wellknown.HTTPConnectionManager,
+					ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{
+							StatPrefix:     statsPrefix,
+							RouteSpecifier: routes,
+							HttpFilters: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+								{
+									Name: wellknown.HealthCheck,
+									ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+										TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_health_check_v3.HealthCheck{
+											PassThroughMode: wrapperspb.Bool(false),
+											Headers: []*envoy_config_route_v3.HeaderMatcher{
+												{
+													Name: ":path",
+													HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+														StringMatch: &envoy_matcher_v3.StringMatcher{
+															MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+																Exact: "/ready",
+															},
+														},
+													},
+												},
+											},
+										}),
+									},
+								},
+								{
+									Name: wellknown.Router,
+									ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+										TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_router_v3.Router{}),
+									},
+								},
+							},
+							NormalizePath: wrapperspb.Bool(true),
+						}),
+					},
+				},
 			},
-		}},
-		TransportSocket: transportSocket,
-	}}
+			TransportSocket: transportSocket,
+		},
+	}
 }
 
 // routeForAdminInterface creates static RouteConfig that forwards requested paths to Envoy admin interface.
