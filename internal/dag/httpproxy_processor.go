@@ -1035,9 +1035,16 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
+			lbPolicyConfig, err := loadBalancerPolicyConfig(lbPolicy, route.LoadBalancerPolicy)
+			if err != nil {
+				validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "LoadBalancerPolicyInvalid",
+					"loadBalancerPolicy processing failed with error: %s", err)
+			}
+
 			c := &Cluster{
 				Upstream:                      s,
 				LoadBalancerPolicy:            lbPolicy,
+				LoadBalancerPolicyConfig:      lbPolicyConfig,
 				Weight:                        uint32(service.Weight), //nolint:gosec // disable G115
 				HTTPHealthCheckPolicy:         healthPolicy,
 				UpstreamValidation:            uv,
@@ -1196,7 +1203,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_v1.Deta
 
 	lbPolicy := loadBalancerPolicy(tcpproxy.LoadBalancerPolicy)
 	switch lbPolicy {
-	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash, LoadBalancerPolicyClientSideWeightedRoundRobin:
 		validCond.AddWarningf(contour_v1.ConditionTypeTCPProxyError, "IgnoredField",
 			"ignoring field %q; %s load balancer policy is not supported for TCPProxies",
 			"Spec.TCPProxy.LoadBalancerPolicy", lbPolicy)
