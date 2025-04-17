@@ -1,118 +1,137 @@
-run:
-  timeout: 10m
-
+version: "2"
 linters:
   enable:
-  - bodyclose
-  - gofumpt
-  - goimports
-  - gci
-  - importas
-  - revive
-  - gosec
-  - misspell
-  - unconvert
-  - unparam
-  - goheader
-  - gocritic
-  - forbidigo
-  - testifylint
-  - ginkgolinter
-
-linters-settings:
-  misspell:
-    ignore-words:
-    - clas
-    - cancelled
-    locale: US
-  unparam:
-    check-exported: false
-  goheader:
-    template-path: ./hack/license-template.txt
-  forbidigo:
-    forbid:
-      - http.DefaultTransport
-  revive:
+    - bodyclose
+    - forbidigo
+    - ginkgolinter
+    - gocritic
+    - goheader
+    - gosec
+    - importas
+    - misspell
+    - revive
+    - testifylint
+    - unconvert
+    - unparam
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: http.DefaultTransport
+    ginkgolinter:
+      forbid-focus-container: true
+    goheader:
+      template-path: ./hack/license-template.txt
+    importas:
+      alias:
+        - pkg: github.com/projectcontour/contour/apis/projectcontour/(v\w+)
+          alias: contour_${1}
+        - pkg: sigs.k8s.io/gateway-api/apis/(v\w+)
+          alias: gatewayapi_${1}
+        - pkg: k8s.io.*/apis?/(\w+)/(v\w+)
+          alias: ${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/config/(\w+)/(v\w+)
+          alias: envoy_config_${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/service/(\w+)/(v\w+)
+          alias: envoy_service_${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/filters/(\w+)/(\w+)/(v\w+)
+          alias: envoy_filter_${1}_${2}_${3}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/(\w+)/(v\w+)
+          alias: envoy_transport_socket_${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/compression/(\w+)/(\w+)/(v\w+)
+          alias: envoy_compression_${1}_${2}_${3}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/(\w+)/(v\w+)
+          alias: envoy_access_logger_${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/(\w+)/(v\w+)
+          alias: envoy_formatter_${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/(\w+)/(v\w+)
+          alias: envoy_upstream_${1}_${2}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/type/(v\w+)
+          alias: envoy_type_${1}
+        - pkg: github.com/envoyproxy/go-control-plane/envoy/type/matcher/(v\w+)
+          alias: envoy_matcher_${1}
+      no-unaliased: true
+    misspell:
+      locale: US
+      ignore-rules:
+        - clas
+        - cancelled
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: use-any
+        - name: var-declaration
+        - name: var-naming
+    testifylint:
+      enable-all: true
+    unparam:
+      check-exported: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-    - name: blank-imports
-    - name: context-as-argument
-    - name: context-keys-type
-    - name: dot-imports
-    - name: empty-block
-    - name: error-naming
-    - name: error-return
-    - name: error-strings
-    - name: errorf
-    - name: exported
-    - name: increment-decrement
-    - name: indent-error-flow
-    - name: package-comments
-    - name: range
-    - name: receiver-naming
-    - name: redefines-builtin-id
-    - name: superfluous-else
-    - name: time-naming
-    - name: unexported-return
-    - name: unreachable-code
-    - name: unused-parameter
-    - name: use-any
-    - name: var-declaration
-    - name: var-naming
-  testifylint:
-    enable-all: true
-  ginkgolinter:
-    forbid-focus-container: true
-  gofumpt:
-    extra-rules: true
-  gci:
-    custom-order: true
-    sections:
-    - standard
-    - default
-    - prefix(github.com/projectcontour/contour)
-  importas:
-    no-unaliased: true
-    alias:
-    - pkg: github.com/projectcontour/contour/apis/projectcontour/(v\w+)
-      alias: contour_${1}
-    - pkg: sigs.k8s.io/gateway-api/apis/(v\w+)
-      alias: gatewayapi_${1}
-    - pkg: k8s.io.*/apis?/(\w+)/(v\w+)
-      alias: ${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/config/(\w+)/(v\w+)
-      alias: envoy_config_${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/service/(\w+)/(v\w+)
-      alias: envoy_service_${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/filters/(\w+)/(\w+)/(v\w+)
-      alias: envoy_filter_${1}_${2}_${3}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/(\w+)/(v\w+)
-      alias: envoy_transport_socket_${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/compression/(\w+)/(\w+)/(v\w+)
-      alias: envoy_compression_${1}_${2}_${3}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/(\w+)/(v\w+)
-      alias: envoy_access_logger_${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/(\w+)/(v\w+)
-      alias: envoy_formatter_${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/(\w+)/(v\w+)
-      alias: envoy_upstream_${1}_${2}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/type/(v\w+)
-      alias: envoy_type_${1}
-    - pkg: github.com/envoyproxy/go-control-plane/envoy/type/matcher/(v\w+)
-      alias: envoy_matcher_${1}
-
+      - linters:
+          - unparam
+        text: always receives
+      - linters:
+          - bodyclose
+        path: test/e2e
+      - linters:
+          - revive
+        path: test/e2e
+        text: should not use dot imports
+      - linters:
+          - testifylint
+        path: test/e2e
+        text: require must only be used in the goroutine running the test function
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-  - linters: ["unparam"]
-    text: "always receives"
-  - path: zz_generated
-    linters: ["goimports"]
-  - path: test/e2e
-    linters: ["bodyclose"]
-  - path: test/e2e
-    linters: ["revive"]
-    text: "should not use dot imports"
-  - path: test/e2e
-    linters: ["testifylint"]
-    text: "require must only be used in the goroutine running the test function"
+formatters:
+  enable:
+    - gci
+    - gofumpt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/projectcontour/contour)
+      custom-order: true
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - zz_generated
