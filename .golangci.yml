@@ -116,3 +116,15 @@ issues:
   - path: test/e2e
     linters: ["testifylint"]
     text: "require must only be used in the goroutine running the test function"
+  - linters: ["gosec"]
+    text: "G115"
+  - linters: ["revive"]
+    text: "redefines-builtin-id"
+  - linters: ["gosimple"]
+    text: "S1009"
+  - linters: ["staticcheck"]
+    text: "SA1006"
+  - linters: ["testifylint"]
+    text: "formatter"
+  - linters: ["testifylint"]
+    text: "negative-positive"

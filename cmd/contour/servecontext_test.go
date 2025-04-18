@@ -24,8 +24,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/tsaarni/certyaml"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"k8s.io/utils/ptr"
 
@@ -286,21 +288,25 @@ func checkFatalErr(t *testing.T, err error) {
 // tryConnect tries to establish TLS connection to the server.
 // If successful, return the server certificate.
 func tryConnect(address string, clientCert tls.Certificate, caCertPool *x509.CertPool) (*x509.Certificate, error) {
+	rawConn, err := net.Dial("tcp", address)
+	if err != nil {
+		rawConn.Close()
+		return nil, errors.Wrapf(err, "error dialing %s", address)
+	}
+
 	clientConfig := &tls.Config{
 		ServerName:   "localhost",
 		MinVersion:   tls.VersionTLS13,
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      caCertPool,
+		NextProtos:   []string{http2.NextProtoTLS},
 	}
-	conn, err := tls.Dial("tcp", address, clientConfig)
-	if err != nil {
-		return nil, err
-	}
+
+	conn := tls.Client(rawConn, clientConfig)
 	defer conn.Close()
 
-	err = peekError(conn)
-	if err != nil {
-		return nil, err
+	if err := peekError(conn); err != nil {
+		return nil, errors.Wrap(err, "error peeking TLS alert")
 	}
 
 	return conn.ConnectionState().PeerCertificates[0], nil
