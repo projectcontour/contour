@@ -71,11 +71,6 @@ func TestIsObjectEqual(t *testing.T) {
 			equals:   false,
 		},
 		{
-			name:     "Endpoint with content change",
-			filename: "testdata/endpoint-content-change.yaml",
-			equals:   false,
-		},
-		{
 			name:     "HTTPProxy with annotation change",
 			filename: "testdata/httpproxy-annotation-change.yaml",
 			equals:   false,

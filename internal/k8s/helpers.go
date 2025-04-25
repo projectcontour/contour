@@ -142,10 +142,6 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 				apiequality.Semantic.DeepEqual(oldObj.Status, newObj.Status) &&
 				apiequality.Semantic.DeepEqual(oldObj.GetAnnotations(), newObj.GetAnnotations()), nil
 		}
-	case *core_v1.Endpoints:
-		if newObj, ok := newObj.(*core_v1.Endpoints); ok {
-			return apiequality.Semantic.DeepEqual(oldObj.Subsets, newObj.Subsets), nil
-		}
 	case *core_v1.Namespace:
 		if newObj, ok := newObj.(*core_v1.Namespace); ok {
 			return apiequality.Semantic.DeepEqual(oldObj.Labels, newObj.Labels), nil
