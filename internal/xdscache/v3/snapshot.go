@@ -86,7 +86,7 @@ func (s *SnapshotHandler) GetCache() envoy_cache_v3.Cache {
 	return s.mux
 }
 
-// Refresh is called when the EndpointsTranslator updates values
+// Refresh is called when the EndpointSliceTranslator updates values
 // in its cache. It updates the EDS cache.
 func (s *SnapshotHandler) Refresh() {
 	version := uuid.NewString()

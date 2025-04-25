@@ -747,15 +747,15 @@ func TestExtensionService(t *testing.T) {
 			rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(core_v1.ServicePort{Port: 8081}))
 			rh.OnAdd(fixture.NewService("ns/svc2").WithPorts(core_v1.ServicePort{Port: 8082}))
 
-			rh.OnAdd(featuretests.Endpoints("ns", "svc1", core_v1.EndpointSubset{
-				Addresses: featuretests.Addresses("192.168.183.20"),
-				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
-			}))
+			rh.OnAdd(featuretests.EndpointSlice("ns", "es1", "svc1",
+				featuretests.Endpoints(featuretests.Endpoint("192.168.183.20", true)),
+				featuretests.Ports(featuretests.Port("", 8081)),
+			))
 
-			rh.OnAdd(featuretests.Endpoints("ns", "svc2", core_v1.EndpointSubset{
-				Addresses: featuretests.Addresses("192.168.183.21"),
-				Ports:     featuretests.Ports(featuretests.Port("", 8082)),
-			}))
+			rh.OnAdd(featuretests.EndpointSlice("ns", "es2", "svc2",
+				featuretests.Endpoints(featuretests.Endpoint("192.168.183.21", true)),
+				featuretests.Ports(featuretests.Port("", 8082)),
+			))
 
 			f(t, rh, c)
 		})

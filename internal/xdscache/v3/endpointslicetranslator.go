@@ -35,6 +35,11 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 )
 
+type (
+	LocalityEndpoints     = envoy_config_endpoint_v3.LocalityLbEndpoints
+	LoadBalancingEndpoint = envoy_config_endpoint_v3.LbEndpoint
+)
+
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given discovery_v1.EndpointSlice.
 // endpointSliceMap may be nil, in which case, the result is also nil.
@@ -354,6 +359,26 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 	} else {
 		e.Debug("cluster load assignments did not change")
 	}
+}
+
+// equal returns true if a and b are the same length, have the same set
+// of keys, and have proto-equivalent values for each key, or false otherwise.
+func equal(a, b map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for k := range a {
+		if _, ok := b[k]; !ok {
+			return false
+		}
+
+		if !proto.Equal(a[k], b[k]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (e *EndpointSliceTranslator) OnAdd(obj any, _ bool) {

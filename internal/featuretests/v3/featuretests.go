@@ -41,7 +41,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	core_v1 "k8s.io/api/core/v1"
+	discovery_v1 "k8s.io/api/discovery/v1"
 	"k8s.io/client-go/tools/cache"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -84,7 +84,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 
-	et := xdscache_v3.NewEndpointsTranslator(log)
+	et := xdscache_v3.NewEndpointSliceTranslator(log)
 
 	conf := xdscache_v3.ListenerConfig{}
 	for _, opt := range opts {
@@ -200,10 +200,10 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 	require.NoError(t, err)
 
 	rh := &resourceEventHandler{
-		EventHandler:       eh,
-		EndpointsHandler:   et,
-		Sequence:           eh.Sequence(),
-		statusUpdateCacher: statusUpdateCacher,
+		EventHandler:         eh,
+		EndpointSliceHandler: et,
+		Sequence:             eh.Sequence(),
+		statusUpdateCacher:   statusUpdateCacher,
 	}
 
 	return rh, &Contour{
@@ -222,13 +222,13 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		}
 }
 
-// resourceEventHandler composes a contour.EventHandler and a contour.EndpointsTranslator
+// resourceEventHandler composes a contour.EventHandler and a contour.EndpointSliceTranslator
 // into a single ResourceEventHandler type. Its event handlers are *blocking* for non-Endpoints
 // resources: they wait until the DAG has been rebuilt and observed, and the sequence counter
 // has been incremented, before returning.
 type resourceEventHandler struct {
-	EventHandler     cache.ResourceEventHandler
-	EndpointsHandler cache.ResourceEventHandler
+	EventHandler         cache.ResourceEventHandler
+	EndpointSliceHandler cache.ResourceEventHandler
 
 	Sequence <-chan int
 
@@ -241,8 +241,8 @@ func (r *resourceEventHandler) OnAdd(obj any) {
 	}
 
 	switch obj.(type) {
-	case *core_v1.Endpoints:
-		r.EndpointsHandler.OnAdd(obj, false)
+	case *discovery_v1.EndpointSlice:
+		r.EndpointSliceHandler.OnAdd(obj, false)
 	default:
 		r.EventHandler.OnAdd(obj, false)
 
@@ -263,8 +263,8 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj any) {
 	}
 
 	switch newObj.(type) {
-	case *core_v1.Endpoints:
-		r.EndpointsHandler.OnUpdate(oldObj, newObj)
+	case *discovery_v1.EndpointSlice:
+		r.EndpointSliceHandler.OnUpdate(oldObj, newObj)
 	default:
 		r.EventHandler.OnUpdate(oldObj, newObj)
 
@@ -282,8 +282,8 @@ func (r *resourceEventHandler) OnDelete(obj any) {
 	}
 
 	switch obj.(type) {
-	case *core_v1.Endpoints:
-		r.EndpointsHandler.OnDelete(obj)
+	case *discovery_v1.EndpointSlice:
+		r.EndpointSliceHandler.OnDelete(obj)
 	default:
 		r.EventHandler.OnDelete(obj)
 
