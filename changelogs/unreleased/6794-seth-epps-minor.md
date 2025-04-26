@@ -2,7 +2,7 @@
 
 Introduces an envoy bootstrap flag to enable the [global downstream connection limit overload manager resource monitors](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/resource_monitors/downstream_connections/v3/downstream_connections.proto#envoy-v3-api-msg-extensions-resource-monitors-downstream-connections-v3-downstreamconnectionsconfig).
 
-The new flag can be passed as an integer flag to the contour bootstrap subcommand, `overload-dowstream-max-conn`.
+The new flag can be passed as an integer flag to the contour bootstrap subcommand, `overload-downstream-max-conn`.
 
 ```sh
 contour bootstrap --help
@@ -28,7 +28,7 @@ Flags:
                                  Client key filename for Envoy secure xDS gRPC communication. ($ENVOY_KEY_FILE)
       --namespace="projectcontour"
                                  The namespace the Envoy container will run in. ($CONTOUR_NAMESPACE)
-      --overload-dowstream-max-conn=OVERLOAD-DOWSTREAM-MAX-CONN
+      --overload-downstream-max-conn=OVERLOAD-DOWNSTREAM-MAX-CONN
                                  Defines the Envoy global downstream connection limit
       --overload-max-heap=OVERLOAD-MAX-HEAP
                                  Defines the maximum heap size in bytes until overload manager stops accepting new connections.

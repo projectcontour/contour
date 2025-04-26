@@ -44,7 +44,7 @@ var _ = BeforeSuite(func() {
 	// add overload manager arguments to envoy bootstrap
 	f.Deployment.ContourBootstrapExtraArgs = []string{
 		"--overload-max-heap=987654321",
-		"--overload-dowstream-max-conn=1000",
+		"--overload-downstream-max-conn=1000",
 	}
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())

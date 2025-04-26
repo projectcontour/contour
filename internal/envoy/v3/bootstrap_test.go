@@ -2017,7 +2017,7 @@ func TestBootstrap(t *testing.T) {
         }
       }`,
 		},
-		"enable max downstream connections overload manager by specifying --overload-dowstream-max-conn=54321": {
+		"enable max downstream connections overload manager by specifying --overload-downstream-max-conn=54321": {
 			config: envoy.BootstrapConfig{
 				Path:                            "envoy.json",
 				Namespace:                       "projectcontour",
