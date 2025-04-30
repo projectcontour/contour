@@ -49,7 +49,6 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
-	v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -93,7 +92,7 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		}
 	}
 
-	envoyGen := v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 
@@ -324,12 +323,12 @@ type StatusResult struct {
 // Equals asserts that the status result is not an error and matches
 // the wanted status exactly.
 func (s *StatusResult) Equals(want contour_v1.HTTPProxyStatus) *Contour {
-	s.T.Helper()
+	s.Helper()
 
 	// We should never get an error fetching the status for an
 	// object, so make it fatal if we do.
 	if s.Err != nil {
-		s.T.Fatal(s.Err.Error())
+		s.Fatal(s.Err.Error())
 	}
 
 	assert.Equal(s.T, want, *s.Have)
@@ -339,12 +338,12 @@ func (s *StatusResult) Equals(want contour_v1.HTTPProxyStatus) *Contour {
 // Like asserts that the status result is not an error and matches
 // non-empty fields in the wanted status.
 func (s *StatusResult) Like(want contour_v1.HTTPProxyStatus) *Contour {
-	s.T.Helper()
+	s.Helper()
 
 	// We should never get an error fetching the status for an
 	// object, so make it fatal if we do.
 	if s.Err != nil {
-		s.T.Fatal(s.Err.Error())
+		s.Fatal(s.Err.Error())
 	}
 
 	if len(want.CurrentStatus) > 0 {
@@ -374,7 +373,7 @@ func (s *StatusResult) HasError(condType, reason, message string) *Contour {
 
 	subCond, ok := validCond.GetError(condType)
 	if !ok {
-		s.T.Fatalf("Did not find error %s", condType)
+		s.Fatalf("Did not find error %s", condType)
 	}
 	assert.Equal(s.T, reason, subCond.Reason)
 	assert.Equal(s.T, message, subCond.Message)
@@ -384,7 +383,7 @@ func (s *StatusResult) HasError(condType, reason, message string) *Contour {
 
 // IsValid asserts that the proxy's CurrentStatus field is equal to "valid".
 func (s *StatusResult) IsValid() *Contour {
-	s.T.Helper()
+	s.Helper()
 
 	assert.Equal(s.T, status.ProxyStatusValid, status.ProxyStatus(s.Have.CurrentStatus))
 
@@ -393,7 +392,7 @@ func (s *StatusResult) IsValid() *Contour {
 
 // IsInvalid asserts that the proxy's CurrentStatus field is equal to "invalid".
 func (s *StatusResult) IsInvalid() *Contour {
-	s.T.Helper()
+	s.Helper()
 
 	assert.Equal(s.T, status.ProxyStatusInvalid, status.ProxyStatus(s.Have.CurrentStatus))
 
@@ -422,7 +421,7 @@ func (c *Contour) Status(obj any) *StatusResult {
 // NoStatus asserts that the given object did not get any status set.
 func (c *Contour) NoStatus(obj any) *Contour {
 	if _, err := c.statusUpdateCache.GetStatus(obj); err == nil {
-		c.T.Errorf("found cached object status, wanted no status")
+		c.Errorf("found cached object status, wanted no status")
 	}
 
 	return c
@@ -493,7 +492,7 @@ func (r *Response) Equals(want *envoy_service_discovery_v3.DiscoveryResponse) *C
 	sort.Slice(want.Resources, func(i, j int) bool { return string(want.Resources[i].Value) < string(want.Resources[j].Value) })
 	sort.Slice(r.Resources, func(i, j int) bool { return string(r.Resources[i].Value) < string(r.Resources[j].Value) })
 
-	protobuf.RequireEqual(r.T, want.Resources, r.DiscoveryResponse.Resources)
+	protobuf.RequireEqual(r.T, want.Resources, r.Resources)
 
 	return r.Contour
 }

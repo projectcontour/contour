@@ -26,8 +26,8 @@ func NewProxy(name string) *ProxyBuilder {
 		ObjectMeta: ObjectMeta(name),
 	}
 
-	b.ObjectMeta.Annotations = map[string]string{}
-	b.ObjectMeta.Labels = map[string]string{}
+	b.Annotations = map[string]string{}
+	b.Labels = map[string]string{}
 
 	return b
 }
@@ -47,13 +47,13 @@ func (b *ProxyBuilder) ensureTLS() {
 
 // Annotate adds the given values as metadata annotations.
 func (b *ProxyBuilder) Annotate(k, v string) *ProxyBuilder {
-	b.ObjectMeta.Annotations[k] = v
+	b.Annotations[k] = v
 	return b
 }
 
 // Label adds the given values as metadata labels.
 func (b *ProxyBuilder) Label(k, v string) *ProxyBuilder {
-	b.ObjectMeta.Labels[k] = v
+	b.Labels[k] = v
 	return b
 }
 

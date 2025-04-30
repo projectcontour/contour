@@ -511,7 +511,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					alpnProtos...)
 			}
 
-			listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
+			listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLS(vh.Name, downstreamTLS, filters))
 
 			// If this VirtualHost has enabled the fallback certificate then set a default
 			// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
@@ -601,11 +601,11 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 
 	return envoy_v3.FilterExternalAuthz(&dag.ExternalAuthorization{
 		AuthorizationService: &dag.ExtensionCluster{
-			Name: dag.ExtensionClusterName(config.ExtensionServiceConfig.ExtensionService),
-			SNI:  config.ExtensionServiceConfig.SNI,
+			Name: dag.ExtensionClusterName(config.ExtensionService),
+			SNI:  config.SNI,
 		},
 		AuthorizationFailOpen:              config.FailOpen,
-		AuthorizationResponseTimeout:       config.ExtensionServiceConfig.Timeout,
+		AuthorizationResponseTimeout:       config.Timeout,
 		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
 }
@@ -616,10 +616,10 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 	}
 
 	return &envoy_v3.GlobalRateLimitConfig{
-		ExtensionService:            config.ExtensionServiceConfig.ExtensionService,
-		SNI:                         config.ExtensionServiceConfig.SNI,
+		ExtensionService:            config.ExtensionService,
+		SNI:                         config.SNI,
 		FailOpen:                    config.FailOpen,
-		Timeout:                     config.ExtensionServiceConfig.Timeout,
+		Timeout:                     config.Timeout,
 		Domain:                      config.Domain,
 		EnableXRateLimitHeaders:     config.EnableXRateLimitHeaders,
 		EnableResourceExhaustedCode: config.EnableResourceExhaustedCode,
@@ -632,10 +632,10 @@ func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
 	}
 
 	return &envoy_v3.EnvoyTracingConfig{
-		ExtensionService: config.ExtensionServiceConfig.ExtensionService,
+		ExtensionService: config.ExtensionService,
 		ServiceName:      config.ServiceName,
-		SNI:              config.ExtensionServiceConfig.SNI,
-		Timeout:          config.ExtensionServiceConfig.Timeout,
+		SNI:              config.SNI,
+		Timeout:          config.Timeout,
 		OverallSampling:  config.OverallSampling,
 		MaxPathTagLength: config.MaxPathTagLength,
 		CustomTags:       envoyTracingConfigCustomTag(config.CustomTags),

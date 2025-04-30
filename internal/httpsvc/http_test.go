@@ -39,7 +39,7 @@ func TestHTTPService(t *testing.T) {
 		Port:        8001,
 		FieldLogger: fixture.NewTestLogger(t),
 	}
-	svc.ServeMux.HandleFunc("/test", func(w http.ResponseWriter, _ *http.Request) {
+	svc.HandleFunc("/test", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -118,7 +118,7 @@ func TestHTTPSService(t *testing.T) {
 	err = contourCertBeforeRotation.WritePEM(svc.Cert, svc.Key)
 	checkFatalErr(t, err)
 
-	svc.ServeMux.HandleFunc("/test", func(w http.ResponseWriter, _ *http.Request) {
+	svc.HandleFunc("/test", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	ctx, cancel := context.WithCancel(context.Background())

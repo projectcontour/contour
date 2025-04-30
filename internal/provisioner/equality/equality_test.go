@@ -202,7 +202,7 @@ func TestDeploymentConfigChanged(t *testing.T) {
 		{
 			description: "if probe values are set to default values",
 			mutate: func(deployment *apps_v1.Deployment) {
-				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.ProbeHandler.HTTPGet.Scheme = "HTTP"
+				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Scheme = "HTTP"
 				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.TimeoutSeconds = int32(1)
 				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.PeriodSeconds = int32(10)
 				deployment.Spec.Template.Spec.Containers[0].LivenessProbe.SuccessThreshold = int32(1)

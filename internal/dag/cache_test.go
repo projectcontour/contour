@@ -2489,7 +2489,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 			},
 		}
 		if secretNamespace != "" {
-			i.ObjectMeta.Annotations = map[string]string{
+			i.Annotations = map[string]string{
 				"projectcontour.io/tls-cert-namespace": secretNamespace,
 			}
 		}

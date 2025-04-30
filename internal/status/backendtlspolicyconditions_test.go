@@ -44,9 +44,9 @@ func TestBackendTLSPolicyAddCondition(t *testing.T) {
 	got := backendTLSPolicyUpdate.ConditionsForAncestorRef(ancestorRef)[0]
 
 	assert.EqualValues(t, gatewayapi_v1alpha2.PolicyConditionAccepted, got.Type)
-	assert.EqualValues(t, meta_v1.ConditionTrue, got.Status)
+	assert.Equal(t, meta_v1.ConditionTrue, got.Status)
 	assert.EqualValues(t, gatewayapi_v1alpha2.PolicyReasonAccepted, got.Reason)
-	assert.EqualValues(t, "Valid BackendTLSPolicy", got.Message)
+	assert.Equal(t, "Valid BackendTLSPolicy", got.Message)
 	assert.EqualValues(t, 7, got.ObservedGeneration)
 }
 

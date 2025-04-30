@@ -446,7 +446,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *core_v1.Service) bool
 		}
 
 		for _, rule := range ingress.Spec.Rules {
-			http := rule.IngressRuleValue.HTTP
+			http := rule.HTTP
 			if http == nil {
 				continue
 			}
@@ -655,7 +655,7 @@ func (kc *KubernetesCache) routeTriggersRebuild(parentRefs []gatewayapi_v1.Paren
 // then delegation check is performed.
 func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName, targetNamespace string) (*Secret, error) {
 	if !kc.delegationPermitted(name, targetNamespace) {
-		return nil, NewDelegationNotPermittedError(fmt.Errorf("Certificate delegation not permitted"))
+		return nil, NewDelegationNotPermittedError(fmt.Errorf("certificate delegation not permitted"))
 	}
 	return kc.LookupTLSSecretInsecure(name)
 }
@@ -665,7 +665,7 @@ func (kc *KubernetesCache) LookupTLSSecret(name types.NamespacedName, targetName
 // then delegation check is performed.
 func (kc *KubernetesCache) LookupCASecret(name types.NamespacedName, targetNamespace string) (*Secret, error) {
 	if !kc.delegationPermitted(name, targetNamespace) {
-		return nil, NewDelegationNotPermittedError(fmt.Errorf("Certificate delegation not permitted"))
+		return nil, NewDelegationNotPermittedError(fmt.Errorf("certificate delegation not permitted"))
 	}
 
 	sec, ok := kc.secrets[name]
@@ -713,7 +713,7 @@ func (kc *KubernetesCache) LookupCAConfigMap(name types.NamespacedName) (*Secret
 // then delegation check is performed.
 func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName, targetNamespace string) (*Secret, error) {
 	if !kc.delegationPermitted(name, targetNamespace) {
-		return nil, NewDelegationNotPermittedError(fmt.Errorf("Certificate delegation not permitted"))
+		return nil, NewDelegationNotPermittedError(fmt.Errorf("certificate delegation not permitted"))
 	}
 
 	sec, ok := kc.secrets[name]
@@ -881,9 +881,9 @@ func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayap
 			sectionNameMatches := tr.SectionName != nil && targetRef.SectionName != nil &&
 				*tr.SectionName == *targetRef.SectionName
 
-			if tr.LocalPolicyTargetReference.Group == targetRef.Group &&
-				tr.LocalPolicyTargetReference.Kind == targetRef.Kind &&
-				tr.LocalPolicyTargetReference.Name == targetRef.Name {
+			if tr.Group == targetRef.Group &&
+				tr.Kind == targetRef.Kind &&
+				tr.Name == targetRef.Name {
 				if sectionNameMatches {
 					return v, true
 				}

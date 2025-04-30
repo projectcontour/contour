@@ -111,7 +111,7 @@ func doInternalRedirectTest(namespace string, proxy *contour_v1.HTTPProxy, t Gin
 		},
 		Spec: core_v1.ServiceSpec{
 			Type:         core_v1.ServiceTypeExternalName,
-			ExternalName: f.Deployment.EnvoyService.ObjectMeta.Name + "." + f.Deployment.EnvoyService.ObjectMeta.Namespace,
+			ExternalName: f.Deployment.EnvoyService.Name + "." + f.Deployment.EnvoyService.Namespace,
 			Ports: []core_v1.ServicePort{
 				{
 					Name: "http",

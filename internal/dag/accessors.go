@@ -250,7 +250,7 @@ func (d *DAG) GetClusters() []*Cluster {
 			}
 
 			if vhost.TCPProxy != nil {
-				res = append(res, vhost.TCPProxy.Clusters...)
+				res = append(res, vhost.Clusters...)
 			}
 		}
 	}

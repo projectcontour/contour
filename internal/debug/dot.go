@@ -117,7 +117,7 @@ func collectDag(b DagBuilder) (nodeCollection, edgeCollection) {
 				edges[pair{vhost, vhost.TCPProxy}] = true
 				nodes[vhost.TCPProxy] = true
 
-				for _, cluster := range vhost.TCPProxy.Clusters {
+				for _, cluster := range vhost.Clusters {
 					edges[pair{vhost.TCPProxy, cluster}] = true
 					nodes[cluster] = true
 
@@ -161,7 +161,7 @@ func printNodes(nodes nodeCollection, w io.Writer) {
 		case *dag.VirtualHost:
 			fmt.Fprintf(w, `"%p" [shape=record, label="{http://%s}"]`+"\n", node, html.EscapeString(node.Name))
 		case *dag.SecureVirtualHost:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{https://%s}"]`+"\n", node, html.EscapeString(node.VirtualHost.Name))
+			fmt.Fprintf(w, `"%p" [shape=record, label="{https://%s}"]`+"\n", node, html.EscapeString(node.Name))
 		case *dag.Route:
 			fmt.Fprintf(w, `"%p" [shape=record, label="{%s}"]`+"\n", node, html.EscapeString(node.PathMatchCondition.String()))
 		case *dag.Cluster:

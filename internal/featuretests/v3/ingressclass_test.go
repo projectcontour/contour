@@ -505,7 +505,7 @@ func TestIngressClassAnnotationUpdate(t *testing.T) {
 	}
 
 	// With the configured ingress class, a virtual show should be added.
-	vhost.ObjectMeta.Annotations = map[string]string{
+	vhost.Annotations = map[string]string{
 		"kubernetes.io/ingress.class": "contour",
 	}
 
@@ -528,7 +528,7 @@ func TestIngressClassAnnotationUpdate(t *testing.T) {
 	// Updating to the non-configured ingress class should remove the
 	// vhost.
 	orig := vhost.DeepCopy()
-	vhost.ObjectMeta.Annotations = map[string]string{
+	vhost.Annotations = map[string]string{
 		"kubernetes.io/ingress.class": "not-contour",
 	}
 

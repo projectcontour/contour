@@ -234,18 +234,20 @@ func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
 
 	// Add the Subnet annotation if specified by provider parameters.
 	if subnetNeeded(&contour.Spec) {
-		if providerParams.Type == model.AzureLoadBalancerProvider {
+		switch providerParams.Type {
+		case model.AzureLoadBalancerProvider:
 			svc.Annotations[azureLBSubnetAnnotation] = *providerParams.Azure.Subnet
-		} else if providerParams.Type == model.GCPLoadBalancerProvider {
+		case model.GCPLoadBalancerProvider:
 			svc.Annotations[gcpLBSubnetAnnotation] = *providerParams.GCP.Subnet
 		}
 	}
 
 	// Add LoadBalancerIP parameter if specified by provider parameters.
 	if loadBalancerAddressNeeded(&contour.Spec) {
-		if providerParams.Type == model.AzureLoadBalancerProvider {
+		switch providerParams.Type {
+		case model.AzureLoadBalancerProvider:
 			svc.Spec.LoadBalancerIP = *providerParams.Azure.Address
-		} else if providerParams.Type == model.GCPLoadBalancerProvider {
+		case model.GCPLoadBalancerProvider:
 			svc.Spec.LoadBalancerIP = *providerParams.GCP.Address
 		}
 	}

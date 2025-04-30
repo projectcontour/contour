@@ -27,7 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -57,7 +56,7 @@ func (c *Certs) CreateSelfSignedCert(ns, name, secretName, dnsName string) func(
 	}
 
 	if err := c.client.Create(context.TODO(), issuer); err != nil && !errors.IsAlreadyExists(err) {
-		require.FailNow(c.t, "error creating Issuer: %v", err)
+		require.FailNowf(c.t, "failed creating Issuer", "error: %s", err)
 	}
 
 	cert := &certmanagerv1.Certificate{
@@ -122,7 +121,7 @@ func (c *Certs) ensureSelfSignedIssuer(ns string) *certmanagerv1.Issuer {
 	}
 
 	if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(issuer), issuer); err != nil {
-		if api_errors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			require.NoError(c.t, c.client.Create(context.TODO(), issuer))
 		} else {
 			require.NoError(c.t, err)

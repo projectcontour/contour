@@ -234,8 +234,8 @@ func verifyTLSFlags(contourXDSTLS *contour_v1alpha1.TLS) error {
 	if contourXDSTLS.CAFile == "" && contourXDSTLS.CertFile == "" && contourXDSTLS.KeyFile == "" {
 		return errors.New("no TLS parameters and --insecure not supplied. You must supply one or the other")
 	}
-	// If one of the three TLS commands is not empty, they all must be not empty
-	if !(contourXDSTLS.CAFile != "" && contourXDSTLS.CertFile != "" && contourXDSTLS.KeyFile != "") {
+	// If one of the three TLS flags is not empty, they all must be not empty
+	if contourXDSTLS.CAFile == "" || contourXDSTLS.CertFile == "" || contourXDSTLS.KeyFile == "" {
 		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
 	}
 

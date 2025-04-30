@@ -680,7 +680,7 @@ func TestGatewayReconcile(t *testing.T) {
 				require.NotNil(t, deploy.Spec.Replicas)
 				assert.EqualValues(t, 4, *deploy.Spec.Replicas)
 				require.NotNil(t, deploy.Spec.Strategy)
-				assert.EqualValues(t, apps_v1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
+				assert.Equal(t, apps_v1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
 			},
 		},
 		"If ContourDeployment.Spec.Contour.NodePlacement is not specified, the Contour deployment has no node selector or tolerations set": {
@@ -1051,7 +1051,7 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.EqualValues(t, 6, *deploy.Spec.Replicas)
 
 				assert.NotNil(t, deploy.Spec.Strategy)
-				assert.EqualValues(t, apps_v1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
+				assert.Equal(t, apps_v1.RecreateDeploymentStrategyType, deploy.Spec.Strategy.Type)
 
 				// Verify that a daemonset has *not* been created
 				ds := &apps_v1.DaemonSet{
@@ -1098,7 +1098,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
-				assert.Contains(t, ds.Spec.Template.ObjectMeta.Annotations, "key")
+				assert.Contains(t, ds.Spec.Template.Annotations, "key")
 			},
 		},
 
@@ -1262,7 +1262,7 @@ func TestGatewayReconcile(t *testing.T) {
 				}
 
 				require.NoError(t, r.client.Get(context.Background(), keyFor(deploy), deploy))
-				assert.Contains(t, deploy.Spec.Template.ObjectMeta.Annotations, "key")
+				assert.Contains(t, deploy.Spec.Template.Annotations, "key")
 			},
 		},
 
@@ -1303,7 +1303,7 @@ func TestGatewayReconcile(t *testing.T) {
 					},
 				}
 				require.NoError(t, r.client.Get(context.Background(), keyFor(ds), ds))
-				assert.EqualValues(t, apps_v1.OnDeleteDaemonSetStrategyType, ds.Spec.UpdateStrategy.Type)
+				assert.Equal(t, apps_v1.OnDeleteDaemonSetStrategyType, ds.Spec.UpdateStrategy.Type)
 
 				// Verify that a deployment has *not* been created
 				deployment := &apps_v1.Deployment{

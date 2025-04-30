@@ -102,7 +102,7 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 				}
 
 				// Add secure vhost route config if not already present.
-				routeConfigName := httpsRouteConfigName(dagListener, vhost.VirtualHost.Name)
+				routeConfigName := httpsRouteConfigName(dagListener, vhost.Name)
 
 				if _, ok := routeConfigs[routeConfigName]; !ok {
 					routeConfigs[routeConfigName] = envoy_v3.RouteConfiguration(routeConfigName)

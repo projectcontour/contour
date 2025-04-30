@@ -112,15 +112,15 @@ func TestGetDAGBuilder(t *testing.T) {
 		commonAssertions(t, got)
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, got)
-		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
+		assert.Equal(t, policy.RequestHeadersPolicy.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
+		assert.Equal(t, policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
 
 		ingressProcessor := mustGetIngressProcessor(t, got)
-		assert.EqualValues(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
+		assert.Equal(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
 		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.Equal(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Set)
 		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
@@ -140,13 +140,13 @@ func TestGetDAGBuilder(t *testing.T) {
 		})
 
 		iProcessor := mustGetIngressProcessor(t, got)
-		assert.EqualValues(t, iProcessor.GlobalCircuitBreakerDefaults, &g)
+		assert.Equal(t, iProcessor.GlobalCircuitBreakerDefaults, &g)
 
 		hProcessor := mustGetHTTPProxyProcessor(t, got)
-		assert.EqualValues(t, hProcessor.GlobalCircuitBreakerDefaults, &g)
+		assert.Equal(t, hProcessor.GlobalCircuitBreakerDefaults, &g)
 
 		gProcessor := mustGetGatewayAPIProcessor(t, got)
-		assert.EqualValues(t, gProcessor.GlobalCircuitBreakerDefaults, &g)
+		assert.Equal(t, gProcessor.GlobalCircuitBreakerDefaults, &g)
 	})
 
 	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
@@ -179,9 +179,9 @@ func TestGetDAGBuilder(t *testing.T) {
 		commonAssertions(t, got)
 
 		ingressProcessor := mustGetIngressProcessor(t, got)
-		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
+		assert.Equal(t, policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.Equal(t, policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
@@ -197,7 +197,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			ingressClassNames: ingressClassNames,
 		})
 		commonAssertions(t, got)
-		assert.EqualValues(t, ingressClassNames, got.Source.IngressClassNames)
+		assert.Equal(t, ingressClassNames, got.Source.IngressClassNames)
 	})
 
 	t.Run("multiple comma-separated ingress classes specified", func(t *testing.T) {
@@ -212,7 +212,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			ingressClassNames: ingressClassNames,
 		})
 		commonAssertions(t, got)
-		assert.EqualValues(t, ingressClassNames, got.Source.IngressClassNames)
+		assert.Equal(t, ingressClassNames, got.Source.IngressClassNames)
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))

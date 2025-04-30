@@ -108,7 +108,7 @@ func checkDaemonSetHasLabels(t *testing.T, ds *apps_v1.DaemonSet, expected map[s
 func checkDaemonSetHasPodAnnotations(t *testing.T, ds *apps_v1.DaemonSet, expected map[string]string) {
 	t.Helper()
 
-	if apiequality.Semantic.DeepEqual(ds.Spec.Template.ObjectMeta.Annotations, expected) {
+	if apiequality.Semantic.DeepEqual(ds.Spec.Template.Annotations, expected) {
 		return
 	}
 
@@ -179,7 +179,7 @@ func checkDaemonSetHasVolume(t *testing.T, ds *apps_v1.DaemonSet, vol core_v1.Vo
 		}
 	}
 
-	if !(hasVol && hasVolMount) {
+	if !hasVol || !hasVolMount {
 		t.Errorf("daemonset has not found volume or volumeMount")
 	}
 }

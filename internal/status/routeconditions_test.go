@@ -42,9 +42,9 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	got := httpRouteUpdate.ConditionsForParentRef(parentRef)[0]
 
 	assert.EqualValues(t, gatewayapi_v1.RouteConditionAccepted, got.Type)
-	assert.EqualValues(t, meta_v1.ConditionTrue, got.Status)
-	assert.EqualValues(t, "Valid", got.Reason)
-	assert.EqualValues(t, "Valid HTTPRoute", got.Message)
+	assert.Equal(t, meta_v1.ConditionTrue, got.Status)
+	assert.Equal(t, "Valid", got.Reason)
+	assert.Equal(t, "Valid HTTPRoute", got.Message)
 	assert.EqualValues(t, 7, got.ObservedGeneration)
 }
 

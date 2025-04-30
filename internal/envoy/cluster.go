@@ -48,7 +48,7 @@ func Clustername(cluster *dag.Cluster) string {
 	}
 	if uv := cluster.UpstreamValidation; uv != nil {
 		if len(uv.CACertificates) > 0 {
-			buf += uv.CACertificates[0].Object.ObjectMeta.Name
+			buf += uv.CACertificates[0].Object.Name
 		}
 		if len(uv.SubjectNames) > 0 {
 			buf += uv.SubjectNames[0]

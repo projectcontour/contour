@@ -73,7 +73,7 @@ func (c *Client) dial() *grpc.ClientConn {
 	switch {
 	case c.CAFile != "" || c.ClientCert != "" || c.ClientKey != "":
 		// If one of the three TLS commands is not empty, they all must be not empty
-		if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
+		if c.CAFile == "" || c.ClientCert == "" || c.ClientKey == "" {
 			kingpin.Fatalf("you must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them")
 		}
 		// Load the client certificates from disk
