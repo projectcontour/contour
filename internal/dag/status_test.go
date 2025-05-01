@@ -8562,7 +8562,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				Namespace: "projectcontour",
 			},
 			Spec: gatewayapi_v1.GatewaySpec{
-				Addresses: []gatewayapi_v1.GatewayAddress{{
+				Addresses: []gatewayapi_v1.GatewaySpecAddress{{
 					Value: "1.2.3.4",
 				}},
 				Listeners: []gatewayapi_v1.Listener{{

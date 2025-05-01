@@ -249,7 +249,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		Spec: gatewayapi_v1.GatewaySpec{
 			GatewayClassName: gatewayapi_v1.ObjectName(validClass.Name),
-			Addresses: []gatewayapi_v1.GatewayAddress{
+			Addresses: []gatewayapi_v1.GatewaySpecAddress{
 				{
 					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "1.2.3.4",
