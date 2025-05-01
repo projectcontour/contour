@@ -306,6 +306,9 @@ type EnvoyConfig struct {
 	// OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
 	// the envoy overload manager actions, such as global connection limits, enforced.
 	//
+	// The configured values must be different from the endpoints
+	// configured by [EnvoyConfig.Metrics] and [EnvoyConfig.Health]
+	//
 	// This is disabled by default
 	// +optional
 	OMEnforcedHealth *HealthConfig `json:"omEnforcedHealth,omitempty"`

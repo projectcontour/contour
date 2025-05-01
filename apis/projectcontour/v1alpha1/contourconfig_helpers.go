@@ -338,9 +338,9 @@ func endpointsInConfict(health *HealthConfig, metrics *MetricsConfig) error {
 // healthEndpointsInConflict returns an error if the same address and port are used between the overload manager enforced health listener and metrics
 // _or_ the stats listener. Since the metrics would be validated against the stats listener already we only need to check that the overload manager
 // health listener is not in conflict with either metrics or stats
-func healthEndpointsInConflict(metrics *MetricsConfig, stats, omEnforcedHealth *HealthConfig) error {
+func healthEndpointsInConflict(metrics *MetricsConfig, health, omEnforcedHealth *HealthConfig) error {
 	switch {
-	case omEnforcedHealth != nil && stats != nil && omEnforcedHealth.Address == stats.Address && omEnforcedHealth.Port == stats.Port:
+	case omEnforcedHealth != nil && health != nil && omEnforcedHealth.Address == health.Address && omEnforcedHealth.Port == health.Port:
 		return fmt.Errorf("cannot use the same port for health checks and overload-manager enforced health checks")
 	case omEnforcedHealth != nil && metrics != nil && omEnforcedHealth.Address == metrics.Address && omEnforcedHealth.Port == metrics.Port:
 		return fmt.Errorf("cannot use the same port for metrics and overload-manager enforced health checks")
