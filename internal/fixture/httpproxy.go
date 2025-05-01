@@ -51,12 +51,6 @@ func (b *ProxyBuilder) Annotate(k, v string) *ProxyBuilder {
 	return b
 }
 
-// Label adds the given values as metadata labels.
-func (b *ProxyBuilder) Label(k, v string) *ProxyBuilder {
-	b.Labels[k] = v
-	return b
-}
-
 // WithSpec updates the builder's Spec field, returning the build proxy.
 func (b *ProxyBuilder) WithSpec(spec contour_v1.HTTPProxySpec) *contour_v1.HTTPProxy {
 	oldSpec := b.Spec
