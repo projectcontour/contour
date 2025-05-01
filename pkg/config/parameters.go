@@ -708,6 +708,10 @@ type Parameters struct {
 	// OMEnforcedHealthListener holds configuration for an envoy listener
 	// that enforces the overload manager actions, like global downstream
 	// connection limits.
+	//
+	// The configured values must be different from the endpoints
+	// configured by [Parameters.Metrics.Envoy] or any listeners
+	// configured by [contour_v1alpha1.ContourConfigurationSpec.Envoy]
 	OMEnforcedHealthListener *OMEnforcedHealthListenerConfig `yaml:"omEnforcedHealthListener,omitempty"`
 }
 
