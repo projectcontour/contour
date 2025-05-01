@@ -320,49 +320,6 @@ type StatusResult struct {
 	Have *contour_v1.HTTPProxyStatus
 }
 
-// Equals asserts that the status result is not an error and matches
-// the wanted status exactly.
-func (s *StatusResult) Equals(want contour_v1.HTTPProxyStatus) *Contour {
-	s.Helper()
-
-	// We should never get an error fetching the status for an
-	// object, so make it fatal if we do.
-	if s.Err != nil {
-		s.Fatal(s.Err.Error())
-	}
-
-	assert.Equal(s.T, want, *s.Have)
-	return s.Contour
-}
-
-// Like asserts that the status result is not an error and matches
-// non-empty fields in the wanted status.
-func (s *StatusResult) Like(want contour_v1.HTTPProxyStatus) *Contour {
-	s.Helper()
-
-	// We should never get an error fetching the status for an
-	// object, so make it fatal if we do.
-	if s.Err != nil {
-		s.Fatal(s.Err.Error())
-	}
-
-	if len(want.CurrentStatus) > 0 {
-		assert.Equal(s.T,
-			contour_v1.HTTPProxyStatus{CurrentStatus: want.CurrentStatus},
-			contour_v1.HTTPProxyStatus{CurrentStatus: s.Have.CurrentStatus},
-		)
-	}
-
-	if len(want.Description) > 0 {
-		assert.Equal(s.T,
-			contour_v1.HTTPProxyStatus{Description: want.Description},
-			contour_v1.HTTPProxyStatus{Description: s.Have.Description},
-		)
-	}
-
-	return s.Contour
-}
-
 // HasError asserts that there is an error on the Valid Condition in the proxy
 // that matches the given values.
 func (s *StatusResult) HasError(condType, reason, message string) *Contour {

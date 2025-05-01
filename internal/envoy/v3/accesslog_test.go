@@ -284,6 +284,51 @@ func TestAccessLogLevel(t *testing.T) {
 	}}
 	protobuf.ExpectEqual(t, want, got)
 
+	got = FileAccessLogJSON("/dev/stdout", nil, nil, contour_v1alpha1.LogLevelCritical)
+	want = []*envoy_config_accesslog_v3.AccessLog{{
+		Name: wellknown.FileAccessLog,
+		ConfigType: &envoy_config_accesslog_v3.AccessLog_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_access_logger_file_v3.FileAccessLog{
+				Path: "/dev/stdout",
+				AccessLogFormat: &envoy_access_logger_file_v3.FileAccessLog_LogFormat{
+					LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
+						OmitEmptyValues: true,
+						Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
+							JsonFormat: &structpb.Struct{
+								Fields: map[string]*structpb.Value{},
+							},
+						},
+					},
+				},
+			}),
+		},
+		Filter: &envoy_config_accesslog_v3.AccessLogFilter{
+			FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_OrFilter{
+				OrFilter: &envoy_config_accesslog_v3.OrFilter{
+					Filters: []*envoy_config_accesslog_v3.AccessLogFilter{
+						{
+							FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+								StatusCodeFilter: &envoy_config_accesslog_v3.StatusCodeFilter{
+									Comparison: &envoy_config_accesslog_v3.ComparisonFilter{
+										Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
+										Value: &envoy_config_core_v3.RuntimeUInt32{
+											DefaultValue: 500,
+											RuntimeKey:   "contour.accesslog.filter.status_code",
+										},
+									},
+								},
+							},
+						},
+						{
+							FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_ResponseFlagFilter{},
+						},
+					},
+				},
+			},
+		},
+	}}
+	protobuf.ExpectEqual(t, want, got)
+
 	// Log level disabled should return nil.
 	assert.Nil(t, FileAccessLogJSON("/dev/stdout", nil, nil, contour_v1alpha1.LogLevelDisabled))
 }
