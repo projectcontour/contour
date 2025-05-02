@@ -296,6 +296,7 @@ func NewListenerCache(
 	listenerConfig ListenerConfig,
 	metricsConfig contour_v1alpha1.MetricsConfig,
 	healthConfig contour_v1alpha1.HealthConfig,
+	omEnforcedHealthConfig *contour_v1alpha1.HealthConfig,
 	adminPort int,
 	envoyGen *envoy_v3.EnvoyGen,
 ) *ListenerCache {
@@ -305,7 +306,7 @@ func NewListenerCache(
 		envoyGen:     envoyGen,
 	}
 
-	for _, l := range envoyGen.StatsListeners(metricsConfig, healthConfig) {
+	for _, l := range envoyGen.StatsListeners(metricsConfig, healthConfig, omEnforcedHealthConfig) {
 		listenerCache.staticValues[l.Name] = l
 	}
 

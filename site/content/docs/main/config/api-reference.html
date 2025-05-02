@@ -6884,6 +6884,25 @@ NetworkParameters
 <p>Network holds various configurable Envoy network values.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>omEnforcedHealth</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.HealthConfig">
+HealthConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+the envoy overload manager actions, such as global connection limits, enforced.</p>
+<p>The configured values must be different from the endpoints
+configured by [EnvoyConfig.Metrics] and [EnvoyConfig.Health]</p>
+<p>This is disabled by default</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListener">EnvoyListener
@@ -7479,6 +7498,23 @@ When the value is greater than 0, the overload manager is enabled,
 and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation,
 When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests.
 More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/">https://projectcontour.io/docs/main/config/overload-manager/</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overloadMaxDownstreamConnections</code>
+<br>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverloadMaxDownstreamConn defines the envoy global downstream connection limit controlled by the overload manager.
+When the value is greater than 0 the overload manager is enabled and listeners
+will begin rejecting connections when the the connection threshold is hit.
+Metrics and health listeners are not subject to the connection limits, however,
+they still count against the global limit.</p>
 </td>
 </tr>
 </tbody>

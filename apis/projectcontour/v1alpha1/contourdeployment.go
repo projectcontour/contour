@@ -245,6 +245,15 @@ type EnvoySettings struct {
 	//
 	// +optional
 	OverloadMaxHeapSize uint64 `json:"overloadMaxHeapSize,omitempty"`
+
+	// OverloadMaxDownstreamConn defines the envoy global downstream connection limit controlled by the overload manager.
+	// When the value is greater than 0 the overload manager is enabled and listeners
+	// will begin rejecting connections when the the connection threshold is hit.
+	// Metrics and health listeners are not subject to the connection limits, however,
+	// they still count against the global limit.
+	//
+	// +optional
+	OverloadMaxDownstreamConnections uint64 `json:"overloadMaxDownstreamConnections,omitempty"`
 }
 
 // WorkloadType is the type of Kubernetes workload to use for a component.

@@ -560,6 +560,22 @@ spec:
                           Contour's default is false.
                         type: boolean
                     type: object
+                  omEnforcedHealth:
+                    description: |-
+                      OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+                      the envoy overload manager actions, such as global connection limits, enforced.
+                      The configured values must be different from the endpoints
+                      configured by [EnvoyConfig.Metrics] and [EnvoyConfig.Health]
+                      This is disabled by default
+                    properties:
+                      address:
+                        description: Defines the health address interface.
+                        minLength: 1
+                        type: string
+                      port:
+                        description: Defines the health port.
+                        type: integer
+                    type: object
                   service:
                     description: |-
                       Service holds Envoy service parameters for setting Ingress status.
@@ -3792,6 +3808,15 @@ spec:
                           type: object
                         type: array
                     type: object
+                  overloadMaxDownstreamConnections:
+                    description: |-
+                      OverloadMaxDownstreamConn defines the envoy global downstream connection limit controlled by the overload manager.
+                      When the value is greater than 0 the overload manager is enabled and listeners
+                      will begin rejecting connections when the the connection threshold is hit.
+                      Metrics and health listeners are not subject to the connection limits, however,
+                      they still count against the global limit.
+                    format: int64
+                    type: integer
                   overloadMaxHeapSize:
                     description: |-
                       OverloadMaxHeapSize defines the maximum heap memory of the envoy controlled by the overload manager.
@@ -4402,6 +4427,22 @@ spec:
                               for more information.
                               Contour's default is false.
                             type: boolean
+                        type: object
+                      omEnforcedHealth:
+                        description: |-
+                          OMEnforcedHealth defines the endpoint Envoy uses to serve health checks with
+                          the envoy overload manager actions, such as global connection limits, enforced.
+                          The configured values must be different from the endpoints
+                          configured by [EnvoyConfig.Metrics] and [EnvoyConfig.Health]
+                          This is disabled by default
+                        properties:
+                          address:
+                            description: Defines the health address interface.
+                            minLength: 1
+                            type: string
+                          port:
+                            description: Defines the health port.
+                            type: integer
                         type: object
                       service:
                         description: |-

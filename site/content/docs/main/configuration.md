@@ -103,6 +103,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | enableExternalNameService | boolean                | `false`                                                                                              | Enable ExternalName Service processing. Enabling this has security implications. Please see the [advisory](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) for more details.                                                                       |
 | metrics                   | MetricsParameters     |                                                                                                       | The [metrics configuration](#metrics-configuration) |
 | featureFlags              | string array           | `[]`                                                                                                 | Defines the toggle to enable new contour features. Available toggles are:  <br/> 1. `useEndpointSlices` - configures contour to fetch endpoint data from k8s endpoint slices.                                                                                                         |
+| omEnforcedHealthListener | OMEnforcedHealthListenerConfig | | The [overload manager enforced health listener config](#overload-manager-enforced-health-listener-config) |
 
 ### TLS Configuration
 
@@ -302,6 +303,18 @@ Sets the compression configuration applied in the compression HTTP filter of the
 |------------|--------|--------|-------------------------|
 | algorithm  | string | "gzip" | Compression algorithm. Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response. Values:`gzip` (default), `brotli`, `zstd`, `disabled`. |
 
+### Overload Manager Enforced Health Listener Config
+
+OMEnforcedHealthListenerConfig holds the configuration for a health stats listener that enforces limits imposed by the overload manager,
+notably max global downstream connections. This listener can be used to fail readiness checks without failing liveness to
+load shed connections under heavy load.
+
+By default, this configuration is not enabled.
+
+| Field Name              | Type   | Default | Description                                |
+| ----------------------- | ------ | ------- | ------------------------------------------ |
+| address                 | string | none    | Address that health listener will bind to. |
+| port                    | int    | 0       | Port that health listener will bind to.    |
 
 ### Configuration Example
 
@@ -475,6 +488,10 @@ data:
     #  socket-options:
     #    tos: 64
     #    traffic-class: 64
+    #
+    # omEnforcedHealthListener:
+    #   address: 0.0.0.0
+    #   port: 8003
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
@@ -520,6 +537,7 @@ connects to Contour:
 | <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto or all.                                                                                                   |
 | <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
 | <nobr>--overload-max-heap              | 0                 | Defines the maximum heap memory of the envoy controlled by the overload manager. When the value is greater than 0, the overload manager is enabled, and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation. When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests. |
+| <nobr>--overload-downstream-max-conn              | 0                 | 	OverloadMaxDownstreamConn defines the envoy global downstream connection limit controlled by the overload manager. When the value is greater than 0 the overload manager is enabled and listeners will begin rejecting connections when the the connection threshold is hit. Metrics and health listeners are not subject to the connection limits, however, they still count against the global limit. |
 
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/01-contour-config.yaml

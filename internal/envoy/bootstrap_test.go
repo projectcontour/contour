@@ -14,6 +14,7 @@
 package envoy
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -35,6 +36,25 @@ func TestValidAdminAddress(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := ValidAdminAddress(tc.address)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestValidConnectionLimit(t *testing.T) {
+	tests := []struct {
+		name      string
+		connLimit int64
+		want      error
+	}{
+		{name: "valid connection limit", connLimit: 10, want: nil},
+		{name: "valid connection limit", connLimit: 0, want: nil},
+		{name: "invalid connection limit", connLimit: -10, want: errors.New("invalid value -10, cannot be < 0")},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := ValidConnectionLimit(tc.connLimit)
 			assert.Equal(t, tc.want, got)
 		})
 	}
