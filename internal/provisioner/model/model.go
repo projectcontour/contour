@@ -43,12 +43,13 @@ func Default(namespace, name string) *Contour {
 			Name:      name,
 		},
 		Spec: ContourSpec{
-			ContourReplicas:       2,
-			EnvoyWorkloadType:     WorkloadTypeDaemonSet,
-			EnvoyReplicas:         2, // ignored if not provisioning Envoy as a deployment.
-			EnvoyLogLevel:         contour_v1alpha1.InfoLog,
-			EnvoyBaseID:           0,
-			EnvoyMaxHeapSizeBytes: 0,
+			ContourReplicas:               2,
+			EnvoyWorkloadType:             WorkloadTypeDaemonSet,
+			EnvoyReplicas:                 2, // ignored if not provisioning Envoy as a deployment.
+			EnvoyLogLevel:                 contour_v1alpha1.InfoLog,
+			EnvoyBaseID:                   0,
+			EnvoyMaxHeapSizeBytes:         0,
+			EnvoyMaxDownstreamConnections: 0,
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
@@ -244,10 +245,14 @@ type ContourSpec struct {
 	// defaults to 0.
 	EnvoyBaseID int32
 
-	// MaximumHeapSizeBytes defines how much memory the overload manager controls Envoy to allocate at most.
-	// If the value is 0, the overload manager is disabled.
+	// EnvoyMaxHeapSizeBytes defines how much memory the overload manager controls Envoy to allocate at most.
 	// defaults to 0.
 	EnvoyMaxHeapSizeBytes uint64
+
+	// EnvoyMaxDownstreamConnections defines the global downstream connection limit before
+	// listeners begin rejecting connections.
+	// defaults to 0.
+	EnvoyMaxDownstreamConnections uint64
 
 	// WatchNamespaces is an array of namespaces. Setting it will instruct the contour instance
 	// to only watch these set of namespaces

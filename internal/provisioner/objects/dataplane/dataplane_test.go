@@ -314,6 +314,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	testLogLevelArg := "--log-level debug"
 	testBaseIDArg := "--base-id 1"
 	testEnvoyMaxHeapSize := "--overload-max-heap=8000000000"
+	testEnvoyMaxDownstreamConn := "--overload-downstream-max-conn=42"
 
 	resQutoa := core_v1.ResourceRequirements{
 		Limits: core_v1.ResourceList{
@@ -340,6 +341,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	cntr.Spec.EnvoyBaseID = 1
 
 	cntr.Spec.EnvoyMaxHeapSizeBytes = 8000000000
+	cntr.Spec.EnvoyMaxDownstreamConnections = 42
 
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
@@ -357,6 +359,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 	checkContainerHasImage(t, container, testContourImage)
 	checkContainerHasArg(t, container, testEnvoyMaxHeapSize)
+	checkContainerHasArg(t, container, testEnvoyMaxDownstreamConn)
 
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyNsEnvVar)
 	checkDaemonSetHasEnvVar(t, ds, EnvoyContainerName, envoyPodEnvVar)
