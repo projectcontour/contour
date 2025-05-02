@@ -488,6 +488,10 @@ data:
     #  socket-options:
     #    tos: 64
     #    traffic-class: 64
+    #
+    # omEnforcedHealthListener:
+    #   address: 0.0.0.0
+    #   port: 8003
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
