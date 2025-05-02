@@ -4016,7 +4016,7 @@ spec:
                     description: |-
                       OverloadMaxDownstreamConn defines the envoy global downstream connection limit controlled by the overload manager.
                       When the value is greater than 0 the overload manager is enabled and listeners
-                      will begin rejecting connections when the the conneciton threshold is hit.
+                      will begin rejecting connections when the the connection threshold is hit.
                       Metrics and health listeners are not subject to the connection limits, however,
                       they still count against the global limit.
                     format: int64
