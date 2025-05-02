@@ -520,6 +520,7 @@ connects to Contour:
 | <nobr>--dns-lookup-family</nobr>       | auto              | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6, auto or all.                                                                                                   |
 | <nobr>--log-format                     | text              | Log output format for Contour. Either text or json. |
 | <nobr>--overload-max-heap              | 0                 | Defines the maximum heap memory of the envoy controlled by the overload manager. When the value is greater than 0, the overload manager is enabled, and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation. When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests. |
+| <nobr>--overload-downstream-max-conn              | 0                 | Defines the maximum heap memory of the envoy controlled by the overload manager. When the value is greater than 0, the overload manager is enabled, and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation. When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests. |
 
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/01-contour-config.yaml

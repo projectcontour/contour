@@ -7500,6 +7500,23 @@ When it reaches 98% of the maximum heap size, Envoy Will stop accepting requests
 More info: <a href="https://projectcontour.io/docs/main/config/overload-manager/">https://projectcontour.io/docs/main/config/overload-manager/</a></p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>overloadMaxDownstreamConnections</code>
+<br>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OverloadMaxDownstreamConn defines the envoy global downstream connection limit controlled by the overload manager.
+When the value is greater than 0 the overload manager is enabled and listeners
+will begin rejecting connections when the the conneciton threshold is hit.
+Metrics and health listeners are not subject to the connection limits, however,
+they still count against the global limit.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS
