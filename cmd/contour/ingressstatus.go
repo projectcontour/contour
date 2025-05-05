@@ -79,9 +79,8 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 			LBStatus:    isw.lbStatus,
 			Log:         isw.log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 		}
-		var handler client_go_cache.ResourceEventHandler = serviceHandler
 		if isw.serviceNamespace != "" {
-			serviceHandler = k8s.NewNamespaceFilter([]string{isw.serviceNamespace}, handler)
+			serviceHandler = k8s.NewNamespaceFilter([]string{isw.serviceNamespace}, serviceHandler)
 		}
 		inf, err := isw.cache.GetInformer(ctx, &core_v1.Service{})
 		if err != nil {
