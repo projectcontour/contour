@@ -680,34 +680,12 @@ func (s *Server) doServe() error {
 		ingressClassNames: ingressClassNames,
 		gatewayRef:        gatewayRef,
 		statusUpdater:     sh.Writer(),
+		statusAddress:     contourConfiguration.Ingress.StatusAddress,
+		serviceName:       contourConfiguration.Envoy.Service.Name,
+		serviceNamespace:  contourConfiguration.Envoy.Service.Namespace,
 	}
 	if err := s.mgr.Add(lbsw); err != nil {
 		return err
-	}
-
-	// Register an informer to watch envoy's service if we haven't been given static details.
-	if lbAddress := contourConfiguration.Ingress.StatusAddress; len(lbAddress) > 0 {
-		s.log.WithField("loadbalancer-address", lbAddress).Info("Using supplied information for Ingress status")
-		lbsw.lbStatus <- parseStatusFlag(lbAddress)
-	} else {
-		serviceHandler := &k8s.ServiceStatusLoadBalancerWatcher{
-			ServiceName: contourConfiguration.Envoy.Service.Name,
-			LBStatus:    lbsw.lbStatus,
-			Log:         s.log.WithField("context", "serviceStatusLoadBalancerWatcher"),
-		}
-
-		var handler cache.ResourceEventHandler = serviceHandler
-		if contourConfiguration.Envoy.Service.Namespace != "" {
-			handler = k8s.NewNamespaceFilter([]string{contourConfiguration.Envoy.Service.Namespace}, handler)
-		}
-
-		if err := s.informOnResource(&core_v1.Service{}, handler); err != nil {
-			s.log.WithError(err).WithField("resource", "services").Fatal("failed to create informer")
-		}
-
-		s.log.WithField("envoy-service-name", contourConfiguration.Envoy.Service.Name).
-			WithField("envoy-service-namespace", contourConfiguration.Envoy.Service.Namespace).
-			Info("Watching Service for Ingress status")
 	}
 
 	xdsServer := &xdsServer{
