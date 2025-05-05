@@ -14,28 +14,9 @@
 package v3
 
 import (
-	core_v1 "k8s.io/api/core/v1"
 	discovery_v1 "k8s.io/api/discovery/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func endpoints(ns, name string, subsets ...core_v1.EndpointSubset) *core_v1.Endpoints {
-	return &core_v1.Endpoints{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Subsets: subsets,
-	}
-}
-
-func addresses(ips ...string) []core_v1.EndpointAddress {
-	var addrs []core_v1.EndpointAddress
-	for _, ip := range ips {
-		addrs = append(addrs, core_v1.EndpointAddress{IP: ip})
-	}
-	return addrs
-}
 
 func endpointSlice(ns, name, service string, addressType discovery_v1.AddressType, endpoints []discovery_v1.Endpoint, ports []discovery_v1.EndpointPort) *discovery_v1.EndpointSlice {
 	return &discovery_v1.EndpointSlice{

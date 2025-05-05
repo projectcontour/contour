@@ -86,10 +86,6 @@ type ContourConfigurationSpec struct {
 	Tracing *TracingConfig `json:"tracing,omitempty"`
 
 	// FeatureFlags defines toggle to enable new contour features.
-	// Available toggles are:
-	// useEndpointSlices - Configures contour to fetch endpoint data
-	// from k8s endpoint slices. defaults to true,
-	// If false then reads endpoint data from the k8s endpoints.
 	FeatureFlags FeatureFlags `json:"featureFlags,omitempty"`
 }
 

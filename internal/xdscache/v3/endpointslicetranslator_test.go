@@ -16,9 +16,12 @@ package v3
 import (
 	"testing"
 
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	core_v1 "k8s.io/api/core/v1"
 	discovery_v1 "k8s.io/api/discovery/v1"
 	"k8s.io/utils/ptr"
@@ -28,6 +31,14 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
+
+type simpleObserver struct {
+	updated bool
+}
+
+func (s *simpleObserver) Refresh() {
+	s.updated = true
+}
 
 func TestEndpointSliceTranslatorContents(t *testing.T) {
 	tests := map[string]struct {
@@ -1141,4 +1152,138 @@ func TestEndpointSliceTranslatorDefaultWeightedService(t *testing.T) {
 	}
 
 	protobuf.ExpectEqual(t, want, endpointSliceTranslator.Contents())
+}
+
+func TestEqual(t *testing.T) {
+	tests := map[string]struct {
+		a, b map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
+		want bool
+	}{
+		"both nil": {
+			a:    nil,
+			b:    nil,
+			want: true,
+		},
+		"one nil, one empty": {
+			a:    map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
+			b:    nil,
+			want: true,
+		},
+		"both empty": {
+			a:    map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
+			b:    map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
+			want: true,
+		},
+		"a is an incomplete subset of b": {
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+			},
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			want: false,
+		},
+		"b is an incomplete subset of a": {
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+			},
+			want: false,
+		},
+		"a and b have the same keys, different values": {
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "different"},
+			},
+			want: false,
+		},
+		"a and b have the same values, different keys": {
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"d": {ClusterName: "a"},
+				"e": {ClusterName: "b"},
+				"f": {ClusterName: "c"},
+			},
+			want: false,
+		},
+		"a and b have the same keys, same values": {
+			a: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			want: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, equal(tc.a, tc.b))
+		})
+	}
+}
+
+func clusterloadassignments(clas ...*envoy_config_endpoint_v3.ClusterLoadAssignment) map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment {
+	m := make(map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment)
+	for _, cla := range clas {
+		m[cla.ClusterName] = cla
+	}
+	return m
+}
+
+func weightedHealthcheckEndpoints(weight, healthcheckPort uint32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := healthcheckEndpoints(healthcheckPort, addrs...)
+	lbendpoints[0].LoadBalancingWeight = wrapperspb.UInt32(weight)
+	return lbendpoints
+}
+
+func healthcheckEndpoints(healthcheckPort uint32, addrs ...*envoy_config_core_v3.Address) []*envoy_config_endpoint_v3.LocalityLbEndpoints {
+	lbendpoints := make([]*envoy_config_endpoint_v3.LbEndpoint, 0, len(addrs))
+	for _, addr := range addrs {
+		lbendpoints = append(lbendpoints, healthCheckLBEndpoint(addr, healthcheckPort))
+	}
+	return []*envoy_config_endpoint_v3.LocalityLbEndpoints{{
+		LbEndpoints: lbendpoints,
+	}}
+}
+
+// healthCheckLBEndpoint creates a new LbEndpoint include healthCheckConfig
+func healthCheckLBEndpoint(addr *envoy_config_core_v3.Address, healthCheckPort uint32) *envoy_config_endpoint_v3.LbEndpoint {
+	var hc *envoy_config_endpoint_v3.Endpoint_HealthCheckConfig
+	if healthCheckPort != 0 {
+		hc = &envoy_config_endpoint_v3.Endpoint_HealthCheckConfig{
+			PortValue: healthCheckPort,
+		}
+	}
+	return &envoy_config_endpoint_v3.LbEndpoint{
+		HostIdentifier: &envoy_config_endpoint_v3.LbEndpoint_Endpoint{
+			Endpoint: &envoy_config_endpoint_v3.Endpoint{
+				Address:           addr,
+				HealthCheckConfig: hc,
+			},
+		},
+	}
 }

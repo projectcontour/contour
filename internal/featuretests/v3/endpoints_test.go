@@ -55,19 +55,18 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// e1 is a simple endpoint for two hosts, and two ports
 	// it has a long name to check that it's clustername is _not_
 	// hashed.
-	e1 := featuretests.Endpoints(
+	e1 := featuretests.EndpointSlice(
 		"super-long-namespace-name-oh-boy",
+		"es1",
 		"what-a-descriptive-service-name-you-must-be-so-proud",
-		core_v1.EndpointSubset{
-			Addresses: featuretests.Addresses(
-				"172.16.0.2",
-				"172.16.0.1",
-			),
-			Ports: featuretests.Ports(
-				featuretests.Port("https", 8443),
-				featuretests.Port("http", 8000),
-			),
-		},
+		featuretests.Endpoints(
+			featuretests.Endpoint("172.16.0.2", true),
+			featuretests.Endpoint("172.16.0.1", true),
+		),
+		featuretests.Ports(
+			featuretests.Port("https", 8443),
+			featuretests.Port("http", 8000),
+		),
 	)
 
 	rh.OnAdd(e1)
@@ -137,32 +136,33 @@ func TestAddEndpointComplicated(t *testing.T) {
 		}),
 	)
 
-	e1 := featuretests.Endpoints(
+	e1 := featuretests.EndpointSlice(
 		"default",
+		"es1",
 		"kuard",
-		core_v1.EndpointSubset{
-			Addresses: featuretests.Addresses(
-				"10.48.1.78",
-			),
-			NotReadyAddresses: featuretests.Addresses(
-				"10.48.1.77",
-			),
-			Ports: featuretests.Ports(
-				featuretests.Port("foo", 8080),
-			),
-		},
-		core_v1.EndpointSubset{
-			Addresses: featuretests.Addresses(
-				"10.48.1.78",
-				"10.48.1.77",
-			),
-			Ports: featuretests.Ports(
-				featuretests.Port("admin", 9000),
-			),
-		},
+		featuretests.Endpoints(
+			featuretests.Endpoint("10.48.1.78", true),
+			featuretests.Endpoint("10.48.1.77", false),
+		),
+		featuretests.Ports(
+			featuretests.Port("foo", 8080),
+		),
 	)
-
 	rh.OnAdd(e1)
+
+	e2 := featuretests.EndpointSlice(
+		"default",
+		"es2",
+		"kuard",
+		featuretests.Endpoints(
+			featuretests.Endpoint("10.48.1.78", true),
+			featuretests.Endpoint("10.48.1.77", true),
+		),
+		featuretests.Ports(
+			featuretests.Port("admin", 9000),
+		),
+	)
+	rh.OnAdd(e2)
 
 	c.Request(endpointType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: endpointType,
@@ -205,32 +205,35 @@ func TestEndpointFilter(t *testing.T) {
 		}),
 	)
 
-	// a single endpoint that represents several
-	// cluster load assignments.
-	rh.OnAdd(featuretests.Endpoints(
+	// Same Service+addresses but should be filterable
+	// by port name suffix.
+	e1 := featuretests.EndpointSlice(
 		"default",
+		"es1",
 		"kuard",
-		core_v1.EndpointSubset{
-			Addresses: featuretests.Addresses(
-				"10.48.1.78",
-			),
-			NotReadyAddresses: featuretests.Addresses(
-				"10.48.1.77",
-			),
-			Ports: featuretests.Ports(
-				featuretests.Port("foo", 8080),
-			),
-		},
-		core_v1.EndpointSubset{
-			Addresses: featuretests.Addresses(
-				"10.48.1.77",
-				"10.48.1.78",
-			),
-			Ports: featuretests.Ports(
-				featuretests.Port("admin", 9000),
-			),
-		},
-	))
+		featuretests.Endpoints(
+			featuretests.Endpoint("10.48.1.78", true),
+			featuretests.Endpoint("10.48.1.77", false),
+		),
+		featuretests.Ports(
+			featuretests.Port("foo", 8080),
+		),
+	)
+	rh.OnAdd(e1)
+
+	e2 := featuretests.EndpointSlice(
+		"default",
+		"es2",
+		"kuard",
+		featuretests.Endpoints(
+			featuretests.Endpoint("10.48.1.78", true),
+			featuretests.Endpoint("10.48.1.77", true),
+		),
+		featuretests.Ports(
+			featuretests.Port("admin", 9000),
+		),
+	)
+	rh.OnAdd(e2)
 
 	c.Request(endpointType, "default/kuard/foo").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: endpointType,
@@ -268,12 +271,10 @@ func TestIssue602(t *testing.T) {
 		}),
 	)
 
-	e1 := featuretests.Endpoints("default", "simple", core_v1.EndpointSubset{
-		Addresses: featuretests.Addresses("192.168.183.24"),
-		Ports: featuretests.Ports(
-			featuretests.Port("", 8080),
-		),
-	})
+	e1 := featuretests.EndpointSlice("default", "es1", "simple",
+		featuretests.Endpoints(featuretests.Endpoint("192.168.183.24", true)),
+		featuretests.Ports(featuretests.Port("", 8080)),
+	)
 	rh.OnAdd(e1)
 
 	// Assert endpoint was added
@@ -287,8 +288,8 @@ func TestIssue602(t *testing.T) {
 		TypeUrl: endpointType,
 	})
 
-	// e2 is the same as e1, but without endpoint subsets
-	e2 := featuretests.Endpoints("default", "simple")
+	// e2 is the same as e1, but without any actual endpoints
+	e2 := featuretests.EndpointSlice("default", "es1", "simple", nil, nil)
 	rh.OnUpdate(e1, e2)
 
 	c.Request(endpointType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{

@@ -825,10 +825,10 @@ func TestGlobalAuthorization(t *testing.T) {
 			rh.OnAdd(fixture.NewService("auth/oidc-server").
 				WithPorts(core_v1.ServicePort{Port: 8081}))
 
-			rh.OnAdd(featuretests.Endpoints("auth", "oidc-server", core_v1.EndpointSubset{
-				Addresses: featuretests.Addresses("192.168.183.21"),
-				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
-			}))
+			rh.OnAdd(featuretests.EndpointSlice("auth", "oidc-es", "oidc-server",
+				featuretests.Endpoints(featuretests.Endpoint("192.168.183.21", true)),
+				featuretests.Ports(featuretests.Port("", 8081)),
+			))
 
 			rh.OnAdd(&contour_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("auth/extension"),
@@ -845,10 +845,10 @@ func TestGlobalAuthorization(t *testing.T) {
 			rh.OnAdd(fixture.NewService("app-server").
 				WithPorts(core_v1.ServicePort{Port: 80}))
 
-			rh.OnAdd(featuretests.Endpoints("auth", "app-server", core_v1.EndpointSubset{
-				Addresses: featuretests.Addresses("192.168.183.21"),
-				Ports:     featuretests.Ports(featuretests.Port("", 80)),
-			}))
+			rh.OnAdd(featuretests.EndpointSlice("auth", "app-es", "app-server",
+				featuretests.Endpoints(featuretests.Endpoint("192.168.183.21", true)),
+				featuretests.Ports(featuretests.Port("", 80)),
+			))
 
 			rh.OnAdd(featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate))
 

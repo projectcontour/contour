@@ -15,6 +15,7 @@ package k8s
 
 import (
 	core_v1 "k8s.io/api/core/v1"
+	discovery_v1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,8 +46,8 @@ func KindOf(obj any) string {
 			return "Secret"
 		case *core_v1.Service:
 			return "Service"
-		case *core_v1.Endpoints:
-			return "Endpoints"
+		case *discovery_v1.EndpointSlice:
+			return "EndpointSlice"
 		case *networking_v1.Ingress:
 			return "Ingress"
 		case *contour_v1.HTTPProxy:
@@ -95,7 +96,7 @@ func VersionOf(obj any) string {
 	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
 	if err != nil {
 		switch obj := obj.(type) {
-		case *core_v1.Secret, *core_v1.Service, *core_v1.Endpoints:
+		case *core_v1.Secret, *core_v1.Service:
 			return core_v1.SchemeGroupVersion.String()
 		case *networking_v1.Ingress:
 			return networking_v1.SchemeGroupVersion.String()

@@ -646,12 +646,7 @@ spec:
                     type: object
                 type: object
               featureFlags:
-                description: |-
-                  FeatureFlags defines toggle to enable new contour features.
-                  Available toggles are:
-                  useEndpointSlices - Configures contour to fetch endpoint data
-                  from k8s endpoint slices. defaults to true,
-                  If false then reads endpoint data from the k8s endpoints.
+                description: FeatureFlags defines toggle to enable new contour features.
                 items:
                   type: string
                 type: array
@@ -4514,12 +4509,8 @@ spec:
                         type: object
                     type: object
                   featureFlags:
-                    description: |-
-                      FeatureFlags defines toggle to enable new contour features.
-                      Available toggles are:
-                      useEndpointSlices - Configures contour to fetch endpoint data
-                      from k8s endpoint slices. defaults to true,
-                      If false then reads endpoint data from the k8s endpoints.
+                    description: FeatureFlags defines toggle to enable new contour
+                      features.
                     items:
                       type: string
                     type: array

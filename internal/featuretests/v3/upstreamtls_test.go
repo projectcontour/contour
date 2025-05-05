@@ -163,10 +163,10 @@ func TestUpstreamTLSWithExtensionService(t *testing.T) {
 
 	rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(core_v1.ServicePort{Port: 8081}))
 
-	rh.OnAdd(featuretests.Endpoints("ns", "svc1", core_v1.EndpointSubset{
-		Addresses: featuretests.Addresses("192.168.183.20"),
-		Ports:     featuretests.Ports(featuretests.Port("", 8081)),
-	}))
+	rh.OnAdd(featuretests.EndpointSlice("ns", "svc1-es", "svc1",
+		featuretests.Endpoints(featuretests.Endpoint("192.168.183.20", true)),
+		featuretests.Ports(featuretests.Port("", 8081)),
+	))
 
 	ext := &contour_v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),

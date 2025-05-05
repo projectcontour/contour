@@ -699,10 +699,6 @@ type Parameters struct {
 	Tracing *Tracing `yaml:"tracing,omitempty"`
 
 	// FeatureFlags defines toggle to enable new contour features.
-	// available toggles are
-	// useEndpointSlices - configures contour to fetch endpoint data
-	// from k8s endpoint slices. defaults to true,
-	// if false then reading endpoint data from the k8s endpoints.
 	FeatureFlags []string `yaml:"featureFlags,omitempty"`
 
 	// OMEnforcedHealthListener holds configuration for an envoy listener
