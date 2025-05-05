@@ -23724,7 +23724,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - endpoints
   - namespaces
   verbs:
   - get

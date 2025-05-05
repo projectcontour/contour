@@ -57,7 +57,7 @@ func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbac_v1
 func NamespacedResourcePolicyRules(resourcesToSkip []contour_v1.Feature) []rbac_v1.PolicyRule {
 	return []rbac_v1.PolicyRule{
 		// Core Contour-watched resources.
-		PolicyRuleFor(core_v1.GroupName, getListWatch, "secrets", "endpoints", "services", "configmaps"),
+		PolicyRuleFor(core_v1.GroupName, getListWatch, "secrets", "services", "configmaps"),
 
 		// Discovery Contour-watched resources.
 		PolicyRuleFor(discovery_v1.GroupName, getListWatch, "endpointslices"),

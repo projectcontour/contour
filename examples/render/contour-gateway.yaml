@@ -8949,7 +8949,6 @@ rules:
   - ""
   resources:
   - configmaps
-  - endpoints
   - namespaces
   - secrets
   - services
