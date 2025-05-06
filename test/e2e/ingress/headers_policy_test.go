@@ -93,8 +93,8 @@ func testGlobalHeadersPolicy(applyToIngress bool) e2e.NamespacedTestBody {
 				assert.Equal(t, "foo", f.GetEchoResponseBody(res.Body).RequestHeaders.Get("X-Contour-GlobalRequestHeader"))
 				assert.Equal(t, "bar", res.Headers.Get("X-Contour-GlobalResponseHeader"))
 			} else {
-				assert.Equal(t, "", f.GetEchoResponseBody(res.Body).RequestHeaders.Get("X-Contour-GlobalRequestHeader"))
-				assert.Equal(t, "", res.Headers.Get("X-Contour-GlobalResponseHeader"))
+				assert.Empty(t, f.GetEchoResponseBody(res.Body).RequestHeaders.Get("X-Contour-GlobalRequestHeader"))
+				assert.Empty(t, res.Headers.Get("X-Contour-GlobalResponseHeader"))
 			}
 		})
 	}

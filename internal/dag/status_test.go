@@ -4942,7 +4942,7 @@ func TestDAGStatus(t *testing.T) {
 				Name:      fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace,
 			}: fixture.NewValidCondition().
-				WithError(contour_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CA Secret "delegated/delegated" is invalid: Certificate delegation not permitted`),
+				WithError(contour_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CA Secret "delegated/delegated" is invalid: certificate delegation not permitted`),
 		},
 	})
 
@@ -5024,7 +5024,7 @@ func TestDAGStatus(t *testing.T) {
 				Name:      fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace,
 			}: fixture.NewValidCondition().
-				WithError(contour_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CRL Secret "delegated/delegated" is invalid: Certificate delegation not permitted`),
+				WithError(contour_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS CRL Secret "delegated/delegated" is invalid: certificate delegation not permitted`),
 		},
 	})
 

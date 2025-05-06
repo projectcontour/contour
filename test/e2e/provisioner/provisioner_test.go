@@ -381,7 +381,7 @@ var _ = Describe("Gateway provisioner", func() {
 			}
 
 			require.True(f.T(), f.CreateGatewayAndWaitFor(gateway, func(gw *gatewayapi_v1.Gateway) bool {
-				if !(e2e.GatewayProgrammed(gw) && e2e.GatewayHasAddress(gw)) {
+				if !e2e.GatewayProgrammed(gw) || !e2e.GatewayHasAddress(gw) {
 					return false
 				}
 
@@ -502,8 +502,8 @@ var _ = Describe("Gateway provisioner", func() {
 				// Envoy is expected to add the "server: envoy" and
 				// "x-envoy-upstream-service-time" HTTP headers when
 				// proxying HTTP; this ensures we are proxying TCP only.
-				assert.Equal(f.T(), "", res.Headers.Get("server"))
-				assert.Equal(f.T(), "", res.Headers.Get("x-envoy-upstream-service-time"))
+				assert.Empty(f.T(), res.Headers.Get("server"))
+				assert.Empty(f.T(), res.Headers.Get("x-envoy-upstream-service-time"))
 			}
 		})
 	})

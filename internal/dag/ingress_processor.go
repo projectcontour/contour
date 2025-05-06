@@ -393,9 +393,9 @@ func stringOrDefault(s, def string) string {
 // In the case that the IngressRule contains no valid HTTPIngressPaths, a
 // nil slice is returned.
 func httppaths(rule networking_v1.IngressRule) []networking_v1.HTTPIngressPath {
-	if rule.IngressRuleValue.HTTP == nil {
+	if rule.HTTP == nil {
 		// rule.IngressRuleValue.HTTP value is optional.
 		return nil
 	}
-	return rule.IngressRuleValue.HTTP.Paths
+	return rule.HTTP.Paths
 }

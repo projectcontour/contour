@@ -553,8 +553,8 @@ func HTTPProxyErrors(proxy *contour_v1.HTTPProxy) string {
 // list contains a condition of type "Valid" and status "False".
 func DetailedConditionInvalid(conditions []contour_v1.DetailedCondition) bool {
 	for _, c := range conditions {
-		if c.Condition.Type == "Valid" {
-			return c.Condition.Status == "False"
+		if c.Type == "Valid" {
+			return c.Status == "False"
 		}
 	}
 	return false

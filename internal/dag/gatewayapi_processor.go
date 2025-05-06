@@ -1872,11 +1872,11 @@ func (p *GatewayAPIProcessor) validateBackendObjectRef(
 	routeKind string,
 	routeNamespace string,
 ) (*Service, *meta_v1.Condition) {
-	if !(backendObjectRef.Group == nil || *backendObjectRef.Group == "") {
+	if backendObjectRef.Group != nil && *backendObjectRef.Group != "" {
 		return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Group must be \"\"", field)))
 	}
 
-	if !(backendObjectRef.Kind != nil && *backendObjectRef.Kind == "Service") {
+	if backendObjectRef.Kind == nil || *backendObjectRef.Kind != "Service" {
 		return nil, ptr.To(resolvedRefsFalse(gatewayapi_v1.RouteReasonInvalidKind, fmt.Sprintf("%s.Kind must be 'Service'", field)))
 	}
 
@@ -2428,9 +2428,10 @@ func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1.Prot
 	// For GRPCRoute, if the protocol is not set on the Service via annotation,
 	// we should assume a protocol that matches what listener the route was attached to
 	if isBlank(service.Protocol) {
-		if protocolType == gatewayapi_v1.HTTPProtocolType {
+		switch protocolType {
+		case gatewayapi_v1.HTTPProtocolType:
 			service.Protocol = "h2c"
-		} else if protocolType == gatewayapi_v1.HTTPSProtocolType {
+		case gatewayapi_v1.HTTPSProtocolType:
 			service.Protocol = "h2"
 		}
 	}

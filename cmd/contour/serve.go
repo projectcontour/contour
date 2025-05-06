@@ -924,7 +924,7 @@ func (s *Server) setupMetrics(metricsConfig contour_v1alpha1.MetricsConfig, heal
 		ServeMux:    http.ServeMux{},
 	}
 
-	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
+	metricsvc.Handle("/metrics", metrics.Handler(registry))
 
 	if metricsConfig.TLS != nil {
 		metricsvc.Cert = metricsConfig.TLS.CertFile
@@ -934,8 +934,8 @@ func (s *Server) setupMetrics(metricsConfig contour_v1alpha1.MetricsConfig, heal
 
 	if healthConfig.Address == metricsConfig.Address && healthConfig.Port == metricsConfig.Port {
 		h := health.Handler(s.coreClient)
-		metricsvc.ServeMux.Handle("/health", h)
-		metricsvc.ServeMux.Handle("/healthz", h)
+		metricsvc.Handle("/health", h)
+		metricsvc.Handle("/healthz", h)
 	}
 
 	return s.mgr.Add(metricsvc)
@@ -952,8 +952,8 @@ func (s *Server) setupHealth(healthConfig contour_v1alpha1.HealthConfig,
 		}
 
 		h := health.Handler(s.coreClient)
-		healthsvc.ServeMux.Handle("/health", h)
-		healthsvc.ServeMux.Handle("/healthz", h)
+		healthsvc.Handle("/health", h)
+		healthsvc.Handle("/healthz", h)
 
 		return s.mgr.Add(healthsvc)
 	}

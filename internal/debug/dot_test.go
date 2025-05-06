@@ -84,8 +84,8 @@ func TestWriteDotLineCount(t *testing.T) {
 			labeledLineCount++
 		}
 	}
-	require.EqualValues(t, 21, lineCount)
-	require.EqualValues(t, 9, labeledLineCount)
+	require.Equal(t, 21, lineCount)
+	require.Equal(t, 9, labeledLineCount)
 }
 
 func getTestListeners() []*dag.Listener {

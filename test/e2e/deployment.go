@@ -718,7 +718,7 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 	// a minute should be more than enough to avoid them.
 	logs := contourCmd.Terminate().Wait(time.Minute).Err.Contents()
 	if strings.Contains(string(logs), "DATA RACE") {
-		return errors.New("Detected data race, see log output above to diagnose")
+		return errors.New("detected data race, see log output above to diagnose")
 	}
 	return nil
 }

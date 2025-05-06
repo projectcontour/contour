@@ -25,7 +25,7 @@ import (
 func assertOptionFlagsAreSorted(t *testing.T, cmd *kingpin.CmdClause) {
 	var flags []string
 
-	for _, v := range cmd.Model().FlagGroupModel.Flags {
+	for _, v := range cmd.Model().Flags {
 		flags = append(flags, v.Name)
 	}
 	assert.Truef(t, sort.StringsAreSorted(flags), "the flags for subcommand %q aren't sorted: %v", cmd.Model().Name, flags)

@@ -31,7 +31,7 @@ func NewService(name string) *ServiceBuilder {
 
 // Annotate adds the given values as metadata annotations.
 func (s *ServiceBuilder) Annotate(k, v string) *ServiceBuilder {
-	s.ObjectMeta.Annotations[k] = v
+	s.Annotations[k] = v
 	return s
 }
 

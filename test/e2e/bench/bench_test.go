@@ -351,7 +351,7 @@ func drawScatterPlot(durations []time.Duration) {
 
 	s, err := plotter.NewScatter(points)
 	require.NoError(f.T(), err)
-	s.GlyphStyle.Color = color.RGBA{R: 9, G: 87, B: 245, A: 1}
+	s.Color = color.RGBA{R: 9, G: 87, B: 245, A: 1}
 
 	p.Add(s)
 

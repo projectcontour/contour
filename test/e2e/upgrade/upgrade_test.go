@@ -130,7 +130,7 @@ var _ = Describe("When upgrading", func() {
 				poller.Stop()
 				totalRequests, successfulRequests := poller.Results()
 				f.T().Logf("Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
-				require.Positive(f.T(), totalRequests)
+				require.NotZero(f.T(), totalRequests)
 				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
 				require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%%", successPercentage)
 			})
@@ -292,7 +292,7 @@ var _ = Describe("When upgrading", func() {
 				poller.Stop()
 				totalRequests, successfulRequests := poller.Results()
 				f.T().Logf("Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
-				require.Positive(f.T(), totalRequests)
+				require.NotZero(f.T(), totalRequests)
 				successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
 				// Success threshold is somewhat arbitrary but less than the standalone
 				// Contour upgrade threshold because the Gateway provisioner does not

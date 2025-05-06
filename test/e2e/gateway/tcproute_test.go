@@ -69,8 +69,8 @@ func testTCPRoute(namespace string, gateway types.NamespacedName) {
 		// Envoy is expected to add the "server: envoy" and
 		// "x-envoy-upstream-service-time" HTTP headers when
 		// proxying HTTP; this ensures we are proxying TCP only.
-		assert.Equal(t, "", res.Headers.Get("server"))
-		assert.Equal(t, "", res.Headers.Get("x-envoy-upstream-service-time"))
+		assert.Empty(t, res.Headers.Get("server"))
+		assert.Empty(t, res.Headers.Get("x-envoy-upstream-service-time"))
 
 		// Delete route and wait for config to no longer be present so this
 		// test doesn't pollute others. This route effectively matches all
