@@ -93,7 +93,6 @@ Full release notes for Gateway API v1.2.0 can be found [here](https://github.com
 - The HTTP compression algorithm can now be configured using the `compression.algorithm` field in the configuration file or the `spec.envoy.listener.compression.algorithm` field in the `ContourConfiguration` CRD. The available values are `gzip` (default), `brotli`, `zstd`, and `disabled`. (#6546, @chaosbox)
 - Fixed a bug where follower Contour instance occasionally got stuck in a non-ready state when using `--watch-namespaces` flag. (#6614, @tsaarni)
 - Contour, support http and https as AppProtocol in k8s' services (#6616, @Krast76)
-- Updates kind node image for e2e tests to Kubernetes 1.31. Supported/tested Kubernetes versions are now 1.31, 1.30, and 1.29. (#6643, @sunjayBhatia)
 - Added conditions `reset-before-request`, `envoy-ratelimited` and `http3-post-connect-failure` for `httpproxy.spec.routes.retryPolicy.retryOn`, see Envoy [documentation](https://www.envoyproxy.io/docs/envoy/v1.32.0/configuration/http/http_filters/router_filter#config-http-filters-router-x-envoy-retry-on) for more details. (#6772, @tsaarni)
 - `HTTPProxy.spec.routes.requestRedirectPolicy.statusCode` now supports 303, 307 and 308 redirect status codes in addition to 301 and 302. (#6789, @billyjs)
 - Adds a new configuration option `strip-trailing-host-dot` which defines if trailing dot of the host should be removed from host/authority header before any processing of request by HTTP filters or routing. (#6792, @saley89)
