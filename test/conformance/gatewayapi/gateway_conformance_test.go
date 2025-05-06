@@ -148,6 +148,7 @@ func TestGatewayConformance(t *testing.T) {
 		for _, f := range features.UDPRouteFeatures {
 			supportedFeatures.Delete(f)
 		}
+		options.SupportedFeatures = make(sets.Set[features.FeatureName])
 		for f := range supportedFeatures {
 			options.SupportedFeatures.Insert(f.Name)
 		}
