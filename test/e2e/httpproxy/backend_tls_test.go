@@ -120,22 +120,20 @@ func testBackendTLS(namespace string) {
 			return clientSecret.UID != oldUID
 		}, time.Second*10, time.Millisecond*50)
 
-		// Send HTTP request again.
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      p.Spec.VirtualHost.Fqdn,
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.NotNil(f.T(), res, "request never succeeded")
-		require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// Get cert presented to backend app.
-		tlsInfo = new(responseTLSDetails)
-		require.NoError(f.T(), json.Unmarshal(res.Body, tlsInfo))
-		require.Len(f.T(), tlsInfo.TLS.PeerCertificates, 1)
-
-		// Get value of client cert Envoy should have presented.
-		require.NoError(f.T(), f.Client.Get(context.TODO(), clientSecretKey, clientSecret))
-
-		assert.Equal(f.T(), tlsInfo.TLS.PeerCertificates[0], string(clientSecret.Data["tls.crt"]))
+		// Send HTTP request again until we get a 200 and new cert is presented.
+		require.Eventually(f.T(), func() bool {
+			res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host:      p.Spec.VirtualHost.Fqdn,
+				Condition: e2e.HasStatusCode(200),
+			})
+			if ok {
+				// Get cert presented to backend app.
+				tlsInfo = new(responseTLSDetails)
+				require.NoError(f.T(), json.Unmarshal(res.Body, tlsInfo))
+				require.Len(f.T(), tlsInfo.TLS.PeerCertificates, 1)
+				return tlsInfo.TLS.PeerCertificates[0] == string(clientSecret.Data["tls.crt"])
+			}
+			return false
+		}, time.Second*10, time.Millisecond*50)
 	})
 }
