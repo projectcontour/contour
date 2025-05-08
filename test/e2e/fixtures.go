@@ -18,7 +18,6 @@ package e2e
 import (
 	"context"
 	"io"
-	"os"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
@@ -636,10 +635,6 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 
 func UseFeatureFlagsFromEnv() []string {
 	flags := make([]string, 0)
-	_, found := os.LookupEnv("CONTOUR_E2E_USE_ENDPOINTS")
-	if found {
-		flags = append(flags, "useEndpointSlices=false")
-	}
 	return flags
 }
 
