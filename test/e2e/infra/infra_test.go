@@ -151,21 +151,5 @@ var _ = Describe("Infra", func() {
 
 	f.Test(testAdminInterface)
 
-	Context("contour with endpoint slices", func() {
-		withEndpointSlicesEnabled := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
-			return func(namespace string) {
-				Context("with endpoint slice enabled", func() {
-					BeforeEach(func() {
-						contourConfig.FeatureFlags = []string{
-							"useEndpointSlices",
-						}
-					})
-
-					body(namespace)
-				})
-			}
-		}
-
-		f.NamespacedTest("simple-endpoint-slice", withEndpointSlicesEnabled(testSimpleEndpointSlice))
-	})
+	f.NamespacedTest("simple-endpoint-slice", testSimpleEndpointSlice)
 })
