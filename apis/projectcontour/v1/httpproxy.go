@@ -739,7 +739,10 @@ type ResponseBodyConfig struct {
 	Type string `json:"type"`
 
 	// Inline provides the content directly in the HTTPProxy resource
+	// A 4KB size limit is enforced to balance having sufficiently expressive content
+	// for custom responses while avoiding overwhelming bloat in CRDs.
 	// +optional
+	// +kubebuilder:validation:MaxLength=4096
 	Inline string `json:"inline,omitempty"`
 }
 

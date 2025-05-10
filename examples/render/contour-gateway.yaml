@@ -6833,8 +6833,11 @@ spec:
                                   body
                                 properties:
                                   inline:
-                                    description: Inline provides the content directly
-                                      in the HTTPProxy resource
+                                    description: |-
+                                      Inline provides the content directly in the HTTPProxy resource
+                                      A 4KB size limit is enforced to balance having sufficiently expressive content
+                                      for custom responses while avoiding overwhelming bloat in CRDs.
+                                    maxLength: 4096
                                     type: string
                                   type:
                                     description: Type specifies the type of body content

@@ -775,7 +775,7 @@ func ResponseMapperFromOverridePolicy(override *dag.ResponseOverride) *envoy_fil
 			Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 			Value: &envoy_config_core_v3.RuntimeUInt32{
 				DefaultValue: statusCodeMatch.Value,
-				RuntimeKey:   "", // Empty string for ResponseMapperFromOverridePolicy tests
+				RuntimeKey:   "", // Empty string for runtime key as it's not needed
 			},
 		}
 	case "Range":
@@ -784,7 +784,7 @@ func ResponseMapperFromOverridePolicy(override *dag.ResponseOverride) *envoy_fil
 			Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
 			Value: &envoy_config_core_v3.RuntimeUInt32{
 				DefaultValue: statusCodeMatch.Start,
-				RuntimeKey:   "unused",
+				RuntimeKey:   "", // Empty string for runtime key as it's not needed
 			},
 		}
 
@@ -793,7 +793,7 @@ func ResponseMapperFromOverridePolicy(override *dag.ResponseOverride) *envoy_fil
 				Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
 				Value: &envoy_config_core_v3.RuntimeUInt32{
 					DefaultValue: statusCodeMatch.End,
-					RuntimeKey:   "unused",
+					RuntimeKey:   "", // Empty string for runtime key as it's not needed
 				},
 			},
 		}
@@ -879,7 +879,7 @@ func LocalReplyConfigFromOverridePolicy(overrides []*dag.ResponseOverride) *envo
 						Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 						Value: &envoy_config_core_v3.RuntimeUInt32{
 							DefaultValue: statusMatch.Value,
-							RuntimeKey:   "unused", // Empty string to match test expectations
+							RuntimeKey:   "", // Empty string for runtime key as it's not needed
 						},
 					},
 				}
@@ -896,7 +896,7 @@ func LocalReplyConfigFromOverridePolicy(overrides []*dag.ResponseOverride) *envo
 						Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
 						Value: &envoy_config_core_v3.RuntimeUInt32{
 							DefaultValue: statusMatch.Start,
-							RuntimeKey:   "unused",
+							RuntimeKey:   "", // Empty string for runtime key as it's not needed
 						},
 					},
 				}
@@ -906,7 +906,7 @@ func LocalReplyConfigFromOverridePolicy(overrides []*dag.ResponseOverride) *envo
 						Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
 						Value: &envoy_config_core_v3.RuntimeUInt32{
 							DefaultValue: statusMatch.End,
-							RuntimeKey:   "unused",
+							RuntimeKey:   "", // Empty string for runtime key as it's not needed
 						},
 					},
 				}

@@ -3533,7 +3533,9 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Inline provides the content directly in the HTTPProxy resource</p>
+<p>Inline provides the content directly in the HTTPProxy resource
+A 4KB size limit is enforced to balance having sufficiently expressive content
+for custom responses while avoiding overwhelming bloat in CRDs.</p>
 </td>
 </tr>
 </tbody>

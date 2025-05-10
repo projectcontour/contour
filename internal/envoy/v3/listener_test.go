@@ -2039,7 +2039,7 @@ func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
 										Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 										Value: &envoy_config_core_v3.RuntimeUInt32{
 											DefaultValue: 404,
-											RuntimeKey:   "unused",
+											RuntimeKey:   "",
 										},
 									},
 								},
@@ -2089,7 +2089,7 @@ func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
 														Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
 														Value: &envoy_config_core_v3.RuntimeUInt32{
 															DefaultValue: 500,
-															RuntimeKey:   "unused",
+															RuntimeKey:   "",
 														},
 													},
 												},
@@ -2102,7 +2102,7 @@ func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
 														Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
 														Value: &envoy_config_core_v3.RuntimeUInt32{
 															DefaultValue: 599,
-															RuntimeKey:   "unused",
+															RuntimeKey:   "",
 														},
 													},
 												},
@@ -2162,7 +2162,7 @@ func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
 										Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 										Value: &envoy_config_core_v3.RuntimeUInt32{
 											DefaultValue: 404,
-											RuntimeKey:   "unused",
+											RuntimeKey:   "",
 										},
 									},
 								},
@@ -2192,7 +2192,7 @@ func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
 														Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
 														Value: &envoy_config_core_v3.RuntimeUInt32{
 															DefaultValue: 500,
-															RuntimeKey:   "unused",
+															RuntimeKey:   "",
 														},
 													},
 												},
@@ -2205,7 +2205,7 @@ func TestLocalReplyConfigFromOverridePolicy(t *testing.T) {
 														Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
 														Value: &envoy_config_core_v3.RuntimeUInt32{
 															DefaultValue: 599,
-															RuntimeKey:   "unused",
+															RuntimeKey:   "",
 														},
 													},
 												},
@@ -2335,7 +2335,7 @@ func TestResponseMapperFromOverridePolicy(t *testing.T) {
 												Op: envoy_config_accesslog_v3.ComparisonFilter_GE,
 												Value: &envoy_config_core_v3.RuntimeUInt32{
 													DefaultValue: 500,
-													RuntimeKey:   "unused",
+													RuntimeKey:   "",
 												},
 											},
 										},
@@ -2348,7 +2348,7 @@ func TestResponseMapperFromOverridePolicy(t *testing.T) {
 												Op: envoy_config_accesslog_v3.ComparisonFilter_LE,
 												Value: &envoy_config_core_v3.RuntimeUInt32{
 													DefaultValue: 599,
-													RuntimeKey:   "unused",
+													RuntimeKey:   "",
 												},
 											},
 										},

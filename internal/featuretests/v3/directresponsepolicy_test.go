@@ -202,7 +202,7 @@ func TestCustomErrorPagePolicy_HTTPProxy(t *testing.T) {
 								Op: envoy_config_accesslog_v3.ComparisonFilter_EQ,
 								Value: &envoy_config_core_v3.RuntimeUInt32{
 									DefaultValue: 503,
-									RuntimeKey:   "unused",
+									RuntimeKey:   "",
 								},
 							},
 						},

@@ -170,6 +170,8 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
+	f.NamespacedTest("httpproxy-response-override-policy", testResponseOverridePolicy)
+
 	f.NamespacedTest("httpproxy-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)
 
 	f.NamespacedTest("httpproxy-ingress-wildcard-override", testIngressWildcardSubdomainFQDN)
