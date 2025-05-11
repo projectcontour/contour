@@ -3,7 +3,7 @@ module github.com/projectcontour/contour
 go 1.24.0
 
 require (
-	dario.cat/mergo v1.0.1
+	dario.cat/mergo v1.0.2
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.1-0.20241111191808-71fefeed8910
 	github.com/alecthomas/kingpin/v2 v2.4.0
