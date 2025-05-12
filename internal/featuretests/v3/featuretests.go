@@ -62,7 +62,7 @@ import (
 )
 
 const (
-	endpointType = resource.EndpointType // nolint:varcheck,deadcode
+	endpointType = resource.EndpointType
 	clusterType  = resource.ClusterType
 	routeType    = resource.RouteType
 	listenerType = resource.ListenerType
