@@ -13,8 +13,6 @@ updates:
   labels:
   - area/dependency
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     k8s-dependencies:
       patterns:
@@ -28,8 +26,6 @@ updates:
   labels:
   - area/tooling
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     artifact-actions:
       patterns:
@@ -51,8 +47,6 @@ updates:
   labels:
   - area/dependency
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     k8s-dependencies:
       patterns:
@@ -71,8 +65,6 @@ updates:
   labels:
   - area/tooling
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     artifact-actions:
       patterns:
@@ -94,8 +86,6 @@ updates:
   labels:
   - area/dependency
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     k8s-dependencies:
       patterns:
@@ -114,8 +104,6 @@ updates:
   labels:
   - area/tooling
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     artifact-actions:
       patterns:
@@ -137,8 +125,6 @@ updates:
   labels:
   - area/dependency
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     k8s-dependencies:
       patterns:
@@ -157,8 +143,6 @@ updates:
   labels:
   - area/tooling
   - release-note/none-required
-  reviewers:
-  - projectcontour/maintainers
   groups:
     artifact-actions:
       patterns:
