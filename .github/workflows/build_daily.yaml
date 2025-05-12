@@ -13,7 +13,7 @@ permissions:
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GO_VERSION: 1.22.12
+  GO_VERSION: 1.23.9
 
 jobs:
   e2e-contour-xds:
