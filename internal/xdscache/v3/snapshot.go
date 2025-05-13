@@ -35,7 +35,7 @@ import (
 type SnapshotHandler struct {
 	resources    map[envoy_resource_v3.Type]xdscache.ResourceCache
 	defaultCache envoy_cache_v3.SnapshotCache
-	edsCache     envoy_cache_v3.SnapshotCache
+	edsCache     *envoy_cache_v3.LinearCache
 	mux          *envoy_cache_v3.MuxCache
 	log          logrus.FieldLogger
 }
@@ -44,7 +44,12 @@ type SnapshotHandler struct {
 func NewSnapshotHandler(resources []xdscache.ResourceCache, log logrus.FieldLogger) *SnapshotHandler {
 	var (
 		defaultCache = envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, log.WithField("context", "defaultCache"))
-		edsCache     = envoy_cache_v3.NewSnapshotCache(false, &contour_xds_v3.Hash, log.WithField("context", "edsCache"))
+		// Envoy will open EDS stream per CDS entry.
+		// LinearCache mitigates the issue where all EDS streams are notified of any endpoint changes, even if unrelated to the requested resources.
+		// With LinearCache, updates are sent only for resources explicitly requested by Envoy.
+		edsCache = envoy_cache_v3.NewLinearCache(envoy_resource_v3.EndpointType,
+			envoy_cache_v3.WithVersionPrefix(uuid.NewString()+"-"),
+			envoy_cache_v3.WithLogger(log.WithField("context", "edsCache")))
 
 		mux = &envoy_cache_v3.MuxCache{
 			Caches: map[string]envoy_cache_v3.Cache{},
@@ -89,21 +94,40 @@ func (s *SnapshotHandler) GetCache() envoy_cache_v3.Cache {
 // Refresh is called when the EndpointSliceTranslator updates values
 // in its cache. It updates the EDS cache.
 func (s *SnapshotHandler) Refresh() {
-	version := uuid.NewString()
+	previouslyNotifiedResources := s.edsCache.GetResources()
+	currentResources := envoy_cache_v3.IndexRawResourcesByName(asResources(s.resources[envoy_resource_v3.EndpointType].Contents()))
 
-	resources := map[envoy_resource_v3.Type][]envoy_types.Resource{
-		envoy_resource_v3.EndpointType: asResources(s.resources[envoy_resource_v3.EndpointType].Contents()),
+	toUpdate := make(map[string]envoy_types.Resource, len(currentResources))
+	toDelete := make([]string, 0, len(previouslyNotifiedResources))
+
+	for resourceName, previousResource := range previouslyNotifiedResources {
+		if newResource, ok := currentResources[resourceName]; ok {
+			// Add resources that were updated.
+			if !proto.Equal(newResource, previousResource) {
+				toUpdate[resourceName] = newResource
+			}
+		} else {
+			// Add resources that were deleted.
+			toDelete = append(toDelete, resourceName)
+		}
 	}
 
-	snapshot, err := envoy_cache_v3.NewSnapshot(version, resources)
-	if err != nil {
-		s.log.Errorf("failed to generate snapshot version %q: %s", version, err)
+	// Add resources that are new.
+	for resourceName, newResource := range currentResources {
+		if _, ok := previouslyNotifiedResources[resourceName]; !ok {
+			toUpdate[resourceName] = newResource
+		}
+	}
+
+	if len(toUpdate) == 0 && len(toDelete) == 0 {
+		s.log.Debug("no EDS resources to update")
 		return
 	}
 
-	if err := s.edsCache.SetSnapshot(context.Background(), contour_xds_v3.Hash.String(), snapshot); err != nil {
-		s.log.Errorf("failed to store snapshot version %q: %s", version, err)
-		return
+	s.log.WithField("toUpdate", len(toUpdate)).WithField("toDelete", len(toDelete)).Debug("refreshing EDS cache")
+
+	if err := s.edsCache.UpdateResources(toUpdate, toDelete); err != nil {
+		s.log.WithError(err).Error("failed to update EDS cache")
 	}
 }
 
