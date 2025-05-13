@@ -211,6 +211,7 @@ func watchstream(log *logrus.Logger, st stream, typeURL string, resources []stri
 			// instead of an ACK.
 			nackReq := &envoy_service_discovery_v3.DiscoveryRequest{
 				TypeUrl:       typeURL,
+				ResourceNames: resources,
 				ResponseNonce: resp.Nonce,
 				VersionInfo:   resp.VersionInfo,
 				ErrorDetail: &status.Status{
@@ -239,6 +240,7 @@ func watchstream(log *logrus.Logger, st stream, typeURL string, resources []stri
 			// just got, or else the watch won't happen properly.
 			ackReq := &envoy_service_discovery_v3.DiscoveryRequest{
 				TypeUrl:       typeURL,
+				ResourceNames: resources,
 				ResponseNonce: resp.Nonce,
 				VersionInfo:   resp.VersionInfo,
 				Node: &envoy_config_core_v3.Node{
@@ -349,8 +351,9 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 			// The ErrorDetail field being populated is what makes this a NACK
 			// instead of an ACK.
 			nackReq := &envoy_service_discovery_v3.DeltaDiscoveryRequest{
-				TypeUrl:       typeURL,
-				ResponseNonce: resp.Nonce,
+				TypeUrl:                typeURL,
+				ResourceNamesSubscribe: resources,
+				ResponseNonce:          resp.Nonce,
 				ErrorDetail: &status.Status{
 					Code:    int32(grpc_code.Code_INTERNAL),
 					Message: "Told to create a NACK for testing",
@@ -374,8 +377,9 @@ func watchDeltaStream(log *logrus.Logger, st deltaStream, typeURL string, resour
 			// We'll ACK our request.
 			// The ResponseNonce field is what makes it an ACK.
 			ackReq := &envoy_service_discovery_v3.DeltaDiscoveryRequest{
-				TypeUrl:       typeURL,
-				ResponseNonce: resp.Nonce,
+				TypeUrl:                typeURL,
+				ResourceNamesSubscribe: resources,
+				ResponseNonce:          resp.Nonce,
 				Node: &envoy_config_core_v3.Node{
 					Id: nodeID,
 				},
