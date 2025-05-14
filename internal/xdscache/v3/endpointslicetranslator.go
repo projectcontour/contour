@@ -339,7 +339,9 @@ func (e *EndpointSliceTranslator) OnChange(root *dag.DAG) {
 	// be removed. Since we reset the cluster cache above, all
 	// the load assignments will be recalculated and we can just
 	// set the entries rather than merging them.
+	e.mu.Lock()
 	e.entries = e.cache.Recalculate()
+	e.mu.Unlock()
 
 	if e.Observer != nil {
 		e.Observer.Refresh()
