@@ -2,8 +2,6 @@ module github.com/projectcontour/contour
 
 go 1.23.0
 
-toolchain go1.24.2
-
 require (
 	dario.cat/mergo v1.0.2
 	github.com/Masterminds/semver/v3 v3.2.1
