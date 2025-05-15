@@ -1528,3 +1528,191 @@ func TestDetermineUpstreamTLS(t *testing.T) {
 		})
 	}
 }
+
+func TestResponseOverridePolicy(t *testing.T) {
+	tests := map[string]struct {
+		policies []contour_v1.HTTPResponseOverridePolicy
+		want     []*ResponseOverride
+		wantNil  bool
+	}{
+		"nil policies": {
+			policies: nil,
+			wantNil:  true,
+		},
+		"empty policies": {
+			policies: []contour_v1.HTTPResponseOverridePolicy{},
+			wantNil:  true,
+		},
+		"basic policy with value match": {
+			policies: []contour_v1.HTTPResponseOverridePolicy{
+				{
+					Match: contour_v1.ResponseOverrideMatch{
+						StatusCodes: []contour_v1.StatusCodeMatch{
+							{
+								Type:  "Value",
+								Value: 404,
+							},
+						},
+					},
+					Response: contour_v1.ResponseOverrideResponse{
+						ContentType: "text/html",
+						Body: contour_v1.ResponseBodyConfig{
+							Type:   "Inline",
+							Inline: "<html><body>Custom Not Found Page</body></html>",
+						},
+					},
+				},
+			},
+			want: []*ResponseOverride{
+				{
+					StatusCodeMatches: []StatusCodeMatch{
+						{
+							Type:  "Value",
+							Value: 404,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Custom Not Found Page</body></html>",
+				},
+			},
+			wantNil: false,
+		},
+		"policy with range match": {
+			policies: []contour_v1.HTTPResponseOverridePolicy{
+				{
+					Match: contour_v1.ResponseOverrideMatch{
+						StatusCodes: []contour_v1.StatusCodeMatch{
+							{
+								Type: "Range",
+								Range: &contour_v1.StatusCodeRange{
+									Start: 500,
+									End:   599,
+								},
+							},
+						},
+					},
+					Response: contour_v1.ResponseOverrideResponse{
+						ContentType: "text/html",
+						Body: contour_v1.ResponseBodyConfig{
+							Type:   "Inline",
+							Inline: "<html><body>Server Error</body></html>",
+						},
+					},
+				},
+			},
+			want: []*ResponseOverride{
+				{
+					StatusCodeMatches: []StatusCodeMatch{
+						{
+							Type:  "Range",
+							Start: 500,
+							End:   599,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Server Error</body></html>",
+				},
+			},
+			wantNil: false,
+		},
+		"multiple policies": {
+			policies: []contour_v1.HTTPResponseOverridePolicy{
+				{
+					Match: contour_v1.ResponseOverrideMatch{
+						StatusCodes: []contour_v1.StatusCodeMatch{
+							{
+								Type:  "Value",
+								Value: 404,
+							},
+						},
+					},
+					Response: contour_v1.ResponseOverrideResponse{
+						ContentType: "text/html",
+						Body: contour_v1.ResponseBodyConfig{
+							Type:   "Inline",
+							Inline: "<html><body>Custom Not Found Page</body></html>",
+						},
+					},
+				},
+				{
+					Match: contour_v1.ResponseOverrideMatch{
+						StatusCodes: []contour_v1.StatusCodeMatch{
+							{
+								Type: "Range",
+								Range: &contour_v1.StatusCodeRange{
+									Start: 500,
+									End:   599,
+								},
+							},
+						},
+					},
+					Response: contour_v1.ResponseOverrideResponse{
+						ContentType: "text/html",
+						Body: contour_v1.ResponseBodyConfig{
+							Type:   "Inline",
+							Inline: "<html><body>Server Error</body></html>",
+						},
+					},
+				},
+			},
+			want: []*ResponseOverride{
+				{
+					StatusCodeMatches: []StatusCodeMatch{
+						{
+							Type:  "Value",
+							Value: 404,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Custom Not Found Page</body></html>",
+				},
+				{
+					StatusCodeMatches: []StatusCodeMatch{
+						{
+							Type:  "Range",
+							Start: 500,
+							End:   599,
+						},
+					},
+					ContentType: "text/html",
+					Body:        "<html><body>Server Error</body></html>",
+				},
+			},
+			wantNil: false,
+		},
+		"policy with no match conditions": {
+			policies: []contour_v1.HTTPResponseOverridePolicy{
+				{
+					Match: contour_v1.ResponseOverrideMatch{
+						StatusCodes: []contour_v1.StatusCodeMatch{},
+					},
+					Response: contour_v1.ResponseOverrideResponse{
+						ContentType: "text/html",
+						Body: contour_v1.ResponseBodyConfig{
+							Type:   "Inline",
+							Inline: "<html><body>Custom Error Page</body></html>",
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantNil: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := responseOverridePolicy(tc.policies)
+			switch {
+			case tc.wantNil && got != nil:
+				t.Fatalf("wanted nil, got: %v", got)
+			case !tc.wantNil && got == nil:
+				t.Fatalf("wanted non-nil, got nil")
+			case tc.wantNil:
+				// We're expecting nil and we got it. Nothing more to do.
+			default:
+				assert.Equal(t, tc.want, got)
+			}
+		})
+	}
+}

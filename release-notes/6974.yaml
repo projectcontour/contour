@@ -1,0 +1,5 @@
+- type: enhancement
+  component: HTTPProxy
+  description: Added support for custom response pages. This feature allows users to configure a custom response page that is displayed when upstream services are unhealthy.
+  issues:
+    - 320 
