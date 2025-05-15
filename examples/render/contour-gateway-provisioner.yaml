@@ -25540,7 +25540,7 @@ spec:
         - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
         command: ["contour"]
-        image: ghcr.io/projectcontour/contour:v1.30.3
+        image: ghcr.io/projectcontour/contour:v1.30.4
         imagePullPolicy: IfNotPresent
         name: contour-gateway-provisioner
         resources:
