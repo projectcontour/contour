@@ -403,6 +403,11 @@ type RouteTimeoutPolicy struct {
 	// IdleStreamTimeout is the timeout applied to idle connection during single request-response.
 	// Stream is HTTP/2 and HTTP/3 concept, for HTTP/1 it refers to single request-response within connection.
 	IdleStreamTimeout timeout.Setting
+
+	// MaxStreamDuration is the maximum duration allowed for streams on the Route.
+	// If not set, the globally defined maximum stream duration will be used.
+	// If set to 0, the maximum will be disabled for this route.
+	MaxStreamDuration timeout.Setting
 }
 
 // ClusterTimeoutPolicy defines the timeout policy for a cluster.

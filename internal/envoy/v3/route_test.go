@@ -386,6 +386,42 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"max stream duration 5m": {
+			route: &dag.Route{
+				TimeoutPolicy: dag.RouteTimeoutPolicy{
+					MaxStreamDuration: timeout.DurationSetting(5 * time.Minute),
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_config_route_v3.Route_Route{
+				Route: &envoy_config_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					MaxStreamDuration: &envoy_config_route_v3.RouteAction_MaxStreamDuration{
+						MaxStreamDuration: durationpb.New(300 * time.Second),
+					},
+				},
+			},
+		},
+		"max stream duration infinity": {
+			route: &dag.Route{
+				TimeoutPolicy: dag.RouteTimeoutPolicy{
+					MaxStreamDuration: timeout.DisabledSetting(),
+				},
+				Clusters: []*dag.Cluster{c1},
+			},
+			want: &envoy_config_route_v3.Route_Route{
+				Route: &envoy_config_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					MaxStreamDuration: &envoy_config_route_v3.RouteAction_MaxStreamDuration{
+						MaxStreamDuration: durationpb.New(0),
+					},
+				},
+			},
+		},
 		"single service w/ a cookie hash policy (session affinity)": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2},
