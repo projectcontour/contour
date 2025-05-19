@@ -351,6 +351,7 @@ The following list are the options available to choose from:
 - `Random`: The random strategy selects a random healthy Endpoints.
 - `RequestHash`: The request hashing strategy allows for load balancing based on request attributes. An upstream Endpoint is selected based on the hash of an element of a request. For example, requests that contain a consistent value in an HTTP request header will be routed to the same upstream Endpoint. Currently, only hashing of HTTP request headers, query parameters and the source IP of a request is supported.
 - `Cookie`: The cookie load balancing strategy is similar to the request hash strategy and is a convenience feature to implement session affinity, as described below.
+- `ClientSideWeightedRoundRobin`: The weighted round-robin strategy, based on the ORCA metrics reported in responses.
 
 More information on the load balancing strategy can be found in [Envoy's documentation][7].
 
@@ -460,6 +461,29 @@ spec:
           parameterName: param2
 ```
 
+ClientSideWeightedRoundRobin
+```yaml
+# httpproxy-client-side-wrr.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: client-side-wrr
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: client-side-wrr.com
+  routes:
+    - conditions:
+        - prefix: /
+      services:
+        - name: client-side-wrr-service
+          port: 8080
+          protocol: h2c
+      loadBalancerPolicy:
+        strategy: ClientSideWeightedRoundRobin
+        clientSideWeightedRoundRobinPolicy:
+          blackoutPeriod: '1m'
+```
 ## Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consistently routed to the same application backend.
