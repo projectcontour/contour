@@ -44,7 +44,7 @@ require (
 	k8s.io/client-go v0.33.1
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.4
+	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/controller-tools v0.18.0
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/kustomize/kyaml v0.19.0
