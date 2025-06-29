@@ -1302,7 +1302,7 @@ type LoadBalancerPolicy struct {
 }
 
 // HeadersPolicy defines how headers are managed during forwarding.
-// The `Host` header is treated specially and if set in a HTTP request
+// The `Host` header is treated specially and if set in an HTTP request
 // will be used as the SNI server name when forwarding over TLS. It is an
 // error to attempt to set the `Host` header in a HTTP response.
 type HeadersPolicy struct {

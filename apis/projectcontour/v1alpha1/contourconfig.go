@@ -524,6 +524,9 @@ type EnvoyListener struct {
 	// AccessLog defines where Envoy logs are outputted for this listener.
 	// +optional
 	AccessLog string `json:"accessLog,omitempty"`
+
+	// Defines whether to stream
+	StreamErrorForInvalidHttp bool `json:"streamErrorForInvalidHttp,omitempty"`
 }
 
 // EnvoyLogging defines how Envoy's logs can be configured.
