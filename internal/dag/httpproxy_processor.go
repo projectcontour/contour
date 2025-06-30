@@ -32,6 +32,7 @@ import (
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -101,7 +102,7 @@ type HTTPProxyProcessor struct {
 	// MaxRequestsPerConnection defines the maximum number of requests per connection to the upstream before it is closed.
 	MaxRequestsPerConnection *uint32
 
-	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener’s new connection read and write buffers.
+	// PerConnectionBufferLimitBytes defines the soft limit on size of the listener's new connection read and write buffers.
 	PerConnectionBufferLimitBytes *uint32
 
 	// GlobalRateLimitService defines Envoy's Global RateLimit Service configuration.
@@ -823,6 +824,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
+		respOverridePolicy := responseOverridePolicy(route.ResponseOverridePolicy)
+
 		r := &Route{
 			PathMatchCondition:        mergePathMatchConditions(routeConditions),
 			HeaderMatchConditions:     mergeHeaderMatchConditions(routeConditions),
@@ -840,6 +843,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Redirect:                  redirectPolicy,
 			DirectResponse:            directPolicy,
 			InternalRedirectPolicy:    irp,
+			ResponseOverridePolicy:    respOverridePolicy,
 		}
 
 		if p.SetSourceMetadataOnRoutes {
@@ -1941,7 +1945,9 @@ func redirectRoutePolicy(redirect *contour_v1.HTTPRequestRedirectPolicy) (*Redir
 
 	var portNumber uint32
 	if redirect.Port != nil {
-		portNumber = uint32(*redirect.Port) //nolint:gosec // disable G115
+		// Port is guaranteed to be between 1-65535 by validation in the CRD,
+		// but we still use SafeIntToUint32 for proper bounds checking
+		portNumber = protobuf.SafeIntToUint32(int(*redirect.Port))
 	}
 
 	var scheme string
@@ -1986,9 +1992,59 @@ func directResponsePolicy(direct *contour_v1.HTTPDirectResponsePolicy) *DirectRe
 		return nil
 	}
 
-	return directResponse(uint32(direct.StatusCode), direct.Body) //nolint:gosec // disable G115
+	// StatusCode is guaranteed to be between 200-599 by validation in the CRD,
+	// but we still use SafeIntToUint32 for proper bounds checking
+	return directResponse(protobuf.SafeIntToUint32(direct.StatusCode), direct.Body)
 }
 
+// responseOverridePolicy converts HTTPResponseOverridePolicy to the internal representation.
+func responseOverridePolicy(policies []contour_v1.HTTPResponseOverridePolicy) []*ResponseOverride {
+	if len(policies) == 0 {
+		return nil
+	}
+
+	var overrides []*ResponseOverride
+	for _, policy := range policies {
+		override := &ResponseOverride{
+			ContentType: policy.Response.ContentType,
+		}
+
+		// Set the body from inline content
+		if policy.Response.Body.Type == "Inline" {
+			override.Body = policy.Response.Body.Inline
+		}
+
+		// Process status code matches
+		for _, statusCode := range policy.Match.StatusCodes {
+			statusMatch := StatusCodeMatch{
+				Type: string(statusCode.Type),
+			}
+
+			// Set the match values based on type
+			if statusCode.Type == "Value" {
+				// StatusCodeValue is guaranteed to be between 100-599 by the validation
+				// in the CRD, but we still use SafeIntToUint32 for proper bounds checking
+				statusMatch.Value = protobuf.SafeIntToUint32(statusCode.Value)
+			} else if statusCode.Type == "Range" && statusCode.Range != nil {
+				// The StatusCodeRange values are guaranteed to be between 100-599 by the validation
+				// in the CRD, but we still use SafeIntToUint32 for proper bounds checking
+				statusMatch.Start = protobuf.SafeIntToUint32(statusCode.Range.Start)
+				statusMatch.End = protobuf.SafeIntToUint32(statusCode.Range.End)
+			}
+
+			override.StatusCodeMatches = append(override.StatusCodeMatches, statusMatch)
+		}
+
+		// Only add the override if it has at least one status code match
+		if len(override.StatusCodeMatches) > 0 {
+			overrides = append(overrides, override)
+		}
+	}
+
+	return overrides
+}
+
+// internalRedirectPolicy builds a *dag.InternalRedirectPolicy for the supplied policy.
 func internalRedirectPolicy(internal *contour_v1.HTTPInternalRedirectPolicy) *InternalRedirectPolicy {
 	if internal == nil {
 		return nil
@@ -1996,7 +2052,9 @@ func internalRedirectPolicy(internal *contour_v1.HTTPInternalRedirectPolicy) *In
 
 	redirectResponseCodes := make([]uint32, len(internal.RedirectResponseCodes))
 	for i, responseCode := range internal.RedirectResponseCodes {
-		redirectResponseCodes[i] = uint32(responseCode)
+		// The RedirectResponseCode values are guaranteed to be valid by the validation
+		// in the CRD (301, 302, 303, 307, 308) but we still use SafeIntToUint32 for proper bounds checking
+		redirectResponseCodes[i] = protobuf.SafeIntToUint32(int(responseCode))
 	}
 
 	policy := &InternalRedirectPolicy{
