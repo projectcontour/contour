@@ -40,8 +40,8 @@ github.com/bombsimon/logrusr/v4 v4.1.0/go.mod h1:pjfHC5e59CvjTBIU3V3sGhFWFAnsnhO
 github.com/campoy/embedmd v1.0.0 h1:V4kI2qTJJLf4J29RzI/MAt2c3Bl4dQSYPuflzwFH2hY=
 github.com/campoy/embedmd v1.0.0/go.mod h1:oxyr9RCiSXg0M3VJ3ks0UGfp98BpSSGr0kpiX3MzVl8=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
-github.com/cert-manager/cert-manager v1.17.3 h1:3zAjN21is2vOK0wNnpN+u7pFvkzD6tVzzEPFthw95c8=
-github.com/cert-manager/cert-manager v1.17.3/go.mod h1:zXVCSnEOu6vNDQOPpXrLO8a0iDnKd8uksgXe5s73p+w=
+github.com/cert-manager/cert-manager v1.17.4 h1:pQrEur25zR23Mum1Au4jRH2p8eH3wY2v4/QahjPDzKo=
+github.com/cert-manager/cert-manager v1.17.4/go.mod h1:zXVCSnEOu6vNDQOPpXrLO8a0iDnKd8uksgXe5s73p+w=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/chigopher/pathlib v0.19.1 h1:RoLlUJc0CqBGwq239cilyhxPNLXTK+HXoASGyGznx5A=
