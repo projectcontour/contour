@@ -344,11 +344,8 @@ func recordContributor(contributors []string, contributor string) []string {
 }
 
 var maintainers = map[string]bool{
-	"@skriss":       true,
-	"@stevesloka":   true,
 	"@sunjayBhatia": true,
 	"@tsaarni":      true,
-	"@youngnick":    true,
 }
 
 type Entry struct {
