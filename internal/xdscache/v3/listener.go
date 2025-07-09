@@ -156,6 +156,13 @@ type ListenerConfig struct {
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
 	SocketOptions *contour_v1alpha1.SocketOptions
+
+	// StreamErrorOnInvalidHTTP
+	// If this option is false (default), Envoy will err on the conservative side handling HTTP errors, terminating both
+	// HTTP/1.1 and HTTP/2 connections when receiving an invalid request. If this option is set to true,
+	// Envoy will be more permissive, only resetting the invalid stream in the case of HTTP/2 and leaving the
+	// connection open where possible (if the entire request is read for HTTP/1.1)
+	StreamErrorOnInvalidHTTP bool
 }
 
 type ExtensionServiceConfig struct {

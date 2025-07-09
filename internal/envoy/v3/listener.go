@@ -16,7 +16,6 @@ package v3
 import (
 	"errors"
 	"fmt"
-	v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"sort"
 	"strings"
 	"time"
@@ -195,7 +194,7 @@ type httpConnectionManagerBuilder struct {
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
 	compression                   *contour_v1alpha1.EnvoyCompression
-	streamErrorForInvalidHttp     bool
+	streamErrorOnInvalidHttp      bool
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -326,6 +325,11 @@ func (b *httpConnectionManagerBuilder) MaxRequestsPerConnection(maxRequestsPerCo
 
 func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurrentStreams *uint32) *httpConnectionManagerBuilder {
 	b.http2MaxConcurrentStreams = http2MaxConcurrentStreams
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) StreamErrorOnInvalidHTTP(streamErrorOnInvalidHttp bool) *httpConnectionManagerBuilder {
+	b.streamErrorOnInvalidHttp = streamErrorOnInvalidHttp
 	return b
 }
 
@@ -543,9 +547,11 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		Tracing:     b.tracingConfig,
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_config_core_v3.HttpProtocolOptions{
-			IdleTimeout:          envoy.Timeout(b.connectionIdleTimeout),
-			DownstreamValidation: wrapperspb.Bool(b.streamErrorForInvalidHttp),
+			IdleTimeout: envoy.Timeout(b.connectionIdleTimeout),
 		},
+
+		StreamErrorOnInvalidHttpMessage: wrapperspb.Bool(b.streamErrorOnInvalidHttp),
+
 		HttpProtocolOptions: &envoy_config_core_v3.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
 			// a Host: header. See #537.

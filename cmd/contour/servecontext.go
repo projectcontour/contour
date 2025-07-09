@@ -557,6 +557,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				MaxRequestsPerIOCycle:         ctx.Config.Listener.MaxRequestsPerIOCycle,
 				HTTP2MaxConcurrentStreams:     ctx.Config.Listener.HTTP2MaxConcurrentStreams,
 				MaxConnectionsPerListener:     ctx.Config.Listener.MaxConnectionsPerListener,
+				StreamErrorOnInvalidHTTP:      ctx.Config.Listener.StreamErrorOnInvalidHTTP,
 				TLS: &contour_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
