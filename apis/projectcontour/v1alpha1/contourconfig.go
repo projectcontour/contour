@@ -438,7 +438,7 @@ type EnvoyListenerConfig struct {
 	// connection open where possible (if the entire request is read for HTTP/1.1)
 	//
 	// +optional
-	StreamErrorOnInvalidHTTP bool `json:"streamErrorOnInvalidHTTP,omitempty"`
+	StreamErrorOnInvalidHTTP *bool `json:"streamErrorOnInvalidHTTP,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

@@ -402,6 +402,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				StripTrailingHostDot(cfg.StripTrailingHostDot).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 				HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
+				StreamErrorOnInvalidHTTP(cfg.StreamErrorOnInvalidHTTP).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
 				Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
@@ -482,6 +483,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
+					StreamErrorOnInvalidHTTP(cfg.StreamErrorOnInvalidHTTP).
 					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 
@@ -565,6 +567,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ForwardClientCertificate(forwardClientCertificate).
 					MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 					HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
+					StreamErrorOnInvalidHTTP(cfg.StreamErrorOnInvalidHTTP).
 					EnableWebsockets(listener.EnableWebsockets).
 					Get()
 

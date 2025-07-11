@@ -1112,7 +1112,8 @@ func Defaults() Parameters {
 			EnvoyAdminPort:            9001,
 		},
 		Listener: ListenerParameters{
-			ConnectionBalancer: "",
+			ConnectionBalancer:       "",
+			StreamErrorOnInvalidHTTP: false,
 		},
 	}
 }
