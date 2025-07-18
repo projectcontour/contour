@@ -102,6 +102,10 @@ func TestGatewayConformance(t *testing.T) {
 		ExemptFeatures: sets.New(
 			features.SupportMesh,
 			features.SupportUDPRoute,
+
+			// TODO: implement percentage based mirroring
+			// See: https://github.com/projectcontour/contour/issues/7021
+			features.SupportHTTPRouteRequestPercentageMirror,
 		),
 	}
 	if os.Getenv("GENERATE_GATEWAY_CONFORMANCE_REPORT") == "true" {
