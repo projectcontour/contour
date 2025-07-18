@@ -466,6 +466,7 @@ func (s *Server) doServe() error {
 		HTTP2MaxConcurrentStreams:     contourConfiguration.Envoy.Listener.HTTP2MaxConcurrentStreams,
 		PerConnectionBufferLimitBytes: contourConfiguration.Envoy.Listener.PerConnectionBufferLimitBytes,
 		SocketOptions:                 contourConfiguration.Envoy.Listener.SocketOptions,
+		StreamErrorOnInvalidHTTP:      contourConfiguration.Envoy.Listener.StreamErrorOnInvalidHTTP,
 	}
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
