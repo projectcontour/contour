@@ -20,6 +20,8 @@ import (
 
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	client_side_weighted_round_robin_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3"
+	round_robin_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/load_balancing_policies/round_robin/v3"
 	envoy_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -49,7 +51,12 @@ func (e *EnvoyGen) Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 
 	cluster.Name = envoy.Clustername(c)
 	cluster.AltStatName = envoy.AltStatName(service)
-	cluster.LbPolicy = lbPolicy(c.LoadBalancerPolicy)
+
+	var isLoadBalancingPolicy bool
+	cluster.LoadBalancingPolicy, isLoadBalancingPolicy = loadBalancingPolicy(c.LoadBalancerPolicy, c.LoadBalancerPolicyConfig)
+	if !isLoadBalancingPolicy {
+		cluster.LbPolicy = lbPolicy(c.LoadBalancerPolicy)
+	}
 	cluster.HealthChecks = edshealthcheck(c)
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
 
@@ -151,7 +158,11 @@ func (e *EnvoyGen) ExtensionCluster(ext *dag.ExtensionCluster) *envoy_config_clu
 	// to produce a stable, readable name.
 	cluster.AltStatName = strings.ReplaceAll(cluster.Name, "/", "_")
 
-	cluster.LbPolicy = lbPolicy(ext.LoadBalancerPolicy)
+	var isLoadBalancingPolicy bool
+	cluster.LoadBalancingPolicy, isLoadBalancingPolicy = loadBalancingPolicy(ext.LoadBalancerPolicy, ext.LoadBalancerPolicyConfig)
+	if !isLoadBalancingPolicy {
+		cluster.LbPolicy = lbPolicy(ext.LoadBalancerPolicy)
+	}
 
 	// Cluster will be discovered via EDS.
 	cluster.ClusterDiscoveryType = ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS)
@@ -252,6 +263,65 @@ func lbPolicy(strategy string) envoy_config_cluster_v3.Cluster_LbPolicy {
 	default:
 		return envoy_config_cluster_v3.Cluster_ROUND_ROBIN
 	}
+}
+
+func loadBalancingPolicy(strategy string, config *dag.LoadBalancerPolicyConfig) (*envoy_config_cluster_v3.LoadBalancingPolicy, bool) {
+	var mainPolicy *envoy_config_cluster_v3.LoadBalancingPolicy_Policy
+	switch strategy {
+	case dag.LoadBalancerPolicyClientSideWeightedRoundRobin:
+		var lbConfig *dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin
+		if config != nil {
+			lbConfig = config.ClientSideWeightedRoundRobin
+		}
+		mainPolicy = &envoy_config_cluster_v3.LoadBalancingPolicy_Policy{
+			TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+				Name:        "envoy.load_balancing_policies.client_side_weighted_round_robin",
+				TypedConfig: protobuf.MustMarshalAny(loadBalancerPolicyConfigClientSideWeightedRoundRobinToPB(lbConfig)),
+			},
+		}
+	default:
+		return nil, false
+	}
+
+	fallbackPolicy := &envoy_config_cluster_v3.LoadBalancingPolicy_Policy{
+		TypedExtensionConfig: &envoy_config_core_v3.TypedExtensionConfig{
+			Name:        "envoy.load_balancing_policies.round_robin",
+			TypedConfig: protobuf.MustMarshalAny(&round_robin_v3.RoundRobin{}),
+		},
+	}
+
+	return &envoy_config_cluster_v3.LoadBalancingPolicy{
+		Policies: []*envoy_config_cluster_v3.LoadBalancingPolicy_Policy{mainPolicy, fallbackPolicy},
+	}, true
+}
+
+func loadBalancerPolicyConfigClientSideWeightedRoundRobinToPB(config *dag.LoadBalancerPolicyConfigClientSideWeightedRoundRobin) *client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin {
+	pb := &client_side_weighted_round_robin_v3.ClientSideWeightedRoundRobin{}
+	if config == nil {
+		return pb
+	}
+	if config.EnableOOBLoadReport != nil {
+		pb.EnableOobLoadReport = wrapperspb.Bool(*config.EnableOOBLoadReport)
+	}
+	if config.OOBReportingPeriod != nil {
+		pb.OobReportingPeriod = durationpb.New(*config.OOBReportingPeriod)
+	}
+	if config.BlackoutPeriod != nil {
+		pb.BlackoutPeriod = durationpb.New(*config.BlackoutPeriod)
+	}
+	if config.WeightExpirationPeriod != nil {
+		pb.WeightExpirationPeriod = durationpb.New(*config.WeightExpirationPeriod)
+	}
+	if config.WeightUpdatePeriod != nil {
+		pb.WeightUpdatePeriod = durationpb.New(*config.WeightUpdatePeriod)
+	}
+	if config.ErrorUtilizationPenalty != nil {
+		pb.ErrorUtilizationPenalty = wrapperspb.Float(*config.ErrorUtilizationPenalty)
+	}
+	if len(config.MetricNamesForComputingUtilization) > 0 {
+		pb.MetricNamesForComputingUtilization = config.MetricNamesForComputingUtilization
+	}
+	return pb
 }
 
 func edshealthcheck(c *dag.Cluster) []*envoy_config_core_v3.HealthCheck {
