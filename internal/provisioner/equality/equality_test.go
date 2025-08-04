@@ -30,10 +30,11 @@ import (
 )
 
 var (
-	testName  = "test"
-	testNs    = testName + "-ns"
-	testImage = "test-image:main"
-	cntr      = &model.Contour{
+	testName            = "test"
+	testNs              = testName + "-ns"
+	testImage           = "test-image:main"
+	testImagePullSecret = ""
+	cntr                = &model.Contour{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNs,
@@ -122,7 +123,7 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			original := dataplane.DesiredDaemonSet(cntr, testImage, testImage)
+			original := dataplane.DesiredDaemonSet(cntr, testImage, testImage, testImagePullSecret)
 
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)
@@ -218,7 +219,7 @@ func TestDeploymentConfigChanged(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		original := deployment.DesiredDeployment(cntr, testImage)
+		original := deployment.DesiredDeployment(cntr, testImage, testImagePullSecret)
 		mutated := original.DeepCopy()
 		tc.mutate(mutated)
 		if updated, changed := equality.DeploymentConfigChanged(original, mutated); changed != tc.expect {
