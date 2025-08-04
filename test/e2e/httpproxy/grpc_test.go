@@ -253,3 +253,68 @@ func parseGRPCWebResponse(body []byte) grpcWebResponse {
 
 	return response
 }
+
+func testGRPCClientSideWRR(namespace string) {
+	Specify("requests to a gRPC service with envoy client side WRR work without weights", func() {
+		t := f.T()
+
+		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "grpc-cswrr",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
+					Fqdn: "grpc-cswrr.projectcontour.io",
+				},
+				Routes: []contour_v1.Route{
+					{
+						Services: []contour_v1.Service{
+							{
+								Name:     "grpc-echo",
+								Port:     9000,
+								Protocol: ptr.To("h2c"),
+							},
+						},
+						LoadBalancerPolicy: &contour_v1.LoadBalancerPolicy{
+							Strategy:                           "ClientSideWeightedRoundRobin",
+							ClientSideWeightedRoundRobinPolicy: &contour_v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy{},
+						},
+					},
+				},
+			},
+		}
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
+
+		addr := strings.TrimPrefix(f.HTTP.HTTPURLBase, "http://")
+		retryOpts := []grpc_retry.CallOption{
+			// Retry if Envoy returns unavailable, the upstream
+			// may not be healthy yet.
+			// Also retry if we get the unimplemented status, see:
+			// https://github.com/projectcontour/contour/issues/4707
+			// Also retry unauthenticated to accommodate eventual consistency
+			// after a global ExtAuth test.
+			grpc_retry.WithCodes(codes.Unavailable, codes.Unimplemented, codes.Unauthenticated),
+			grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
+			grpc_retry.WithMax(20),
+		}
+		conn, err := grpc.NewClient(addr,
+			grpc.WithAuthority(p.Spec.VirtualHost.Fqdn),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		// Give significant leeway for retries to complete with exponential backoff.
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+		defer cancel()
+		client := yages.NewEchoClient(conn)
+		resp, err := client.Ping(ctx, &yages.Empty{})
+
+		require.NoErrorf(t, err, "gRPC error code %d", status.Code(err))
+		require.Equal(t, "pong", resp.Text)
+	})
+}
