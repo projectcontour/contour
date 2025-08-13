@@ -9428,7 +9428,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.34.1
+        image: docker.io/envoyproxy/envoy:v1.34.4
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
