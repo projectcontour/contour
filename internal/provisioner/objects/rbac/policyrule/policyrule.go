@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package policyrule
 
 import (
 	"strings"
@@ -24,17 +24,11 @@ import (
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/resources"
 	"github.com/projectcontour/contour/internal/provisioner/slice"
 )
 
 const contourV1GroupName = "projectcontour.io"
-
-var (
-	GatewayGroupNamespacedResource       = []string{"gateways", "httproutes", "tlsroutes", "grpcroutes", "tcproutes", "referencegrants", "backendtlspolicies"}
-	GatewayGroupNamespacedResourceStatus = []string{"gateways/status", "httproutes/status", "tlsroutes/status", "grpcroutes/status", "tcproutes/status", "backendtlspolicies/status"}
-	ContourGroupNamespacedResource       = []string{"httpproxies", "tlscertificatedelegations", "extensionservices", "contourconfigurations"}
-	ContourGroupNamespacedResourceStatus = []string{"httpproxies/status", "extensionservices/status", "contourconfigurations/status"}
-)
 
 var (
 	createGetUpdate = []string{"create", "get", "update"}
@@ -42,8 +36,8 @@ var (
 	update          = []string{"update"}
 )
 
-// PolicyRuleFor returns PolicyRule object with provided apiGroup, verbs and resources
-func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbac_v1.PolicyRule {
+// policyRuleFor returns PolicyRule object with provided apiGroup, verbs and resources
+func policyRuleFor(apiGroup string, verbs []string, resources ...string) rbac_v1.PolicyRule {
 	return rbac_v1.PolicyRule{
 		Verbs:     verbs,
 		APIGroups: []string{apiGroup},
@@ -57,23 +51,23 @@ func PolicyRuleFor(apiGroup string, verbs []string, resources ...string) rbac_v1
 func NamespacedResourcePolicyRules(resourcesToSkip []contour_v1.Feature) []rbac_v1.PolicyRule {
 	return []rbac_v1.PolicyRule{
 		// Core Contour-watched resources.
-		PolicyRuleFor(core_v1.GroupName, getListWatch, "secrets", "services", "configmaps"),
+		policyRuleFor(core_v1.GroupName, getListWatch, "secrets", "services", "configmaps"),
 
 		// Discovery Contour-watched resources.
-		PolicyRuleFor(discovery_v1.GroupName, getListWatch, "endpointslices"),
+		policyRuleFor(discovery_v1.GroupName, getListWatch, "endpointslices"),
 
 		// Gateway API resources.
 		// Note, ReferenceGrant does not currently have a .status field so it's omitted from the status rule.
-		PolicyRuleFor(gatewayapi_v1.GroupName, getListWatch, filterResources(resourcesToSkip, GatewayGroupNamespacedResource...)...),
-		PolicyRuleFor(gatewayapi_v1.GroupName, update, filterResources(resourcesToSkip, GatewayGroupNamespacedResourceStatus...)...),
+		policyRuleFor(gatewayapi_v1.GroupName, getListWatch, filterResources(resourcesToSkip, resources.GatewayGroupNamespaced...)...),
+		policyRuleFor(gatewayapi_v1.GroupName, update, filterResources(resourcesToSkip, resources.GatewayGroupNamespacedStatus...)...),
 
 		// Ingress resources.
-		PolicyRuleFor(networking_v1.GroupName, getListWatch, "ingresses"),
-		PolicyRuleFor(networking_v1.GroupName, createGetUpdate, "ingresses/status"),
+		policyRuleFor(networking_v1.GroupName, getListWatch, "ingresses"),
+		policyRuleFor(networking_v1.GroupName, createGetUpdate, "ingresses/status"),
 
 		// Contour CRDs.
-		PolicyRuleFor(contourV1GroupName, getListWatch, filterResources(resourcesToSkip, ContourGroupNamespacedResource...)...),
-		PolicyRuleFor(contourV1GroupName, createGetUpdate, filterResources(resourcesToSkip, ContourGroupNamespacedResourceStatus...)...),
+		policyRuleFor(contourV1GroupName, getListWatch, filterResources(resourcesToSkip, resources.ContourGroupNamespaced...)...),
+		policyRuleFor(contourV1GroupName, createGetUpdate, filterResources(resourcesToSkip, resources.ContourGroupNamespacedStatus...)...),
 	}
 }
 
@@ -82,11 +76,11 @@ func NamespacedResourcePolicyRules(resourcesToSkip []contour_v1.Feature) []rbac_
 func ClusterScopedResourcePolicyRules() []rbac_v1.PolicyRule {
 	return []rbac_v1.PolicyRule{
 		// GatewayClass.
-		PolicyRuleFor(gatewayapi_v1.GroupName, getListWatch, "gatewayclasses"),
-		PolicyRuleFor(gatewayapi_v1.GroupName, update, "gatewayclasses/status"),
+		policyRuleFor(gatewayapi_v1.GroupName, getListWatch, "gatewayclasses"),
+		policyRuleFor(gatewayapi_v1.GroupName, update, "gatewayclasses/status"),
 
 		// Namespaces
-		PolicyRuleFor(core_v1.GroupName, getListWatch, "namespaces"),
+		policyRuleFor(core_v1.GroupName, getListWatch, "namespaces"),
 	}
 }
 
