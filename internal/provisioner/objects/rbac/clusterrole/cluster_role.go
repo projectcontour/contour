@@ -25,7 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/policyrule"
 )
 
 // EnsureClusterRole ensures a ClusterRole resource exists with the provided name
@@ -53,14 +53,14 @@ func desiredClusterRole(name string, contour *model.Contour, clusterScopedResour
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Rules: util.ClusterScopedResourcePolicyRules(),
+		Rules: policyrule.ClusterScopedResourcePolicyRules(),
 	}
 	if clusterScopedResourceOnly {
 		return role
 	}
 
 	// add other rules for namespacedResources, so that we can associated them with ClusterRole later
-	role.Rules = append(role.Rules, util.NamespacedResourcePolicyRules(contour.Spec.DisabledFeatures)...)
+	role.Rules = append(role.Rules, policyrule.NamespacedResourcePolicyRules(contour.Spec.DisabledFeatures)...)
 	return role
 }
 

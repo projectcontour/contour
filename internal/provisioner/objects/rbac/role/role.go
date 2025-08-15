@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
-	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/policyrule"
 )
 
 // EnsureControllerRole ensures a Role resource exists with the for the Contour
@@ -109,7 +109,7 @@ func desiredRoleForResourceInNamespace(name, namespace string, contour *model.Co
 			Labels:      contour.CommonLabels(),
 			Annotations: contour.CommonAnnotations(),
 		},
-		Rules: util.NamespacedResourcePolicyRules(contour.Spec.DisabledFeatures),
+		Rules: policyrule.NamespacedResourcePolicyRules(contour.Spec.DisabledFeatures),
 	}
 }
 

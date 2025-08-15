@@ -24,7 +24,7 @@ import (
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/resources"
 	"github.com/projectcontour/contour/internal/provisioner/slice"
 )
 
@@ -137,44 +137,44 @@ func TestDesiredRoleFilterResources(t *testing.T) {
 		{
 			description:      "empty disabled features",
 			disabledFeatures: nil,
-			expectedGateway:  [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
-			expectedContour:  [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
+			expectedGateway:  [][]string{resources.GatewayGroupNamespaced, resources.GatewayGroupNamespacedStatus},
+			expectedContour:  [][]string{resources.ContourGroupNamespaced, resources.ContourGroupNamespacedStatus},
 		},
 		{
 			description:      "disable tlsroutes feature",
 			disabledFeatures: []contour_v1.Feature{"tlsroutes"},
 			expectedGateway: [][]string{
-				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes"),
-				removeFromStringArray(util.GatewayGroupNamespacedResourceStatus, "tlsroutes/status"),
+				removeFromStringArray(resources.GatewayGroupNamespaced, "tlsroutes"),
+				removeFromStringArray(resources.GatewayGroupNamespacedStatus, "tlsroutes/status"),
 			},
-			expectedContour: [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
+			expectedContour: [][]string{resources.ContourGroupNamespaced, resources.ContourGroupNamespacedStatus},
 		},
 
 		{
 			description:      "disable extensionservices feature",
 			disabledFeatures: []contour_v1.Feature{"extensionservices"},
-			expectedGateway:  [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
+			expectedGateway:  [][]string{resources.GatewayGroupNamespaced, resources.GatewayGroupNamespacedStatus},
 			expectedContour: [][]string{
-				removeFromStringArray(util.ContourGroupNamespacedResource, "extensionservices"),
-				removeFromStringArray(util.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
+				removeFromStringArray(resources.ContourGroupNamespaced, "extensionservices"),
+				removeFromStringArray(resources.ContourGroupNamespacedStatus, "extensionservices/status"),
 			},
 		},
 		{
 			description:      "disable non-existent features",
 			disabledFeatures: []contour_v1.Feature{"abc", "efg"},
-			expectedGateway:  [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
-			expectedContour:  [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
+			expectedGateway:  [][]string{resources.GatewayGroupNamespaced, resources.GatewayGroupNamespacedStatus},
+			expectedContour:  [][]string{resources.ContourGroupNamespaced, resources.ContourGroupNamespacedStatus},
 		},
 		{
 			description:      "disable both gateway and contour features",
 			disabledFeatures: []contour_v1.Feature{"grpcroutes", "tlsroutes", "backendtlspolicies", "extensionservices"},
 			expectedGateway: [][]string{
-				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes", "grpcroutes", "backendtlspolicies"),
-				removeFromStringArray(util.GatewayGroupNamespacedResourceStatus, "tlsroutes/status", "grpcroutes/status", "backendtlspolicies/status"),
+				removeFromStringArray(resources.GatewayGroupNamespaced, "tlsroutes", "grpcroutes", "backendtlspolicies"),
+				removeFromStringArray(resources.GatewayGroupNamespacedStatus, "tlsroutes/status", "grpcroutes/status", "backendtlspolicies/status"),
 			},
 			expectedContour: [][]string{
-				removeFromStringArray(util.ContourGroupNamespacedResource, "extensionservices"),
-				removeFromStringArray(util.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
+				removeFromStringArray(resources.ContourGroupNamespaced, "extensionservices"),
+				removeFromStringArray(resources.ContourGroupNamespacedStatus, "extensionservices/status"),
 			},
 		},
 	}
