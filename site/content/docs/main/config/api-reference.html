@@ -2500,6 +2500,139 @@ list of hash policies is empty after validation, the load balancing
 strategy will fall back to the default <code>RoundRobin</code>.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>clientSideWeightedRoundRobinPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy">
+LoadBalancerPolicyClientSideWeightedRoundRobinPolicy
+</a>
+</em>
+</td>
+<td>
+<p>ClientSideWeightedRoundRobinPolicy contains configuration for a client side WRR LB policy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.LoadBalancerPolicyClientSideWeightedRoundRobinPolicy">LoadBalancerPolicyClientSideWeightedRoundRobinPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.LoadBalancerPolicy">LoadBalancerPolicy</a>)
+</p>
+<p>
+<p>LoadBalancerPolicyClientSideWeightedRoundRobinPolicy holds configuration for a client side wrr lb policy.
+For default values, constraints and behavior patterns refer to the envoy doc.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>enableOobLoadReport</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Whether to enable out-of-band utilization reporting collection from the endpoints.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>oobReportingPeriod</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Load reporting interval to request from the server. Note that the
+server may not provide reports as frequently as the client requests.
+Used only when enable_oob_load_report is true.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>blackoutPeriod</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>A given endpoint must report load metrics continuously for at least
+this long before the endpoint weight will be used. This avoids
+churn when the set of endpoint addresses changes. Takes effect
+both immediately after we establish a connection to an endpoint and
+after weight_expiration_period has caused us to stop using the most
+recent load metrics.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>weightExpirationPeriod</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>If a given endpoint has not reported load metrics in this long,
+then we stop using the reported weight. This ensures that we do
+not continue to use very stale weights. Once we stop using a stale
+value, if we later start seeing fresh reports again, the
+blackout_period applies.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>weightUpdatePeriod</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>How often endpoint weights are recalculated.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>errorUtilizationPenalty</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The multiplier used to adjust endpoint weights with the error rate
+calculated as eps/qps.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metricNamesForComputingUtilization</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>By default, endpoint weight is computed based on the :ref:<code>application_utilization &lt;envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.application_utilization&gt;</code> field reported by the endpoint.
+If that field is not set, then utilization will instead be computed by taking the max of the values of the metrics specified here.
+For map fields in the ORCA proto, the string will be of the form “<map_field_name>.<map_key>“. For example, the string “named_metrics.foo“ will mean to look for the key “foo“ in the ORCA :ref:<code>named_metrics &lt;envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.named_metrics&gt;</code> field.
+If none of the specified metrics are present in the load report, then :ref:<code>cpu_utilization &lt;envoy_v3_api_field_.xds.data.orca.v3.OrcaLoadReport.cpu_utilization&gt;</code> is used instead.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.LocalRateLimitPolicy">LocalRateLimitPolicy
