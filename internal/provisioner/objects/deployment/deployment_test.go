@@ -178,7 +178,8 @@ func TestDesiredDeployment(t *testing.T) {
 	}
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
-	deploy := DesiredDeployment(cntr, testContourImage)
+	testImagePullSecret := ""
+	deploy := DesiredDeployment(cntr, testContourImage, testImagePullSecret)
 
 	container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
 	checkContainerHasImage(t, container, testContourImage)
@@ -239,7 +240,7 @@ func TestDesiredDeploymentWhenSettingWatchNamespaces(t *testing.T) {
 			cntr.Spec.IngressClassName = &icName
 			// Change the Contour watch namespaces flag
 			cntr.Spec.WatchNamespaces = tc.namespaces
-			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test", "")
 			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
 			arg := fmt.Sprintf("--watch-namespaces=%s", strings.Join(append(model.NamespacesToStrings(tc.namespaces), cntr.Namespace), ","))
 			checkContainerHasArg(t, container, arg)
@@ -268,7 +269,7 @@ func TestNodePlacementDeployment(t *testing.T) {
 		},
 	}
 
-	deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+	deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test", "")
 
 	checkDeploymentHasNodeSelector(t, deploy, selectors)
 	checkDeploymentHasTolerations(t, deploy, tolerations)
@@ -297,7 +298,7 @@ func TestDesiredDeploymentWhenSettingDisabledFeature(t *testing.T) {
 			cntr.Spec.IngressClassName = &icName
 			cntr.Spec.DisabledFeatures = tc.disabledFeatures
 			// Change the Contour watch namespaces flag
-			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test")
+			deploy := DesiredDeployment(cntr, "ghcr.io/projectcontour/contour:test", "")
 			container := checkDeploymentHasContainer(t, deploy, contourContainerName, true)
 			for _, f := range tc.disabledFeatures {
 				arg := fmt.Sprintf("--disable-feature=%s", string(f))

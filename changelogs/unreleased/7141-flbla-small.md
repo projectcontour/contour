@@ -1,0 +1,1 @@
+add a new flag: --image-pull-secret, which allows users to specify a secret in the same namespace as the gatewayprovisionner for pulling images from private registries. when set, it's used to pull Envoy and Contour images.

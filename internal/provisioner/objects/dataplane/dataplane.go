@@ -75,11 +75,11 @@ var defContainerResources = core_v1.ResourceRequirements{
 }
 
 // EnsureDataPlane ensures an Envoy data plane (daemonset or deployment) exists for the given contour.
-func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
+func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage, imagePullSecret string) error {
 	switch contour.Spec.EnvoyWorkloadType {
 	// If a Deployment was specified, provision a Deployment.
 	case model.WorkloadTypeDeployment:
-		desired := desiredDeployment(contour, contourImage, envoyImage)
+		desired := desiredDeployment(contour, contourImage, envoyImage, imagePullSecret)
 
 		updater := func(ctx context.Context, cli client.Client, current, desired *apps_v1.Deployment) error {
 			differ := equality.DeploymentSelectorsDiffer(current, desired)
@@ -94,7 +94,7 @@ func EnsureDataPlane(ctx context.Context, cli client.Client, contour *model.Cont
 
 	// The default workload type is a DaemonSet.
 	default:
-		desired := DesiredDaemonSet(contour, contourImage, envoyImage)
+		desired := DesiredDaemonSet(contour, contourImage, envoyImage, imagePullSecret)
 
 		updater := func(ctx context.Context, cli client.Client, current, desired *apps_v1.DaemonSet) error {
 			differ := equality.DaemonSetSelectorsDiffer(current, desired)
@@ -335,7 +335,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 // DesiredDaemonSet returns the desired DaemonSet for the provided contour using
 // contourImage as the shutdown-manager/envoy-initconfig container images and
 // envoyImage as Envoy's container image.
-func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *apps_v1.DaemonSet {
+func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage, imagePullSecret string) *apps_v1.DaemonSet {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
 	ds := &apps_v1.DaemonSet{
@@ -403,10 +403,18 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		ds.Spec.Template.Spec.Tolerations = contour.Spec.NodePlacement.Envoy.Tolerations
 	}
 
+	if imagePullSecret != "" {
+		ds.Spec.Template.Spec.ImagePullSecrets = []core_v1.LocalObjectReference{
+			{
+				Name: imagePullSecret,
+			},
+		}
+	}
+
 	return ds
 }
 
-func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) *apps_v1.Deployment {
+func desiredDeployment(contour *model.Contour, contourImage, envoyImage, imagePullSecret string) *apps_v1.Deployment {
 	initContainers, containers := desiredContainers(contour, contourImage, envoyImage)
 
 	deployment := &apps_v1.Deployment{
@@ -486,6 +494,14 @@ func desiredDeployment(contour *model.Contour, contourImage, envoyImage string) 
 
 	if contour.EnvoyTolerationsExist() {
 		deployment.Spec.Template.Spec.Tolerations = contour.Spec.NodePlacement.Envoy.Tolerations
+	}
+
+	if imagePullSecret != "" {
+		deployment.Spec.Template.Spec.ImagePullSecrets = []core_v1.LocalObjectReference{
+			{
+				Name: imagePullSecret,
+			},
+		}
 	}
 
 	return deployment
