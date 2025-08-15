@@ -25,7 +25,7 @@ import (
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
+	rbacutil "github.com/projectcontour/contour/internal/provisioner/objects/rbac/util"
 	"github.com/projectcontour/contour/internal/provisioner/slice"
 )
 
@@ -134,48 +134,48 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 			description:               "empty disabled features",
 			disabledFeatures:          nil,
 			clusterScopedResourceOnly: false,
-			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
-			expectedContour:           [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
+			expectedGateway:           [][]string{rbacutil.GatewayGroupNamespacedResource, rbacutil.GatewayGroupNamespacedResourceStatus},
+			expectedContour:           [][]string{rbacutil.ContourGroupNamespacedResource, rbacutil.ContourGroupNamespacedResourceStatus},
 		},
 		{
 			description:               "disable tlsroutes feature",
 			disabledFeatures:          []contour_v1.Feature{"tlsroutes"},
 			clusterScopedResourceOnly: false,
 			expectedGateway: [][]string{
-				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes"),
-				removeFromStringArray(util.GatewayGroupNamespacedResourceStatus, "tlsroutes/status"),
+				removeFromStringArray(rbacutil.GatewayGroupNamespacedResource, "tlsroutes"),
+				removeFromStringArray(rbacutil.GatewayGroupNamespacedResourceStatus, "tlsroutes/status"),
 			},
-			expectedContour: [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
+			expectedContour: [][]string{rbacutil.ContourGroupNamespacedResource, rbacutil.ContourGroupNamespacedResourceStatus},
 		},
 
 		{
 			description:               "disable extensionservices feature",
 			disabledFeatures:          []contour_v1.Feature{"extensionservices"},
 			clusterScopedResourceOnly: false,
-			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
+			expectedGateway:           [][]string{rbacutil.GatewayGroupNamespacedResource, rbacutil.GatewayGroupNamespacedResourceStatus},
 			expectedContour: [][]string{
-				removeFromStringArray(util.ContourGroupNamespacedResource, "extensionservices"),
-				removeFromStringArray(util.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
+				removeFromStringArray(rbacutil.ContourGroupNamespacedResource, "extensionservices"),
+				removeFromStringArray(rbacutil.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
 			},
 		},
 		{
 			description:               "disable non-existent features",
 			disabledFeatures:          []contour_v1.Feature{"abc", "efg"},
 			clusterScopedResourceOnly: false,
-			expectedGateway:           [][]string{util.GatewayGroupNamespacedResource, util.GatewayGroupNamespacedResourceStatus},
-			expectedContour:           [][]string{util.ContourGroupNamespacedResource, util.ContourGroupNamespacedResourceStatus},
+			expectedGateway:           [][]string{rbacutil.GatewayGroupNamespacedResource, rbacutil.GatewayGroupNamespacedResourceStatus},
+			expectedContour:           [][]string{rbacutil.ContourGroupNamespacedResource, rbacutil.ContourGroupNamespacedResourceStatus},
 		},
 		{
 			description:               "disable both gateway and contour features",
 			disabledFeatures:          []contour_v1.Feature{"grpcroutes", "tlsroutes", "extensionservices", "backendtlspolicies"},
 			clusterScopedResourceOnly: false,
 			expectedGateway: [][]string{
-				removeFromStringArray(util.GatewayGroupNamespacedResource, "tlsroutes", "grpcroutes", "backendtlspolicies"),
-				removeFromStringArray(util.GatewayGroupNamespacedResourceStatus, "tlsroutes/status", "grpcroutes/status", "backendtlspolicies/status"),
+				removeFromStringArray(rbacutil.GatewayGroupNamespacedResource, "tlsroutes", "grpcroutes", "backendtlspolicies"),
+				removeFromStringArray(rbacutil.GatewayGroupNamespacedResourceStatus, "tlsroutes/status", "grpcroutes/status", "backendtlspolicies/status"),
 			},
 			expectedContour: [][]string{
-				removeFromStringArray(util.ContourGroupNamespacedResource, "extensionservices"),
-				removeFromStringArray(util.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
+				removeFromStringArray(rbacutil.ContourGroupNamespacedResource, "extensionservices"),
+				removeFromStringArray(rbacutil.ContourGroupNamespacedResourceStatus, "extensionservices/status"),
 			},
 		},
 		{
