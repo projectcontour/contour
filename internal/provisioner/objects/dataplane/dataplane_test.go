@@ -311,6 +311,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+	testImagePullSecret := ""
 	testLogLevelArg := "--log-level debug"
 	testBaseIDArg := "--base-id 1"
 	testEnvoyMaxHeapSize := "--overload-max-heap=8000000000"
@@ -343,7 +344,7 @@ func TestDesiredDaemonSet(t *testing.T) {
 	cntr.Spec.EnvoyMaxHeapSizeBytes = 8000000000
 	cntr.Spec.EnvoyMaxDownstreamConnections = 42
 
-	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
+	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage, testImagePullSecret)
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasArg(t, container, testLogLevelArg)
 	checkContainerHasArg(t, container, testBaseIDArg)
@@ -386,7 +387,8 @@ func TestDesiredDeployment(t *testing.T) {
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
-	deploy := desiredDeployment(cntr, testContourImage, testEnvoyImage)
+	testImagePullSecret := ""
+	deploy := desiredDeployment(cntr, testContourImage, testEnvoyImage, testImagePullSecret)
 	checkDeploymentHasStrategy(t, deploy, cntr.Spec.EnvoyDeploymentStrategy)
 	checkEnvoyDeploymentHasAffinity(t, deploy, cntr)
 }
@@ -414,7 +416,8 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
-	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
+	testImagePullSecret := ""
+	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage, testImagePullSecret)
 	checkDaemonSetHasNodeSelector(t, ds, selectors)
 	checkDaemonSetHasTolerations(t, ds, tolerations)
 }
@@ -436,9 +439,28 @@ func TestEnvoyCustomPorts(t *testing.T) {
 
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
-	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
+	testImagePullSecret := ""
+	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage, testImagePullSecret)
 	checkContainerHasPort(t, ds, int32(metricPort))
 
 	container := checkDaemonSetHasContainer(t, ds, EnvoyContainerName, true)
 	checkContainerHasReadinessPort(t, container, 8020)
+}
+
+func TestDesiredDaemonSetWithImagePullSecret(t *testing.T) {
+	name := "ds-test"
+	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
+	cntr.Spec.NetworkPublishing.Envoy.Ports = []model.Port{
+		{Name: "http", ServicePort: 80, ContainerPort: 8080},
+	}
+	testContourImage := "ghcr.io/projectcontour/contour:test"
+	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
+	testImagePullSecret := "my-secret"
+
+	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage, testImagePullSecret)
+
+	require.NotNil(t, ds)
+	require.NotNil(t, ds.Spec.Template.Spec.ImagePullSecrets)
+	require.Len(t, ds.Spec.Template.Spec.ImagePullSecrets, 1)
+	require.Equal(t, testImagePullSecret, ds.Spec.Template.Spec.ImagePullSecrets[0].Name)
 }
