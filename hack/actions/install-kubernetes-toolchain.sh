@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 
 readonly KUBECTL_VERS="v1.33.0"
-readonly KIND_VERS="v0.27.0"
+readonly KIND_VERS="v0.30.0"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}

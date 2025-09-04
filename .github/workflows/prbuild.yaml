@@ -114,11 +114,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
         - kubernetes_version: "kubernetes:latest"
-          node_image: "docker.io/kindest/node:v1.33.0@sha256:02f73d6ae3f11ad5d543f16736a2cb2a63a300ad60e81dac22099b0b04784a4e"
+          node_image: "docker.io/kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a"
         - kubernetes_version: "kubernetes:n-1"
-          node_image: "docker.io/kindest/node:v1.32.2@sha256:f226345927d7e348497136874b6d207e0b32cc52154ad8323129352923a3142f"
+          node_image: "docker.io/kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2"
         - kubernetes_version: "kubernetes:n-2"
-          node_image: "docker.io/kindest/node:v1.31.6@sha256:28b7cbb993dfe093c76641a0c95807637213c9109b761f1d422c2400e22b8e87"
+          node_image: "docker.io/kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1"
         - config_type: "ConfigmapConfiguration"
           use_config_crd: "false"
         - config_type: "ContourConfiguration"
@@ -173,11 +173,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
         - kubernetes_version: "kubernetes:latest"
-          node_image: "docker.io/kindest/node:v1.33.0@sha256:02f73d6ae3f11ad5d543f16736a2cb2a63a300ad60e81dac22099b0b04784a4e"
+          node_image: "docker.io/kindest/node:v1.34.0@sha256:7416a61b42b1662ca6ca89f02028ac133a309a2a30ba309614e8ec94d976dc5a"
         - kubernetes_version: "kubernetes:n-1"
-          node_image: "docker.io/kindest/node:v1.32.2@sha256:f226345927d7e348497136874b6d207e0b32cc52154ad8323129352923a3142f"
+          node_image: "docker.io/kindest/node:v1.33.4@sha256:25a6018e48dfcaee478f4a59af81157a437f15e6e140bf103f85a2e7cd0cbbf2"
         - kubernetes_version: "kubernetes:n-2"
-          node_image: "docker.io/kindest/node:v1.31.6@sha256:28b7cbb993dfe093c76641a0c95807637213c9109b761f1d422c2400e22b8e87"
+          node_image: "docker.io/kindest/node:v1.32.8@sha256:abd489f042d2b644e2d033f5c2d900bc707798d075e8186cb65e3f1367a9d5a1"
     steps:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
