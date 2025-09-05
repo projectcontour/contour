@@ -9408,7 +9408,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Type:    string(gatewayapi_v1.ListenerConditionProgrammed),
 							Status:  meta_v1.ConditionFalse,
 							Reason:  "Invalid",
-							Message: "Error parsing Listener.AllowedRoutes.Namespaces.Selector: values: Invalid value: []string{\"error\"}: values set must be empty for exists and does not exist.",
+							Message: "Error parsing Listener.AllowedRoutes.Namespaces.Selector: values: Invalid value: [\"error\"]: values set must be empty for exists and does not exist.",
 						},
 						listenerAcceptedCondition(),
 						listenerResolvedRefsCondition(),
