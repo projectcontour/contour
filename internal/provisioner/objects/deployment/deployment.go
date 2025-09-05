@@ -52,8 +52,8 @@ const (
 )
 
 // EnsureDeployment ensures a deployment using image exists for the given contour.
-func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
-	desired := DesiredDeployment(contour, image)
+func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image, imagePullSecret string) error {
+	desired := DesiredDeployment(contour, image, imagePullSecret)
 
 	updater := func(ctx context.Context, cli client.Client, current, desired *apps_v1.Deployment) error {
 		differ := equality.DeploymentSelectorsDiffer(current, desired)
@@ -82,7 +82,7 @@ func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *mo
 
 // DesiredDeployment returns the desired deployment for the provided contour using
 // image as Contour's container image.
-func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment {
+func DesiredDeployment(contour *model.Contour, image, imagePullSecret string) *apps_v1.Deployment {
 	xdsPort := objects.XDSPort
 	args := []string{
 		"serve",
@@ -274,6 +274,14 @@ func DesiredDeployment(contour *model.Contour, image string) *apps_v1.Deployment
 
 	if contour.ContourTolerationsExist() {
 		deploy.Spec.Template.Spec.Tolerations = contour.Spec.NodePlacement.Contour.Tolerations
+	}
+
+	if imagePullSecret != "" {
+		deploy.Spec.Template.Spec.ImagePullSecrets = []core_v1.LocalObjectReference{
+			{
+				Name: imagePullSecret,
+			},
+		}
 	}
 
 	return deploy
