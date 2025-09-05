@@ -95,7 +95,7 @@ func TestGatewayReconcile(t *testing.T) {
 		}
 	}
 
-	makeGatewayWithAddrs := func(addrs []gatewayapi_v1.GatewayAddress) *gatewayapi_v1.Gateway {
+	makeGatewayWithAddrs := func(addrs []gatewayapi_v1.GatewaySpecAddress) *gatewayapi_v1.Gateway {
 		gtw := makeGateway()
 		gtw.Spec.Addresses = addrs
 		return gtw
@@ -220,7 +220,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"A gateway with one IP address results in an Envoy service with loadBalancerIP set to that IP address": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewaySpecAddress{
 				{
 					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.207",
@@ -234,7 +234,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"A gateway with two IP addresses results in an Envoy service with loadBalancerIP set to the first IP address": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewaySpecAddress{
 				{
 					Type:  ptr.To(gatewayapi_v1.IPAddressType),
 					Value: "172.18.255.207",
@@ -251,7 +251,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"A gateway with one Hostname address results in an Envoy service with loadBalancerIP set to that hostname": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewaySpecAddress{
 				{
 					Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 					Value: "projectcontour.io",
@@ -264,7 +264,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"A gateway with two Hostname addresses results in an Envoy service with loadBalancerIP set to the first hostname": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewaySpecAddress{
 				{
 					Type:  ptr.To(gatewayapi_v1.HostnameAddressType),
 					Value: "projectcontour.io",
@@ -281,7 +281,7 @@ func TestGatewayReconcile(t *testing.T) {
 		},
 		"A gateway with one custom address type results in an Envoy service with no loadBalancerIP": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
-			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewayAddress{
+			gateway: makeGatewayWithAddrs([]gatewayapi_v1.GatewaySpecAddress{
 				{
 					Type:  ptr.To(gatewayapi_v1.AddressType("acme.io/CustomAddressType")),
 					Value: "custom-address-types-are-not-supported",
