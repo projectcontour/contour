@@ -30,7 +30,7 @@ Full release notes for Gateway API v1.3.0 can be found [here](https://github.com
 
 
 # Other Changes
-- Update to Go 1.25.0. See the [Go release notes](https://go.dev/doc/go1.25) for more information. (#7168, @sunjayBhatia)
+- Update to Go 1.25.1. See the [Go release notes](https://go.dev/doc/devel/release#go1.25.minor) for more information. (#7211, @sunjayBhatia)
 - Updates Envoy to v1.35.2. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.35.2/version_history/v1.35/v1.35) for more information about the content of the release. (#7197, @sunjayBhatia)
 
 
