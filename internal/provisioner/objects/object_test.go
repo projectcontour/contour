@@ -36,10 +36,6 @@ func TestEnsureObject_ErrorGettingObject(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build()
 
 	want := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -56,10 +52,6 @@ func TestEnsureObject_NonExistentObjectIsCreated(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	want := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -79,10 +71,6 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 	require.NoError(t, err)
 
 	existing := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace:       "obj-ns",
 			Name:            "obj-name",
@@ -93,10 +81,6 @@ func TestEnsureObject_ExistingObjectIsUpdated(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
 	desired := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -131,10 +115,6 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 	require.NoError(t, err)
 
 	existing := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -144,10 +124,6 @@ func TestEnsureObject_ErrorUpdatingObject(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(existing).Build()
 
 	desired := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -171,10 +147,6 @@ func TestEnsureObjectDeleted_ObjectNotFound(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 	svc := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -189,10 +161,6 @@ func TestEnsureObjectDeleted_ErrorGettingObject(t *testing.T) {
 	client := fake.NewClientBuilder().WithScheme(runtime.NewScheme()).Build()
 
 	svc := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -207,10 +175,6 @@ func TestEnsureObjectDeleted_ObjectExistsWithoutLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	existing := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -231,10 +195,6 @@ func TestEnsureObjectDeleted_ObjectExistsWithNonMatchingLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	existing := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
@@ -258,10 +218,6 @@ func TestEnsureObjectDeleted_ObjectExistsWithMatchingLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	existing := &core_v1.Service{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "obj-ns",
 			Name:      "obj-name",
