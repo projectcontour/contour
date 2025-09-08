@@ -3,16 +3,11 @@ We are delighted to present version v1.33.0 of Contour, our layer 7 HTTP reverse
 A big thank you to everyone who contributed to the release.
 
 
-- [Major Changes](#major-changes)
 - [Minor Changes](#minor-changes)
 - [Other Changes](#other-changes)
-- [Docs Changes](#docs-changes)
-- [Deprecations/Removals](#deprecation-and-removal-notices)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 - [Community Thanks!](#community-thanks)
-
-# Major Changes
 
 
 # Minor Changes
@@ -27,16 +22,16 @@ The distroless variant contains only the files required to run Envoy, improving 
 (#7170, @tsaarni)
 
 
+## Update to Gateway API v1.3.0
+
+Gateway API CRD compatibility has been updated to release v1.3.0.
+
+Full release notes for Gateway API v1.3.0 can be found [here](https://github.com/kubernetes-sigs/gateway-api/releases/tag/v1.3.0).
+
+
 # Other Changes
 - Update to Go 1.25.0. See the [Go release notes](https://go.dev/doc/go1.25) for more information. (#7168, @sunjayBhatia)
 - Updates Envoy to v1.35.2. See the [Envoy release notes](https://www.envoyproxy.io/docs/envoy/v1.35.2/version_history/v1.35/v1.35) for more information about the content of the release. (#7197, @sunjayBhatia)
-
-
-# Docs Changes
-
-
-# Deprecation and Removal Notices
-
 
 
 # Installing and Upgrading
