@@ -32,7 +32,7 @@ require (
 	github.com/vektra/mockery/v2 v2.53.5
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.43.0
-	golang.org/x/oauth2 v0.30.0
+	golang.org/x/oauth2 v0.31.0
 	gonum.org/v1/plot v0.16.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7
 	google.golang.org/grpc v1.75.0
