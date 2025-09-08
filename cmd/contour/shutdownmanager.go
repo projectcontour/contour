@@ -25,6 +25,7 @@ import (
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -247,7 +248,7 @@ func getOpenConnections(adminAddress string) (int, error) {
 
 // parseOpenConnections returns the sum of open connections from a Prometheus HTTP request
 func parseOpenConnections(stats io.Reader) (int, error) {
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.LegacyValidation)
 	openConnections := 0
 
 	if stats == nil {
