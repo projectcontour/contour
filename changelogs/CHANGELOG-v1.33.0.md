@@ -46,8 +46,7 @@ To upgrade an existing Contour installation, please consult the [upgrade documen
 Contour v1.33.0 is tested against Kubernetes 1.32 through 1.34.
 
 # Community Thanks!
-We’re immensely grateful for all the community contributions that help make Contour even better! For this release, special thanks go out to the following contributors:
-
+We’re immensely grateful for all the community contributions that help make Contour even better!
 
 
 # Are you a Contour user? We would love to know!
