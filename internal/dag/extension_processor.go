@@ -156,6 +156,13 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 	extension.LoadBalancerPolicy = lbPolicy
 
+	lbPolicyConfig, err := loadBalancerPolicyConfig(lbPolicy, ext.Spec.LoadBalancerPolicy)
+	if err != nil {
+		validCondition.AddErrorf(contour_v1.ConditionTypeSpecError, "LoadBalancerPolicyInvalid",
+			"loadBalancerPolicy processing failed with error: %s", err)
+	}
+	extension.LoadBalancerPolicyConfig = lbPolicyConfig
+
 	// Timeouts are specified above the cluster (e.g.
 	// in the ext_authz filter). The ext_authz filter
 	// doesn't have an idle timeout (only a request
