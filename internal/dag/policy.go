@@ -32,6 +32,7 @@ import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
@@ -136,6 +137,9 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_v1.Heade
 				if HostRewriteHeader := extractHostRewriteHeaderValue(v); HostRewriteHeader != "" {
 					return nil, fmt.Errorf("rewriting %q host header with dynamic value is not supported on service", key)
 				}
+				if err := gatewayapi.IsValidHostname(v); err != nil {
+					return nil, fmt.Errorf("invalid hostname %q for Host header rewrite: %v", v, err)
+				}
 				userPolicy.HostRewrite = v
 			}
 			continue
@@ -186,6 +190,9 @@ func headersPolicyRoute(policy *contour_v1.HeadersPolicy, allowHostRewrite bool,
 			if extractedHostRewriteHeader := extractHostRewriteHeaderValue(entry.Value); extractedHostRewriteHeader != "" {
 				hostRewriteHeader = http.CanonicalHeaderKey(extractedHostRewriteHeader)
 				continue
+			}
+			if err := gatewayapi.IsValidHostname(entry.Value); err != nil {
+				return nil, fmt.Errorf("invalid hostname %q for Host header rewrite: %v", entry.Value, err)
 			}
 			hostRewrite = entry.Value
 			continue
@@ -255,6 +262,10 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1.HTTPHeaderFilter, headerPolicyTyp
 			}
 			if key == "Host" && (headerPolicyType == string(gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier) ||
 				headerPolicyType == string(gatewayapi_v1.GRPCRouteFilterRequestHeaderModifier)) {
+				if err := gatewayapi.IsValidHostname(header.Value); err != nil {
+					errlist = append(errlist, fmt.Errorf("invalid hostname %q for Host header rewrite: %v", header.Value, err))
+					continue
+				}
 				hostRewrite = header.Value
 				continue
 			}
