@@ -41,6 +41,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		leaderElection:        false,
 		leaderElectionID:      "0d879e31.projectcontour.io",
 		gatewayControllerName: "projectcontour.io/gateway-controller",
+		imagePullSecret:       "",
 	}
 
 	cmd.Flag("contour-image", "The container image used for the managed Contour.").
@@ -57,6 +58,10 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 	cmd.Flag("gateway-controller-name", "The controller string to process GatewayClasses and Gateways for.").
 		Default(provisionerConfig.gatewayControllerName).
 		StringVar(&provisionerConfig.gatewayControllerName)
+
+	cmd.Flag("image-pull-secret-name", "The image pull secret for the managed Envoy and Contour.").
+		Default(provisionerConfig.imagePullSecret).
+		StringVar(&provisionerConfig.imagePullSecret)
 
 	cmd.Flag("incluster", "Use in cluster configuration.").
 		Default("true").
@@ -84,6 +89,10 @@ type gatewayProvisionerConfig struct {
 	// envoyImage is the container image for the Envoy container(s) managed
 	// by the gateway provisioner.
 	envoyImage string
+
+	// imagePullSecret is the name of the image pull secret that will be used
+	// to pull the Contour and Envoy images.
+	imagePullSecret string
 
 	// metricsBindAddress is the TCP address that the gateway provisioner should bind to for
 	// serving prometheus metrics. It can be set to "0" to disable the metrics serving.
@@ -171,7 +180,7 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 	if _, err := controller.NewGatewayClassController(mgr, provisionerConfig.gatewayControllerName); err != nil {
 		return nil, fmt.Errorf("failed to create gatewayclass controller: %w", err)
 	}
-	if _, err := controller.NewGatewayController(mgr, provisionerConfig.gatewayControllerName, provisionerConfig.contourImage, provisionerConfig.envoyImage); err != nil {
+	if _, err := controller.NewGatewayController(mgr, provisionerConfig.gatewayControllerName, provisionerConfig.contourImage, provisionerConfig.envoyImage, provisionerConfig.imagePullSecret); err != nil {
 		return nil, fmt.Errorf("failed to create gateway controller: %w", err)
 	}
 	return mgr, nil

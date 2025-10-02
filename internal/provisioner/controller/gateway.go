@@ -49,15 +49,17 @@ type gatewayReconciler struct {
 	gatewayController gatewayapi_v1.GatewayController
 	contourImage      string
 	envoyImage        string
+	imagePullSecret   string
 	client            client.Client
 	log               logr.Logger
 }
 
-func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, envoyImage string) (controller.Controller, error) {
+func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, envoyImage, imagePullSecret string) (controller.Controller, error) {
 	r := &gatewayReconciler{
 		gatewayController: gatewayapi_v1.GatewayController(gatewayController),
 		contourImage:      contourImage,
 		envoyImage:        envoyImage,
+		imagePullSecret:   imagePullSecret,
 		client:            mgr.GetClient(),
 		log:               ctrl.Log.WithName("gateway-controller"),
 	}
@@ -432,8 +434,8 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 
 	handleResult("contour config", contourconfig.EnsureContourConfig(ctx, r.client, contour))
 	handleResult("xDS TLS secrets", secret.EnsureXDSSecrets(ctx, r.client, contour, r.contourImage))
-	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage))
-	handleResult("envoy data plane", dataplane.EnsureDataPlane(ctx, r.client, contour, r.contourImage, r.envoyImage))
+	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage, r.imagePullSecret))
+	handleResult("envoy data plane", dataplane.EnsureDataPlane(ctx, r.client, contour, r.contourImage, r.envoyImage, r.imagePullSecret))
 	handleResult("contour service", service.EnsureContourService(ctx, r.client, contour))
 
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
