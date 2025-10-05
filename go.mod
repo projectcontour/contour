@@ -36,7 +36,7 @@ require (
 	gonum.org/v1/plot v0.16.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a
 	google.golang.org/grpc v1.72.3
-	google.golang.org/protobuf v1.36.9
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.32.9
 	k8s.io/apiextensions-apiserver v0.32.9
