@@ -21,6 +21,8 @@ If you're using Contour and want to add your organization to this list, please
 
 <a href="https://bugfender.com/" target="_blank"><img alt="bugfender.com" src="../../img/adopters/bugfender.svg" height="50"></a>
 
+<a href="https://www.inmobi.com/" target="_blank"><img alt="InMobi" src="../../img/adopters/inmobi.svg" height="50"></a>
+
 ## Success Stories
 
 Below is a list of adopters of Contour in **production environments** that have
@@ -77,6 +79,12 @@ At SnappCloud, we are dedicated to enriching the open-source community by develo
 Bugfender is a log aggregation platform designed for mobile and web front-end applications, with a strong focus on security and privacy. Its SDK seamlessly integrates into applications, facilitating log transmission to the Bugfender Dashboard. Bugfender streamlines bug identification and reproduction for enhanced user experience.
 
 At Bugfender, we chose Contour as Kubernetes ingress for its high performance. With millions of devices running Bugfender's SDK simultaneously communicating with our backend, Contour proves more efficient in handling TLS connections than its alternatives. This was pivotal for our growth.
+
+**[InMobi](https://www.inmobi.com/)**
+
+InMobi is a global mobile advertising and marketing technology company (founded 2007). We help brands and publishers reach, engage, and monetize audiences through programmatic advertising, commerce media, and privacy-aware growth solutions across apps and mobile web.
+
+We use **Project Contour** as our Kubernetes ingress controller across GKE clusters to provide Envoy-based L7 routing, TLS termination, and traffic policy via `HTTPProxy`. This setup gives us predictable rollouts and clean GitOps workflows with Argo CD for ad-serving and analytics workloads.
 
 ## Adding a logo to projectcontour.io
 
