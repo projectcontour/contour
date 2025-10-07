@@ -84,7 +84,7 @@ At Bugfender, we chose Contour as Kubernetes ingress for its high performance. W
 
 InMobi is a global mobile advertising and marketing technology company (founded 2007). We help brands and publishers reach, engage, and monetize audiences through programmatic advertising, commerce media, and privacy-aware growth solutions across apps and mobile web.
 
-We use **Project Contour** as our Kubernetes ingress controller across GKE clusters to provide Envoy-based L7 routing, TLS termination, and traffic policy via `HTTPProxy`. This setup gives us predictable rollouts and clean GitOps workflows with Argo CD for ad-serving and analytics workloads.
+We use **Project Contour** as our Kubernetes ingress controller across GKE clusters to provide Envoy-based L7 routing, TLS termination, and traffic policy via `HTTPProxy`. This setup gives us predictable rollouts and clean GitOps workflows for ad-serving and analytics workloads.
 
 ## Adding a logo to projectcontour.io
 
