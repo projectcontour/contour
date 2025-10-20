@@ -72,11 +72,11 @@ type KubernetesCache struct {
 	gatewayclass              *gatewayapi_v1.GatewayClass
 	gateway                   *gatewayapi_v1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1.HTTPRoute
-	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
+	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha3.TLSRoute
 	grpcroutes                map[types.NamespacedName]*gatewayapi_v1.GRPCRoute
 	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute
 	referencegrants           map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant
-	backendtlspolicies        map[types.NamespacedName]*gatewayapi_v1alpha3.BackendTLSPolicy
+	backendtlspolicies        map[types.NamespacedName]*gatewayapi_v1.BackendTLSPolicy
 	extensions                map[types.NamespacedName]*contour_v1alpha1.ExtensionService
 
 	// Metrics contains Prometheus metrics.
@@ -109,10 +109,10 @@ func (kc *KubernetesCache) init() {
 	kc.namespaces = make(map[string]*core_v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1.HTTPRoute)
 	kc.referencegrants = make(map[types.NamespacedName]*gatewayapi_v1beta1.ReferenceGrant)
-	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
+	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha3.TLSRoute)
 	kc.grpcroutes = make(map[types.NamespacedName]*gatewayapi_v1.GRPCRoute)
 	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute)
-	kc.backendtlspolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha3.BackendTLSPolicy)
+	kc.backendtlspolicies = make(map[types.NamespacedName]*gatewayapi_v1.BackendTLSPolicy)
 	kc.extensions = make(map[types.NamespacedName]*contour_v1alpha1.ExtensionService)
 }
 
@@ -235,7 +235,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.httproutes)
 
-		case *gatewayapi_v1alpha2.TLSRoute:
+		case *gatewayapi_v1alpha3.TLSRoute:
 			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 			return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tlsroutes)
 
@@ -251,7 +251,7 @@ func (kc *KubernetesCache) Insert(obj any) bool {
 			kc.referencegrants[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.referencegrants)
 
-		case *gatewayapi_v1alpha3.BackendTLSPolicy:
+		case *gatewayapi_v1.BackendTLSPolicy:
 			kc.backendtlspolicies[k8s.NamespacedNameOf(obj)] = obj
 			return true, len(kc.backendtlspolicies)
 
@@ -392,7 +392,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.httproutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.httproutes)
 
-	case *gatewayapi_v1alpha2.TLSRoute:
+	case *gatewayapi_v1alpha3.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
 		delete(kc.tlsroutes, m)
 		return kc.routeTriggersRebuild(obj.Spec.ParentRefs), len(kc.tlsroutes)
@@ -413,7 +413,7 @@ func (kc *KubernetesCache) remove(obj any) (bool, int) {
 		delete(kc.referencegrants, m)
 		return ok, len(kc.referencegrants)
 
-	case *gatewayapi_v1alpha3.BackendTLSPolicy:
+	case *gatewayapi_v1.BackendTLSPolicy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.backendtlspolicies[m]
 		delete(kc.backendtlspolicies, m)
@@ -868,8 +868,8 @@ func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.
 // namespace-local references are allowed) and is used to match the namespace on the resulting backendTLSPolicy.
 //
 // If a policy is found, true is returned.
-func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName, namespace string) (*gatewayapi_v1alpha3.BackendTLSPolicy, bool) {
-	var fallbackBackendTLSPolicy *gatewayapi_v1alpha3.BackendTLSPolicy
+func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName, namespace string) (*gatewayapi_v1.BackendTLSPolicy, bool) {
+	var fallbackBackendTLSPolicy *gatewayapi_v1.BackendTLSPolicy
 	for _, v := range kc.backendtlspolicies {
 		// Make sure the BackendTLSPolicy namespace matches the backend namespace.
 		if v.Namespace != namespace {

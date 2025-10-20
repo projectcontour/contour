@@ -48,12 +48,12 @@ func TestKindOf(t *testing.T) {
 		{"ContourDeployment", &contour_v1alpha1.ContourDeployment{}},
 		{"GRPCRoute", &gatewayapi_v1.GRPCRoute{}},
 		{"HTTPRoute", &gatewayapi_v1.HTTPRoute{}},
-		{"TLSRoute", &gatewayapi_v1alpha2.TLSRoute{}},
+		{"TLSRoute", &gatewayapi_v1alpha3.TLSRoute{}},
 		{"TCPRoute", &gatewayapi_v1alpha2.TCPRoute{}},
 		{"Gateway", &gatewayapi_v1.Gateway{}},
 		{"GatewayClass", &gatewayapi_v1.GatewayClass{}},
 		{"ReferenceGrant", &gatewayapi_v1beta1.ReferenceGrant{}},
-		{"BackendTLSPolicy", &gatewayapi_v1alpha3.BackendTLSPolicy{}},
+		{"BackendTLSPolicy", &gatewayapi_v1.BackendTLSPolicy{}},
 		{
 			"Foo", &unstructured.Unstructured{
 				Object: map[string]any{

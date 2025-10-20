@@ -27,6 +27,7 @@ import (
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -483,7 +484,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -496,12 +497,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	})
 
 	// TLSRoute with a single service/weight.
-	route1 := &gatewayapi_v1alpha2.TLSRoute{
+	route1 := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
 			"app":  "contour",
 			"type": "controller",
 		}),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
@@ -543,12 +544,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 	require.Empty(t, c.Request(routeType).Resources)
 
 	// TLSRoute with multiple weighted services.
-	route2 := &gatewayapi_v1alpha2.TLSRoute{
+	route2 := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMetaWithAnnotations("basic", map[string]string{
 			"app":  "contour",
 			"type": "controller",
 		}),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),

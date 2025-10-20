@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -347,7 +348,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-1.provisioner.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									{Name: "https-1-cert"},
@@ -359,7 +360,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     444,
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-2.provisioner.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									{Name: "https-2-cert"},
@@ -738,7 +739,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Name:     "https",
 							Protocol: gatewayapi_v1.TLSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -757,12 +758,12 @@ var _ = Describe("Gateway provisioner", func() {
 
 			By("Skip reconciling the TLSRoute if disabledFeatures includes it")
 			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
-			route := &gatewayapi_v1alpha2.TLSRoute{
+			route := &gatewayapi_v1alpha3.TLSRoute{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
 					Name:      "tlsroute-1",
 				},
-				Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 					Hostnames: []gatewayapi_v1.Hostname{"provisioner.projectcontour.io"},
 					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 						ParentRefs: []gatewayapi_v1.ParentReference{
@@ -783,7 +784,7 @@ var _ = Describe("Gateway provisioner", func() {
 
 			By("Expect tlsroute not to be accepted")
 			require.Never(f.T(), func() bool {
-				tr := &gatewayapi_v1alpha2.TLSRoute{}
+				tr := &gatewayapi_v1alpha3.TLSRoute{}
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(route), tr); err != nil {
 					return false
 				}

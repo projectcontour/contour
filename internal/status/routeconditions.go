@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 )
@@ -170,7 +171,7 @@ func (r *RouteStatusUpdate) Mutate(obj client.Object) client.Object {
 		route.Status.Parents = newRouteParentStatuses
 
 		return route
-	case *gatewayapi_v1alpha2.TLSRoute:
+	case *gatewayapi_v1alpha3.TLSRoute:
 		route := o.DeepCopy()
 
 		// Get all the RouteParentStatuses that are for other Gateways.

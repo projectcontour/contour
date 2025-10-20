@@ -27,6 +27,7 @@ import (
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -1384,7 +1385,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
@@ -1400,7 +1401,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "tls",
 					Port:     8443,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 					},
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -1445,9 +1446,9 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
+	rh.OnAdd(&gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayListenerParentRef("projectcontour", "contour", "tls", 0),

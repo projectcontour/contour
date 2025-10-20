@@ -27,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -303,21 +301,21 @@ func TestUpstreamTLSWithHTTPRoute(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1alpha3.BackendTLSPolicy{
+	rh.OnAdd(&gatewayapi_v1.BackendTLSPolicy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "authenticated",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-			TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+		Spec: gatewayapi_v1.BackendTLSPolicySpec{
+			TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 				{
-					LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+					LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 						Kind: "Service",
 						Name: "backend",
 					},
 				},
 			},
-			Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+			Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 				CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 					Kind: "Secret",
 					Name: gatewayapi_v1.ObjectName(sec2.Name),
@@ -419,21 +417,21 @@ func TestBackendTLSPolicyPrecedenceOverUpstreamProtocolAnnotationWithHTTPRoute(t
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1alpha3.BackendTLSPolicy{
+	rh.OnAdd(&gatewayapi_v1.BackendTLSPolicy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "authenticated",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-			TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+		Spec: gatewayapi_v1.BackendTLSPolicySpec{
+			TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 				{
-					LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+					LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 						Kind: "Service",
 						Name: "backend",
 					},
 				},
 			},
-			Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+			Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 				CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 					Kind: "Secret",
 					Name: gatewayapi_v1.ObjectName(sec1.Name),
@@ -564,21 +562,21 @@ func TestUpstreamTLSWithHTTPRouteANDHTTPProxy(t *testing.T) {
 		},
 	})
 
-	rh.OnAdd(&gatewayapi_v1alpha3.BackendTLSPolicy{
+	rh.OnAdd(&gatewayapi_v1.BackendTLSPolicy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "authenticated",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-			TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+		Spec: gatewayapi_v1.BackendTLSPolicySpec{
+			TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 				{
-					LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+					LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 						Kind: "Service",
 						Name: "backend",
 					},
 				},
 			},
-			Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+			Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 				CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 					Kind: "Secret",
 					Name: gatewayapi_v1.ObjectName(sec1.Name),
