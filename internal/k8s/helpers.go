@@ -82,8 +82,8 @@ func isStatusEqual(objA, objB any) bool {
 				return true
 			}
 		}
-	case *gatewayapi_v1alpha2.TLSRoute:
-		if b, ok := objB.(*gatewayapi_v1alpha2.TLSRoute); ok {
+	case *gatewayapi_v1alpha3.TLSRoute:
+		if b, ok := objB.(*gatewayapi_v1alpha3.TLSRoute); ok {
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(meta_v1.Condition{}, "LastTransitionTime")) {
 				return true
@@ -120,10 +120,10 @@ func IsObjectEqual(oldObj, newObj client.Object) (bool, error) {
 		*gatewayapi_v1.Gateway,
 		*gatewayapi_v1beta1.ReferenceGrant,
 		*gatewayapi_v1.HTTPRoute,
-		*gatewayapi_v1alpha2.TLSRoute,
+		*gatewayapi_v1alpha3.TLSRoute,
 		*gatewayapi_v1.GRPCRoute,
 		*gatewayapi_v1alpha2.TCPRoute,
-		*gatewayapi_v1alpha3.BackendTLSPolicy:
+		*gatewayapi_v1.BackendTLSPolicy:
 		return isGenerationEqual(oldObj, newObj), nil
 
 	// Slow path: compare the content of the objects.

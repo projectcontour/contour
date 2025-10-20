@@ -278,7 +278,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -300,7 +300,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -322,7 +322,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -397,7 +397,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Name:     "https",
 				Port:     443,
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 					CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 						gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
@@ -422,7 +422,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.HTTPSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 						gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 					},
@@ -458,7 +458,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name:     "https-listener",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 						},
@@ -492,12 +492,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	basicTLSRoute := &gatewayapi_v1alpha2.TLSRoute{
+	basicTLSRoute := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 			},
@@ -687,12 +687,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardServiceCustomNs,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "custom",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -724,12 +724,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughSameNamespace,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: gatewayTLSPassthroughSameNamespace.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -761,12 +761,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughSameNamespace,
 			objs: []any{
 				kuardServiceCustomNs,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -790,12 +790,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Labels: map[string]string{"matching-label-key": "matching-label-value"},
 					},
 				},
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -833,12 +833,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Labels: map[string]string{"matching-label-key": "this-label-value-does-not-match"},
 					},
 				},
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardServiceCustomNs.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -867,12 +867,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: kuardService.Namespace,
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("some-other-namespace", "some-other-gateway-name")},
 						},
@@ -898,7 +898,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						TLS: &gatewayapi_v1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.ListenerTLSConfig{
 							Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
@@ -930,7 +930,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.TLSProtocolType,
-						TLS: &gatewayapi_v1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.ListenerTLSConfig{
 							Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						},
 						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -984,7 +984,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Listeners: []gatewayapi_v1.Listener{{
 						Port:     80,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						TLS: &gatewayapi_v1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.ListenerTLSConfig{
 							Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 						},
 						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -1563,7 +1563,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPProtocolType,
-						TLS: &gatewayapi_v1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.ListenerTLSConfig{
 							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								gatewayapi.CertificateRef(sec1.Name, sec1.Namespace),
 							},
@@ -1710,7 +1710,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						TLS: &gatewayapi_v1.GatewayTLSConfig{
+						TLS: &gatewayapi_v1.ListenerTLSConfig{
 							CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 								{
 									Group: ptr.To(gatewayapi_v1.Group("custom")),
@@ -1745,7 +1745,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Listeners: []gatewayapi_v1.Listener{{
 						Port:     443,
 						Protocol: gatewayapi_v1.HTTPSProtocolType,
-						TLS:      &gatewayapi_v1.GatewayTLSConfig{},
+						TLS:      &gatewayapi_v1.ListenerTLSConfig{},
 						AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
 							Namespaces: &gatewayapi_v1.RouteNamespaces{
 								From: ptr.To(gatewayapi_v1.NamespacesFromAll),
@@ -3531,21 +3531,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsService,
 				configMapCert1,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlssvc",
 								},
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "ConfigMap",
 								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -3600,21 +3600,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				tlsService,
 				cert1,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlssvc",
 								},
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Secret",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
@@ -3670,21 +3670,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				cert1,
 				cert2,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlssvc",
 								},
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
@@ -3763,22 +3763,22 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 					},
 				},
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlsandnontlssvc",
 								},
 								SectionName: ptr.To(gatewayapi_v1.SectionName("https")),
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Secret",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
@@ -3854,21 +3854,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				tlsService,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlssvc",
 								},
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Secret",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
@@ -3911,21 +3911,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				tlsService,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlssvc",
 								},
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "ConfigMap",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
@@ -3968,21 +3968,21 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				tlsService,
 				makeHTTPRoute("basic", "projectcontour", "", makeHTTPRouteRule(gatewayapi_v1.PathMatchPathPrefix, "/", "tlssvc", 443, 1)),
-				&gatewayapi_v1alpha3.BackendTLSPolicy{
+				&gatewayapi_v1.BackendTLSPolicy{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 							{
-								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+								LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 									Kind: "Service",
 									Name: "tlssvc",
 								},
 							},
 						},
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 								Kind: "Invalid",
 								Name: gatewayapi_v1.ObjectName(cert1.Name),
@@ -4152,12 +4152,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4189,12 +4189,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4212,12 +4212,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4275,12 +4275,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4339,12 +4339,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4388,12 +4388,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4437,12 +4437,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4486,12 +4486,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4536,12 +4536,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4593,12 +4593,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4642,12 +4642,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4669,12 +4669,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
 				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4704,12 +4704,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []any{
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4729,12 +4729,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4776,12 +4776,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -4823,12 +4823,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				kuardService,
 				kuardService2,
 				kuardService3,
-				&gatewayapi_v1alpha2.TLSRoute{
+				&gatewayapi_v1alpha3.TLSRoute{
 					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "projectcontour",
 					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+					Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
 						},
@@ -14187,7 +14187,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14260,7 +14260,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14596,7 +14596,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -14665,7 +14665,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},

@@ -185,7 +185,7 @@ func TCPRouteAccepted(route *gatewayapi_v1alpha2.TCPRoute) bool {
 }
 
 // TLSRouteIgnoredByContour returns true if the route has an empty .status.parents.conditions list
-func TLSRouteIgnoredByContour(route *gatewayapi_v1alpha2.TLSRoute) bool {
+func TLSRouteIgnoredByContour(route *gatewayapi_v1alpha3.TLSRoute) bool {
 	if route == nil {
 		return false
 	}
@@ -195,7 +195,7 @@ func TLSRouteIgnoredByContour(route *gatewayapi_v1alpha2.TLSRoute) bool {
 
 // TLSRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".
-func TLSRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
+func TLSRouteAccepted(route *gatewayapi_v1alpha3.TLSRoute) bool {
 	if route == nil {
 		return false
 	}
@@ -261,13 +261,13 @@ func GRPCRoutePartiallyInvalid(route *gatewayapi_v1.GRPCRoute) bool {
 
 // BackendTLSPolicyAccepted returns true if the backend TLS policy has a .status.conditions
 // entry of "Accepted: true".
-func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha3.BackendTLSPolicy) bool {
+func BackendTLSPolicyAccepted(btp *gatewayapi_v1.BackendTLSPolicy) bool {
 	if btp == nil {
 		return false
 	}
 
 	for _, gw := range btp.Status.Ancestors {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.PolicyConditionAccepted), meta_v1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.PolicyConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}

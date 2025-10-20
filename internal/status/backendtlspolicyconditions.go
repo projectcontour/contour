@@ -21,8 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"github.com/projectcontour/contour/internal/gatewayapi"
 )
@@ -31,7 +29,7 @@ import (
 // BackendTLSPolicy's status.
 type BackendTLSPolicyStatusUpdate struct {
 	FullName               types.NamespacedName
-	PolicyAncestorStatuses []*gatewayapi_v1alpha2.PolicyAncestorStatus
+	PolicyAncestorStatuses []*gatewayapi_v1.PolicyAncestorStatus
 	GatewayRef             types.NamespacedName
 	GatewayController      gatewayapi_v1.GatewayController
 	Generation             int64
@@ -56,8 +54,8 @@ func (b *BackendTLSPolicyStatusUpdate) StatusUpdateFor(ancestorRef gatewayapi_v1
 
 // AddCondition adds a condition with the given properties to the
 // BackendTLSPolicyAncestorStatus.
-func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewayapi_v1alpha2.PolicyConditionType, status meta_v1.ConditionStatus, reason gatewayapi_v1alpha2.PolicyConditionReason, message string) meta_v1.Condition {
-	var pas *gatewayapi_v1alpha2.PolicyAncestorStatus
+func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewayapi_v1.PolicyConditionType, status meta_v1.ConditionStatus, reason gatewayapi_v1.PolicyConditionReason, message string) meta_v1.Condition {
+	var pas *gatewayapi_v1.PolicyAncestorStatus
 
 	for _, v := range b.PolicyAncestorStatuses {
 		if v.AncestorRef == b.ancestorRef {
@@ -67,7 +65,7 @@ func (b *BackendTLSPolicyAncestorStatusUpdate) AddCondition(conditionType gatewa
 	}
 
 	if pas == nil {
-		pas = &gatewayapi_v1alpha2.PolicyAncestorStatus{
+		pas = &gatewayapi_v1.PolicyAncestorStatus{
 			AncestorRef:    b.ancestorRef,
 			ControllerName: b.GatewayController,
 		}
@@ -118,14 +116,14 @@ func (b *BackendTLSPolicyStatusUpdate) ConditionsForAncestorRef(ancestorRef gate
 }
 
 func (b *BackendTLSPolicyStatusUpdate) Mutate(obj client.Object) client.Object {
-	o, ok := obj.(*gatewayapi_v1alpha3.BackendTLSPolicy)
+	o, ok := obj.(*gatewayapi_v1.BackendTLSPolicy)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator",
 			obj, b.FullName.Namespace, b.FullName.Name,
 		))
 	}
 
-	var newPolicyAncestorStatuses []gatewayapi_v1alpha2.PolicyAncestorStatus
+	var newPolicyAncestorStatuses []gatewayapi_v1.PolicyAncestorStatus
 	for _, pas := range b.PolicyAncestorStatuses {
 		for i := range pas.Conditions {
 			cond := &pas.Conditions[i]

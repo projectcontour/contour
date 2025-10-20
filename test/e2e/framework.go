@@ -379,7 +379,7 @@ func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayapi_v1.HTTPRoute, co
 
 // CreateTLSRouteAndWaitFor creates the provided TLSRoute in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute, condition func(*gatewayapi_v1alpha2.TLSRoute) bool) bool {
+func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha3.TLSRoute, condition func(*gatewayapi_v1alpha3.TLSRoute) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 
@@ -391,7 +391,7 @@ func (f *Framework) CreateTCPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute
 
 // CreateBackendTLSPolicy creates the provided BackendTLSPolicy in the Kubernetes API
 // and then waits for the specified condition to be true.
-func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1alpha3.BackendTLSPolicy, condition func(*gatewayapi_v1alpha3.BackendTLSPolicy) bool) bool {
+func (f *Framework) CreateBackendTLSPolicyAndWaitFor(route *gatewayapi_v1.BackendTLSPolicy, condition func(*gatewayapi_v1.BackendTLSPolicy) bool) bool {
 	return createAndWaitFor(f.t, f.Client, route, condition, f.RetryInterval, f.RetryTimeout)
 }
 

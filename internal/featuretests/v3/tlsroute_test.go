@@ -25,6 +25,7 @@ import (
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -67,7 +68,7 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 			Listeners: []gatewayapi_v1.Listener{{
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -81,9 +82,9 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 
 	rh.OnAdd(gatewayPassthrough)
 
-	route1 := &gatewayapi_v1alpha2.TLSRoute{
+	route1 := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
@@ -125,9 +126,9 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	require.Empty(t, c.Request(routeType).Resources)
 
 	// Route2 doesn't define any SNIs, so this should become the default backend.
-	route2 := &gatewayapi_v1alpha2.TLSRoute{
+	route2 := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
@@ -167,9 +168,9 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 	// check that there is no route config
 	require.Empty(t, c.Request(routeType).Resources)
 
-	route3 := &gatewayapi_v1alpha2.TLSRoute{
+	route3 := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic"),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
@@ -182,9 +183,9 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 		},
 	}
 
-	route4 := &gatewayapi_v1alpha2.TLSRoute{
+	route4 := &gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: fixture.ObjectMeta("basic-wildcard"),
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
@@ -269,7 +270,7 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 					Name:     "tls",
 					Port:     5000,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
@@ -288,12 +289,12 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 
 	rh.OnAdd(gateway)
 
-	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
+	rh.OnAdd(&gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
@@ -325,12 +326,12 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 		),
 	})
 
-	rh.OnAdd(&gatewayapi_v1alpha2.TLSRoute{
+	rh.OnAdd(&gatewayapi_v1alpha3.TLSRoute{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic-2",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+		Spec: gatewayapi_v1alpha3.TLSRouteSpec{
 			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
 				ParentRefs: []gatewayapi_v1.ParentReference{
 					gatewayapi.GatewayParentRef("projectcontour", "contour"),
