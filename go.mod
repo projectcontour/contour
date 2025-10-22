@@ -25,7 +25,7 @@ require (
 	github.com/projectcontour/yages v0.1.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.66.1
+	github.com/prometheus/common v0.67.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
 	github.com/tsaarni/certyaml v0.10.0
@@ -57,7 +57,7 @@ require (
 	codeberg.org/go-pdf/fpdf v0.10.0 // indirect
 	git.sr.ht/~sbinet/gg v0.6.0 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
-	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
+	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -122,7 +122,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/image v0.25.0 // indirect
