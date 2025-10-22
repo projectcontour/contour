@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
-	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -103,7 +102,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, backendTLSPolicyUpdate := range c.backendTLSPolicyUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       &gatewayapi_v1alpha3.BackendTLSPolicy{},
+			Resource:       &gatewayapi_v1.BackendTLSPolicy{},
 			Mutator:        backendTLSPolicyUpdate,
 		}
 

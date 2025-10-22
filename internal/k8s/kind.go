@@ -56,7 +56,7 @@ func KindOf(obj any) string {
 			return "HTTPRoute"
 		case *gatewayapi_v1.GRPCRoute:
 			return "GRPCRoute"
-		case *gatewayapi_v1alpha2.TLSRoute:
+		case *gatewayapi_v1alpha3.TLSRoute:
 			return "TLSRoute"
 		case *gatewayapi_v1alpha2.TCPRoute:
 			return "TCPRoute"
@@ -66,7 +66,7 @@ func KindOf(obj any) string {
 			return "GatewayClass"
 		case *gatewayapi_v1beta1.ReferenceGrant:
 			return "ReferenceGrant"
-		case *gatewayapi_v1alpha3.BackendTLSPolicy:
+		case *gatewayapi_v1.BackendTLSPolicy:
 			return "BackendTLSPolicy"
 		case *contour_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"

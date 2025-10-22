@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gatewayapi_v1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -201,7 +202,7 @@ func TestIsEqualForGeneration(t *testing.T) {
 	run(t, &gatewayapi_v1.GatewayClass{})
 	run(t, &gatewayapi_v1.Gateway{})
 	run(t, &gatewayapi_v1.HTTPRoute{})
-	run(t, &gatewayapi_v1alpha2.TLSRoute{})
+	run(t, &gatewayapi_v1alpha3.TLSRoute{})
 	run(t, &gatewayapi_v1beta1.ReferenceGrant{})
 	run(t, &gatewayapi_v1.GRPCRoute{})
 	run(t, &gatewayapi_v1alpha2.TCPRoute{})

@@ -970,10 +970,10 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_v1alpha1.ContourCo
 			"httproutes":         &gatewayapi_v1.HTTPRoute{},
 			"referencegrants":    &gatewayapi_v1beta1.ReferenceGrant{},
 			"namespaces":         &core_v1.Namespace{},
-			"tlsroutes":          &gatewayapi_v1alpha2.TLSRoute{},
+			"tlsroutes":          &gatewayapi_v1alpha3.TLSRoute{},
 			"grpcroutes":         &gatewayapi_v1.GRPCRoute{},
 			"tcproutes":          &gatewayapi_v1alpha2.TCPRoute{},
-			"backendtlspolicies": &gatewayapi_v1alpha3.BackendTLSPolicy{},
+			"backendtlspolicies": &gatewayapi_v1.BackendTLSPolicy{},
 			"configmaps":         &core_v1.ConfigMap{},
 		}
 
