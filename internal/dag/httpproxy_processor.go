@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1345,28 +1346,33 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_v1.HTTPProxy {
 	}
 
 	for fqdn, proxies := range fqdnHTTPProxies {
-		switch len(proxies) {
-		case 1:
-			valid = append(valid, proxies[0])
-		default:
-			// multiple proxies use the same fqdn. mark them as invalid.
-			var conflicting []string
-			for _, proxy := range proxies {
-				conflicting = append(conflicting, proxy.Namespace+"/"+proxy.Name)
-			}
-			sort.Strings(conflicting) // sort for test stability
-			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
-			for _, proxy := range proxies {
-				pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
-				pa.Vhost = fqdn
-				pa.ConditionFor(status.ValidCondition).AddError(contour_v1.ConditionTypeVirtualHostError,
-					"DuplicateVhost",
-					msg)
-				commit()
-			}
+		sortHTTPProxies(proxies)
+		valid = append(valid, proxies[0])
+		conflicting := proxies[1:]
+		for _, proxy := range conflicting {
+			pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
+			pa.Vhost = fqdn
+			pa.ConditionFor(status.ValidCondition).AddError(contour_v1.ConditionTypeVirtualHostError,
+				"DuplicateVhost",
+				fmt.Sprintf("fqdn %q already in use by a pre-existing HTTPProxy", fqdn))
+			commit()
 		}
 	}
 	return valid
+}
+
+// For multiple proxies that use the same FQDN, sort based on creation timestamp
+// first and namespace/name lexicographic order second to resolve conflicts. The
+// HTTPProxy that sorts first (i.e. oldest/first in alphabet) should not be
+// marked invalid, as it claimed the FQDN first.
+func sortHTTPProxies(proxies []*contour_v1.HTTPProxy) {
+	slices.SortFunc(proxies, func(a, b *contour_v1.HTTPProxy) int {
+		// if the creation time is the same, compare the proxy name
+		if a.CreationTimestamp.Equal(&b.CreationTimestamp) {
+			return strings.Compare(k8s.NamespacedNameOf(a).String(), k8s.NamespacedNameOf(b).String())
+		}
+		return a.CreationTimestamp.Compare(b.CreationTimestamp.Time)
+	})
 }
 
 // rootAllowed returns true if the HTTPProxy lives in a permitted root namespace.
