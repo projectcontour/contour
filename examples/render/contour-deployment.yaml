@@ -225,7 +225,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   name: contourconfigurations.projectcontour.io
 spec:
-  preserveUnknownFields: false
   group: projectcontour.io
   names:
     kind: ContourConfiguration
@@ -1624,7 +1623,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   name: contourdeployments.projectcontour.io
 spec:
-  preserveUnknownFields: false
   group: projectcontour.io
   names:
     kind: ContourDeployment
@@ -5443,7 +5441,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   name: extensionservices.projectcontour.io
 spec:
-  preserveUnknownFields: false
   group: projectcontour.io
   names:
     kind: ExtensionService
@@ -5923,7 +5920,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   name: httpproxies.projectcontour.io
 spec:
-  preserveUnknownFields: false
   group: projectcontour.io
   names:
     kind: HTTPProxy
@@ -8825,7 +8821,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.19.0
   name: tlscertificatedelegations.projectcontour.io
 spec:
-  preserveUnknownFields: false
   group: projectcontour.io
   names:
     kind: TLSCertificateDelegation

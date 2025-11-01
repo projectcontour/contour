@@ -24,11 +24,4 @@ go run sigs.k8s.io/controller-tools/cmd/controller-gen --version
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd:crdVersions=v1 "paths=${PATHS}" "output:dir=${TEMPDIR}"
 
-# Explicitly add "preserveUnknownFields: false" to CRD specs since any CRDs created
-# as v1beta1 will have this field set to true, which we don't want going forward, and
-# it needs to be explicitly specified in order to be updated/removed. After enough time
-# has passed and we're not concerned about folks upgrading from v1beta1 CRDs, we can
-# remove the awk call that adds this field to the spec, and rely on the v1 default.
-ls "${TEMPDIR}"/*.yaml | xargs cat | sed '/^$/d' \
-  | awk '/group: projectcontour.io/{print "  preserveUnknownFields: false"}1' \
-  > "${REPO}/examples/contour/01-crds.yaml"
+ls "${TEMPDIR}"/*.yaml | xargs cat | sed '/^$/d' > "${REPO}/examples/contour/01-crds.yaml"
