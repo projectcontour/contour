@@ -236,6 +236,163 @@ contour/
 - ContourConfiguration
 - ExtensionService (alpha)
 
+## UI/Frontend Code
+
+### Overview
+
+**Contour is a headless controller with NO admin dashboard or web UI.** All configuration and management happens through Kubernetes APIs and CLI tools (`kubectl`, `contour` CLI).
+
+The only UI-related code in the repository is for the **static documentation website** (https://projectcontour.io), located in the `/site` directory.
+
+### Documentation Website (`/site`)
+
+#### Technology Stack
+
+- **Static Site Generator**: Hugo (Go-based)
+- **Template Engine**: Go HTML templates
+- **Styling**: SCSS (~1,353 lines total)
+- **JavaScript**: Vanilla JavaScript (22 lines)
+- **No JavaScript Frameworks**: No React, Vue, Angular, or similar
+
+#### Directory Structure
+
+```
+site/
+├── config.yaml              # Hugo configuration
+├── content/                 # Markdown documentation files
+│   ├── docs/                # Versioned documentation (1.20 - 1.33 + main)
+│   ├── community/           # Community pages
+│   └── resources/           # Resources and guides
+├── themes/contour/          # Custom Hugo theme
+│   ├── assets/
+│   │   └── scss/            # Stylesheets
+│   │       ├── _components.scss (846 lines)
+│   │       ├── _base.scss (253 lines)
+│   │       ├── _header.scss (107 lines)
+│   │       ├── _footer.scss (97 lines)
+│   │       ├── _mixins.scss (35 lines)
+│   │       ├── _variables.scss (10 lines)
+│   │       └── site.scss (5 lines)
+│   ├── layouts/             # HTML templates
+│   │   ├── index.html       # Homepage
+│   │   ├── _default/        # Default layouts
+│   │   ├── partials/        # Reusable components
+│   │   └── shortcodes/      # Hugo shortcodes
+│   └── static/
+│       ├── js/
+│       │   └── main.js      # Minimal JavaScript (22 lines)
+│       ├── fonts/           # Metropolis font family
+│       └── img/             # SVG icons, logos, diagrams
+└── data/                    # Data files for templates
+```
+
+#### JavaScript Functionality (main.js)
+
+The JavaScript code is minimal and handles only basic interactions:
+
+```javascript
+// Mobile navigation toggle
+function mobileNavToggle()
+
+// Documentation version dropdown toggle
+function docsVersionToggle()
+
+// Click-outside handler to close dropdown menus
+window.onclick - closes dropdown when clicking outside
+```
+
+**Total: 22 lines of vanilla JavaScript** - no build process, no transpilation, no frameworks.
+
+#### SCSS Styling
+
+The site uses SCSS for styling with a modular architecture:
+
+- **_components.scss** (846 lines) - Buttons, cards, navigation, forms, etc.
+- **_base.scss** (253 lines) - Base styles, typography, layout
+- **_header.scss** (107 lines) - Header and navigation styles
+- **_footer.scss** (97 lines) - Footer styles
+- **_mixins.scss** (35 lines) - Reusable SCSS mixins
+- **_variables.scss** (10 lines) - Color and spacing variables
+
+**Total: ~1,353 lines of SCSS**
+
+#### Features
+
+1. **Versioned Documentation**
+   - Supports multiple versions (1.20 through 1.33 + main branch)
+   - Version dropdown selector
+   - Each version has its own content tree
+
+2. **Search Functionality**
+   - Integrated with Algolia for full-text search
+   - Configuration in `config.yaml`:
+     - App ID: `IW9YQMJ8HH`
+     - Index: `projectcontour`
+
+3. **Responsive Design**
+   - Mobile-friendly navigation with hamburger menu
+   - Responsive grid layouts
+   - Mobile-first CSS approach
+
+4. **Code Syntax Highlighting**
+   - Built-in Hugo syntax highlighting
+   - Pygments style for code blocks
+   - Support for multiple languages
+
+5. **Auto-Generated API Reference**
+   - HTML files generated from CRD definitions
+   - Located in `content/docs/*/config/api-reference.html`
+   - Covers HTTPProxy, ContourConfiguration, etc.
+
+#### Static Assets
+
+- **Fonts**: Metropolis font family (Regular, Bold, Light, Medium, SemiBold, with Italic variants)
+- **Images**: SVG icons, project logos, architecture diagrams, UML diagrams
+- **Icons**: GitHub, Slack, Twitter, search, navigation arrows, etc.
+
+#### Build & Development
+
+```bash
+# Prerequisites
+brew install hugo  # macOS
+choco install hugo-extended -confirm  # Windows
+
+# Build and serve locally
+hugo server --disableFastRender
+
+# Serves at http://localhost:1313
+```
+
+### What's NOT Included
+
+❌ **No Admin Dashboard** - Configuration is done entirely via Kubernetes YAML
+❌ **No Metrics Dashboard** - Uses Prometheus/Grafana for observability
+❌ **No Control Panel** - All management through `kubectl` and Kubernetes APIs
+❌ **No Application UI** - Contour is a backend controller only
+❌ **No Modern JS Framework** - Just vanilla JS for simple interactions
+❌ **No Build Pipeline** - No webpack, Vite, npm, or node_modules
+❌ **No REST API UI** - Debug endpoints are for curl/browser direct access
+
+### Visualization & Dashboards
+
+For runtime visualization, Contour relies on external tools:
+
+- **Prometheus + Grafana** - Metrics and monitoring dashboards (example configs in `/examples/grafana/`)
+- **Kubernetes Dashboard** - View HTTPProxy/Gateway resources
+- **kubectl** - CLI-based resource inspection
+- **Debug Endpoints** - `/debug/pprof` for profiling (text/binary output)
+
+### Summary
+
+The project is **100% backend-focused** with no application UI. The only "UI code" is a standard static documentation website built with Hugo, featuring minimal JavaScript for basic interactions and SCSS for styling. All Contour configuration, monitoring, and management happens through:
+
+1. **Kubernetes APIs** (kubectl, YAML manifests)
+2. **Contour CLI** (bootstrap, version, etc.)
+3. **Prometheus/Grafana** (metrics visualization)
+4. **External tooling** (debuggers, profilers, log aggregators)
+
+This is typical for Kubernetes controllers, which are headless services that operate entirely through declarative configuration.
+
 ## Test Architecture
 
 Contour has a comprehensive multi-layered testing strategy:
