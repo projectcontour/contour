@@ -617,7 +617,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		http2Options.AllowConnect = true
 	}
 
-	// Assign http2Options only if it has been modified
+	// Assign http2Options only when max concurrent streams are set or web sockets are enabled
 	if b.http2MaxConcurrentStreams != nil || b.enableWebsockets {
 		cm.Http2ProtocolOptions = http2Options
 	}
