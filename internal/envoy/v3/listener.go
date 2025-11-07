@@ -618,7 +618,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 	}
 
 	// Assign http2Options only if it has been modified
-	if b.http2MaxConcurrentStreams != nil {
+	if b.http2MaxConcurrentStreams != nil || b.enableWebsockets {
 		cm.Http2ProtocolOptions = http2Options
 	}
 
