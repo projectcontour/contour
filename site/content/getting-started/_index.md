@@ -50,13 +50,13 @@ This option requires [Helm to be installed locally][29].
 Add the bitnami chart repository (which contains the Contour chart) by running the following:
 
 ```bash
-$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm repo add contour https://projectcontour.github.io/helm-charts/
 ```
 
 Install the Contour chart by running the following:
 
 ```bash
-$ helm install my-release bitnami/contour --namespace projectcontour --create-namespace
+$ helm install my-release contour/contour --namespace projectcontour --create-namespace
 ```
 
 Verify Contour is ready by running:
