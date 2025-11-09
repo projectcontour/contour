@@ -162,6 +162,9 @@ type ListenerConfig struct {
 
 	// EnableJA4Fingerprinting enables JA4 fingerprinting for HTTPS listeners.
 	EnableJA4Fingerprinting *bool
+
+	// MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
+    MaxConnectionsToAcceptPerSocketEvent *uint32
 }
 
 type ExtensionServiceConfig struct {
@@ -599,6 +602,13 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			}
 		}
 	}
+       
+        // 2. max_connections_to_accept_per_socket_event
+        if cfg.MaxConnectionsToAcceptPerSocketEvent != nil {
+	    for _, listener := range listeners {
+		listener.MaxConnectionsToAcceptPerSocketEvent = *cfg.MaxConnectionsToAcceptPerSocketEvent
+	    }
+        }
 
 	c.Update(listeners)
 }
