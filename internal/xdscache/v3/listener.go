@@ -33,6 +33,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
+        "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // nolint:revive
@@ -606,7 +607,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
         // 2. max_connections_to_accept_per_socket_event
         if cfg.MaxConnectionsToAcceptPerSocketEvent != nil {
 	    for _, listener := range listeners {
-		listener.MaxConnectionsToAcceptPerSocketEvent = *cfg.MaxConnectionsToAcceptPerSocketEvent
+		listener.MaxConnectionsToAcceptPerSocketEvent = wrapperspb.UInt32(*cfg.MaxConnectionsToAcceptPerSocketEvent)
 	    }
         }
 
