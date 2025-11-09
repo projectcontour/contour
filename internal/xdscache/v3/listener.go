@@ -151,6 +151,9 @@ type ListenerConfig struct {
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
 	SocketOptions *contour_v1alpha1.SocketOptions
+  
+        // MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
+        MaxConnectionsToAcceptPerSocketEvent *uint32
 }
 
 type ExtensionServiceConfig struct {
@@ -610,6 +613,13 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			}
 		}
 	}
+       
+        // 2. max_connections_to_accept_per_socket_event
+        if cfg.MaxConnectionsToAcceptPerSocketEvent != nil {
+	    for _, listener := range listeners {
+		listener.MaxConnectionsToAcceptPerSocketEvent = *cfg.MaxConnectionsToAcceptPerSocketEvent
+	    }
+        }
 
 	c.Update(listeners)
 }
