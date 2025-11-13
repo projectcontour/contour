@@ -40,7 +40,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Codespell
-      uses: codespell-project/actions-codespell@406322ec52dd7b488e48c1c4b82e2a8b3a1bf630 # v2.1
+      uses: codespell-project/actions-codespell@8f01853be192eb0f849a5c7d721450e7a467c579 # v2.2
       with:
         skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
         ignore_words_file: './.codespell.ignorewords'
