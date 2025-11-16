@@ -1434,7 +1434,7 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 			if len(auth.HTTPServerSettings.AllowedAuthorizationHeaders) > 0 {
 				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
 					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
-						err.Error())
+						"allowed authorization headers validation failed: %v", err)
 
 					return nil
 				}
@@ -1445,7 +1445,7 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 			if len(auth.HTTPServerSettings.AllowedUpstreamHeaders) > 0 {
 				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
 					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
-						err.Error())
+						"allowed upstream headers validation failed: %v", err)
 
 					return nil
 				}

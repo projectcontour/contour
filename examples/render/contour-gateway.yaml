@@ -362,6 +362,13 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
+                      maxConnectionsToAcceptPerSocketEvent:
+                        description: |-
+                          MaxConnectionsToAcceptPerSocketEvent defines the maximum number of
+                          connections Envoy will accept per socket event.
+                        format: int32
+                        minimum: 1
+                        type: integer
                       maxRequestsPerConnection:
                         description: |-
                           Defines the maximum requests for downstream connections. If not specified, there is no limit.
@@ -4253,6 +4260,13 @@ spec:
                             description: |-
                               Defines the limit on number of active connections to a listener. The limit is applied
                               per listener. The default value when this is not set is unlimited.
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          maxConnectionsToAcceptPerSocketEvent:
+                            description: |-
+                              MaxConnectionsToAcceptPerSocketEvent defines the maximum number of
+                              connections Envoy will accept per socket event.
                             format: int32
                             minimum: 1
                             type: integer
