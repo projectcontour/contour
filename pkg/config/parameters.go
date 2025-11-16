@@ -529,11 +529,11 @@ type ListenerParameters struct {
 	//
 	// +optional
 	MaxConnectionsPerListener *uint32 `yaml:"max-connections-per-listener,omitempty"`
-        
-        // MaxConnectionsToAcceptPerSocketEvent defines the maximum number of connections
-        // Envoy will accept from the kernel per socket event.
-        // See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto
-        MaxConnectionsToAcceptPerSocketEvent *uint32 `yaml:"max-connections-to-accept-per-socket-event,omitempty"`
+
+	// MaxConnectionsToAcceptPerSocketEvent defines the maximum number of connections
+	// Envoy will accept from the kernel per socket event.
+	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto
+	MaxConnectionsToAcceptPerSocketEvent *uint32 `yaml:"max-connections-to-accept-per-socket-event,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -564,10 +564,10 @@ func (p *ListenerParameters) Validate() error {
 	if p.MaxConnectionsPerListener != nil && *p.MaxConnectionsPerListener < 1 {
 		return fmt.Errorf("invalid max connections per listener value %d set on listener, minimum value is 1", *p.MaxConnectionsPerListener)
 	}
-         
-        if p.MaxConnectionsToAcceptPerSocketEvent != nil && *p.MaxConnectionsToAcceptPerSocketEvent == 0 {
-                return fmt.Errorf("max-connections-to-accept-per-socket-event must be greater than 0")
-        }
+
+	if p.MaxConnectionsToAcceptPerSocketEvent != nil && *p.MaxConnectionsToAcceptPerSocketEvent == 0 {
+		return fmt.Errorf("max-connections-to-accept-per-socket-event must be greater than 0")
+	}
 
 	return p.SocketOptions.Validate()
 }
