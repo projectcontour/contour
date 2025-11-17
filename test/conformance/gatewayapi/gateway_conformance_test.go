@@ -91,13 +91,6 @@ func TestGatewayConformance(t *testing.T) {
 			// created.
 			// See: https://github.com/kubernetes-sigs/gateway-api/issues/2592
 			tests.HTTPRouteInvalidParentRefSectionNameNotMatchingPort.ShortName,
-
-			// This test currently fails since we do not program any filter chain
-			// for a Gateway Listener that has no attached routes. The test
-			// includes a TLS Listener with no hostname specified and the test
-			// sends a request for an unknown (to Contour/Envoy) host which fails
-			// instead of returning a 404.
-			tests.HTTPRouteHTTPSListener.ShortName,
 		},
 		ExemptFeatures: sets.New(
 			features.SupportMesh,

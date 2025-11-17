@@ -593,6 +593,17 @@ func (p *GatewayAPIProcessor) computeListener(
 			// routes to be bound to this listener since it can't serve TLS traffic.
 			return info
 		}
+
+		// We have a valid Listener with a valid TLS Secret and empty
+		// (catchall) hostname.
+		// Always add a wildcard secure virtualhost to ensure requests that do
+		// not match any attached routes get a 404 response (rather than a
+		// connection error because Envoy does not have a filter chain match).
+		if ptr.Deref(listener.Hostname, "") == "" {
+			svh := p.dag.EnsureSecureVirtualHost(validateListenersResult.ListenerNames[string(listener.Name)], "*")
+			svh.Secret = listenerSecret
+
+		}
 	case gatewayapi_v1.TLSProtocolType:
 		// The TLS protocol is used for TCP traffic encrypted with TLS.
 		// Gateway API allows TLS to be either terminated at the proxy
