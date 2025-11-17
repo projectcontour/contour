@@ -1,0 +1,1 @@
+For a Gateway HTTPS Listeners with unspecified (catchall/wildcard) hostnames, we add a wildcard filter chain. This is to ensure we get a routing failure HTTP response (404) when a request is received that is for an "unknown" fqdn, rather than a connection error because Envoy does not have a filter chain to match.
