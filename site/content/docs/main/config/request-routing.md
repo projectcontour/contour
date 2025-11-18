@@ -128,7 +128,7 @@ Modifiers:
 
 #### Method Matching
 
-HTTPProxy currently does not provide a dedicated field for matching HTTP methods. However, you can achieve method-based routing using **header conditions** with the Envoy pseudo-header `:method`. This allows routing requests based on HTTP methods such as `GET`, `POST`, `PUT`, etc.
+HTTPProxy currently does not provide a dedicated field for matching HTTP methods. However, you can achieve method-based routing using **header conditions** with the HTTP/2 pseudo-header formatted`:method` header match. This allows routing requests based on HTTP methods such as `GET`, `POST`, `PUT`, etc.
 
 ```yaml
 apiVersion: projectcontour.io/v1
