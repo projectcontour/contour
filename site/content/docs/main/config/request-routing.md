@@ -126,6 +126,36 @@ Modifiers:
 - `ignoreCase`: IgnoreCase specifies that string matching should be case insensitive. It has no effect on the `Regex` parameter.
 - `treatMissingAsEmpty`: specifies if the header match rule specified header does not exist, this header value will be treated as empty. Defaults to false. Unlike the underlying Envoy implementation this is **only** supported for negative matches (e.g. NotContains, NotExact).
 
+#### Method Matching
+
+HTTPProxy currently does not provide a dedicated field for matching HTTP methods. However, you can achieve method-based routing using **header conditions** with the HTTP/2 pseudo-header formatted`:method` header match. This allows routing requests based on HTTP methods such as `GET`, `POST`, `PUT`, etc.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: method-matching
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: methods.example.com
+  routes:
+    - conditions:
+        - header:
+            name: ":method"
+            exact: GET
+      services:
+        - name: get-service
+          port: 80
+    - conditions:
+        - header:
+            name: ":method"
+            exact: POST
+      services:
+        - name: post-service
+          port: 80
+```
+
 #### Query parameter conditions
 
 Similar to the `header` conditions, `queryParameter` conditions also require the
