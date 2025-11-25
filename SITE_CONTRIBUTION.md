@@ -58,8 +58,7 @@ A reference table, located at the end of the Markdown file, uses the following f
 [4]: https://httpbin.org/
 [5]: https://github.com/projectcontour/community/wiki/Office-Hours
 [6]: {{< param slack_url >}}
-[7]: https://github.com/bitnami/charts/tree/master/bitnami/contour
-[8]: https://www.youtube.com/watch?v=xUJbTnN3Dmw
+[7]: https://www.youtube.com/watch?v=xUJbTnN3Dmw
 ```
 
 ## Using URL parameters

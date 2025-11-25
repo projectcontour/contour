@@ -47,7 +47,7 @@ You should see the following:
 ### Option 2: Helm
 This option requires [Helm to be installed locally][29].
 
-Add the bitnami chart repository (which contains the Contour chart) by running the following:
+Add projectcontour's chart repository by running the following:
 
 ```bash
 $ helm repo add contour https://projectcontour.github.io/helm-charts/
@@ -232,8 +232,6 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [12]: {{< param slack_url >}}
 [13]: https://projectcontour.io/resources/deprecation-policy/
 [14]: /docs/{{< param latest_version >}}/guides/gateway-api
-[15]: https://github.com/bitnami/charts/tree/master/bitnami/contour
-[16]: https://github.com/helm/charts#%EF%B8%8F-deprecation-and-archive-notice
 [17]: /docs/{{< param latest_version >}}/troubleshooting
 [18]: /docs/{{< param latest_version >}}/architecture
 [19]: https://youtu.be/YA82A4Rcs_A
