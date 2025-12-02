@@ -73,6 +73,7 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 					MinimumProtocolVersion: "1.2",
 					MaximumProtocolVersion: "1.3",
 					CipherSuites:           contour_v1alpha1.DefaultTLSCiphers,
+					EnableFingerprinting:   ptr.To(false),
 				},
 			},
 			Service: &contour_v1alpha1.NamespacedName{

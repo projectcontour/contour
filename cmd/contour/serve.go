@@ -138,6 +138,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes,tcproutes,backendtlspolicies>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes", "tcproutes", "backendtlspolicies")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
+	serve.Flag("enable-tls-fingerprinting", "Enable JA3/JA4 TLS fingerprinting in the TLS Inspector filter.").BoolVar(&ctx.enableTLSFingerprinting)
+
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpsAccessLog)
 	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests.").PlaceHolder("<ipaddr>").StringVar(&ctx.httpAddr)
@@ -444,6 +446,7 @@ func (s *Server) doServe() error {
 	listenerConfig := xdscache_v3.ListenerConfig{
 		Compression:                   contourConfiguration.Envoy.Listener.Compression,
 		UseProxyProto:                 *contourConfiguration.Envoy.Listener.UseProxyProto,
+		EnableTLSFingerprinting:       *contourConfiguration.Envoy.Listener.TLS.EnableFingerprinting,
 		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                 contourConfiguration.Envoy.Logging.AccessLogFormat,

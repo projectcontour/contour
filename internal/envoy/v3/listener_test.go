@@ -29,6 +29,7 @@ import (
 	envoy_filter_http_lua_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_filter_http_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_filter_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	envoy_filter_listener_tls_inspector_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_filter_network_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
@@ -75,6 +76,49 @@ func TestProtoNamesForVersions(t *testing.T) {
 	assert.Equal(t, []string{"h2"}, ProtoNamesForVersions(HTTPVersion2))
 	assert.Equal(t, []string(nil), ProtoNamesForVersions(HTTPVersion3))
 	assert.Equal(t, []string{"h2", "http/1.1"}, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2))
+}
+
+func TestTLSInspector(t *testing.T) {
+	tests := map[string]struct {
+		enableFingerprinting bool
+		wantJA3              bool
+		wantJA4              bool
+	}{
+		"fingerprinting disabled": {
+			enableFingerprinting: false,
+			wantJA3:              false,
+			wantJA4:              false,
+		},
+		"fingerprinting enabled": {
+			enableFingerprinting: true,
+			wantJA3:              true,
+			wantJA4:              true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := TLSInspector(tc.enableFingerprinting)
+
+			assert.Equal(t, wellknown.TlsInspector, got.Name)
+
+			var tlsInspector envoy_filter_listener_tls_inspector_v3.TlsInspector
+			err := got.GetTypedConfig().UnmarshalTo(&tlsInspector)
+			require.NoError(t, err)
+
+			if tc.wantJA3 {
+				assert.True(t, tlsInspector.GetEnableJa3Fingerprinting().GetValue())
+			} else {
+				assert.Nil(t, tlsInspector.GetEnableJa3Fingerprinting())
+			}
+
+			if tc.wantJA4 {
+				assert.True(t, tlsInspector.GetEnableJa4Fingerprinting().GetValue())
+			} else {
+				assert.Nil(t, tlsInspector.GetEnableJa4Fingerprinting())
+			}
+		})
+	}
 }
 
 func TestListener(t *testing.T) {
@@ -133,13 +177,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			lf: ListenerFilters(
-				TLSInspector(),
+				TLSInspector(false),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(),
+					TLSInspector(false),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -150,14 +194,14 @@ func TestListener(t *testing.T) {
 			port:    9000,
 			lf: ListenerFilters(
 				ProxyProtocol(),
-				TLSInspector(),
+				TLSInspector(false),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https-proxy",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
-					TLSInspector(),
+					TLSInspector(false),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -186,14 +230,14 @@ func TestListener(t *testing.T) {
 			port:                          9000,
 			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			lf: ListenerFilters(
-				TLSInspector(),
+				TLSInspector(false),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:                          "https",
 				Address:                       SocketAddress("0.0.0.0", 9000),
 				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(),
+					TLSInspector(false),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},

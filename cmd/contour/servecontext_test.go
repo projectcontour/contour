@@ -413,6 +413,7 @@ func defaultContourConfiguration() contour_v1alpha1.ContourConfigurationSpec {
 				TLS: &contour_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "",
 					MaximumProtocolVersion: "",
+					EnableFingerprinting:   ptr.To(false),
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          0,

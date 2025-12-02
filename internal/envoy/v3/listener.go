@@ -114,11 +114,19 @@ func CodecForVersions(versions ...HTTPVersionType) HTTPVersionType {
 }
 
 // TLSInspector returns a new TLS inspector listener filter.
-func TLSInspector() *envoy_config_listener_v3.ListenerFilter {
+// If enableFingerprinting is true, JA3 and JA4 fingerprinting will be enabled.
+func TLSInspector(enableFingerprinting bool) *envoy_config_listener_v3.ListenerFilter {
+	tlsInspectorConfig := &envoy_filter_listener_tls_inspector_v3.TlsInspector{}
+
+	if enableFingerprinting {
+		tlsInspectorConfig.EnableJa3Fingerprinting = wrapperspb.Bool(true)
+		tlsInspectorConfig.EnableJa4Fingerprinting = wrapperspb.Bool(true)
+	}
+
 	return &envoy_config_listener_v3.ListenerFilter{
 		Name: wellknown.TlsInspector,
 		ConfigType: &envoy_config_listener_v3.ListenerFilter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_listener_tls_inspector_v3.TlsInspector{}),
+			TypedConfig: protobuf.MustMarshalAny(tlsInspectorConfig),
 		},
 	}
 }

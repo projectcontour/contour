@@ -75,7 +75,8 @@ type serveContext struct {
 	statsPort int
 
 	// envoy's listener parameters
-	useProxyProto bool
+	useProxyProto           bool
+	enableTLSFingerprinting bool
 
 	// envoy's http listener parameters
 	httpAddr      string
@@ -561,6 +562,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
 					CipherSuites:           cipherSuites,
+					EnableFingerprinting:   &ctx.enableTLSFingerprinting,
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          ctx.Config.Listener.SocketOptions.TOS,
