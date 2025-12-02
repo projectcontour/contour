@@ -671,6 +671,6 @@ func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool, enableTLSFingerprinting bool) []*envoy_config_listener_v3.ListenerFilter {
+func secureProxyProtocol(useProxy, enableTLSFingerprinting bool) []*envoy_config_listener_v3.ListenerFilter {
 	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector(enableTLSFingerprinting))
 }
