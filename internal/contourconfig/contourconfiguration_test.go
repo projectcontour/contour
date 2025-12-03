@@ -70,7 +70,8 @@ func TestOverlayOnDefaults(t *testing.T) {
 						"foo",
 						"bar",
 					},
-					EnableFingerprinting: ptr.To(true),
+					EnableJA3Fingerprinting: ptr.To(true),
+					EnableJA4Fingerprinting: ptr.To(true),
 				},
 			},
 			Service: &contour_v1alpha1.NamespacedName{

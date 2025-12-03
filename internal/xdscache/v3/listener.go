@@ -65,9 +65,13 @@ type ListenerConfig struct {
 	// If not set, defaults to false.
 	UseProxyProto bool
 
-	// EnableTLSFingerprinting enables JA3/JA4 fingerprinting in the TLS Inspector.
+	// EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
 	// If not set, defaults to false.
-	EnableTLSFingerprinting bool
+	EnableJA3Fingerprinting bool
+
+	// EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+	// If not set, defaults to false.
+	EnableJA4Fingerprinting bool
 
 	// Compression defines configuration related to compression in the default HTTP Listener filters.
 	Compression *contour_v1alpha1.EnvoyCompression
@@ -426,7 +430,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
 				socketOptions,
-				secureProxyProtocol(cfg.UseProxyProto, cfg.EnableTLSFingerprinting),
+				secureProxyProtocol(cfg.UseProxyProto, cfg.EnableJA3Fingerprinting, cfg.EnableJA4Fingerprinting),
 			)
 		}
 
@@ -671,6 +675,6 @@ func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy, enableTLSFingerprinting bool) []*envoy_config_listener_v3.ListenerFilter {
-	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector(enableTLSFingerprinting))
+func secureProxyProtocol(useProxy, enableJA3, enableJA4 bool) []*envoy_config_listener_v3.ListenerFilter {
+	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector(enableJA3, enableJA4))
 }

@@ -759,8 +759,13 @@ func (in *EnvoyTLS) DeepCopyInto(out *EnvoyTLS) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.EnableFingerprinting != nil {
-		in, out := &in.EnableFingerprinting, &out.EnableFingerprinting
+	if in.EnableJA3Fingerprinting != nil {
+		in, out := &in.EnableJA3Fingerprinting, &out.EnableJA3Fingerprinting
+		*out = new(bool)
+		**out = **in
+	}
+	if in.EnableJA4Fingerprinting != nil {
+		in, out := &in.EnableJA4Fingerprinting, &out.EnableJA4Fingerprinting
 		*out = new(bool)
 		**out = **in
 	}

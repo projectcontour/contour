@@ -138,7 +138,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("disable-feature", "Do not start an informer for the specified resources.").PlaceHolder("<extensionservices,tlsroutes,grpcroutes,tcproutes,backendtlspolicies>").EnumsVar(&ctx.disabledFeatures, "extensionservices", "tlsroutes", "grpcroutes", "tcproutes", "backendtlspolicies")
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
 
-	serve.Flag("enable-tls-fingerprinting", "Enable JA3/JA4 TLS fingerprinting in the TLS Inspector filter.").BoolVar(&ctx.enableTLSFingerprinting)
+	serve.Flag("enable-ja3-fingerprinting", "Enable JA3 fingerprinting in the TLS Inspector filter (requires Envoy 1.21.0+).").BoolVar(&ctx.enableJA3Fingerprinting)
+	serve.Flag("enable-ja4-fingerprinting", "Enable JA4 fingerprinting in the TLS Inspector filter (requires Envoy 1.35.0+).").BoolVar(&ctx.enableJA4Fingerprinting)
 
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpsAccessLog)
@@ -446,7 +447,8 @@ func (s *Server) doServe() error {
 	listenerConfig := xdscache_v3.ListenerConfig{
 		Compression:                   contourConfiguration.Envoy.Listener.Compression,
 		UseProxyProto:                 *contourConfiguration.Envoy.Listener.UseProxyProto,
-		EnableTLSFingerprinting:       *contourConfiguration.Envoy.Listener.TLS.EnableFingerprinting,
+		EnableJA3Fingerprinting:       *contourConfiguration.Envoy.Listener.TLS.EnableJA3Fingerprinting,
+		EnableJA4Fingerprinting:       *contourConfiguration.Envoy.Listener.TLS.EnableJA4Fingerprinting,
 		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                 contourConfiguration.Envoy.Logging.AccessLogFormat,

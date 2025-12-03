@@ -80,25 +80,40 @@ func TestProtoNamesForVersions(t *testing.T) {
 
 func TestTLSInspector(t *testing.T) {
 	tests := map[string]struct {
-		enableFingerprinting bool
-		wantJA3              bool
-		wantJA4              bool
+		enableJA3 bool
+		enableJA4 bool
+		wantJA3   bool
+		wantJA4   bool
 	}{
-		"fingerprinting disabled": {
-			enableFingerprinting: false,
-			wantJA3:              false,
-			wantJA4:              false,
+		"both disabled": {
+			enableJA3: false,
+			enableJA4: false,
+			wantJA3:   false,
+			wantJA4:   false,
 		},
-		"fingerprinting enabled": {
-			enableFingerprinting: true,
-			wantJA3:              true,
-			wantJA4:              true,
+		"JA3 enabled only": {
+			enableJA3: true,
+			enableJA4: false,
+			wantJA3:   true,
+			wantJA4:   false,
+		},
+		"JA4 enabled only": {
+			enableJA3: false,
+			enableJA4: true,
+			wantJA3:   false,
+			wantJA4:   true,
+		},
+		"both enabled": {
+			enableJA3: true,
+			enableJA4: true,
+			wantJA3:   true,
+			wantJA4:   true,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := TLSInspector(tc.enableFingerprinting)
+			got := TLSInspector(tc.enableJA3, tc.enableJA4)
 
 			assert.Equal(t, wellknown.TlsInspector, got.Name)
 
@@ -177,13 +192,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			lf: ListenerFilters(
-				TLSInspector(false),
+				TLSInspector(false, false),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(false),
+					TLSInspector(false, false),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -194,14 +209,14 @@ func TestListener(t *testing.T) {
 			port:    9000,
 			lf: ListenerFilters(
 				ProxyProtocol(),
-				TLSInspector(false),
+				TLSInspector(false, false),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https-proxy",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
-					TLSInspector(false),
+					TLSInspector(false, false),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -230,14 +245,14 @@ func TestListener(t *testing.T) {
 			port:                          9000,
 			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			lf: ListenerFilters(
-				TLSInspector(false),
+				TLSInspector(false, false),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:                          "https",
 				Address:                       SocketAddress("0.0.0.0", 9000),
 				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(false),
+					TLSInspector(false, false),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},

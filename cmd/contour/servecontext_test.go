@@ -411,9 +411,10 @@ func defaultContourConfiguration() contour_v1alpha1.ContourConfigurationSpec {
 				DisableMergeSlashes:        ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
 				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: "",
-					MaximumProtocolVersion: "",
-					EnableFingerprinting:   ptr.To(false),
+					MinimumProtocolVersion:  "",
+					MaximumProtocolVersion:  "",
+					EnableJA3Fingerprinting: ptr.To(false),
+					EnableJA4Fingerprinting: ptr.To(false),
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          0,

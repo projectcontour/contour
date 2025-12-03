@@ -7605,7 +7605,7 @@ Note: This list is a superset of what is valid for stock Envoy builds and those 
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>enableFingerprinting</code>
+<code>enableJA3Fingerprinting</code>
 <br>
 <em>
 bool
@@ -7613,9 +7613,27 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>EnableFingerprinting enables JA3 and JA4 TLS fingerprinting in the
-TLS Inspector listener filter. When enabled, Envoy will extract JA3/JA4
-fingerprints from TLS client hellos.</p>
+<p>EnableJA3Fingerprinting enables JA3 TLS fingerprinting in the
+TLS Inspector listener filter. When enabled, Envoy will extract JA3
+fingerprints from TLS client hellos.
+Note: JA3 fingerprinting requires Envoy 1.21.0 or later.</p>
+<p>Contour&rsquo;s default is false.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableJA4Fingerprinting</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EnableJA4Fingerprinting enables JA4 TLS fingerprinting in the
+TLS Inspector listener filter. When enabled, Envoy will extract JA4
+fingerprints from TLS client hellos.
+Note: JA4 fingerprinting requires Envoy 1.35.0 or later.</p>
 <p>Contour&rsquo;s default is false.</p>
 </td>
 </tr>

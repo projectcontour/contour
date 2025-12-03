@@ -76,7 +76,8 @@ type serveContext struct {
 
 	// envoy's listener parameters
 	useProxyProto           bool
-	enableTLSFingerprinting bool
+	enableJA3Fingerprinting bool
+	enableJA4Fingerprinting bool
 
 	// envoy's http listener parameters
 	httpAddr      string
@@ -559,10 +560,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				HTTP2MaxConcurrentStreams:     ctx.Config.Listener.HTTP2MaxConcurrentStreams,
 				MaxConnectionsPerListener:     ctx.Config.Listener.MaxConnectionsPerListener,
 				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
-					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
-					CipherSuites:           cipherSuites,
-					EnableFingerprinting:   &ctx.enableTLSFingerprinting,
+					MinimumProtocolVersion:  ctx.Config.TLS.MinimumProtocolVersion,
+					MaximumProtocolVersion:  ctx.Config.TLS.MaximumProtocolVersion,
+					CipherSuites:            cipherSuites,
+					EnableJA3Fingerprinting: &ctx.enableJA3Fingerprinting,
+					EnableJA4Fingerprinting: &ctx.enableJA4Fingerprinting,
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          ctx.Config.Listener.SocketOptions.TOS,
