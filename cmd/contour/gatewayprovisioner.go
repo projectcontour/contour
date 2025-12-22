@@ -35,7 +35,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 	cmd := app.Command("gateway-provisioner", "Run contour gateway provisioner.")
 
 	provisionerConfig := &gatewayProvisionerConfig{
-		contourImage:          "ghcr.io/projectcontour/contour:v1.33.0",
+		contourImage:          "ghcr.io/projectcontour/contour:v1.33.1",
 		envoyImage:            "docker.io/envoyproxy/envoy:distroless-v1.35.8",
 		metricsBindAddress:    ":8080",
 		leaderElection:        false,
