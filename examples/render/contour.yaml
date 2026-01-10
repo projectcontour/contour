@@ -939,6 +939,13 @@ spec:
                         minLength: 1
                         type: string
                     type: object
+                    x-kubernetes-validations:
+                    - message: name is required
+                      rule: has(self.name)
+                    - message: namespace cannot be empty
+                      rule: '!has(self.namespace) || self.namespace != ”'
+                    - message: apiVersion cannot be empty
+                      rule: '!has(self.apiVersion) || self.apiVersion != ”'
                   failOpen:
                     description: |-
                       If FailOpen is true, the client request is forwarded to the upstream service
@@ -975,6 +982,11 @@ spec:
                         type: boolean
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: either extensionRef or authPolicy must be specified
+                  rule: has(self.extensionRef) || has(self.authPolicy)
+                - message: failOpen requires extensionRef to be set
+                  rule: '!self.failOpen || has(self.extensionRef)'
               health:
                 description: |-
                   Health defines the endpoints Contour uses to serve health checks.
@@ -1247,6 +1259,19 @@ spec:
                                           required:
                                           - name
                                           type: object
+                                          x-kubernetes-validations:
+                                          - message: exactly one header match condition
+                                              must be specified
+                                            rule: '(has(self.present) ? 1 : 0) + (has(self.notpresent)
+                                              ? 1 : 0) + (has(self.contains) ? 1 :
+                                              0) + (has(self.notcontains) ? 1 : 0)
+                                              + (has(self.exact) ? 1 : 0) + (has(self.notexact)
+                                              ? 1 : 0) + (has(self.regex) ? 1 : 0)
+                                              == 1'
+                                          - message: treatMissingAsEmpty is only valid
+                                              with negative match conditions
+                                            rule: '!self.treatMissingAsEmpty || has(self.notcontains)
+                                              || has(self.notexact)'
                                         minItems: 1
                                         type: array
                                       value:
@@ -1257,7 +1282,19 @@ spec:
                                     required:
                                     - value
                                     type: object
+                                    x-kubernetes-validations:
+                                    - message: headers must contain at least one match
+                                        condition
+                                      rule: size(self.headers) > 0
                                 type: object
+                                x-kubernetes-validations:
+                                - message: exactly one of genericKey, requestHeader,
+                                    requestHeaderValueMatch, or remoteAddress must
+                                    be set
+                                  rule: '(has(self.genericKey) ? 1 : 0) + (has(self.requestHeader)
+                                    ? 1 : 0) + (has(self.requestHeaderValueMatch)
+                                    ? 1 : 0) + (has(self.remoteAddress) ? 1 : 0) ==
+                                    1'
                               minItems: 1
                               type: array
                           required:
@@ -1271,6 +1308,9 @@ spec:
                           the default global rate limit policy defined by the Contour configuration.
                         type: boolean
                     type: object
+                    x-kubernetes-validations:
+                    - message: descriptors must not be set when disabled is true
+                      rule: '!self.disabled || size(self.descriptors) == 0'
                   domain:
                     description: Domain is passed to the Rate Limit Service.
                     type: string
@@ -4887,6 +4927,13 @@ spec:
                             minLength: 1
                             type: string
                         type: object
+                        x-kubernetes-validations:
+                        - message: name is required
+                          rule: has(self.name)
+                        - message: namespace cannot be empty
+                          rule: '!has(self.namespace) || self.namespace != ”'
+                        - message: apiVersion cannot be empty
+                          rule: '!has(self.apiVersion) || self.apiVersion != ”'
                       failOpen:
                         description: |-
                           If FailOpen is true, the client request is forwarded to the upstream service
@@ -4923,6 +4970,11 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: either extensionRef or authPolicy must be specified
+                      rule: has(self.extensionRef) || has(self.authPolicy)
+                    - message: failOpen requires extensionRef to be set
+                      rule: '!self.failOpen || has(self.extensionRef)'
                   health:
                     description: |-
                       Health defines the endpoints Contour uses to serve health checks.
@@ -5196,6 +5248,20 @@ spec:
                                               required:
                                               - name
                                               type: object
+                                              x-kubernetes-validations:
+                                              - message: exactly one header match
+                                                  condition must be specified
+                                                rule: '(has(self.present) ? 1 : 0)
+                                                  + (has(self.notpresent) ? 1 : 0)
+                                                  + (has(self.contains) ? 1 : 0) +
+                                                  (has(self.notcontains) ? 1 : 0)
+                                                  + (has(self.exact) ? 1 : 0) + (has(self.notexact)
+                                                  ? 1 : 0) + (has(self.regex) ? 1
+                                                  : 0) == 1'
+                                              - message: treatMissingAsEmpty is only
+                                                  valid with negative match conditions
+                                                rule: '!self.treatMissingAsEmpty ||
+                                                  has(self.notcontains) || has(self.notexact)'
                                             minItems: 1
                                             type: array
                                           value:
@@ -5206,7 +5272,19 @@ spec:
                                         required:
                                         - value
                                         type: object
+                                        x-kubernetes-validations:
+                                        - message: headers must contain at least one
+                                            match condition
+                                          rule: size(self.headers) > 0
                                     type: object
+                                    x-kubernetes-validations:
+                                    - message: exactly one of genericKey, requestHeader,
+                                        requestHeaderValueMatch, or remoteAddress
+                                        must be set
+                                      rule: '(has(self.genericKey) ? 1 : 0) + (has(self.requestHeader)
+                                        ? 1 : 0) + (has(self.requestHeaderValueMatch)
+                                        ? 1 : 0) + (has(self.remoteAddress) ? 1 :
+                                        0) == 1'
                                   minItems: 1
                                   type: array
                               required:
@@ -5220,6 +5298,9 @@ spec:
                               the default global rate limit policy defined by the Contour configuration.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: descriptors must not be set when disabled is true
+                          rule: '!self.disabled || size(self.descriptors) == 0'
                       domain:
                         description: Domain is passed to the Rate Limit Service.
                         type: string
@@ -5579,6 +5660,11 @@ spec:
                             be used to calculate a hash for the request.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: exactly one of headerHashOptions, queryParameterHashOptions,
+                          or hashSourceIP must be set
+                        rule: '(has(self.headerHashOptions) ? 1 : 0) + (has(self.queryParameterHashOptions)
+                          ? 1 : 0) + (self.hashSourceIP ? 1 : 0) == 1'
                     type: array
                   strategy:
                     description: |-
@@ -5590,6 +5676,9 @@ spec:
                       is used.
                     type: string
                 type: object
+                x-kubernetes-validations:
+                - message: requestHashPolicies may only be set when strategy is RequestHash
+                  rule: '!has(self.requestHashPolicies) || self.strategy == ''RequestHash'''
               protocol:
                 description: |-
                   Protocol may be used to specify (or override) the protocol used to reach this Service.
@@ -5706,6 +5795,8 @@ spec:
                 - message: subjectNames[0] must equal subjectName if set
                   rule: 'has(self.subjectNames) ? self.subjectNames[0] == self.subjectName
                     : true'
+                - message: either subjectName or subjectNames must be specified
+                  rule: has(self.subjectName) || size(self.subjectNames) > 0
             required:
             - services
             type: object
@@ -6062,6 +6153,17 @@ spec:
                             required:
                             - name
                             type: object
+                            x-kubernetes-validations:
+                            - message: exactly one header match condition must be
+                                specified
+                              rule: '(has(self.present) ? 1 : 0) + (has(self.notpresent)
+                                ? 1 : 0) + (has(self.contains) ? 1 : 0) + (has(self.notcontains)
+                                ? 1 : 0) + (has(self.exact) ? 1 : 0) + (has(self.notexact)
+                                ? 1 : 0) + (has(self.regex) ? 1 : 0) == 1'
+                            - message: treatMissingAsEmpty is only valid with negative
+                                match conditions
+                              rule: '!self.treatMissingAsEmpty || has(self.notcontains)
+                                || has(self.notexact)'
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
@@ -6111,12 +6213,27 @@ spec:
                             required:
                             - name
                             type: object
+                            x-kubernetes-validations:
+                            - message: exactly one query parameter match condition
+                                must be specified
+                              rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix)
+                                ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.regex)
+                                ? 1 : 0) + (has(self.contains) ? 1 : 0) + (has(self.present)
+                                ? 1 : 0) == 1'
+                            - message: ignoreCase has no effect on regex matches
+                              rule: '!self.ignoreCase || !has(self.regex)'
                           regex:
                             description: |-
                               Regex defines a regex match for a request.
                               This field is not allowed in include match conditions.
                             type: string
                         type: object
+                        x-kubernetes-validations:
+                        - message: exactly one of prefix, exact, regex, header, or
+                            queryParameter must be set
+                          rule: '(has(self.prefix) ? 1 : 0) + (has(self.exact) ? 1
+                            : 0) + (has(self.regex) ? 1 : 0) + (has(self.header) ?
+                            1 : 0) + (has(self.queryParameter) ? 1 : 0) == 1'
                       type: array
                     name:
                       description: Name of the HTTPProxy
@@ -6128,6 +6245,9 @@ spec:
                   required:
                   - name
                   type: object
+                  x-kubernetes-validations:
+                  - message: namespace cannot be empty
+                    rule: '!has(self.namespace) || self.namespace != ”'
                 type: array
               ingressClassName:
                 description: |-
@@ -6242,6 +6362,17 @@ spec:
                             required:
                             - name
                             type: object
+                            x-kubernetes-validations:
+                            - message: exactly one header match condition must be
+                                specified
+                              rule: '(has(self.present) ? 1 : 0) + (has(self.notpresent)
+                                ? 1 : 0) + (has(self.contains) ? 1 : 0) + (has(self.notcontains)
+                                ? 1 : 0) + (has(self.exact) ? 1 : 0) + (has(self.notexact)
+                                ? 1 : 0) + (has(self.regex) ? 1 : 0) == 1'
+                            - message: treatMissingAsEmpty is only valid with negative
+                                match conditions
+                              rule: '!self.treatMissingAsEmpty || has(self.notcontains)
+                                || has(self.notexact)'
                           prefix:
                             description: Prefix defines a prefix match for a request.
                             type: string
@@ -6291,12 +6422,27 @@ spec:
                             required:
                             - name
                             type: object
+                            x-kubernetes-validations:
+                            - message: exactly one query parameter match condition
+                                must be specified
+                              rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix)
+                                ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.regex)
+                                ? 1 : 0) + (has(self.contains) ? 1 : 0) + (has(self.present)
+                                ? 1 : 0) == 1'
+                            - message: ignoreCase has no effect on regex matches
+                              rule: '!self.ignoreCase || !has(self.regex)'
                           regex:
                             description: |-
                               Regex defines a regex match for a request.
                               This field is not allowed in include match conditions.
                             type: string
                         type: object
+                        x-kubernetes-validations:
+                        - message: exactly one of prefix, exact, regex, header, or
+                            queryParameter must be set
+                          rule: '(has(self.prefix) ? 1 : 0) + (has(self.exact) ? 1
+                            : 0) + (has(self.regex) ? 1 : 0) + (has(self.header) ?
+                            1 : 0) + (has(self.queryParameter) ? 1 : 0) == 1'
                       type: array
                     cookieRewritePolicies:
                       description: |-
@@ -6304,6 +6450,8 @@ spec:
                         rewritten cookie names must be unique in this list. Order rewrite
                         policies are specified in does not matter.
                       items:
+                        description: CookieRewritePolicy defines how to rewrite Set-Cookie
+                          header attributes.
                         properties:
                           domainRewrite:
                             description: |-
@@ -6361,6 +6509,10 @@ spec:
                         required:
                         - name
                         type: object
+                        x-kubernetes-validations:
+                        - message: at least one cookie rewrite field must be specified
+                          rule: has(self.pathRewrite) || has(self.domainRewrite) ||
+                            has(self.secure) || has(self.sameSite)
                       type: array
                     directResponsePolicy:
                       description: DirectResponsePolicy returns an arbitrary HTTP
@@ -6382,6 +6534,10 @@ spec:
                       required:
                       - statusCode
                       type: object
+                      x-kubernetes-validations:
+                      - message: body must be empty for status codes 204 and 304
+                        rule: '!(self.statusCode == 204 || self.statusCode == 304)
+                          || self.body == ”'
                     enableWebsockets:
                       description: Enables websocket support for the route.
                       type: boolean
@@ -6414,6 +6570,9 @@ spec:
                             - end
                             - start
                             type: object
+                            x-kubernetes-validations:
+                            - message: start must be less than end
+                              rule: self.start < self.end
                           type: array
                         healthyThresholdCount:
                           description: The number of healthy health checks required
@@ -6492,6 +6651,7 @@ spec:
                             - 308
                             format: int32
                             type: integer
+                          minItems: 1
                           type: array
                       type: object
                     ipAllowPolicy:
@@ -6501,12 +6661,17 @@ spec:
                         Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
                         The rules defined here override any rules set on the root HTTPProxy.
                       items:
+                        description: IPFilterPolicy defines a single IP filter rule.
                         properties:
                           cidr:
                             description: |-
                               CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                               a bare IP address (without a mask) to filter on exactly one address.
+                            minLength: 1
                             type: string
+                            x-kubernetes-validations:
+                            - message: cidr must be a valid IPv4 or IPv6 CIDR
+                              rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                           source:
                             description: |-
                               Source indicates how to determine the ip address to filter on, and can be
@@ -6531,12 +6696,17 @@ spec:
                         Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
                         The rules defined here override any rules set on the root HTTPProxy.
                       items:
+                        description: IPFilterPolicy defines a single IP filter rule.
                         properties:
                           cidr:
                             description: |-
                               CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                               a bare IP address (without a mask) to filter on exactly one address.
+                            minLength: 1
                             type: string
+                            x-kubernetes-validations:
+                            - message: cidr must be a valid IPv4 or IPv6 CIDR
+                              rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                           source:
                             description: |-
                               Source indicates how to determine the ip address to filter on, and can be
@@ -6574,6 +6744,9 @@ spec:
                             this field or the "disabled" field can be specified.
                           type: string
                       type: object
+                      x-kubernetes-validations:
+                      - message: only one of require or disabled may be specified
+                        rule: '!(self.require != ” && self.disabled)'
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
@@ -6635,6 +6808,11 @@ spec:
                                   be used to calculate a hash for the request.
                                 type: boolean
                             type: object
+                            x-kubernetes-validations:
+                            - message: exactly one of headerHashOptions, queryParameterHashOptions,
+                                or hashSourceIP must be set
+                              rule: '(has(self.headerHashOptions) ? 1 : 0) + (has(self.queryParameterHashOptions)
+                                ? 1 : 0) + (self.hashSourceIP ? 1 : 0) == 1'
                           type: array
                         strategy:
                           description: |-
@@ -6646,6 +6824,11 @@ spec:
                             is used.
                           type: string
                       type: object
+                      x-kubernetes-validations:
+                      - message: requestHashPolicies may only be set when strategy
+                          is RequestHash
+                        rule: '!has(self.requestHashPolicies) || self.strategy ==
+                          ''RequestHash'''
                     pathRewritePolicy:
                       description: |-
                         The policy for rewriting the path of the request URL
@@ -6679,8 +6862,16 @@ spec:
                             required:
                             - replacement
                             type: object
+                            x-kubernetes-validations:
+                            - message: prefix must start with '/'
+                              rule: '!has(self.prefix) || self.prefix.startsWith(''/'')'
+                            - message: replacement must start with '/'
+                              rule: self.replacement.startsWith('/')
                           type: array
                       type: object
+                      x-kubernetes-validations:
+                      - message: replacePrefix must not be empty when specified
+                        rule: size(self.replacePrefix) > 0
                     permitInsecure:
                       description: |-
                         Allow this path to respond to insecure requests over HTTP which are normally
@@ -6840,6 +7031,22 @@ spec:
                                                 required:
                                                 - name
                                                 type: object
+                                                x-kubernetes-validations:
+                                                - message: exactly one header match
+                                                    condition must be specified
+                                                  rule: '(has(self.present) ? 1 :
+                                                    0) + (has(self.notpresent) ? 1
+                                                    : 0) + (has(self.contains) ? 1
+                                                    : 0) + (has(self.notcontains)
+                                                    ? 1 : 0) + (has(self.exact) ?
+                                                    1 : 0) + (has(self.notexact) ?
+                                                    1 : 0) + (has(self.regex) ? 1
+                                                    : 0) == 1'
+                                                - message: treatMissingAsEmpty is
+                                                    only valid with negative match
+                                                    conditions
+                                                  rule: '!self.treatMissingAsEmpty
+                                                    || has(self.notcontains) || has(self.notexact)'
                                               minItems: 1
                                               type: array
                                             value:
@@ -6850,7 +7057,19 @@ spec:
                                           required:
                                           - value
                                           type: object
+                                          x-kubernetes-validations:
+                                          - message: headers must contain at least
+                                              one match condition
+                                            rule: size(self.headers) > 0
                                       type: object
+                                      x-kubernetes-validations:
+                                      - message: exactly one of genericKey, requestHeader,
+                                          requestHeaderValueMatch, or remoteAddress
+                                          must be set
+                                        rule: '(has(self.genericKey) ? 1 : 0) + (has(self.requestHeader)
+                                          ? 1 : 0) + (has(self.requestHeaderValueMatch)
+                                          ? 1 : 0) + (has(self.remoteAddress) ? 1
+                                          : 0) == 1'
                                     minItems: 1
                                     type: array
                                 required:
@@ -6864,6 +7083,10 @@ spec:
                                 the default global rate limit policy defined by the Contour configuration.
                               type: boolean
                           type: object
+                          x-kubernetes-validations:
+                          - message: descriptors must not be set when disabled is
+                              true
+                            rule: '!self.disabled || size(self.descriptors) == 0'
                         local:
                           description: |-
                             Local defines local rate limiting parameters, i.e. parameters
@@ -6929,7 +7152,14 @@ spec:
                           - requests
                           - unit
                           type: object
+                          x-kubernetes-validations:
+                          - message: burst must be greater than or equal to requests
+                            rule: self.burst == 0 || self.burst >= self.requests
                       type: object
+                      x-kubernetes-validations:
+                      - message: only one of local or global rate limit policy may
+                          be specified
+                        rule: '!(has(self.local) && has(self.global))'
                     requestHeadersPolicy:
                       description: |-
                         The policy for managing request headers during proxying.
@@ -6971,6 +7201,9 @@ spec:
                             type: object
                           type: array
                       type: object
+                      x-kubernetes-validations:
+                      - message: at least one of set or remove must be specified
+                        rule: has(self.set) || has(self.remove)
                     requestRedirectPolicy:
                       description: RequestRedirectPolicy defines an HTTP redirection.
                       properties:
@@ -7030,6 +7263,9 @@ spec:
                           format: int32
                           type: integer
                       type: object
+                      x-kubernetes-validations:
+                      - message: only one of path or prefix may be specified
+                        rule: '!(has(self.path) && has(self.prefix))'
                     responseHeadersPolicy:
                       description: |-
                         The policy for managing response headers during proxying.
@@ -7064,6 +7300,9 @@ spec:
                             type: object
                           type: array
                       type: object
+                      x-kubernetes-validations:
+                      - message: at least one of set or remove must be specified
+                        rule: has(self.set) || has(self.remove)
                     retryPolicy:
                       description: The retry policy for this route.
                       properties:
@@ -7135,6 +7374,16 @@ spec:
                             type: string
                           type: array
                       type: object
+                      x-kubernetes-validations:
+                      - message: perTryTimeout, retryOn, and retriableStatusCodes
+                          must not be set when retries are disabled
+                        rule: self.numRetries != -1 || (!has(self.perTryTimeout) &&
+                          size(self.retryOn) == 0 && size(self.retriableStatusCodes)
+                          == 0)
+                      - message: retriableStatusCodes requires retryOn to include
+                          retriable-status-codes
+                        rule: size(self.retriableStatusCodes) == 0 || self.retryOn.exists(r,
+                          r == 'retriable-status-codes')
                     services:
                       description: Services are the services to proxy traffic.
                       items:
@@ -7145,6 +7394,8 @@ spec:
                             description: The policies for rewriting Set-Cookie header
                               attributes.
                             items:
+                              description: CookieRewritePolicy defines how to rewrite
+                                Set-Cookie header attributes.
                               properties:
                                 domainRewrite:
                                   description: |-
@@ -7202,6 +7453,11 @@ spec:
                               required:
                               - name
                               type: object
+                              x-kubernetes-validations:
+                              - message: at least one cookie rewrite field must be
+                                  specified
+                                rule: has(self.pathRewrite) || has(self.domainRewrite)
+                                  || has(self.secure) || has(self.sameSite)
                             type: array
                           healthPort:
                             description: |-
@@ -7273,6 +7529,9 @@ spec:
                                   type: object
                                 type: array
                             type: object
+                            x-kubernetes-validations:
+                            - message: at least one of set or remove must be specified
+                              rule: has(self.set) || has(self.remove)
                           responseHeadersPolicy:
                             description: |-
                               The policy for managing response headers during proxying.
@@ -7307,6 +7566,9 @@ spec:
                                   type: object
                                 type: array
                             type: object
+                            x-kubernetes-validations:
+                            - message: at least one of set or remove must be specified
+                              rule: has(self.set) || has(self.remove)
                           slowStartPolicy:
                             description: Slow start will gradually increase amount
                               of traffic to a newly added endpoint.
@@ -7341,6 +7603,10 @@ spec:
                             required:
                             - window
                             type: object
+                            x-kubernetes-validations:
+                            - message: minWeightPercent must be between 0 and 100
+                              rule: self.minWeightPercent >= 0 && self.minWeightPercent
+                                <= 100
                           validation:
                             description: UpstreamValidation defines how to verify
                               the backend service's certificate
@@ -7379,6 +7645,10 @@ spec:
                             - message: subjectNames[0] must equal subjectName if set
                               rule: 'has(self.subjectNames) ? self.subjectNames[0]
                                 == self.subjectName : true'
+                            - message: either subjectName or subjectNames must be
+                                specified
+                              rule: has(self.subjectName) || size(self.subjectNames)
+                                > 0
                           weight:
                             description: Weight defines percentage of traffic to balance
                               traffic
@@ -7389,6 +7659,11 @@ spec:
                         - name
                         - port
                         type: object
+                        x-kubernetes-validations:
+                        - message: when mirror is true and weight is set, weight must
+                            be between 1 and 100
+                          rule: '!self.mirror || !has(self.weight) || (self.weight
+                            >= 1 && self.weight <= 100)'
                       type: array
                     timeoutPolicy:
                       description: The timeout policy for this route.
@@ -7415,6 +7690,11 @@ spec:
                           type: string
                       type: object
                   type: object
+                  x-kubernetes-validations:
+                  - message: only one of prefix, exact, or regex condition may be
+                      specified
+                    rule: '!(size(self.conditions.filter(c, c.prefix != ” || c.exact
+                      != ” || c.regex != ”)) > 1)'
                 type: array
               tcpproxy:
                 description: TCPProxy holds TCP proxy information.
@@ -7442,6 +7722,10 @@ spec:
                         format: int32
                         type: integer
                     type: object
+                    x-kubernetes-validations:
+                    - message: timeoutSeconds must be less than or equal to intervalSeconds
+                      rule: '!(has(self.intervalSeconds) && has(self.timeoutSeconds))
+                        || self.timeoutSeconds <= self.intervalSeconds'
                   include:
                     description: Include specifies that this tcpproxy should be delegated
                       to another HTTPProxy.
@@ -7453,6 +7737,9 @@ spec:
                         description: Namespace of the HTTPProxy to include. Defaults
                           to the current namespace if not supplied.
                         type: string
+                        x-kubernetes-validations:
+                        - message: namespace must be a valid DNS label
+                          rule: self == '' || self.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')
                     required:
                     - name
                     type: object
@@ -7469,6 +7756,9 @@ spec:
                         description: Namespace of the HTTPProxy to include. Defaults
                           to the current namespace if not supplied.
                         type: string
+                        x-kubernetes-validations:
+                        - message: namespace must be a valid DNS label
+                          rule: self == '' || self.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')
                     required:
                     - name
                     type: object
@@ -7536,6 +7826,11 @@ spec:
                                 be used to calculate a hash for the request.
                               type: boolean
                           type: object
+                          x-kubernetes-validations:
+                          - message: exactly one of headerHashOptions, queryParameterHashOptions,
+                              or hashSourceIP must be set
+                            rule: '(has(self.headerHashOptions) ? 1 : 0) + (has(self.queryParameterHashOptions)
+                              ? 1 : 0) + (self.hashSourceIP ? 1 : 0) == 1'
                         type: array
                       strategy:
                         description: |-
@@ -7547,6 +7842,10 @@ spec:
                           is used.
                         type: string
                     type: object
+                    x-kubernetes-validations:
+                    - message: requestHashPolicies may only be set when strategy is
+                        RequestHash
+                      rule: '!has(self.requestHashPolicies) || self.strategy == ''RequestHash'''
                   services:
                     description: Services are the services to proxy traffic
                     items:
@@ -7557,6 +7856,8 @@ spec:
                           description: The policies for rewriting Set-Cookie header
                             attributes.
                           items:
+                            description: CookieRewritePolicy defines how to rewrite
+                              Set-Cookie header attributes.
                             properties:
                               domainRewrite:
                                 description: |-
@@ -7614,6 +7915,10 @@ spec:
                             required:
                             - name
                             type: object
+                            x-kubernetes-validations:
+                            - message: at least one cookie rewrite field must be specified
+                              rule: has(self.pathRewrite) || has(self.domainRewrite)
+                                || has(self.secure) || has(self.sameSite)
                           type: array
                         healthPort:
                           description: |-
@@ -7685,6 +7990,9 @@ spec:
                                 type: object
                               type: array
                           type: object
+                          x-kubernetes-validations:
+                          - message: at least one of set or remove must be specified
+                            rule: has(self.set) || has(self.remove)
                         responseHeadersPolicy:
                           description: |-
                             The policy for managing response headers during proxying.
@@ -7719,6 +8027,9 @@ spec:
                                 type: object
                               type: array
                           type: object
+                          x-kubernetes-validations:
+                          - message: at least one of set or remove must be specified
+                            rule: has(self.set) || has(self.remove)
                         slowStartPolicy:
                           description: Slow start will gradually increase amount of
                             traffic to a newly added endpoint.
@@ -7753,6 +8064,10 @@ spec:
                           required:
                           - window
                           type: object
+                          x-kubernetes-validations:
+                          - message: minWeightPercent must be between 0 and 100
+                            rule: self.minWeightPercent >= 0 && self.minWeightPercent
+                              <= 100
                         validation:
                           description: UpstreamValidation defines how to verify the
                             backend service's certificate
@@ -7791,6 +8106,9 @@ spec:
                           - message: subjectNames[0] must equal subjectName if set
                             rule: 'has(self.subjectNames) ? self.subjectNames[0] ==
                               self.subjectName : true'
+                          - message: either subjectName or subjectNames must be specified
+                            rule: has(self.subjectName) || size(self.subjectNames)
+                              > 0
                         weight:
                           description: Weight defines percentage of traffic to balance
                             traffic
@@ -7801,8 +8119,16 @@ spec:
                       - name
                       - port
                       type: object
+                      x-kubernetes-validations:
+                      - message: when mirror is true and weight is set, weight must
+                          be between 1 and 100
+                        rule: '!self.mirror || !has(self.weight) || (self.weight >=
+                          1 && self.weight <= 100)'
                     type: array
                 type: object
+                x-kubernetes-validations:
+                - message: only one of include or includes may be set
+                  rule: '!(has(self.include) && has(self.includesDeprecated))'
               virtualhost:
                 description: |-
                   Virtualhost appears at most once. If it is present, the object is considered
@@ -7862,6 +8188,13 @@ spec:
                             minLength: 1
                             type: string
                         type: object
+                        x-kubernetes-validations:
+                        - message: name is required
+                          rule: has(self.name)
+                        - message: namespace cannot be empty
+                          rule: '!has(self.namespace) || self.namespace != ”'
+                        - message: apiVersion cannot be empty
+                          rule: '!has(self.apiVersion) || self.apiVersion != ”'
                       failOpen:
                         description: |-
                           If FailOpen is true, the client request is forwarded to the upstream service
@@ -7898,6 +8231,11 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: either extensionRef or authPolicy must be specified
+                      rule: has(self.extensionRef) || has(self.authPolicy)
+                    - message: failOpen requires extensionRef to be set
+                      rule: '!self.failOpen || has(self.extensionRef)'
                   corsPolicy:
                     description: Specifies the cross-origin policy to apply to the
                       VirtualHost.
@@ -7937,6 +8275,10 @@ spec:
                           type: string
                         minItems: 1
                         type: array
+                        x-kubernetes-validations:
+                        - message: allowOrigin cannot contain "*" together with other
+                            origins
+                          rule: '!(size(self) > 1 && self.exists(o, o == "*"))'
                       allowPrivateNetwork:
                         description: |-
                           AllowPrivateNetwork specifies whether to allow private network requests.
@@ -7978,12 +8320,17 @@ spec:
                       Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
                       The rules defined here may be overridden in a Route.
                     items:
+                      description: IPFilterPolicy defines a single IP filter rule.
                       properties:
                         cidr:
                           description: |-
                             CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                             a bare IP address (without a mask) to filter on exactly one address.
+                          minLength: 1
                           type: string
+                          x-kubernetes-validations:
+                          - message: cidr must be a valid IPv4 or IPv6 CIDR
+                            rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                         source:
                           description: |-
                             Source indicates how to determine the ip address to filter on, and can be
@@ -8008,12 +8355,17 @@ spec:
                       Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
                       The rules defined here may be overridden in a Route.
                     items:
+                      description: IPFilterPolicy defines a single IP filter rule.
                       properties:
                         cidr:
                           description: |-
                             CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                             a bare IP address (without a mask) to filter on exactly one address.
+                          minLength: 1
                           type: string
+                          x-kubernetes-validations:
+                          - message: cidr must be a valid IPv4 or IPv6 CIDR
+                            rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                         source:
                           description: |-
                             Source indicates how to determine the ip address to filter on, and can be
@@ -8145,6 +8497,10 @@ spec:
                                   set
                                 rule: 'has(self.subjectNames) ? self.subjectNames[0]
                                   == self.subjectName : true'
+                              - message: either subjectName or subjectNames must be
+                                  specified
+                                rule: has(self.subjectName) || size(self.subjectNames)
+                                  > 0
                           required:
                           - uri
                           type: object
@@ -8306,6 +8662,20 @@ spec:
                                               required:
                                               - name
                                               type: object
+                                              x-kubernetes-validations:
+                                              - message: exactly one header match
+                                                  condition must be specified
+                                                rule: '(has(self.present) ? 1 : 0)
+                                                  + (has(self.notpresent) ? 1 : 0)
+                                                  + (has(self.contains) ? 1 : 0) +
+                                                  (has(self.notcontains) ? 1 : 0)
+                                                  + (has(self.exact) ? 1 : 0) + (has(self.notexact)
+                                                  ? 1 : 0) + (has(self.regex) ? 1
+                                                  : 0) == 1'
+                                              - message: treatMissingAsEmpty is only
+                                                  valid with negative match conditions
+                                                rule: '!self.treatMissingAsEmpty ||
+                                                  has(self.notcontains) || has(self.notexact)'
                                             minItems: 1
                                             type: array
                                           value:
@@ -8316,7 +8686,19 @@ spec:
                                         required:
                                         - value
                                         type: object
+                                        x-kubernetes-validations:
+                                        - message: headers must contain at least one
+                                            match condition
+                                          rule: size(self.headers) > 0
                                     type: object
+                                    x-kubernetes-validations:
+                                    - message: exactly one of genericKey, requestHeader,
+                                        requestHeaderValueMatch, or remoteAddress
+                                        must be set
+                                      rule: '(has(self.genericKey) ? 1 : 0) + (has(self.requestHeader)
+                                        ? 1 : 0) + (has(self.requestHeaderValueMatch)
+                                        ? 1 : 0) + (has(self.remoteAddress) ? 1 :
+                                        0) == 1'
                                   minItems: 1
                                   type: array
                               required:
@@ -8330,6 +8712,9 @@ spec:
                               the default global rate limit policy defined by the Contour configuration.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: descriptors must not be set when disabled is true
+                          rule: '!self.disabled || size(self.descriptors) == 0'
                       local:
                         description: |-
                           Local defines local rate limiting parameters, i.e. parameters
@@ -8395,7 +8780,14 @@ spec:
                         - requests
                         - unit
                         type: object
+                        x-kubernetes-validations:
+                        - message: burst must be greater than or equal to requests
+                          rule: self.burst == 0 || self.burst >= self.requests
                     type: object
+                    x-kubernetes-validations:
+                    - message: only one of local or global rate limit policy may be
+                        specified
+                      rule: '!(has(self.local) && has(self.global))'
                   tls:
                     description: |-
                       If present the fields describes TLS properties of the virtual
@@ -8487,6 +8879,10 @@ spec:
                               presented to the external authorization server.
                             type: boolean
                         type: object
+                        x-kubernetes-validations:
+                        - message: caSecret must not be set when skipClientCertValidation
+                            is true
+                          rule: '!(self.skipClientCertValidation && has(self.caSecret))'
                       enableFallbackCertificate:
                         description: |-
                           EnableFallbackCertificate defines if the vhost should allow a default certificate to
@@ -8520,10 +8916,25 @@ spec:
                           When cross-namespace reference is used, TLSCertificateDelegation resource must exist in the namespace to grant access to the secret.
                         type: string
                     type: object
+                    x-kubernetes-validations:
+                    - message: exactly one of secretName or passthrough must be specified
+                      rule: '(has(self.secretName) ? 1 : 0) + (self.passthrough ?
+                        1 : 0) == 1'
                 required:
                 - fqdn
                 type: object
+                x-kubernetes-validations:
+                - message: authorization requires TLS to be enabled
+                  rule: '!has(self.authorization) || has(self.tls)'
+                - message: only one of ipAllowPolicy or ipDenyPolicy may be specified
+                  rule: '!(size(self.ipAllowPolicy) > 0 && size(self.ipDenyPolicy)
+                    > 0)'
+                - message: at most one JWT provider may be marked as default
+                  rule: size(self.jwtProviders.filter(p, p.default)) <= 1
             type: object
+            x-kubernetes-validations:
+            - message: routes must not be set when tcpproxy is defined
+              rule: '!(has(self.tcpproxy) && size(self.routes) > 0)'
           status:
             default:
               currentStatus: NotReconciled

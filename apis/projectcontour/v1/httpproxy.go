@@ -19,6 +19,7 @@ import (
 )
 
 // HTTPProxySpec defines the spec of the CRD.
+// +kubebuilder:validation:XValidation:rule="!(has(self.tcpproxy) && size(self.routes) > 0)",message="routes must not be set when tcpproxy is defined"
 type HTTPProxySpec struct {
 	// Virtualhost appears at most once. If it is present, the object is considered
 	// to be a "root" HTTPProxy.
@@ -64,6 +65,7 @@ type HTTPProxySpec struct {
 type Namespace string
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
+// +kubebuilder:validation:XValidation:rule="!has(self.namespace) || self.namespace != """,message="namespace cannot be empty"
 type Include struct {
 	// Name of the HTTPProxy
 	Name string `json:"name"`
@@ -84,6 +86,7 @@ type Include struct {
 
 // MatchCondition are a general holder for matching rules for HTTPProxies.
 // One of Prefix, Exact, Regex, Header or QueryParameter must be provided.
+// +kubebuilder:validation:XValidation:rule="(has(self.prefix) ? 1 : 0) + (has(self.exact) ? 1 : 0) + (has(self.regex) ? 1 : 0) + (has(self.header) ? 1 : 0) + (has(self.queryParameter) ? 1 : 0) == 1",message="exactly one of prefix, exact, regex, header, or queryParameter must be set"
 type MatchCondition struct {
 	// Prefix defines a prefix match for a request.
 	// +optional
@@ -114,6 +117,8 @@ type MatchCondition struct {
 // For negative matching rules only (e.g. NotContains or NotExact) you can set
 // TreatMissingAsEmpty.
 // IgnoreCase has no effect for Regex.
+// +kubebuilder:validation:XValidation:rule="(has(self.present) ? 1 : 0) + (has(self.notpresent) ? 1 : 0) + (has(self.contains) ? 1 : 0) + (has(self.notcontains) ? 1 : 0) + (has(self.exact) ? 1 : 0) + (has(self.notexact) ? 1 : 0) + (has(self.regex) ? 1 : 0) == 1",message="exactly one header match condition must be specified"
+// +kubebuilder:validation:XValidation:rule="!self.treatMissingAsEmpty || has(self.notcontains) || has(self.notexact)",message="treatMissingAsEmpty is only valid with negative match conditions"
 type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
 	// Header names are case insensitive.
@@ -173,6 +178,8 @@ type HeaderMatchCondition struct {
 // query parameters. The Name field is required, only one of Exact, Prefix,
 // Suffix, Regex, Contains and Present can be set. IgnoreCase has no effect
 // for Regex.
+// +kubebuilder:validation:XValidation:rule="(has(self.exact) ? 1 : 0) + (has(self.prefix) ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.regex) ? 1 : 0) + (has(self.contains) ? 1 : 0) + (has(self.present) ? 1 : 0) == 1",message="exactly one query parameter match condition must be specified"
+// +kubebuilder:validation:XValidation:rule="!self.ignoreCase || !has(self.regex)",message="ignoreCase has no effect on regex matches"
 type QueryParameterMatchCondition struct {
 	// Name is the name of the query parameter to match against. Name is required.
 	// Query parameter names are case insensitive.
@@ -214,6 +221,9 @@ type QueryParameterMatchCondition struct {
 }
 
 // ExtensionServiceReference names an ExtensionService resource.
+// +kubebuilder:validation:XValidation:rule="has(self.name)",message="name is required"
+// +kubebuilder:validation:XValidation:rule="!has(self.namespace) || self.namespace != """,message="namespace cannot be empty"
+// +kubebuilder:validation:XValidation:rule="!has(self.apiVersion) || self.apiVersion != """,message="apiVersion cannot be empty"
 type ExtensionServiceReference struct {
 	// API version of the referent.
 	// If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
@@ -242,6 +252,8 @@ type ExtensionServiceReference struct {
 // AuthorizationServer configures an external server to authenticate
 // client requests. The external server must implement the v3 Envoy
 // external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto).
+// +kubebuilder:validation:XValidation:rule="has(self.extensionRef) || has(self.authPolicy)",message="either extensionRef or authPolicy must be specified"
+// +kubebuilder:validation:XValidation:rule="!self.failOpen || has(self.extensionRef)",message="failOpen requires extensionRef to be set"
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
@@ -313,6 +325,9 @@ type AuthorizationPolicy struct {
 
 // VirtualHost appears at most once. If it is present, the object is considered
 // to be a "root".
+// +kubebuilder:validation:XValidation:rule="!has(self.authorization) || has(self.tls)",message="authorization requires TLS to be enabled"
+// +kubebuilder:validation:XValidation:rule="!(size(self.ipAllowPolicy) > 0 && size(self.ipDenyPolicy) > 0)",message="only one of ipAllowPolicy or ipDenyPolicy may be specified"
+// +kubebuilder:validation:XValidation:rule="size(self.jwtProviders.filter(p, p.default)) <= 1",message="at most one JWT provider may be marked as default"
 type VirtualHost struct {
 	// The fully qualified domain name of the root of the ingress tree
 	// all leaves of the DAG rooted at this object relate to the fqdn.
@@ -440,6 +455,7 @@ type RemoteJWKS struct {
 
 // TLS describes tls properties. The SNI names that will be matched on
 // are described in the HTTPProxy's Spec.VirtualHost.Fqdn field.
+// +kubebuilder:validation:XValidation:rule="(has(self.secretName) ? 1 : 0) + (self.passthrough ? 1 : 0) == 1",message="exactly one of secretName or passthrough must be specified"
 type TLS struct {
 	// SecretName is the name of a TLS secret.
 	// Either SecretName or Passthrough must be specified, but not both.
@@ -503,6 +519,7 @@ type CORSPolicy struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:XValidation:rule="!(size(self) > 1 && self.exists(o, o == \"*\"))",message="allowOrigin cannot contain \"*\" together with other origins"
 	AllowOrigin []string `json:"allowOrigin"`
 	// AllowMethods specifies the content for the *access-control-allow-methods* header.
 	// +kubebuilder:validation:Required
@@ -530,6 +547,7 @@ type CORSPolicy struct {
 }
 
 // Route contains the set of routes for a virtual host.
+// +kubebuilder:validation:XValidation:rule="!(size(self.conditions.filter(c, c.prefix != "" || c.exact != "" || c.regex != "")) > 1)",message="only one of prefix, exact, or regex condition may be specified"
 type Route struct {
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
@@ -627,6 +645,7 @@ type Route struct {
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="!(self.require != "" && self.disabled)",message="only one of require or disabled may be specified"
 type JWTVerificationPolicy struct {
 	// Require names a specific JWT provider (defined in the virtual host)
 	// to require for the route. If specified, this field overrides the
@@ -653,6 +672,7 @@ const (
 	IPFilterSourceRemote IPFilterSource = "Remote"
 )
 
+// IPFilterPolicy defines a single IP filter rule.
 type IPFilterPolicy struct {
 	// Source indicates how to determine the ip address to filter on, and can be
 	// one of two values:
@@ -664,9 +684,13 @@ type IPFilterPolicy struct {
 
 	// CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
 	// a bare IP address (without a mask) to filter on exactly one address.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$`
 	CIDR string `json:"cidr"`
 }
 
+// HTTPDirectResponsePolicy defines configuration for returning a direct HTTP response.
+// +kubebuilder:validation:XValidation:rule="!(self.statusCode == 204 || self.statusCode == 304) || self.body == """,message="body must be empty for status codes 204 and 304"
 type HTTPDirectResponsePolicy struct {
 	// StatusCode is the HTTP response status to be returned.
 	// +required
@@ -685,6 +709,7 @@ type HTTPDirectResponsePolicy struct {
 }
 
 // HTTPRequestRedirectPolicy defines configuration for redirecting a request.
+// +kubebuilder:validation:XValidation:rule="!(has(self.path) && has(self.prefix))",message="only one of path or prefix may be specified"
 type HTTPRequestRedirectPolicy struct {
 	// Scheme is the scheme to be used in the value of the `Location`
 	// header in the response.
@@ -749,6 +774,7 @@ type HTTPInternalRedirectPolicy struct {
 	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
 	// Only 301, 302, 303, 307 and 308 are valid values.
 	// +optional
+	// +kubebuilder:validation:MinItems=1
 	RedirectResponseCodes []RedirectResponseCode `json:"redirectResponseCodes,omitempty"`
 
 	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme
@@ -767,6 +793,8 @@ type HTTPInternalRedirectPolicy struct {
 	DenyRepeatedRouteRedirect bool `json:"denyRepeatedRouteRedirect,omitempty"`
 }
 
+// CookieRewritePolicy defines how to rewrite Set-Cookie header attributes.
+// +kubebuilder:validation:XValidation:rule="has(self.pathRewrite) || has(self.domainRewrite) || has(self.secure) || has(self.sameSite)",message="at least one cookie rewrite field must be specified"
 type CookieRewritePolicy struct {
 	// Name is the name of the cookie for which attributes will be rewritten.
 	// +kubebuilder:validation:MinLength=1
@@ -817,6 +845,7 @@ type CookieDomainRewrite struct {
 }
 
 // RateLimitPolicy defines rate limiting parameters.
+// +kubebuilder:validation:XValidation:rule="!(has(self.local) && has(self.global))",message="only one of local or global rate limit policy may be specified"
 type RateLimitPolicy struct {
 	// Local defines local rate limiting parameters, i.e. parameters
 	// for rate limiting that occurs within each Envoy pod as requests
@@ -832,6 +861,7 @@ type RateLimitPolicy struct {
 }
 
 // LocalRateLimitPolicy defines local rate limiting parameters.
+// +kubebuilder:validation:XValidation:rule="self.burst == 0 || self.burst >= self.requests",message="burst must be greater than or equal to requests"
 type LocalRateLimitPolicy struct {
 	// Requests defines how many requests per unit of time should
 	// be allowed before rate limiting occurs.
@@ -867,6 +897,7 @@ type LocalRateLimitPolicy struct {
 }
 
 // GlobalRateLimitPolicy defines global rate limiting parameters.
+// +kubebuilder:validation:XValidation:rule="!self.disabled || size(self.descriptors) == 0",message="descriptors must not be set when disabled is true"
 type GlobalRateLimitPolicy struct {
 	// Disabled configures the HTTPProxy to not use
 	// the default global rate limit policy defined by the Contour configuration.
@@ -891,6 +922,7 @@ type RateLimitDescriptor struct {
 
 // RateLimitDescriptorEntry is a key-value pair generator. Exactly
 // one field on this struct must be non-nil.
+// +kubebuilder:validation:XValidation:rule="(has(self.genericKey) ? 1 : 0) + (has(self.requestHeader) ? 1 : 0) + (has(self.requestHeaderValueMatch) ? 1 : 0) + (has(self.remoteAddress) ? 1 : 0) == 1",message="exactly one of genericKey, requestHeader, requestHeaderValueMatch, or remoteAddress must be set"
 type RateLimitDescriptorEntry struct {
 	// GenericKey defines a descriptor entry with a static key and value.
 	// +optional
@@ -946,6 +978,7 @@ type RequestHeaderDescriptor struct {
 // RequestHeaderValueMatchDescriptor defines a descriptor entry that's populated
 // if the request's headers match a set of 1+ match criteria. The descriptor key
 // is "header_match", and the descriptor value is statically defined.
+// +kubebuilder:validation:XValidation:rule="size(self.headers) > 0",message="headers must contain at least one match condition"
 type RequestHeaderValueMatchDescriptor struct {
 	// Headers is a list of 1+ match criteria to apply against the request
 	// to determine whether to populate the descriptor entry or not.
@@ -971,6 +1004,7 @@ type RequestHeaderValueMatchDescriptor struct {
 type RemoteAddressDescriptor struct{}
 
 // TCPProxy contains the set of services to proxy TCP connections.
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.includesDeprecated))",message="only one of include or includes may be set"
 type TCPProxy struct {
 	// The load balancing policy for the backend services. Note that the
 	// `Cookie` and `RequestHash` load balancing strategies cannot be used
@@ -1000,10 +1034,12 @@ type TCPProxyInclude struct {
 	Name string `json:"name"`
 	// Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.
 	// +optional
+	// +kubebuilder:validation:Pattern=`^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`
 	Namespace string `json:"namespace,omitempty"`
 }
 
 // Service defines an Kubernetes Service to proxy traffic.
+// +kubebuilder:validation:XValidation:rule="!self.mirror || !has(self.weight) || (self.weight >= 1 && self.weight <= 100)",message="when mirror is true and weight is set, weight must be between 1 and 100"
 type Service struct {
 	// Name is the name of Kubernetes service to proxy traffic.
 	// Names defined here will be used to look up corresponding endpoints which contain the ips to route.
@@ -1087,6 +1123,7 @@ type HTTPHealthCheckPolicy struct {
 	ExpectedStatuses []HTTPStatusRange `json:"expectedStatuses,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="self.start < self.end",message="start must be less than end"
 type HTTPStatusRange struct {
 	// The start (inclusive) of a range of HTTP status codes.
 	// +kubebuilder:validation:Minimum=100
@@ -1099,6 +1136,7 @@ type HTTPStatusRange struct {
 }
 
 // TCPHealthCheckPolicy defines health checks on the upstream service.
+// +kubebuilder:validation:XValidation:rule="!(has(self.intervalSeconds) && has(self.timeoutSeconds)) || self.timeoutSeconds <= self.intervalSeconds",message="timeoutSeconds must be less than or equal to intervalSeconds"
 type TCPHealthCheckPolicy struct {
 	// The interval (seconds) between health checks
 	// +optional
@@ -1149,6 +1187,8 @@ type TimeoutPolicy struct {
 type RetryOn string
 
 // RetryPolicy defines the attributes associated with retrying policy.
+// +kubebuilder:validation:XValidation:rule="self.numRetries != -1 || (!has(self.perTryTimeout) && size(self.retryOn) == 0 && size(self.retriableStatusCodes) == 0)",message="perTryTimeout, retryOn, and retriableStatusCodes must not be set when retries are disabled"
+// +kubebuilder:validation:XValidation:rule="size(self.retriableStatusCodes) == 0 || self.retryOn.exists(r, r == 'retriable-status-codes')",message="retriableStatusCodes requires retryOn to include retriable-status-codes"
 type RetryPolicy struct {
 	// NumRetries is maximum allowed number of retries.
 	// If set to -1, then retries are disabled.
@@ -1196,6 +1236,8 @@ type RetryPolicy struct {
 }
 
 // ReplacePrefix describes a path prefix replacement.
+// +kubebuilder:validation:XValidation:rule="!has(self.prefix) || self.prefix.startsWith('/')",message="prefix must start with '/'"
+// +kubebuilder:validation:XValidation:rule="self.replacement.startsWith('/')",message="replacement must start with '/'"
 type ReplacePrefix struct {
 	// Prefix specifies the URL path prefix to be replaced.
 	//
@@ -1227,6 +1269,7 @@ type ReplacePrefix struct {
 // No HTTP headers or body content is rewritten.
 //
 // Exactly one field in this struct may be specified.
+// +kubebuilder:validation:XValidation:rule="size(self.replacePrefix) > 0",message="replacePrefix must not be empty when specified"
 type PathRewritePolicy struct {
 	// ReplacePrefix describes how the path prefix should be replaced.
 	// +optional
@@ -1257,6 +1300,7 @@ type QueryParameterHashOptions struct {
 
 // RequestHashPolicy contains configuration for an individual hash policy
 // on a request attribute.
+// +kubebuilder:validation:XValidation:rule="(has(self.headerHashOptions) ? 1 : 0) + (has(self.queryParameterHashOptions) ? 1 : 0) + (self.hashSourceIP ? 1 : 0) == 1",message="exactly one of headerHashOptions, queryParameterHashOptions, or hashSourceIP must be set"
 type RequestHashPolicy struct {
 	// Terminal is a flag that allows for short-circuiting computing of a hash
 	// for a given request. If set to true, and the request attribute specified
@@ -1284,6 +1328,7 @@ type RequestHashPolicy struct {
 }
 
 // LoadBalancerPolicy defines the load balancing policy.
+// +kubebuilder:validation:XValidation:rule="!has(self.requestHashPolicies) || self.strategy == 'RequestHash'",message="requestHashPolicies may only be set when strategy is RequestHash"
 type LoadBalancerPolicy struct {
 	// Strategy specifies the policy used to balance requests
 	// across the pool of backend pods. Valid policy names are
@@ -1305,6 +1350,7 @@ type LoadBalancerPolicy struct {
 // The `Host` header is treated specially and if set in a HTTP request
 // will be used as the SNI server name when forwarding over TLS. It is an
 // error to attempt to set the `Host` header in a HTTP response.
+// +kubebuilder:validation:XValidation:rule="has(self.set) || has(self.remove)",message="at least one of set or remove must be specified"
 type HeadersPolicy struct {
 	// Set specifies a list of HTTP header values that will be set in the HTTP header.
 	// If the header does not exist it will be added, otherwise it will be overwritten with the new value.
@@ -1329,6 +1375,7 @@ type HeaderValue struct {
 
 // UpstreamValidation defines how to verify the backend service's certificate
 // +kubebuilder:validation:XValidation:message="subjectNames[0] must equal subjectName if set",rule="has(self.subjectNames) ? self.subjectNames[0] == self.subjectName : true"
+// +kubebuilder:validation:XValidation:rule="has(self.subjectName) || size(self.subjectNames) > 0",message="either subjectName or subjectNames must be specified"
 type UpstreamValidation struct {
 	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend.
 	// The secret must contain key named ca.crt.
@@ -1352,6 +1399,7 @@ type UpstreamValidation struct {
 }
 
 // DownstreamValidation defines how to verify the client certificate.
+// +kubebuilder:validation:XValidation:rule="!(self.skipClientCertValidation && has(self.caSecret))",message="caSecret must not be set when skipClientCertValidation is true"
 type DownstreamValidation struct {
 	// Name of a Kubernetes secret that contains a CA certificate bundle.
 	// The secret must contain key named ca.crt.
@@ -1486,6 +1534,7 @@ type HTTPProxyList struct {
 
 // SlowStartPolicy will gradually increase amount of traffic to a newly added endpoint.
 // It can be used only with RoundRobin and WeightedLeastRequest load balancing strategies.
+// +kubebuilder:validation:XValidation:rule="self.minWeightPercent >= 0 && self.minWeightPercent <= 100",message="minWeightPercent must be between 0 and 100"
 type SlowStartPolicy struct {
 	// The duration of slow start window.
 	// Duration is expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
