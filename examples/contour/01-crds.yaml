@@ -724,9 +724,9 @@ spec:
                     - message: name is required
                       rule: has(self.name)
                     - message: namespace cannot be empty
-                      rule: '!has(self.namespace) || self.namespace != ""'
+                      rule: '!has(self.namespace) || self.namespace != ”'
                     - message: apiVersion cannot be empty
-                      rule: '!has(self.apiVersion) || self.apiVersion != ""'
+                      rule: '!has(self.apiVersion) || self.apiVersion != ”'
                   failOpen:
                     description: |-
                       If FailOpen is true, the client request is forwarded to the upstream service
@@ -4712,9 +4712,9 @@ spec:
                         - message: name is required
                           rule: has(self.name)
                         - message: namespace cannot be empty
-                          rule: '!has(self.namespace) || self.namespace != ""'
+                          rule: '!has(self.namespace) || self.namespace != ”'
                         - message: apiVersion cannot be empty
-                          rule: '!has(self.apiVersion) || self.apiVersion != ""'
+                          rule: '!has(self.apiVersion) || self.apiVersion != ”'
                       failOpen:
                         description: |-
                           If FailOpen is true, the client request is forwarded to the upstream service
@@ -6026,9 +6026,6 @@ spec:
                   required:
                   - name
                   type: object
-                  x-kubernetes-validations:
-                  - message: namespace cannot be empty
-                    rule: '!has(self.namespace) || self.namespace != ""'
                 type: array
               ingressClassName:
                 description: |-
@@ -6318,7 +6315,7 @@ spec:
                       x-kubernetes-validations:
                       - message: body must be empty for status codes 204 and 304
                         rule: '!(self.statusCode == 204 || self.statusCode == 304)
-                          || self.body == ""'
+                          || self.body == ”'
                     enableWebsockets:
                       description: Enables websocket support for the route.
                       type: boolean
@@ -6449,10 +6446,8 @@ spec:
                               CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                               a bare IP address (without a mask) to filter on exactly one address.
                             minLength: 1
+                            pattern: ^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$
                             type: string
-                            x-kubernetes-validations:
-                            - message: cidr must be a valid IPv4 or IPv6 CIDR
-                              rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                           source:
                             description: |-
                               Source indicates how to determine the ip address to filter on, and can be
@@ -6484,10 +6479,8 @@ spec:
                               CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                               a bare IP address (without a mask) to filter on exactly one address.
                             minLength: 1
+                            pattern: ^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$
                             type: string
-                            x-kubernetes-validations:
-                            - message: cidr must be a valid IPv4 or IPv6 CIDR
-                              rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                           source:
                             description: |-
                               Source indicates how to determine the ip address to filter on, and can be
@@ -6527,7 +6520,7 @@ spec:
                       type: object
                       x-kubernetes-validations:
                       - message: only one of require or disabled may be specified
-                        rule: '!(self.require != "" && self.disabled)'
+                        rule: '!(self.require != ” && self.disabled)'
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
@@ -7158,9 +7151,8 @@ spec:
                       x-kubernetes-validations:
                       - message: perTryTimeout, retryOn, and retriableStatusCodes
                           must not be set when retries are disabled
-                        rule: self.numRetries != -1 || (!has(self.perTryTimeout) &&
-                          size(self.retryOn) == 0 && size(self.retriableStatusCodes)
-                          == 0)
+                        rule: self.count != -1 || (!has(self.perTryTimeout) && size(self.retryOn)
+                          == 0 && size(self.retriableStatusCodes) == 0)
                       - message: retriableStatusCodes requires retryOn to include
                           retriable-status-codes
                         rule: size(self.retriableStatusCodes) == 0 || self.retryOn.exists(r,
@@ -7474,8 +7466,8 @@ spec:
                   x-kubernetes-validations:
                   - message: only one of prefix, exact, or regex condition may be
                       specified
-                    rule: '!(size(self.conditions.filter(c, c.prefix != "" || c.exact
-                      != "" || c.regex != "")) > 1)'
+                    rule: '!(size(self.conditions.filter(c, c.prefix != ” || c.exact
+                      != ” || c.regex != ”)) > 1)'
                 type: array
               tcpproxy:
                 description: TCPProxy holds TCP proxy information.
@@ -7517,10 +7509,8 @@ spec:
                       namespace:
                         description: Namespace of the HTTPProxy to include. Defaults
                           to the current namespace if not supplied.
+                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                         type: string
-                        x-kubernetes-validations:
-                        - message: namespace must be a valid DNS label
-                          rule: self == '' || self.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')
                     required:
                     - name
                     type: object
@@ -7536,10 +7526,8 @@ spec:
                       namespace:
                         description: Namespace of the HTTPProxy to include. Defaults
                           to the current namespace if not supplied.
+                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                         type: string
-                        x-kubernetes-validations:
-                        - message: namespace must be a valid DNS label
-                          rule: self == '' || self.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')
                     required:
                     - name
                     type: object
@@ -7973,9 +7961,9 @@ spec:
                         - message: name is required
                           rule: has(self.name)
                         - message: namespace cannot be empty
-                          rule: '!has(self.namespace) || self.namespace != ""'
+                          rule: '!has(self.namespace) || self.namespace != ”'
                         - message: apiVersion cannot be empty
-                          rule: '!has(self.apiVersion) || self.apiVersion != ""'
+                          rule: '!has(self.apiVersion) || self.apiVersion != ”'
                       failOpen:
                         description: |-
                           If FailOpen is true, the client request is forwarded to the upstream service
@@ -8057,9 +8045,9 @@ spec:
                         minItems: 1
                         type: array
                         x-kubernetes-validations:
-                        - message: allowOrigin cannot contain "*" together with other
+                        - message: allowOrigin cannot contain '*' together with other
                             origins
-                          rule: '!(size(self) > 1 && self.exists(o, o == "*"))'
+                          rule: '!(size(self) > 1 && self.exists(o, o == ''*''))'
                       allowPrivateNetwork:
                         description: |-
                           AllowPrivateNetwork specifies whether to allow private network requests.
@@ -8108,10 +8096,8 @@ spec:
                             CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                             a bare IP address (without a mask) to filter on exactly one address.
                           minLength: 1
+                          pattern: ^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$
                           type: string
-                          x-kubernetes-validations:
-                          - message: cidr must be a valid IPv4 or IPv6 CIDR
-                            rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                         source:
                           description: |-
                             Source indicates how to determine the ip address to filter on, and can be
@@ -8143,10 +8129,8 @@ spec:
                             CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
                             a bare IP address (without a mask) to filter on exactly one address.
                           minLength: 1
+                          pattern: ^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$
                           type: string
-                          x-kubernetes-validations:
-                          - message: cidr must be a valid IPv4 or IPv6 CIDR
-                            rule: self.cidr.matches('^([0-9a-fA-F:.]+)(/[0-9]{1,3})?$')
                         source:
                           description: |-
                             Source indicates how to determine the ip address to filter on, and can be
