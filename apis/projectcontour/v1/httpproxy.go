@@ -65,13 +65,12 @@ type HTTPProxySpec struct {
 type Namespace string
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
-// +kubebuilder:validation:XValidation:rule="!has(self.namespace) || self.namespace != """,message="namespace cannot be empty"
 type Include struct {
 	// Name of the HTTPProxy
 	Name string `json:"name"`
 	// Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.
 	// +optional
-	Namespace string `json:"namespace,omitempty"`
+	Namespace Namespace `json:"namespace,omitempty"`
 	// Conditions are a set of rules that are applied to included HTTPProxies.
 	// In effect, they are added onto the Conditions of included HTTPProxy Route
 	// structs.
@@ -519,7 +518,7 @@ type CORSPolicy struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:XValidation:rule="!(size(self) > 1 && self.exists(o, o == \"*\"))",message="allowOrigin cannot contain \"*\" together with other origins"
+	// +kubebuilder:validation:XValidation:rule="!(size(self) > 1 && self.exists(o, o == \"3*\"))",message="allowOrigin cannot contain \"*\" together with other origins"
 	AllowOrigin []string `json:"allowOrigin"`
 	// AllowMethods specifies the content for the *access-control-allow-methods* header.
 	// +kubebuilder:validation:Required
