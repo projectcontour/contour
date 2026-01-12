@@ -1635,6 +1635,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
+								Name: "*",
+							},
+							Secret: secret(sec1),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
 								Routes: routes(prefixrouteHTTPRoute("/", service(kuardService))),
 							},
@@ -1682,6 +1688,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "*",
+							},
+							Secret: secret(sec1),
+						},
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
@@ -1793,6 +1805,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
+								Name: "*",
+							},
+							Secret: secret(sec2),
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
 								Routes: routes(prefixrouteHTTPRoute("/", service(kuardService))),
 							},
@@ -1841,6 +1859,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "*",
+							},
+							Secret: secret(sec2),
+						},
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
@@ -2112,6 +2136,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "*",
+							},
+							Secret: secret(sec1),
+						},
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
@@ -5027,6 +5057,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Name: "https-443",
 					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "*",
+							},
+							Secret: secret(sec1),
+						},
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:   "test.projectcontour.io",
