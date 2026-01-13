@@ -70,7 +70,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard.example.com", sec1,
@@ -123,7 +123,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
