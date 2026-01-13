@@ -558,9 +558,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				HTTP2MaxConcurrentStreams:     ctx.Config.Listener.HTTP2MaxConcurrentStreams,
 				MaxConnectionsPerListener:     ctx.Config.Listener.MaxConnectionsPerListener,
 				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
-					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
-					CipherSuites:           cipherSuites,
+					MinimumProtocolVersion:  ctx.Config.TLS.MinimumProtocolVersion,
+					MaximumProtocolVersion:  ctx.Config.TLS.MaximumProtocolVersion,
+					CipherSuites:            cipherSuites,
+					EnableJA3Fingerprinting: ctx.Config.TLS.EnableJA3Fingerprinting,
+					EnableJA4Fingerprinting: ctx.Config.TLS.EnableJA4Fingerprinting,
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          ctx.Config.Listener.SocketOptions.TOS,

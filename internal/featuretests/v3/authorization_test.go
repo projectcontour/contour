@@ -84,7 +84,7 @@ func authzResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Conto
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
@@ -165,7 +165,7 @@ func authzFailOpen(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
@@ -473,7 +473,7 @@ func authzInvalidReference(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
@@ -532,7 +532,7 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh ResourceEventHandlerWra
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls(fqdn, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),

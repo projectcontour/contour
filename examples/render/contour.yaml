@@ -419,6 +419,16 @@ spec:
                             items:
                               type: string
                             type: array
+                          enableJA3Fingerprinting:
+                            description: |-
+                              EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+                              When true, populates JA3 hash in dynamic metadata.
+                            type: boolean
+                          enableJA4Fingerprinting:
+                            description: |-
+                              EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+                              When true, populates JA4 hash in dynamic metadata.
+                            type: boolean
                           maximumProtocolVersion:
                             description: |-
                               MaximumProtocolVersion is the maximum TLS version this vhost should
@@ -657,6 +667,16 @@ spec:
                             items:
                               type: string
                             type: array
+                          enableJA3Fingerprinting:
+                            description: |-
+                              EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+                              When true, populates JA3 hash in dynamic metadata.
+                            type: boolean
+                          enableJA4Fingerprinting:
+                            description: |-
+                              EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+                              When true, populates JA4 hash in dynamic metadata.
+                            type: boolean
                           maximumProtocolVersion:
                             description: |-
                               MaximumProtocolVersion is the maximum TLS version this vhost should
@@ -4366,6 +4386,16 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              enableJA3Fingerprinting:
+                                description: |-
+                                  EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+                                  When true, populates JA3 hash in dynamic metadata.
+                                type: boolean
+                              enableJA4Fingerprinting:
+                                description: |-
+                                  EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+                                  When true, populates JA4 hash in dynamic metadata.
+                                type: boolean
                               maximumProtocolVersion:
                                 description: |-
                                   MaximumProtocolVersion is the maximum TLS version this vhost should
@@ -4604,6 +4634,16 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              enableJA3Fingerprinting:
+                                description: |-
+                                  EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+                                  When true, populates JA3 hash in dynamic metadata.
+                                type: boolean
+                              enableJA4Fingerprinting:
+                                description: |-
+                                  EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+                                  When true, populates JA4 hash in dynamic metadata.
+                                type: boolean
                               maximumProtocolVersion:
                                 description: |-
                                   MaximumProtocolVersion is the maximum TLS version this vhost should
