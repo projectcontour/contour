@@ -191,6 +191,14 @@ type ProtocolParameters struct {
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+
+	// EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+	// When true, populates JA3 hash in dynamic metadata.
+	EnableJA3Fingerprinting *bool `yaml:"enable-ja3-fingerprinting,omitempty"`
+
+	// EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+	// When true, populates JA4 hash in dynamic metadata.
+	EnableJA4Fingerprinting *bool `yaml:"enable-ja4-fingerprinting,omitempty"`
 }
 
 // Validate TLS fallback certificate, client certificate, and cipher suites

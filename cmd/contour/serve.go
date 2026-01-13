@@ -454,6 +454,8 @@ func (s *Server) doServe() error {
 		MinimumTLSVersion:             annotation.TLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
 		MaximumTLSVersion:             annotation.TLSVersion(contourConfiguration.Envoy.Listener.TLS.MaximumProtocolVersion, "1.3"),
 		CipherSuites:                  contourConfiguration.Envoy.Listener.TLS.SanitizedCipherSuites(),
+		EnableJA3Fingerprinting:       contourConfiguration.Envoy.Listener.TLS.EnableJA3Fingerprinting,
+		EnableJA4Fingerprinting:       contourConfiguration.Envoy.Listener.TLS.EnableJA4Fingerprinting,
 		Timeouts:                      timeouts,
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
 		AllowChunkedLength:            !*contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,

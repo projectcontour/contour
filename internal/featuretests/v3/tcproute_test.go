@@ -257,7 +257,7 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 				Name:    "https-5000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("*", sec1, tcpproxy("https-5000", "default/backend-1/80/da39a3ee5e"), nil),

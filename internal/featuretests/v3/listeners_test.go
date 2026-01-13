@@ -205,7 +205,7 @@ func TestTLSListener(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls("kuard.example.com", s1,
@@ -250,7 +250,7 @@ func TestTLSListener(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls("kuard.example.com", s1,
@@ -355,7 +355,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", secret1,
@@ -397,7 +397,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
@@ -475,7 +475,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
@@ -554,7 +554,7 @@ func TestLDSFilter(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					filterchaintls("kuard.example.com", s1,
@@ -704,7 +704,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
 			envoy_v3.ProxyProtocol(),
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
@@ -792,7 +792,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("127.0.0.200", 9200),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
@@ -875,7 +875,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
@@ -959,7 +959,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("example.com", s1,
@@ -1025,7 +1025,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
@@ -1083,7 +1083,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			envoy_v3.FilterChainTLS(
@@ -1495,7 +1495,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("127.0.0.200", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("test.projectcontour.io", tlssecret,
@@ -1515,7 +1515,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 				Name:    "https-8443",
 				Address: envoy_v3.SocketAddress("127.0.0.200", 16443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{{
 					FilterChainMatch: &envoy_config_listener_v3.FilterChainMatch{
@@ -1622,7 +1622,7 @@ func TestSocketOptions(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: []*envoy_config_listener_v3.FilterChain{
 					envoy_v3.FilterChainTLS(

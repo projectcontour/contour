@@ -167,7 +167,7 @@ func TestGateway_TLS(t *testing.T) {
 				Name:    "https-443",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("test.projectcontour.io", sec1,

@@ -133,13 +133,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			lf: ListenerFilters(
-				TLSInspector(),
+				TLSInspector(nil, nil),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(),
+					TLSInspector(nil, nil),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -150,14 +150,14 @@ func TestListener(t *testing.T) {
 			port:    9000,
 			lf: ListenerFilters(
 				ProxyProtocol(),
-				TLSInspector(),
+				TLSInspector(nil, nil),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https-proxy",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
-					TLSInspector(),
+					TLSInspector(nil, nil),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -186,14 +186,14 @@ func TestListener(t *testing.T) {
 			port:                          9000,
 			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			lf: ListenerFilters(
-				TLSInspector(),
+				TLSInspector(nil, nil),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:                          "https",
 				Address:                       SocketAddress("0.0.0.0", 9000),
 				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(),
+					TLSInspector(nil, nil),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},

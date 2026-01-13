@@ -146,7 +146,7 @@ func globalExternalAuthorizationFilterExistsTLS(t *testing.T, rh ResourceEventHa
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("foo.com",
@@ -216,7 +216,7 @@ func globalExternalAuthorizationWithTLSGlobalAuthDisabled(t *testing.T, rh Resou
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("foo.com",
@@ -493,7 +493,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("foo.com",
@@ -613,7 +613,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("foo.com",
@@ -702,7 +702,7 @@ func globalExternalAuthorizationFilterTLSWithFallbackCertificate(t *testing.T, r
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("foo.com",
