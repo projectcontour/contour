@@ -1339,6 +1339,16 @@ func (in *TracingConfig) DeepCopyInto(out *TracingConfig) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ClientSampling != nil {
+		in, out := &in.ClientSampling, &out.ClientSampling
+		*out = new(string)
+		**out = **in
+	}
+	if in.RandomSampling != nil {
+		in, out := &in.RandomSampling, &out.RandomSampling
+		*out = new(string)
+		**out = **in
+	}
 	if in.MaxPathTagLength != nil {
 		in, out := &in.MaxPathTagLength, &out.MaxPathTagLength
 		*out = new(uint32)

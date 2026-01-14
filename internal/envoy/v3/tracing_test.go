@@ -67,6 +67,12 @@ func TestTracingConfig(t *testing.T) {
 				OverallSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
+				ClientSampling: &envoy_type_v3.Percent{
+					Value: 0.0,
+				},
+				RandomSampling: &envoy_type_v3.Percent{
+					Value: 0.0,
+				},
 				MaxPathTagLength: wrapperspb.UInt32(256),
 				CustomTags: []*envoy_trace_v3.CustomTag{
 					{
@@ -128,6 +134,12 @@ func TestTracingConfig(t *testing.T) {
 				OverallSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
+				ClientSampling: &envoy_type_v3.Percent{
+					Value: 0.0,
+				},
+				RandomSampling: &envoy_type_v3.Percent{
+					Value: 0.0,
+				},
 				MaxPathTagLength: wrapperspb.UInt32(256),
 				CustomTags:       nil,
 				Provider: &envoy_config_trace_v3.Tracing_Http{
@@ -163,6 +175,12 @@ func TestTracingConfig(t *testing.T) {
 			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
+				},
+				ClientSampling: &envoy_type_v3.Percent{
+					Value: 0.0,
+				},
+				RandomSampling: &envoy_type_v3.Percent{
+					Value: 0.0,
 				},
 				MaxPathTagLength: wrapperspb.UInt32(256),
 				CustomTags:       nil,
