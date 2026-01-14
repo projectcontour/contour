@@ -784,10 +784,22 @@ func (s *Server) setupTracingService(tracingConfig *contour_v1alpha1.TracingConf
 		overallSampling = 100.0
 	}
 
+	clientSampling, err := strconv.ParseFloat(ptr.Deref(tracingConfig.ClientSampling, "100"), 64)
+	if err != nil || clientSampling == 0 {
+		clientSampling = 100.0
+	}
+
+	randomSampling, err := strconv.ParseFloat(ptr.Deref(tracingConfig.RandomSampling, "100"), 64)
+	if err != nil || randomSampling == 0 {
+		randomSampling = 100.0
+	}
+
 	return &xdscache_v3.TracingConfig{
 		ServiceName:            ptr.Deref(tracingConfig.ServiceName, "contour"),
 		ExtensionServiceConfig: extensionSvcConfig,
 		OverallSampling:        overallSampling,
+		ClientSampling:         clientSampling,
+		RandomSampling:         randomSampling,
 		MaxPathTagLength:       ptr.Deref(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:             customTags,
 	}, nil
