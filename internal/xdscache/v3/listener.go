@@ -171,6 +171,10 @@ type TracingConfig struct {
 
 	OverallSampling float64
 
+	ClientSampling float64
+
+	RandomSampling float64
+
 	MaxPathTagLength uint32
 
 	CustomTags []*CustomTag
@@ -637,6 +641,8 @@ func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
 		SNI:              config.SNI,
 		Timeout:          config.Timeout,
 		OverallSampling:  config.OverallSampling,
+		ClientSampling:   config.ClientSampling,
+		RandomSampling:   config.RandomSampling,
 		MaxPathTagLength: config.MaxPathTagLength,
 		CustomTags:       envoyTracingConfigCustomTag(config.CustomTags),
 	}

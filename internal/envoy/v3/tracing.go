@@ -44,6 +44,12 @@ func TracingConfig(tracing *EnvoyTracingConfig) *envoy_filter_network_http_conne
 		OverallSampling: &envoy_type_v3.Percent{
 			Value: tracing.OverallSampling,
 		},
+		ClientSampling: &envoy_type_v3.Percent{
+			Value: tracing.ClientSampling,
+		},
+		RandomSampling: &envoy_type_v3.Percent{
+			Value: tracing.RandomSampling,
+		},
 		MaxPathTagLength: wrapperspb.UInt32(tracing.MaxPathTagLength),
 		CustomTags:       customTags,
 		Provider: &envoy_config_trace_v3.Tracing_Http{
@@ -102,6 +108,8 @@ type EnvoyTracingConfig struct {
 	SNI              string
 	Timeout          timeout.Setting
 	OverallSampling  float64
+	ClientSampling   float64
+	RandomSampling   float64
 	MaxPathTagLength uint32
 	CustomTags       []*CustomTag
 }

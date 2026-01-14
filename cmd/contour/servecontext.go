@@ -413,6 +413,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 			IncludePodDetail: ctx.Config.Tracing.IncludePodDetail,
 			ServiceName:      ctx.Config.Tracing.ServiceName,
 			OverallSampling:  ctx.Config.Tracing.OverallSampling,
+			ClientSampling:   ctx.Config.Tracing.ClientSampling,
+			RandomSampling:   ctx.Config.Tracing.RandomSampling,
 			MaxPathTagLength: ctx.Config.Tracing.MaxPathTagLength,
 			CustomTags:       customTags,
 			ExtensionService: &contour_v1alpha1.NamespacedName{

@@ -39,6 +39,8 @@ func TestTracing(t *testing.T) {
 		},
 		ServiceName:      "contour",
 		OverallSampling:  100,
+		ClientSampling:   100,
+		RandomSampling:   100,
 		MaxPathTagLength: 256,
 		CustomTags: []*xdscache_v3.CustomTag{
 			{
@@ -128,6 +130,8 @@ func TestTracing(t *testing.T) {
 			ServiceName:      tracingConfig.ServiceName,
 			Timeout:          tracingConfig.Timeout,
 			OverallSampling:  tracingConfig.OverallSampling,
+			ClientSampling:   tracingConfig.ClientSampling,
+			RandomSampling:   tracingConfig.RandomSampling,
 			MaxPathTagLength: tracingConfig.MaxPathTagLength,
 			CustomTags: []*envoy_v3.CustomTag{
 				{

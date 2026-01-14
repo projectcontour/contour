@@ -47,6 +47,8 @@ func TestTracingConfig(t *testing.T) {
 				SNI:              "some-server.com",
 				Timeout:          timeout.DurationSetting(5 * time.Second),
 				OverallSampling:  100,
+				ClientSampling:   100,
+				RandomSampling:   100,
 				MaxPathTagLength: 256,
 				CustomTags: []*CustomTag{
 					{
@@ -65,6 +67,12 @@ func TestTracingConfig(t *testing.T) {
 			},
 			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
+					Value: 100.0,
+				},
+				ClientSampling: &envoy_type_v3.Percent{
+					Value: 100.0,
+				},
+				RandomSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
 				MaxPathTagLength: wrapperspb.UInt32(256),
@@ -121,11 +129,19 @@ func TestTracingConfig(t *testing.T) {
 				SNI:              "some-server.com",
 				Timeout:          timeout.DurationSetting(5 * time.Second),
 				OverallSampling:  100,
+				ClientSampling:   100,
+				RandomSampling:   100,
 				MaxPathTagLength: 256,
 				CustomTags:       nil,
 			},
 			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
+					Value: 100.0,
+				},
+				ClientSampling: &envoy_type_v3.Percent{
+					Value: 100.0,
+				},
+				RandomSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
 				MaxPathTagLength: wrapperspb.UInt32(256),
@@ -157,11 +173,19 @@ func TestTracingConfig(t *testing.T) {
 				SNI:              "",
 				Timeout:          timeout.DurationSetting(5 * time.Second),
 				OverallSampling:  100,
+				ClientSampling:   100,
+				RandomSampling:   100,
 				MaxPathTagLength: 256,
 				CustomTags:       nil,
 			},
 			want: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing{
 				OverallSampling: &envoy_type_v3.Percent{
+					Value: 100.0,
+				},
+				ClientSampling: &envoy_type_v3.Percent{
+					Value: 100.0,
+				},
+				RandomSampling: &envoy_type_v3.Percent{
 					Value: 100.0,
 				},
 				MaxPathTagLength: wrapperspb.UInt32(256),
