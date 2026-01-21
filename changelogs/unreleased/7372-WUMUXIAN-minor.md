@@ -1,0 +1,1 @@
+Make it possible to enable TLS fingerprinting in Envoy's TLS Inspector Listener filter, useful for security monitoring, analytics, and bot detection. Provides independent control over JA3 and JA4 fingerprinting methods.
