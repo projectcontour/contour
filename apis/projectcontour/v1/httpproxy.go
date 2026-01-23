@@ -221,8 +221,8 @@ type QueryParameterMatchCondition struct {
 
 // ExtensionServiceReference names an ExtensionService resource.
 // +kubebuilder:validation:XValidation:rule="has(self.name)",message="name is required"
-// +kubebuilder:validation:XValidation:rule="!has(self.namespace) || self.namespace != ”",message="namespace cannot be empty"
-// +kubebuilder:validation:XValidation:rule="!has(self.apiVersion) || self.apiVersion != ”",message="apiVersion cannot be empty"
+// +kubebuilder:validation:XValidation:rule="!has(self.namespace) || self.namespace != "",message="namespace cannot be empty"
+// +kubebuilder:validation:XValidation:rule="!has(self.apiVersion) || self.apiVersion != "",message="apiVersion cannot be empty"
 type ExtensionServiceReference struct {
 	// API version of the referent.
 	// If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
@@ -546,7 +546,7 @@ type CORSPolicy struct {
 }
 
 // Route contains the set of routes for a virtual host.
-// +kubebuilder:validation:XValidation:rule="!(size(self.conditions.filter(c, c.prefix != ” || c.exact != ” || c.regex != ”)) > 1)",message="only one of prefix, exact, or regex condition may be specified"
+// +kubebuilder:validation:XValidation:rule="!(size(self.conditions.filter(c, c.prefix != "" || c.exact != "" || c.regex != "")) > 1)",message="only one of prefix, exact, or regex condition may be specified"
 type Route struct {
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
@@ -644,7 +644,7 @@ type Route struct {
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
 }
 
-// +kubebuilder:validation:XValidation:rule="!(self.require != ” && self.disabled)",message="only one of require or disabled may be specified"
+// +kubebuilder:validation:XValidation:rule="!(self.require != "" && self.disabled)",message="only one of require or disabled may be specified"
 type JWTVerificationPolicy struct {
 	// Require names a specific JWT provider (defined in the virtual host)
 	// to require for the route. If specified, this field overrides the
@@ -689,7 +689,7 @@ type IPFilterPolicy struct {
 }
 
 // HTTPDirectResponsePolicy defines configuration for returning a direct HTTP response.
-// +kubebuilder:validation:XValidation:rule="!(self.statusCode == 204 || self.statusCode == 304) || self.body == ”",message="body must be empty for status codes 204 and 304"
+// +kubebuilder:validation:XValidation:rule="!(self.statusCode == 204 || self.statusCode == 304) || self.body == """,message="body must be empty for status codes 204 and 304"
 type HTTPDirectResponsePolicy struct {
 	// StatusCode is the HTTP response status to be returned.
 	// +required
@@ -1003,7 +1003,7 @@ type RequestHeaderValueMatchDescriptor struct {
 type RemoteAddressDescriptor struct{}
 
 // TCPProxy contains the set of services to proxy TCP connections.
-// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.includesDeprecated))",message="only one of include or includes may be set"
+// +kubebuilder:validation:XValidation:rule="!(has(self.include) && has(self.includes))",message="only one of include or includes may be set"
 type TCPProxy struct {
 	// The load balancing policy for the backend services. Note that the
 	// `Cookie` and `RequestHash` load balancing strategies cannot be used
