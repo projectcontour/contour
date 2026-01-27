@@ -199,7 +199,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				}
 
 				switch params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy {
-				case "", core_v1.ServiceExternalTrafficPolicyTypeCluster, core_v1.ServiceExternalTrafficPolicyTypeLocal:
+				case "", core_v1.ServiceExternalTrafficPolicyCluster, core_v1.ServiceExternalTrafficPolicyLocal:
 				default:
 					msg := fmt.Sprintf("invalid ContourDeployment spec.envoy.networkPublishing.externalTrafficPolicy %q, must be Local or Cluster",
 						params.Spec.Envoy.NetworkPublishing.ExternalTrafficPolicy)

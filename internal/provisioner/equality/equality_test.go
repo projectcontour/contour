@@ -434,7 +434,7 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 		{
 			description: "if external traffic policy changed",
 			mutate: func(svc *core_v1.Service) {
-				svc.Spec.ExternalTrafficPolicy = core_v1.ServiceExternalTrafficPolicyTypeCluster
+				svc.Spec.ExternalTrafficPolicy = core_v1.ServiceExternalTrafficPolicyCluster
 			},
 			expect: true,
 		},

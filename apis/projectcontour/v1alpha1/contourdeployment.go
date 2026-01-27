@@ -315,7 +315,7 @@ type NetworkPublishing struct {
 	// If unset, defaults to "Local".
 	//
 	// +optional
-	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
+	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicy `json:"externalTrafficPolicy,omitempty"`
 
 	// IPFamilyPolicy represents the dual-stack-ness requested or required by
 	// this Service. If there is no value provided, then this field will be set
