@@ -67,7 +67,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -119,7 +119,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -167,7 +167,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -223,7 +223,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -277,7 +277,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -331,7 +331,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -388,7 +388,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -448,7 +448,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(nil, nil),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,

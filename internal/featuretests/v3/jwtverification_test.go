@@ -76,7 +76,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1, httpsFilterFor("jwt.example.com"),
@@ -128,7 +128,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -281,7 +281,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -389,7 +389,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -499,7 +499,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -613,7 +613,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -761,7 +761,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -925,7 +925,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -1070,7 +1070,7 @@ func TestJWTVerification(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -1223,7 +1223,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1, httpsFilterFor("jwt.example.com"),
@@ -1285,7 +1285,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -1448,7 +1448,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -1566,7 +1566,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,
@@ -1686,7 +1686,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("jwt.example.com", sec1,

@@ -156,6 +156,12 @@ type ListenerConfig struct {
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
 	SocketOptions *contour_v1alpha1.SocketOptions
+
+	// EnableJA3Fingerprinting enables JA3 fingerprinting for HTTPS listeners.
+	EnableJA3Fingerprinting *bool
+
+	// EnableJA4Fingerprinting enables JA4 fingerprinting for HTTPS listeners.
+	EnableJA4Fingerprinting *bool
 }
 
 type ExtensionServiceConfig struct {
@@ -422,7 +428,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
 				socketOptions,
-				secureProxyProtocol(cfg.UseProxyProto),
+				secureProxyProtocol(cfg.UseProxyProto, cfg.EnableJA3Fingerprinting, cfg.EnableJA4Fingerprinting),
 			)
 		}
 
@@ -667,6 +673,6 @@ func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
-	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector())
+func secureProxyProtocol(useProxy bool, enableJA3, enableJA4 *bool) []*envoy_config_listener_v3.ListenerFilter {
+	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector(enableJA3, enableJA4))
 }

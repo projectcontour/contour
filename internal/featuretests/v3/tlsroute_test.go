@@ -112,7 +112,7 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -155,7 +155,7 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -222,7 +222,7 @@ func TestTLSRoute_TLSPassthrough(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -315,7 +315,7 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 				Name:    "https-5000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("test1.projectcontour.io", sec1, tcpproxy("https-5000", "default/svc1/80/da39a3ee5e"), nil),
@@ -352,7 +352,7 @@ func TestTLSRoute_TLSTermination(t *testing.T) {
 				Name:    "https-5000",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 13000),
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("test1.projectcontour.io", sec1, tcpproxy("https-5000", "default/svc1/80/da39a3ee5e"), nil),
