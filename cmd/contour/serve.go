@@ -748,6 +748,19 @@ func (s *Server) getExtensionSvcConfig(name, namespace string) (xdscache_v3.Exte
 	return extensionSvcConfig, nil
 }
 
+// parseSamplingRate parses a sampling rate string and returns the float value,
+// defaulting to 100.0 for invalid values or zero values.
+func parseSamplingRate(rateStr *string) float64 {
+	if rateStr == nil {
+		return 100.0
+	}
+	rate, err := strconv.ParseFloat(*rateStr, 64)
+	if err != nil || rate == 0 {
+		return 100.0
+	}
+	return rate
+}
+
 func (s *Server) setupTracingService(tracingConfig *contour_v1alpha1.TracingConfig) (*xdscache_v3.TracingConfig, error) {
 	if tracingConfig == nil {
 		return nil, nil
@@ -779,15 +792,16 @@ func (s *Server) setupTracingService(tracingConfig *contour_v1alpha1.TracingConf
 		})
 	}
 
-	overallSampling, err := strconv.ParseFloat(ptr.Deref(tracingConfig.OverallSampling, "100"), 64)
-	if err != nil || overallSampling == 0 {
-		overallSampling = 100.0
-	}
+	overallSampling := parseSamplingRate(tracingConfig.OverallSampling)
+	clientSampling := parseSamplingRate(tracingConfig.ClientSampling)
+	randomSampling := parseSamplingRate(tracingConfig.RandomSampling)
 
 	return &xdscache_v3.TracingConfig{
 		ServiceName:            ptr.Deref(tracingConfig.ServiceName, "contour"),
 		ExtensionServiceConfig: extensionSvcConfig,
 		OverallSampling:        overallSampling,
+		ClientSampling:         clientSampling,
+		RandomSampling:         randomSampling,
 		MaxPathTagLength:       ptr.Deref(tracingConfig.MaxPathTagLength, 256),
 		CustomTags:             customTags,
 	}, nil

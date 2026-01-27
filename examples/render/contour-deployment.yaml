@@ -1312,6 +1312,11 @@ spec:
                 description: Tracing defines properties for exporting trace data to
                   OpenTelemetry.
                 properties:
+                  clientSampling:
+                    description: |-
+                      ClientSampling defines the sampling rate when x-client-trace-id header is set.
+                      contour's default is 100.
+                    type: string
                   customTags:
                     description: CustomTags defines a list of custom tags with unique
                       tag name.
@@ -1367,6 +1372,11 @@ spec:
                   overallSampling:
                     description: |-
                       OverallSampling defines the sampling rate of trace data.
+                      contour's default is 100.
+                    type: string
+                  randomSampling:
+                    description: |-
+                      RandomSampling defines the random sampling rate for all requests.
                       contour's default is 100.
                     type: string
                   serviceName:
@@ -5261,6 +5271,11 @@ spec:
                     description: Tracing defines properties for exporting trace data
                       to OpenTelemetry.
                     properties:
+                      clientSampling:
+                        description: |-
+                          ClientSampling defines the sampling rate when x-client-trace-id header is set.
+                          contour's default is 100.
+                        type: string
                       customTags:
                         description: CustomTags defines a list of custom tags with
                           unique tag name.
@@ -5317,6 +5332,11 @@ spec:
                       overallSampling:
                         description: |-
                           OverallSampling defines the sampling rate of trace data.
+                          contour's default is 100.
+                        type: string
+                      randomSampling:
+                        description: |-
+                          RandomSampling defines the random sampling rate for all requests.
                           contour's default is 100.
                         type: string
                       serviceName:

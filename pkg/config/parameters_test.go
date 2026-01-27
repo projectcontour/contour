@@ -682,6 +682,8 @@ func TestTracingConfigValidation(t *testing.T) {
 		IncludePodDetail: ptr.To(false),
 		ServiceName:      ptr.To("contour"),
 		OverallSampling:  ptr.To("100"),
+		ClientSampling:   ptr.To("100"),
+		RandomSampling:   ptr.To("100"),
 		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags:       nil,
 		ExtensionService: "projectcontour/otel-collector",
@@ -692,6 +694,8 @@ func TestTracingConfigValidation(t *testing.T) {
 		IncludePodDetail: ptr.To(false),
 		ServiceName:      ptr.To("contour"),
 		OverallSampling:  ptr.To("100"),
+		ClientSampling:   ptr.To("100"),
+		RandomSampling:   ptr.To("100"),
 		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags:       nil,
 	}
@@ -700,6 +704,8 @@ func TestTracingConfigValidation(t *testing.T) {
 	trace = &Tracing{
 		IncludePodDetail: ptr.To(false),
 		OverallSampling:  ptr.To("100"),
+		ClientSampling:   ptr.To("100"),
+		RandomSampling:   ptr.To("100"),
 		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags:       nil,
 		ExtensionService: "projectcontour/otel-collector",
@@ -708,6 +714,8 @@ func TestTracingConfigValidation(t *testing.T) {
 
 	trace = &Tracing{
 		OverallSampling:  ptr.To("100"),
+		ClientSampling:   ptr.To("100"),
+		RandomSampling:   ptr.To("100"),
 		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
@@ -722,6 +730,8 @@ func TestTracingConfigValidation(t *testing.T) {
 
 	trace = &Tracing{
 		OverallSampling:  ptr.To("100"),
+		ClientSampling:   ptr.To("100"),
+		RandomSampling:   ptr.To("100"),
 		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
@@ -735,6 +745,8 @@ func TestTracingConfigValidation(t *testing.T) {
 	trace = &Tracing{
 		IncludePodDetail: ptr.To(true),
 		OverallSampling:  ptr.To("100"),
+		ClientSampling:   ptr.To("100"),
+		RandomSampling:   ptr.To("100"),
 		MaxPathTagLength: ptr.To(uint32(256)),
 		CustomTags: []CustomTag{
 			{
@@ -746,6 +758,20 @@ func TestTracingConfigValidation(t *testing.T) {
 				RequestHeaderName: ":path",
 			},
 		},
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.Error(t, trace.Validate())
+
+	// Test invalid ClientSampling
+	trace = &Tracing{
+		ClientSampling:   ptr.To("invalid"),
+		ExtensionService: "projectcontour/otel-collector",
+	}
+	require.Error(t, trace.Validate())
+
+	// Test invalid RandomSampling
+	trace = &Tracing{
+		RandomSampling:   ptr.To("not-a-number"),
 		ExtensionService: "projectcontour/otel-collector",
 	}
 	require.Error(t, trace.Validate())

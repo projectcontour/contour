@@ -816,6 +816,16 @@ type TracingConfig struct {
 	// +optional
 	OverallSampling *string `json:"overallSampling,omitempty"`
 
+	// ClientSampling defines the sampling rate when x-client-trace-id header is set.
+	// contour's default is 100.
+	// +optional
+	ClientSampling *string `json:"clientSampling,omitempty"`
+
+	// RandomSampling defines the random sampling rate for all requests.
+	// contour's default is 100.
+	// +optional
+	RandomSampling *string `json:"randomSampling,omitempty"`
+
 	// MaxPathTagLength defines maximum length of the request path
 	// to extract and include in the HttpUrl tag.
 	// contour's default is 256.

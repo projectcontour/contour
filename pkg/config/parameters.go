@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -727,6 +728,14 @@ type Tracing struct {
 	// the default value is 100.
 	OverallSampling *string `yaml:"overallSampling,omitempty"`
 
+	// ClientSampling defines the client sampling rate of trace data.
+	// the default value is 100.
+	ClientSampling *string `yaml:"clientSampling,omitempty"`
+
+	// RandomSampling defines the random sampling rate of trace data.
+	// the default value is 100.
+	RandomSampling *string `yaml:"randomSampling,omitempty"`
+
 	// MaxPathTagLength defines maximum length of the request path
 	// to extract and include in the HttpUrl tag.
 	// the default value is 256.
@@ -906,6 +915,20 @@ func (t *Tracing) Validate() error {
 
 	if t.ExtensionService == "" {
 		return errors.New("tracing.extensionService must be defined")
+	}
+
+	if t.ClientSampling != nil {
+		_, err := strconv.ParseFloat(*t.ClientSampling, 64)
+		if err != nil {
+			return fmt.Errorf("invalid tracing client sampling: %v", err)
+		}
+	}
+
+	if t.RandomSampling != nil {
+		_, err := strconv.ParseFloat(*t.RandomSampling, 64)
+		if err != nil {
+			return fmt.Errorf("invalid tracing random sampling: %v", err)
+		}
 	}
 
 	var customTagNames []string

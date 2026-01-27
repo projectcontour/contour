@@ -833,6 +833,8 @@ func TestConvertServeContext(t *testing.T) {
 					IncludePodDetail: ptr.To(false),
 					ServiceName:      ptr.To("contour"),
 					OverallSampling:  ptr.To("100"),
+					ClientSampling:   ptr.To("100"),
+					RandomSampling:   ptr.To("100"),
 					MaxPathTagLength: ptr.To(uint32(256)),
 					CustomTags: []config.CustomTag{
 						{
@@ -853,6 +855,8 @@ func TestConvertServeContext(t *testing.T) {
 					IncludePodDetail: ptr.To(false),
 					ServiceName:      ptr.To("contour"),
 					OverallSampling:  ptr.To("100"),
+					ClientSampling:   ptr.To("100"),
+					RandomSampling:   ptr.To("100"),
 					MaxPathTagLength: ptr.To(uint32(256)),
 					CustomTags: []*contour_v1alpha1.CustomTag{
 						{
