@@ -904,8 +904,9 @@ type AuthorizationServerBufferSettings struct {
 func (s *SecureVirtualHost) Valid() bool {
 	// A SecureVirtualHost is valid if either
 	// 1. it has a secret and at least one route.
+	// 1. it has a secret and hostname '*' to ensure TLS is terminated for a wildcard/catchall Listener
 	// 2. it has a tcpproxy, because the tcpproxy backend may negotiate TLS itself.
-	return (s.Secret != nil && len(s.Routes) > 0) || s.TCPProxy != nil
+	return (s.Secret != nil && (len(s.Routes) > 0 || s.Name == "*")) || s.TCPProxy != nil
 }
 
 // A Listener represents a TCP socket that accepts
