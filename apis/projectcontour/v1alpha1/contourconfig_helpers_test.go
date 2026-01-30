@@ -200,6 +200,18 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Tracing.OverallSampling = ptr.To("10")
 		require.NoError(t, c.Validate())
 
+		c.Tracing.ClientSampling = ptr.To("invalid")
+		require.Error(t, c.Validate())
+
+		c.Tracing.ClientSampling = ptr.To("20")
+		require.NoError(t, c.Validate())
+
+		c.Tracing.RandomSampling = ptr.To("not-a-number")
+		require.Error(t, c.Validate())
+
+		c.Tracing.RandomSampling = ptr.To("30")
+		require.NoError(t, c.Validate())
+
 		customTags := []*contour_v1alpha1.CustomTag{
 			{
 				TagName: "first tag",

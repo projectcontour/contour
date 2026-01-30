@@ -218,6 +218,57 @@ func TestGetDAGBuilder(t *testing.T) {
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))
 }
 
+func TestParseSamplingRate(t *testing.T) {
+	tests := map[string]struct {
+		input *string
+		want  float64
+	}{
+		"nil input": {
+			input: nil,
+			want:  100.0,
+		},
+		"empty string": {
+			input: ptr.To(""),
+			want:  100.0,
+		},
+		"valid number": {
+			input: ptr.To("50.5"),
+			want:  50.5,
+		},
+		"zero value": {
+			input: ptr.To("0"),
+			want:  100.0,
+		},
+		"negative number": {
+			input: ptr.To("-10"),
+			want:  -10.0,
+		},
+		"invalid string": {
+			input: ptr.To("invalid"),
+			want:  100.0,
+		},
+		"non-numeric string": {
+			input: ptr.To("not-a-number"),
+			want:  100.0,
+		},
+		"decimal zero": {
+			input: ptr.To("0.0"),
+			want:  100.0,
+		},
+		"large number": {
+			input: ptr.To("999.99"),
+			want:  999.99,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseSamplingRate(tc.input)
+			assert.InDelta(t, tc.want, got, 0.001)
+		})
+	}
+}
+
 func mustGetGatewayAPIProcessor(t *testing.T, builder *dag.Builder) *dag.GatewayAPIProcessor {
 	t.Helper()
 	for i := range builder.Processors {

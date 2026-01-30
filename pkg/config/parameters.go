@@ -727,6 +727,14 @@ type Tracing struct {
 	// the default value is 100.
 	OverallSampling *string `yaml:"overallSampling,omitempty"`
 
+	// ClientSampling defines the client sampling rate of trace data.
+	// the default value is 100.
+	ClientSampling *string `yaml:"clientSampling,omitempty"`
+
+	// RandomSampling defines the random sampling rate of trace data.
+	// the default value is 100.
+	RandomSampling *string `yaml:"randomSampling,omitempty"`
+
 	// MaxPathTagLength defines maximum length of the request path
 	// to extract and include in the HttpUrl tag.
 	// the default value is 256.

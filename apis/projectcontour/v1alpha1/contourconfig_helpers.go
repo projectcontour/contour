@@ -64,6 +64,20 @@ func (t *TracingConfig) Validate() error {
 		}
 	}
 
+	if t.ClientSampling != nil {
+		_, err := strconv.ParseFloat(*t.ClientSampling, 64)
+		if err != nil {
+			return fmt.Errorf("invalid tracing client sampling: %v", err)
+		}
+	}
+
+	if t.RandomSampling != nil {
+		_, err := strconv.ParseFloat(*t.RandomSampling, 64)
+		if err != nil {
+			return fmt.Errorf("invalid tracing random sampling: %v", err)
+		}
+	}
+
 	var customTagNames []string
 
 	for _, customTag := range t.CustomTags {
