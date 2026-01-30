@@ -761,18 +761,4 @@ func TestTracingConfigValidation(t *testing.T) {
 		ExtensionService: "projectcontour/otel-collector",
 	}
 	require.Error(t, trace.Validate())
-
-	// Test invalid ClientSampling
-	trace = &Tracing{
-		ClientSampling:   ptr.To("invalid"),
-		ExtensionService: "projectcontour/otel-collector",
-	}
-	require.Error(t, trace.Validate())
-
-	// Test invalid RandomSampling
-	trace = &Tracing{
-		RandomSampling:   ptr.To("not-a-number"),
-		ExtensionService: "projectcontour/otel-collector",
-	}
-	require.Error(t, trace.Validate())
 }

@@ -21,7 +21,7 @@ Contour supports configuring envoy to export data to OpenTelemetry, and allows u
 
 ## Tracing-config
 
-In order to use this feature, you must first select and deploy an opentelemetry-collector to receive the tracing data exported by envoy. 
+In order to use this feature, you must first select and deploy an opentelemetry-collector to receive the tracing data exported by envoy.
 
 First we should deploy an opentelemetry-collector to receive the tracing data exported by envoy
 ```bash
@@ -81,30 +81,30 @@ metadata:
   name: contour
   namespace: projectcontour
 data:
-  contour.yaml: |
-     tracing:
-       # Whether to send the namespace and instance where envoy is located to open, the default is true.
-       includePodDetail: true
-       # The extensionService and namespace and name defined above in the format of namespace/name.
-       extensionService: projectcontour/otel-collector
-       # The service name that envoy sends to openTelemetry-collector, the default is contour.
-       serviceName: some-service-name
-       # The overall sampling rate for tracing, the default is 100.
-       overallSampling: 100
-       # The client sampling rate for tracing, the default is 100.
-       clientSampling: 100
-       # The random sampling rate for tracing, the default is 100.
-       randomSampling: 100
-       # A custom set of tags.
-       customTags:
-       # envoy will send the tagName to the collector.
-       - tagName: custom-tag
-         # fixed tag value.
-         literal: foo
-       - tagName: header-tag
-         # The tag value obtained from the request header,
-         # if the request header does not exist, this tag will not be sent.
-         requestHeaderName: X-Custom-Header
+   contour.yaml: |
+    tracing:
+      # Whether to send the namespace and instance where envoy is located to open, the default is true.
+      includePodDetail: true
+      # The extensionService and namespace and name defined above in the format of namespace/name.
+      extensionService: projectcontour/otel-collector
+      # The service name that envoy sends to openTelemetry-collector, the default is contour.
+      serviceName: some-service-name
+      # The overall sampling rate for tracing, the default is 100.
+      overallSampling: 100
+      # The client sampling rate for tracing, the default is 100.
+      clientSampling: 100
+      # The random sampling rate for tracing, the default is 100.
+      randomSampling: 100
+      # A custom set of tags.
+      customTags:
+      # envoy will send the tagName to the collector.
+      - tagName: custom-tag
+        # fixed tag value.
+        literal: foo
+      - tagName: header-tag
+        # The tag value obtained from the request header,
+        # if the request header does not exist, this tag will not be sent.
+        requestHeaderName: X-Custom-Header
 EOF
 ```
 
@@ -122,4 +122,3 @@ Now you should be able to see traces in the logs of the otel collector.
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing
 [2]: https://opentelemetry.io/
-

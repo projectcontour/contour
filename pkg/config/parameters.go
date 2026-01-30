@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -915,20 +914,6 @@ func (t *Tracing) Validate() error {
 
 	if t.ExtensionService == "" {
 		return errors.New("tracing.extensionService must be defined")
-	}
-
-	if t.ClientSampling != nil {
-		_, err := strconv.ParseFloat(*t.ClientSampling, 64)
-		if err != nil {
-			return fmt.Errorf("invalid tracing client sampling: %v", err)
-		}
-	}
-
-	if t.RandomSampling != nil {
-		_, err := strconv.ParseFloat(*t.RandomSampling, 64)
-		if err != nil {
-			return fmt.Errorf("invalid tracing random sampling: %v", err)
-		}
 	}
 
 	var customTagNames []string

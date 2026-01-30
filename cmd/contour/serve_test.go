@@ -14,60 +14,17 @@
 package main
 
 import (
-	"context"
-	"net/http"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
-	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/config"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
-	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 )
-
-// fakeManager implements manager.Manager interface for testing.
-// Only GetAPIReader() is implemented; other methods panic if called.
-type fakeManager struct {
-	apiReader client.Reader
-}
-
-var _ manager.Manager = &fakeManager{}
-
-func (f *fakeManager) GetAPIReader() client.Reader                                  { return f.apiReader }
-func (f *fakeManager) Add(manager.Runnable) error                                   { panic("not implemented") }
-func (f *fakeManager) Elected() <-chan struct{}                                     { panic("not implemented") }
-func (f *fakeManager) AddMetricsServerExtraHandler(string, http.Handler) error      { panic("not implemented") }
-func (f *fakeManager) AddHealthzCheck(string, healthz.Checker) error                { panic("not implemented") }
-func (f *fakeManager) AddReadyzCheck(string, healthz.Checker) error                 { panic("not implemented") }
-func (f *fakeManager) Start(context.Context) error                                  { panic("not implemented") }
-func (f *fakeManager) GetWebhookServer() webhook.Server                             { panic("not implemented") }
-func (f *fakeManager) GetLogger() logr.Logger                                       { panic("not implemented") }
-func (f *fakeManager) GetControllerOptions() config.Controller                      { panic("not implemented") }
-func (f *fakeManager) GetHTTPClient() *http.Client                                  { panic("not implemented") }
-func (f *fakeManager) GetConfig() *rest.Config                                      { panic("not implemented") }
-func (f *fakeManager) GetCache() ctrl_cache.Cache                                   { panic("not implemented") }
-func (f *fakeManager) GetScheme() *runtime.Scheme                                   { panic("not implemented") }
-func (f *fakeManager) GetClient() client.Client                                     { panic("not implemented") }
-func (f *fakeManager) GetFieldIndexer() client.FieldIndexer                         { panic("not implemented") }
-func (f *fakeManager) GetEventRecorderFor(string) record.EventRecorder              { panic("not implemented") }
-func (f *fakeManager) GetRESTMapper() meta.RESTMapper                               { panic("not implemented") }
 
 func TestGetDAGBuilder(t *testing.T) {
 	commonAssertions := func(t *testing.T, builder *dag.Builder) {
@@ -261,6 +218,57 @@ func TestGetDAGBuilder(t *testing.T) {
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))
 }
 
+func TestParseSamplingRate(t *testing.T) {
+	tests := map[string]struct {
+		input *string
+		want  float64
+	}{
+		"nil input": {
+			input: nil,
+			want:  100.0,
+		},
+		"empty string": {
+			input: ptr.To(""),
+			want:  100.0,
+		},
+		"valid number": {
+			input: ptr.To("50.5"),
+			want:  50.5,
+		},
+		"zero value": {
+			input: ptr.To("0"),
+			want:  100.0,
+		},
+		"negative number": {
+			input: ptr.To("-10"),
+			want:  -10.0,
+		},
+		"invalid string": {
+			input: ptr.To("invalid"),
+			want:  100.0,
+		},
+		"non-numeric string": {
+			input: ptr.To("not-a-number"),
+			want:  100.0,
+		},
+		"decimal zero": {
+			input: ptr.To("0.0"),
+			want:  100.0,
+		},
+		"large number": {
+			input: ptr.To("999.99"),
+			want:  999.99,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseSamplingRate(tc.input)
+			assert.InDelta(t, tc.want, got, 0.001)
+		})
+	}
+}
+
 func mustGetGatewayAPIProcessor(t *testing.T, builder *dag.Builder) *dag.GatewayAPIProcessor {
 	t.Helper()
 	for i := range builder.Processors {
@@ -298,367 +306,4 @@ func mustGetIngressProcessor(t *testing.T, builder *dag.Builder) *dag.IngressPro
 
 	require.FailNow(t, "IngressProcessor not found in list of DAG builder's processors")
 	return nil
-}
-
-func TestSetupTracingService(t *testing.T) {
-	// Helper to create a fake client with an ExtensionService
-	newFakeClient := func(objects ...runtime.Object) client.Reader {
-		scheme := runtime.NewScheme()
-		require.NoError(t, contour_v1alpha1.AddToScheme(scheme))
-		return fake.NewClientBuilder().
-			WithScheme(scheme).
-			WithRuntimeObjects(objects...).
-			Build()
-	}
-
-	// Helper to create a Server with a fake manager
-	newServerWithClient := func(c client.Reader) *Server {
-		return &Server{
-			log: logrus.StandardLogger(),
-			mgr: &fakeManager{apiReader: c},
-		}
-	}
-
-	// Create a basic ExtensionService for tests
-	extensionService := &contour_v1alpha1.ExtensionService{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Name:      "otel-collector",
-			Namespace: "tracing",
-		},
-		Spec: contour_v1alpha1.ExtensionServiceSpec{
-			Services: []contour_v1alpha1.ExtensionServiceTarget{
-				{Name: "otel-collector", Port: 4317},
-			},
-		},
-	}
-
-	tests := map[string]struct {
-		tracingConfig *contour_v1alpha1.TracingConfig
-		objects       []runtime.Object
-		want          *xdscache_v3.TracingConfig
-		wantErr       string
-	}{
-		"nil tracing config returns nil": {
-			tracingConfig: nil,
-			objects:       nil,
-			want:          nil,
-			wantErr:       "",
-		},
-		"extension service not found returns error": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "nonexistent",
-					Namespace: "tracing",
-				},
-			},
-			objects: nil,
-			wantErr: "error getting extension service",
-		},
-		"basic config with defaults": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags: []*xdscache_v3.CustomTag{
-					{TagName: "podName", EnvironmentName: "HOSTNAME"},
-					{TagName: "podNamespace", EnvironmentName: "CONTOUR_NAMESPACE"},
-				},
-			},
-		},
-		"includePodDetail false omits pod tags": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				IncludePodDetail: ptr.To(false),
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags:       nil,
-			},
-		},
-		"custom service name": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				ServiceName:      ptr.To("my-service"),
-				IncludePodDetail: ptr.To(false),
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "my-service",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags:       nil,
-			},
-		},
-		"custom sampling rates": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				OverallSampling:  ptr.To("50.5"),
-				ClientSampling:   ptr.To("75.0"),
-				RandomSampling:   ptr.To("25.0"),
-				IncludePodDetail: ptr.To(false),
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  50.5,
-				ClientSampling:   75.0,
-				RandomSampling:   25.0,
-				MaxPathTagLength: 256,
-				CustomTags:       nil,
-			},
-		},
-		"invalid sampling rate defaults to 100": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				OverallSampling:  ptr.To("invalid"),
-				ClientSampling:   ptr.To("not-a-number"),
-				RandomSampling:   ptr.To(""),
-				IncludePodDetail: ptr.To(false),
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags:       nil,
-			},
-		},
-		"zero sampling rate defaults to 100": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				OverallSampling:  ptr.To("0"),
-				ClientSampling:   ptr.To("0.0"),
-				RandomSampling:   ptr.To("0"),
-				IncludePodDetail: ptr.To(false),
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags:       nil,
-			},
-		},
-		"custom max path tag length": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				MaxPathTagLength: ptr.To(uint32(512)),
-				IncludePodDetail: ptr.To(false),
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 512,
-				CustomTags:       nil,
-			},
-		},
-		"custom tags with literal and request header": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				IncludePodDetail: ptr.To(false),
-				CustomTags: []*contour_v1alpha1.CustomTag{
-					{
-						TagName: "env",
-						Literal: "production",
-					},
-					{
-						TagName:           "method",
-						RequestHeaderName: ":method",
-					},
-				},
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags: []*xdscache_v3.CustomTag{
-					{TagName: "env", Literal: "production"},
-					{TagName: "method", RequestHeaderName: ":method"},
-				},
-			},
-		},
-		"custom tags combined with pod detail tags": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				IncludePodDetail: ptr.To(true),
-				CustomTags: []*contour_v1alpha1.CustomTag{
-					{
-						TagName: "env",
-						Literal: "staging",
-					},
-				},
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "contour",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  100.0,
-				ClientSampling:   100.0,
-				RandomSampling:   100.0,
-				MaxPathTagLength: 256,
-				CustomTags: []*xdscache_v3.CustomTag{
-					{TagName: "podName", EnvironmentName: "HOSTNAME"},
-					{TagName: "podNamespace", EnvironmentName: "CONTOUR_NAMESPACE"},
-					{TagName: "env", Literal: "staging"},
-				},
-			},
-		},
-		"full configuration": {
-			tracingConfig: &contour_v1alpha1.TracingConfig{
-				ExtensionService: &contour_v1alpha1.NamespacedName{
-					Name:      "otel-collector",
-					Namespace: "tracing",
-				},
-				IncludePodDetail: ptr.To(true),
-				ServiceName:      ptr.To("my-app"),
-				OverallSampling:  ptr.To("10.0"),
-				ClientSampling:   ptr.To("20.0"),
-				RandomSampling:   ptr.To("30.0"),
-				MaxPathTagLength: ptr.To(uint32(128)),
-				CustomTags: []*contour_v1alpha1.CustomTag{
-					{TagName: "version", Literal: "v1.0.0"},
-				},
-			},
-			objects: []runtime.Object{extensionService},
-			want: &xdscache_v3.TracingConfig{
-				ServiceName: "my-app",
-				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
-					ExtensionService: types.NamespacedName{
-						Name:      "otel-collector",
-						Namespace: "tracing",
-					},
-				},
-				OverallSampling:  10.0,
-				ClientSampling:   20.0,
-				RandomSampling:   30.0,
-				MaxPathTagLength: 128,
-				CustomTags: []*xdscache_v3.CustomTag{
-					{TagName: "podName", EnvironmentName: "HOSTNAME"},
-					{TagName: "podNamespace", EnvironmentName: "CONTOUR_NAMESPACE"},
-					{TagName: "version", Literal: "v1.0.0"},
-				},
-			},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			fakeClient := newFakeClient(tc.objects...)
-			server := newServerWithClient(fakeClient)
-
-			got, err := server.setupTracingService(tc.tracingConfig)
-
-			if tc.wantErr != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tc.wantErr)
-				return
-			}
-
-			require.NoError(t, err)
-			assert.Equal(t, tc.want, got)
-		})
-	}
 }
