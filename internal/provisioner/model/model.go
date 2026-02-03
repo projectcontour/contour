@@ -53,7 +53,7 @@ func Default(namespace, name string) *Contour {
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type:                  LoadBalancerServicePublishingType,
-					ExternalTrafficPolicy: core_v1.ServiceExternalTrafficPolicyTypeLocal,
+					ExternalTrafficPolicy: core_v1.ServiceExternalTrafficPolicyLocal,
 					IPFamilyPolicy:        core_v1.IPFamilyPolicySingleStack,
 				},
 			},
@@ -435,7 +435,7 @@ type EnvoyNetworkPublishing struct {
 	// and LoadBalancer IPs).
 	//
 	// If unset, defaults to "Local".
-	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicyType
+	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicy
 }
 
 type NetworkPublishingType = contour_v1alpha1.NetworkPublishingType
