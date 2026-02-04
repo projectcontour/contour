@@ -1,0 +1,28 @@
+# Lychee Ignore File for Contour Documentation Link Checks
+
+# Purpose:
+# - Avoid false positives from placeholder/dev links
+# - Ignore dynamic GitHub URLs that cannot be validated reliably
+# - Reduce CI noise while still catching real broken links
+
+# Local development links (not valid in CI)
+localhost
+127.0.0.1
+
+# Placeholder/example domains used in docs
+example.com
+example.org
+
+# Mail links are not checkable as HTTP URLs
+mailto:*
+
+# GitHub issue creation links are dynamic and often return redirects
+https://github.com/projectcontour/contour/issues/new*
+https://github.com/projectcontour/contour/issues?q=*
+
+# GitHub compare URLs are temporary/dynamic
+https://github.com/projectcontour/contour/compare/*
+
+# Common documentation short-links that may rate-limit bots
+https://twitter.com/*
+https://x.com/*
