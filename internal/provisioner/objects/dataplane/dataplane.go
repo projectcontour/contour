@@ -61,7 +61,9 @@ const (
 	xdsResourceVersion = "v3"
 )
 
-// the default resource requirements for container: envoy-initconfig & shutdown-manager, the default value is come from:
+// the default resource requirements for container: envoy-initconfig & shutdown-manager.
+// CPU limit is generous to avoid throttling.
+// See: https://github.com/projectcontour/contour/issues/7366
 // ref: https://projectcontour.io/docs/1.25/deploy-options/#setting-resource-requests-and-limits
 var defContainerResources = core_v1.ResourceRequirements{
 	Requests: core_v1.ResourceList{
@@ -69,7 +71,7 @@ var defContainerResources = core_v1.ResourceRequirements{
 		core_v1.ResourceMemory: resource.MustParse("50Mi"),
 	},
 	Limits: core_v1.ResourceList{
-		core_v1.ResourceCPU:    resource.MustParse("50m"),
+		core_v1.ResourceCPU:    resource.MustParse("200m"),
 		core_v1.ResourceMemory: resource.MustParse("100Mi"),
 	},
 }
