@@ -4,11 +4,10 @@ on:
   pull_request:
     paths:
       - "site/content/docs/main/**/*.md"
-  # Run weekly
+
   schedule:
     - cron: "0 7 * * 1"
-  
-  # Allow manual runs
+
   workflow_dispatch:
 
 jobs:
@@ -16,13 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # Step 2: Run Lychee link checker on MAIN docs only
+      # Lychee parses Markdown files, extracts URLs, and checks them via HTTP requests.
+      # The job fails if any broken links are detected.
       - name: Run Lychee link checker (main docs only)
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
         with:
           args: >
             --verbose
@@ -37,30 +36,43 @@ jobs:
             --format markdown
             "site/content/docs/main/**/*.md"
 
-      # Step 3: Check if an open broken-link issue already exists
-      # This prevents weekly issue spam.
-      - name: Check if issue already exists
+      # Scheduled runs should create or update a tracking issue instead of opening duplicates.
+      - name: Create or update issue (scheduled runs only)
         if: failure() && github.event_name == 'schedule'
-        id: issue-check
         uses: actions/github-script@v7
         with:
           script: |
-            const query =
-              'repo:${{ github.repository }} ' +
-              'is:issue is:open ' +
-              '"Broken links detected in Contour documentation"';
+            const fs = require("fs");
 
-            const result = await github.rest.search.issuesAndPullRequests({
-              q: query
+            const title = "Broken links found in documentation";
+            const report = fs.readFileSync("lychee-report.md", "utf8");
+
+            // Search for an existing open issue with the same title
+            const search = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open "${title}"`
             });
 
-            core.setOutput("exists", result.data.total_count > 0);
+            if (search.data.total_count > 0) {
+              const issue = search.data.items[0];
 
-      # Step 4: Create issue ONLY if none exists already
-      - name: Create GitHub issue (scheduled run only)
-        if: failure() && github.event_name == 'schedule' && steps.issue-check.outputs.exists == 'false'
-        uses: peter-evans/create-issue-from-file@v5
-        with:
-          title: "Broken links detected in Contour documentation"
-          content-filepath: lychee-report.md
-          labels: documentation, automated
+              // Add the latest report as a comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: report
+              });
+
+              console.log(`Updated existing issue #${issue.number}`);
+            } else {
+              // Create a new issue if none exists
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: report,
+                labels: ["documentation", "automated"]
+              });
+
+              console.log("Created new broken-links issue");
+            }
