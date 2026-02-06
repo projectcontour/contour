@@ -6714,6 +6714,24 @@ NamespacedName
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>loadBalancer</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LoadBalancer specifies how Contour should set the ingress status address.
+If provided, the value can be in one of the formats:
+- address:<address,...>: Contour will use the provided comma separated list of addresses directly. The address can be a fully qualified domain name or an IP address.
+- service:<namespace>/<name>: Contour will use the address of the designated service.
+- ingress:<namespace>/<name>: Contour will use the address of the designated ingress.</p>
+<p>Contour&rsquo;s default is an empty string.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>http</code>
 <br>
 <em>
