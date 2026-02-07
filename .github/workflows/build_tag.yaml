@@ -18,7 +18,7 @@ permissions:
 
 env:
   GOPROXY: https://proxy.golang.org/
-  GO_VERSION: 1.24.11
+  GO_VERSION: 1.24.13
 
 jobs:
   build:
