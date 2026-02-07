@@ -84,6 +84,7 @@ var _ = Describe("Ingress", func() {
 
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
+		require.NoError(f.T(), f.WaitForReachable())
 	})
 
 	AfterEach(func() {

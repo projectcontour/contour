@@ -79,6 +79,7 @@ var _ = Describe("Incluster", func() {
 		require.NoError(f.T(), f.Deployment.EnsureContourDeployment())
 		require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
+		require.NoError(f.T(), f.WaitForReachable())
 	})
 
 	AfterEach(func() {
