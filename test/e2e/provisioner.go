@@ -174,7 +174,7 @@ func (p *Provisioner) EnsureResourcesForInclusterProvisioner() error {
 		}
 	}
 
-	return nil
+	return WaitForDeployment(p.Deployment, p.client)
 }
 
 // DeleteResourcesForInclusterContour ensures deletion of all resources

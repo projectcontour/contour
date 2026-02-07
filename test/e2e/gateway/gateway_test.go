@@ -128,6 +128,7 @@ var _ = Describe("Gateway API", func() {
 
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
+		require.NoError(f.T(), f.WaitForReachable())
 
 		// Since we're reconciling a specific Gateway,
 		// we don't expect GatewayClasses to be reconciled

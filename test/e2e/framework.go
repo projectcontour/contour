@@ -572,3 +572,15 @@ func VerifyTLSServerCert(caCert []byte) func(*tls.Config) {
 		c.InsecureSkipVerify = false
 	}
 }
+
+func (f *Framework) WaitForReachable() error {
+	return wait.PollUntilContextTimeout(context.Background(), f.RetryInterval, f.RetryTimeout, true, func(context.Context) (bool, error) {
+		res, err := f.HTTP.Request(&HTTPRequestOpts{
+			Path: "/",
+		})
+		if err != nil {
+			return false, nil
+		}
+		return res != nil, nil
+	})
+}

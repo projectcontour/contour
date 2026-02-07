@@ -115,3 +115,23 @@ func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Se
 	}
 	return updatedPods
 }
+
+func WaitForDeployment(deployment *apps_v1.Deployment, cli client.Client) error {
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, func(ctx context.Context) (bool, error) {
+		dp := new(apps_v1.Deployment)
+		if err := cli.Get(ctx, client.ObjectKeyFromObject(deployment), dp); err != nil {
+			return false, err
+		}
+
+		if dp.Spec.Replicas == nil {
+			return false, nil
+		}
+
+		replicas := *dp.Spec.Replicas
+		return dp.Status.ObservedGeneration == dp.Generation &&
+			dp.Status.Replicas == replicas &&
+			dp.Status.ReadyReplicas == replicas &&
+			dp.Status.UpdatedReplicas == replicas &&
+			dp.Status.AvailableReplicas == replicas, nil
+	})
+}

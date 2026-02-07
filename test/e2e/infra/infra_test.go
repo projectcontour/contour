@@ -113,6 +113,7 @@ var _ = Describe("Infra", func() {
 
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
+		require.NoError(f.T(), f.WaitForReachable())
 
 		kubectlCmd, err = f.Kubectl.StartKubectlPortForward(19001, 9001, "projectcontour", f.Deployment.EnvoyResourceAndName(), additionalContourArgs...)
 		require.NoError(f.T(), err)

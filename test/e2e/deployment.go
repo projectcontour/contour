@@ -416,6 +416,9 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
 		return err
 	}
+	if err := WaitForDeployment(deployment, d.client); err != nil {
+		return err
+	}
 
 	service := d.RateLimitService.DeepCopy()
 	service.Namespace = setNamespace
@@ -437,6 +440,9 @@ func (d *Deployment) EnsureGlobalExternalAuthResources(namespace string) error {
 	deployment := d.GlobalExtAuthDeployment.DeepCopy()
 	deployment.Namespace = setNamespace
 	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
+		return err
+	}
+	if err := WaitForDeployment(deployment, d.client); err != nil {
 		return err
 	}
 
