@@ -301,6 +301,7 @@ func (e *EchoSecure) Deploy(ns, name string, preApplyHook func(deployment *apps_
 			Name:      name,
 		},
 		Spec: apps_v1.DeploymentSpec{
+			Replicas: ptr.To(int32(1)),
 			Selector: &meta_v1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},

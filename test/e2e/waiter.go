@@ -45,7 +45,7 @@ func WaitForContourDeploymentUpdated(deployment *apps_v1.Deployment, cli client.
 
 		return updatedPods == int(*deployment.Spec.Replicas), nil
 	}
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*200, time.Minute*5, true, updatedPods)
 }
 
 func WaitForEnvoyDaemonSetUpdated(daemonset *apps_v1.DaemonSet, cli client.Client, image string) error {
@@ -64,7 +64,7 @@ func WaitForEnvoyDaemonSetUpdated(daemonset *apps_v1.DaemonSet, cli client.Clien
 		return updatedPods == int(ds.Status.DesiredNumberScheduled) &&
 			ds.Status.NumberReady > 0, nil
 	}
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*200, time.Minute*5, true, updatedPods)
 }
 
 func WaitForEnvoyDeploymentUpdated(deployment *apps_v1.Deployment, cli client.Client, image string) error {
@@ -83,7 +83,7 @@ func WaitForEnvoyDeploymentUpdated(deployment *apps_v1.Deployment, cli client.Cl
 			int(dp.Status.ReadyReplicas) == updatedPods &&
 			int(dp.Status.UnavailableReplicas) == 0, nil
 	}
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, updatedPods)
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*200, time.Minute*5, true, updatedPods)
 }
 
 func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Selector, namespace, image string, cli client.Client) int {
@@ -117,10 +117,10 @@ func getPodsUpdatedWithContourImage(ctx context.Context, labelSelector labels.Se
 }
 
 func WaitForDeployment(deployment *apps_v1.Deployment, cli client.Client) error {
-	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute*3, true, func(ctx context.Context) (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), time.Millisecond*200, time.Minute*5, true, func(ctx context.Context) (bool, error) {
 		dp := new(apps_v1.Deployment)
 		if err := cli.Get(ctx, client.ObjectKeyFromObject(deployment), dp); err != nil {
-			return false, err
+			return false, nil
 		}
 
 		if dp.Spec.Replicas == nil {

@@ -326,7 +326,7 @@ func (d *Deployment) EnsureCertgenJob() error {
 			return err
 		}
 	}
-	if err := wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute, true, jobDeleted); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), time.Millisecond*200, time.Minute, true, jobDeleted); err != nil {
 		return err
 	}
 	return d.client.Create(context.TODO(), d.CertgenJob)
