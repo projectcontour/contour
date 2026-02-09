@@ -361,6 +361,37 @@ ExtensionServiceReference
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>serviceAPIType</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServiceAPIType">
+AuthorizationServiceAPIType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceAPIType sets the protocol used to communicate with
+the external authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpSettings</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerSettings">
+HTTPAuthorizationServerSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>authPolicy</code>
 <br>
 <em>
@@ -481,6 +512,29 @@ bool
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="projectcontour.io/v1.AuthorizationServiceAPIType">AuthorizationServiceAPIType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+</p>
+<p>
+<p>AuthorizationServiceAPIType indicates the protocol
+implemented by the external authorization server.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;grpc&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;http&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="projectcontour.io/v1.CORSHeaderValue">CORSHeaderValue
 (<code>string</code> alias)</p></h3>
@@ -1277,6 +1331,156 @@ the default global rate limit policy defined by the Contour configuration.</p>
 <p>Descriptors defines the list of descriptors that will
 be generated and sent to the rate limit service. Each
 descriptor contains 1+ key-value pair entries.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPAuthorizationServerAllowedHeaders">HTTPAuthorizationServerAllowedHeaders
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerSettings">HTTPAuthorizationServerSettings</a>)
+</p>
+<p>
+<p>HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>exact</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Exact specifies a string that the header name must be equal to.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>prefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix defines a prefix match for the header name.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>suffix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Suffix defines a suffix match for a header name.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>contains</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Contains specifies a substring that must be present in the header name.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ignoreCase</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IgnoreCase specifies whether string matching should be case-insensitive.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.HTTPAuthorizationServerSettings">HTTPAuthorizationServerSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+</p>
+<p>
+<p>HTTPAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>pathPrefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PathPrefix Sets a prefix to the value of authorization request header Path.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowedAuthorizationHeaders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerAllowedHeaders">
+[]HTTPAuthorizationServerAllowedHeaders
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowedUpstreamHeaders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerAllowedHeaders">
+[]HTTPAuthorizationServerAllowedHeaders
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
+Coexistent headers will be overridden.</p>
 </td>
 </tr>
 </tbody>
@@ -5437,7 +5641,7 @@ ExtensionServiceSpec
 </td>
 <td>
 <p>Services specifies the set of Kubernetes Service resources that
-receive GRPC extension API requests.
+receive extension API requests.
 If no weights are specified for any of the entries in
 this array, traffic will be spread evenly across all the
 services.
@@ -5471,7 +5675,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Protocol may be used to specify (or override) the protocol used to reach this Service.
-Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.</p>
+Values may be h2, h2c or http/1.1. If omitted, protocol-selection falls back on Service annotations.</p>
 </td>
 </tr>
 <tr>
@@ -5486,9 +5690,9 @@ LoadBalancerPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>The policy for load balancing GRPC service requests. Note that the
+<p>The policy for load balancing service requests. Note that the
 <code>Cookie</code> and <code>RequestHash</code> load balancing strategies cannot be used
-here.</p>
+here for GRPC service requests.</p>
 </td>
 </tr>
 <tr>
@@ -7662,7 +7866,7 @@ constant is retained for backwards compatibility only.</p>
 </td>
 <td>
 <p>Services specifies the set of Kubernetes Service resources that
-receive GRPC extension API requests.
+receive extension API requests.
 If no weights are specified for any of the entries in
 this array, traffic will be spread evenly across all the
 services.
@@ -7696,7 +7900,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Protocol may be used to specify (or override) the protocol used to reach this Service.
-Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.</p>
+Values may be h2, h2c or http/1.1. If omitted, protocol-selection falls back on Service annotations.</p>
 </td>
 </tr>
 <tr>
@@ -7711,9 +7915,9 @@ LoadBalancerPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>The policy for load balancing GRPC service requests. Note that the
+<p>The policy for load balancing service requests. Note that the
 <code>Cookie</code> and <code>RequestHash</code> load balancing strategies cannot be used
-here.</p>
+here for GRPC service requests.</p>
 </td>
 </tr>
 <tr>

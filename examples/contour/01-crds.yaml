@@ -727,6 +727,79 @@ spec:
                       set in most cases. It is intended for use only while migrating applications
                       from internal authorization to Contour external authorization.
                     type: boolean
+                  httpSettings:
+                    description: HTTPAuthorizationServerSettings defines configurations
+                      for interacting with an external HTTP authorization server.
+                    properties:
+                      allowedAuthorizationHeaders:
+                        description: |-
+                          AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+                          Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.
+                        items:
+                          description: |-
+                            HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+                            in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+                            experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+                          properties:
+                            contains:
+                              description: Contains specifies a substring that must
+                                be present in the header name.
+                              type: string
+                            exact:
+                              description: Exact specifies a string that the header
+                                name must be equal to.
+                              type: string
+                            ignoreCase:
+                              description: IgnoreCase specifies whether string matching
+                                should be case-insensitive.
+                              type: boolean
+                            prefix:
+                              description: Prefix defines a prefix match for the header
+                                name.
+                              type: string
+                            suffix:
+                              description: Suffix defines a suffix match for a header
+                                name.
+                              type: string
+                          type: object
+                        type: array
+                      allowedUpstreamHeaders:
+                        description: |-
+                          AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
+                          Coexistent headers will be overridden.
+                        items:
+                          description: |-
+                            HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+                            in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+                            experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+                          properties:
+                            contains:
+                              description: Contains specifies a substring that must
+                                be present in the header name.
+                              type: string
+                            exact:
+                              description: Exact specifies a string that the header
+                                name must be equal to.
+                              type: string
+                            ignoreCase:
+                              description: IgnoreCase specifies whether string matching
+                                should be case-insensitive.
+                              type: boolean
+                            prefix:
+                              description: Prefix defines a prefix match for the header
+                                name.
+                              type: string
+                            suffix:
+                              description: Suffix defines a suffix match for a header
+                                name.
+                              type: string
+                          type: object
+                        type: array
+                      pathPrefix:
+                        description: PathPrefix Sets a prefix to the value of authorization
+                          request header Path.
+                        type: string
+                    type: object
                   responseTimeout:
                     description: |-
                       ResponseTimeout configures maximum time to wait for a check response from the authorization server.
@@ -734,6 +807,15 @@ spec:
                       Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
                       The string "infinity" is also a valid input and specifies no timeout.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                    type: string
+                  serviceAPIType:
+                    default: grpc
+                    description: |-
+                      ServiceAPIType sets the protocol used to communicate with
+                      the external authorization server.
+                    enum:
+                    - http
+                    - grpc
                     type: string
                   withRequestBody:
                     description: WithRequestBody specifies configuration for sending
@@ -4675,6 +4757,79 @@ spec:
                           set in most cases. It is intended for use only while migrating applications
                           from internal authorization to Contour external authorization.
                         type: boolean
+                      httpSettings:
+                        description: HTTPAuthorizationServerSettings defines configurations
+                          for interacting with an external HTTP authorization server.
+                        properties:
+                          allowedAuthorizationHeaders:
+                            description: |-
+                              AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+                              Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.
+                            items:
+                              description: |-
+                                HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+                                in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+                                experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+                              properties:
+                                contains:
+                                  description: Contains specifies a substring that
+                                    must be present in the header name.
+                                  type: string
+                                exact:
+                                  description: Exact specifies a string that the header
+                                    name must be equal to.
+                                  type: string
+                                ignoreCase:
+                                  description: IgnoreCase specifies whether string
+                                    matching should be case-insensitive.
+                                  type: boolean
+                                prefix:
+                                  description: Prefix defines a prefix match for the
+                                    header name.
+                                  type: string
+                                suffix:
+                                  description: Suffix defines a suffix match for a
+                                    header name.
+                                  type: string
+                              type: object
+                            type: array
+                          allowedUpstreamHeaders:
+                            description: |-
+                              AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
+                              Coexistent headers will be overridden.
+                            items:
+                              description: |-
+                                HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+                                in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+                                experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+                              properties:
+                                contains:
+                                  description: Contains specifies a substring that
+                                    must be present in the header name.
+                                  type: string
+                                exact:
+                                  description: Exact specifies a string that the header
+                                    name must be equal to.
+                                  type: string
+                                ignoreCase:
+                                  description: IgnoreCase specifies whether string
+                                    matching should be case-insensitive.
+                                  type: boolean
+                                prefix:
+                                  description: Prefix defines a prefix match for the
+                                    header name.
+                                  type: string
+                                suffix:
+                                  description: Suffix defines a suffix match for a
+                                    header name.
+                                  type: string
+                              type: object
+                            type: array
+                          pathPrefix:
+                            description: PathPrefix Sets a prefix to the value of
+                              authorization request header Path.
+                            type: string
+                        type: object
                       responseTimeout:
                         description: |-
                           ResponseTimeout configures maximum time to wait for a check response from the authorization server.
@@ -4682,6 +4837,15 @@ spec:
                           Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
                           The string "infinity" is also a valid input and specifies no timeout.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                        type: string
+                      serviceAPIType:
+                        default: grpc
+                        description: |-
+                          ServiceAPIType sets the protocol used to communicate with
+                          the external authorization server.
+                        enum:
+                        - http
+                        - grpc
                         type: string
                       withRequestBody:
                         description: WithRequestBody specifies configuration for sending
@@ -5298,9 +5462,9 @@ spec:
                 type: object
               loadBalancerPolicy:
                 description: |-
-                  The policy for load balancing GRPC service requests. Note that the
+                  The policy for load balancing service requests. Note that the
                   `Cookie` and `RequestHash` load balancing strategies cannot be used
-                  here.
+                  here for GRPC service requests.
                 properties:
                   requestHashPolicies:
                     description: |-
@@ -5374,8 +5538,9 @@ spec:
               protocol:
                 description: |-
                   Protocol may be used to specify (or override) the protocol used to reach this Service.
-                  Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.
+                  Values may be h2, h2c or http/1.1. If omitted, protocol-selection falls back on Service annotations.
                 enum:
+                - http/1.1
                 - h2
                 - h2c
                 type: string
@@ -5391,7 +5556,7 @@ spec:
               services:
                 description: |-
                   Services specifies the set of Kubernetes Service resources that
-                  receive GRPC extension API requests.
+                  receive extension API requests.
                   If no weights are specified for any of the entries in
                   this array, traffic will be spread evenly across all the
                   services.
@@ -7650,6 +7815,79 @@ spec:
                           set in most cases. It is intended for use only while migrating applications
                           from internal authorization to Contour external authorization.
                         type: boolean
+                      httpSettings:
+                        description: HTTPAuthorizationServerSettings defines configurations
+                          for interacting with an external HTTP authorization server.
+                        properties:
+                          allowedAuthorizationHeaders:
+                            description: |-
+                              AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+                              Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.
+                            items:
+                              description: |-
+                                HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+                                in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+                                experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+                              properties:
+                                contains:
+                                  description: Contains specifies a substring that
+                                    must be present in the header name.
+                                  type: string
+                                exact:
+                                  description: Exact specifies a string that the header
+                                    name must be equal to.
+                                  type: string
+                                ignoreCase:
+                                  description: IgnoreCase specifies whether string
+                                    matching should be case-insensitive.
+                                  type: boolean
+                                prefix:
+                                  description: Prefix defines a prefix match for the
+                                    header name.
+                                  type: string
+                                suffix:
+                                  description: Suffix defines a suffix match for a
+                                    header name.
+                                  type: string
+                              type: object
+                            type: array
+                          allowedUpstreamHeaders:
+                            description: |-
+                              AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
+                              Coexistent headers will be overridden.
+                            items:
+                              description: |-
+                                HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+                                in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+                                experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+                              properties:
+                                contains:
+                                  description: Contains specifies a substring that
+                                    must be present in the header name.
+                                  type: string
+                                exact:
+                                  description: Exact specifies a string that the header
+                                    name must be equal to.
+                                  type: string
+                                ignoreCase:
+                                  description: IgnoreCase specifies whether string
+                                    matching should be case-insensitive.
+                                  type: boolean
+                                prefix:
+                                  description: Prefix defines a prefix match for the
+                                    header name.
+                                  type: string
+                                suffix:
+                                  description: Suffix defines a suffix match for a
+                                    header name.
+                                  type: string
+                              type: object
+                            type: array
+                          pathPrefix:
+                            description: PathPrefix Sets a prefix to the value of
+                              authorization request header Path.
+                            type: string
+                        type: object
                       responseTimeout:
                         description: |-
                           ResponseTimeout configures maximum time to wait for a check response from the authorization server.
@@ -7657,6 +7895,15 @@ spec:
                           Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
                           The string "infinity" is also a valid input and specifies no timeout.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                        type: string
+                      serviceAPIType:
+                        default: grpc
+                        description: |-
+                          ServiceAPIType sets the protocol used to communicate with
+                          the external authorization server.
+                        enum:
+                        - http
+                        - grpc
                         type: string
                       withRequestBody:
                         description: WithRequestBody specifies configuration for sending

@@ -761,6 +761,16 @@ type GlobalExternalAuthorization struct {
 	// ExtensionService identifies the extension service defining the RLS,
 	// formatted as <namespace>/<name>.
 	ExtensionService string `yaml:"extensionService,omitempty"`
+	// ServiceAPIType defines the external authorization service API type.
+	// It indicates the protocol implemented by the external server, specifying whether it's a raw HTTP authorization server
+	// or a gRPC authorization server.
+	//
+	// +optional
+	ServiceAPIType contour_v1.AuthorizationServiceAPIType `json:"serviceAPIType,omitempty"`
+	// HttpAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.
+	//
+	// +optional
+	HTTPServerSettings *contour_v1.HTTPAuthorizationServerSettings `json:"httpSettings,omitempty"`
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.
 	//

@@ -407,6 +407,44 @@ func queryParameterMatchConditionsValid(conditions []contour_v1.MatchCondition) 
 	return nil
 }
 
+// ExternalAuthAllowedHeadersValid validates that the allowed header conditions within a
+// slice of HTTPAuthorizationServerAllowedHeaders are valid. Specifically, it returns an error for
+// any of the following scenarios:
+//   - no conditions are set
+//   - more than one condition is set in the same allowed header condition branch
+//   - invalid regular expression is specified for the Regex condition
+func ExternalAuthAllowedHeadersValid(allowedHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders) error {
+	for _, allowedHeader := range allowedHeaders {
+		sum := 0
+
+		if allowedHeader.Exact != "" {
+			sum++
+		}
+
+		if allowedHeader.Prefix != "" {
+			sum++
+		}
+
+		if allowedHeader.Suffix != "" {
+			sum++
+		}
+
+		if allowedHeader.Contains != "" {
+			sum++
+		}
+
+		if sum == 0 {
+			return errors.New("one of prefix, suffix, exact or contains is required for each allowedHeader")
+		}
+
+		if sum > 1 {
+			return errors.New("only one of prefix, suffix, exact, and contains should be set in the allowedHeader")
+		}
+	}
+
+	return nil
+}
+
 // ValidateRegex returns an error if the supplied
 // RE2 regex syntax is invalid.
 func ValidateRegex(regex string) error {

@@ -457,8 +457,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Name:      nsedName.Name,
 				Namespace: nsedName.Namespace,
 			},
+			ServiceAPIType:  ctx.Config.GlobalExternalAuthorization.ServiceAPIType,
 			ResponseTimeout: ctx.Config.GlobalExternalAuthorization.ResponseTimeout,
 			FailOpen:        ctx.Config.GlobalExternalAuthorization.FailOpen,
+		}
+
+		if ctx.Config.GlobalExternalAuthorization.HTTPServerSettings != nil {
+			globalExtAuth.HTTPServerSettings = ctx.Config.GlobalExternalAuthorization.HTTPServerSettings
 		}
 
 		if ctx.Config.GlobalExternalAuthorization.AuthPolicy != nil {
