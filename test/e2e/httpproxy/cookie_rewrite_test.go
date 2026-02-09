@@ -878,6 +878,10 @@ func deployEchoServer(t require.TestingT, c client.Client, ns, name string) {
 	}
 	require.NoError(t, c.Create(context.TODO(), deployment))
 
+	if err := e2e.WaitForDeployment(deployment, c); err != nil {
+		require.NoError(t, err)
+	}
+
 	service := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,

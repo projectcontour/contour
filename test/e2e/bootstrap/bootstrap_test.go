@@ -76,17 +76,15 @@ var _ = Describe("Bootstrap", func() {
 		var err error
 		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration)
 		require.NoError(f.T(), err)
+		DeferCleanup(f.Deployment.StopLocalContour, contourCmd, contourConfigFile)
 
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
+		require.NoError(f.T(), f.WaitForReachable())
 
 		kubectlCmd, err = f.Kubectl.StartKubectlPortForward(19001, 9001, "projectcontour", f.Deployment.EnvoyResourceAndName())
 		require.NoError(f.T(), err)
-	})
-
-	AfterEach(func() {
-		f.Kubectl.StopKubectlPortForward(kubectlCmd)
-		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
+		DeferCleanup(f.Kubectl.StopKubectlPortForward, kubectlCmd)
 	})
 
 	f.Test(func() {
