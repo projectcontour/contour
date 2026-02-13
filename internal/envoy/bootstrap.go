@@ -168,7 +168,7 @@ func WriteConfig(filename string, config proto.Message) (err error) {
 	} else {
 		out, err = os.Create(filename)
 		if err != nil {
-			return
+			return err
 		}
 		defer func() {
 			err = out.Close()

@@ -1128,7 +1128,7 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_v1.IPFilterPolicy, validC
 		validCond.AddError(contour_v1.ConditionTypeIPFilterError, "IncompatibleIPAddressFilters",
 			"cannot specify both `ipAllowPolicy` and `ipDenyPolicy`")
 		err = fmt.Errorf("invalid ip filter")
-		return
+		return allow, filters, err
 	case len(allowPolicy) > 0:
 		allow = true
 		ipPolicies = allowPolicy
@@ -1137,7 +1137,7 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_v1.IPFilterPolicy, validC
 		ipPolicies = denyPolicy
 	}
 	if ipPolicies == nil {
-		return
+		return allow, filters, err
 	}
 	filters = make([]IPFilterRule, 0, len(ipPolicies))
 	for _, p := range ipPolicies {
@@ -1166,7 +1166,7 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_v1.IPFilterPolicy, validC
 		allow = false
 		filters = nil
 	}
-	return
+	return allow, filters, err
 }
 
 // processHTTPProxyTCPProxy processes the spec.tcpproxy stanza in a HTTPProxy document

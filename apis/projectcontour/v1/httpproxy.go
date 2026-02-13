@@ -1339,6 +1339,7 @@ type UpstreamValidation struct {
 	// +kubebuilder:validation:MaxLength=317
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate.
+	//
 	// Deprecated: migrate to using the plural field subjectNames.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=250
