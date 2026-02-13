@@ -13,7 +13,7 @@
 
 // Package debug provides http endpoints for healthcheck, metrics,
 // and pprof debugging.
-package debug
+package debug // nolint:revive // Ignore var-naming warning about package name conflicting with runtime/debug.
 
 import (
 	"context"

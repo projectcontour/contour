@@ -107,6 +107,9 @@ linters:
           - testifylint
         path: test/e2e
         text: require must only be used in the goroutine running the test function
+      - linters:
+          - staticcheck
+        text: "SA1019.*SubjectName.*migrate to using the plural field subjectNames"
     paths:
       - third_party$
       - builtin$
