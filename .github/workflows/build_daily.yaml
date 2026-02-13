@@ -12,7 +12,7 @@ permissions:
 
 env:
   GOPROXY: https://proxy.golang.org/
-  GO_VERSION: 1.25.7
+  GO_VERSION: 1.26.0
 
 jobs:
   e2e-envoy-deployment:
