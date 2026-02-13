@@ -12,7 +12,7 @@
 // limitations under the License.
 
 // Package metrics provides Prometheus metrics for Contour.
-package metrics
+package metrics // nolint:revive // Ignore var-naming warning about package name conflicting with stdlib.
 
 import (
 	"net/http"
