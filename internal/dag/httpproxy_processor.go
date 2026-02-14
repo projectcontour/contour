@@ -1403,6 +1403,40 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 		AuthorizationResponseTimeout: *respTimeout,
 	}
 
+	switch auth.ServiceAPIType {
+	case contour_v1.AuthorizationGRPCService:
+		globalExternalAuthorization.ServiceAPIType = contour_v1.AuthorizationGRPCService
+	case contour_v1.AuthorizationHTTPService:
+		globalExternalAuthorization.ServiceAPIType = contour_v1.AuthorizationHTTPService
+		if auth.HTTPServerSettings != nil {
+			globalExternalAuthorization.HTTPPathPrefix = auth.HTTPServerSettings.PathPrefix
+
+			// globalExternalAuthorization.HttpServerURI = auth.HttpServerSettings.ServerURI
+
+			if len(auth.HTTPServerSettings.AllowedAuthorizationHeaders) > 0 {
+				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+						"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: %s", err)
+
+					return nil
+				}
+
+				globalExternalAuthorization.HTTPAllowedAuthorizationHeaders = auth.HTTPServerSettings.AllowedAuthorizationHeaders
+			}
+
+			if len(auth.HTTPServerSettings.AllowedUpstreamHeaders) > 0 {
+				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+						"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedUpstreamHeaders is invalid: %s", err)
+
+					return nil
+				}
+
+				globalExternalAuthorization.HTTPAllowedUpstreamHeaders = auth.HTTPServerSettings.AllowedUpstreamHeaders
+			}
+		}
+	}
+
 	if auth.WithRequestBody != nil {
 		maxRequestBytes := defaultMaxRequestBytes
 		if auth.WithRequestBody.MaxRequestBytes != 0 {
