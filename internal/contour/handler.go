@@ -159,7 +159,7 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 	reset := func() (v int) {
 		v, outstanding = outstanding, 0
-		return
+		return v
 	}
 
 	for {
