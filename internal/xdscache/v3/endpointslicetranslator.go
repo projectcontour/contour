@@ -15,6 +15,7 @@ package v3
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"sync"
 
@@ -307,9 +308,7 @@ func (e *EndpointSliceTranslator) Merge(entries map[string]*envoy_config_endpoin
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	for k, v := range entries {
-		e.entries[k] = v
-	}
+	maps.Copy(e.entries, entries)
 }
 
 // OnChange observes DAG rebuild events.

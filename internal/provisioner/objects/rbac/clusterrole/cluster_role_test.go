@@ -113,11 +113,8 @@ func TestDesiredClusterRoleFilterResources(t *testing.T) {
 	filterContourResources := func(policyRules []rbac_v1.PolicyRule) [][]string {
 		contourResources := [][]string{}
 		for _, rule := range policyRules {
-			for _, apigroup := range rule.APIGroups {
-				if apigroup == contour_v1.GroupName {
-					contourResources = append(contourResources, rule.Resources)
-					break
-				}
+			if slices.Contains(rule.APIGroups, contour_v1.GroupName) {
+				contourResources = append(contourResources, rule.Resources)
 			}
 		}
 		return contourResources

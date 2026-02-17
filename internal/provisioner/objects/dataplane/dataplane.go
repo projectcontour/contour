@@ -16,6 +16,7 @@ package dataplane
 import (
 	"context"
 	"fmt"
+	"maps"
 	"path/filepath"
 
 	apps_v1 "k8s.io/api/apps/v1"
@@ -536,24 +537,18 @@ func EnvoyPodSelector(contour *model.Contour) *meta_v1.LabelSelector {
 // envoyPodLabels returns the labels for envoy's pods
 func envoyPodLabels(contour *model.Contour) map[string]string {
 	labels := EnvoyPodSelector(contour).MatchLabels
-	for k, v := range contour.WorkloadLabels() {
-		labels[k] = v
-	}
+	maps.Copy(labels, contour.WorkloadLabels())
 	return labels
 }
 
 // envoyPodAnnotations returns the annotations for envoy's pods
 func envoyPodAnnotations(contour *model.Contour) map[string]string {
 	annotations := map[string]string{}
-	for k, v := range contour.Spec.EnvoyPodAnnotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, contour.Spec.EnvoyPodAnnotations)
 
 	// Annotations specified on the Gateway take precedence
 	// over annotations specified on the GatewayClass/its parameters.
-	for k, v := range contour.CommonAnnotations() {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, contour.CommonAnnotations())
 
 	return annotations
 }

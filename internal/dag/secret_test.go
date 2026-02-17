@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -259,33 +260,33 @@ func secretdata(cert, key string) map[string][]byte {
 //
 // See also: https://tools.ietf.org/html/rfc7468#section-5.2
 func caBundleData(cert ...string) map[string][]byte {
-	var data string
+	var data strings.Builder
 
-	data += "start of CA bundle\n"
+	data.WriteString("start of CA bundle\n")
 
 	for n, c := range cert {
-		data += fmt.Sprintf("certificate %d\n", n)
-		data += c
-		data += "\n"
+		data.WriteString(fmt.Sprintf("certificate %d\n", n))
+		data.WriteString(c)
+		data.WriteString("\n")
 	}
 
-	data += "end of CA bundle\n"
+	data.WriteString("end of CA bundle\n")
 
 	return map[string][]byte{
-		CACertificateKey: []byte(data),
+		CACertificateKey: []byte(data.String()),
 	}
 }
 
 // pemBundle concatenates supplied PEM strings
 // into a valid PEM bundle (just add newline!)
 func pemBundle(cert ...string) string {
-	var data string
+	var data strings.Builder
 	for _, c := range cert {
-		data += c
-		data += "\n"
+		data.WriteString(c)
+		data.WriteString("\n")
 	}
 
-	return data
+	return data.String()
 }
 
 func makeTLSSecret(data map[string][]byte) *core_v1.Secret {

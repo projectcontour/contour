@@ -15,6 +15,7 @@ package dag
 
 import (
 	"fmt"
+	"maps"
 
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -104,9 +105,7 @@ func (osw *ObjectStatusWriter) SetValid() {
 // the commit function to be called to write the final status of the object.
 func (osw *ObjectStatusWriter) WithObject(obj meta_v1.Object) (_ *ObjectStatusWriter, commit func()) {
 	m := make(map[string]string)
-	for k, v := range osw.values {
-		m[k] = v
-	}
+	maps.Copy(m, osw.values)
 	nosw := &ObjectStatusWriter{
 		sw:     osw.sw,
 		obj:    obj,

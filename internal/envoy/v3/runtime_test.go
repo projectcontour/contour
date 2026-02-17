@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"maps"
 	"testing"
 
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
@@ -42,9 +43,7 @@ func TestRuntimeLayers(t *testing.T) {
 				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
 				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
 			}
-			for k, v := range tc.configurableFields {
-				expectedFields[k] = v
-			}
+			maps.Copy(expectedFields, tc.configurableFields)
 			layers := RuntimeLayers(tc.configurableFields)
 			require.Equal(t, []*envoy_service_runtime_v3.Runtime{
 				{

@@ -189,7 +189,7 @@ func parseStatusFlag(status string) core_v1.LoadBalancerStatus {
 	// Support ','-separated lists.
 	var ingresses []core_v1.LoadBalancerIngress
 
-	for _, item := range strings.Split(status, ",") {
+	for item := range strings.SplitSeq(status, ",") {
 		item = strings.TrimSpace(item)
 		if len(item) == 0 {
 			continue

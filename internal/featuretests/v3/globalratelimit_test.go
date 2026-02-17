@@ -794,7 +794,6 @@ func TestGlobalRateLimiting(t *testing.T) {
 	}
 
 	for n, f := range subtests {
-		f := f
 		t.Run(n, func(t *testing.T) {
 			rh, c, done := setup(t,
 				func(cfg *xdscache_v3.ListenerConfig) {

@@ -16,6 +16,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 
 	core_v1 "k8s.io/api/core/v1"
@@ -268,9 +269,7 @@ func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
 		if isInternal {
 			provider := providerParams.Type
 			internalAnnotations := InternalLBAnnotations[provider]
-			for name, value := range internalAnnotations {
-				svc.Annotations[name] = value
-			}
+			maps.Copy(svc.Annotations, internalAnnotations)
 		}
 	case model.NodePortServicePublishingType:
 		svc.Spec.Type = core_v1.ServiceTypeNodePort
@@ -295,9 +294,7 @@ func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
 			svc.Annotations = map[string]string{}
 		}
 
-		for k, v := range contour.Spec.NetworkPublishing.Envoy.ServiceAnnotations {
-			svc.Annotations[k] = v
-		}
+		maps.Copy(svc.Annotations, contour.Spec.NetworkPublishing.Envoy.ServiceAnnotations)
 	}
 
 	return svc

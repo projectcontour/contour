@@ -15,6 +15,7 @@ package v3
 
 import (
 	"fmt"
+	"maps"
 	"sync"
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
@@ -58,14 +59,10 @@ func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings) *RuntimeCache 
 
 func (c *RuntimeCache) buildDynamicLayer() []proto.Message {
 	values := make(map[string]*structpb.Value)
-	for k, v := range c.runtimeKV {
-		values[k] = v
-	}
+	maps.Copy(values, c.runtimeKV)
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	for k, v := range c.dynamicRuntimeKV {
-		values[k] = v
-	}
+	maps.Copy(values, c.dynamicRuntimeKV)
 	return protobuf.AsMessages(envoy_v3.RuntimeLayers(values))
 }
 
