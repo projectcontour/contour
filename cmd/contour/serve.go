@@ -16,6 +16,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -1045,9 +1046,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		if dbc.headersPolicy.RequestHeadersPolicy != nil {
 			if dbc.headersPolicy.RequestHeadersPolicy.Set != nil {
 				requestHeadersPolicy.Set = make(map[string]string)
-				for k, v := range dbc.headersPolicy.RequestHeadersPolicy.Set {
-					requestHeadersPolicy.Set[k] = v
-				}
+				maps.Copy(requestHeadersPolicy.Set, dbc.headersPolicy.RequestHeadersPolicy.Set)
 			}
 			if dbc.headersPolicy.RequestHeadersPolicy.Remove != nil {
 				requestHeadersPolicy.Remove = make([]string, 0, len(dbc.headersPolicy.RequestHeadersPolicy.Remove))
@@ -1058,9 +1057,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		if dbc.headersPolicy.ResponseHeadersPolicy != nil {
 			if dbc.headersPolicy.ResponseHeadersPolicy.Set != nil {
 				responseHeadersPolicy.Set = make(map[string]string)
-				for k, v := range dbc.headersPolicy.ResponseHeadersPolicy.Set {
-					responseHeadersPolicy.Set[k] = v
-				}
+				maps.Copy(responseHeadersPolicy.Set, dbc.headersPolicy.ResponseHeadersPolicy.Set)
 			}
 			if dbc.headersPolicy.ResponseHeadersPolicy.Remove != nil {
 				responseHeadersPolicy.Remove = make([]string, 0, len(dbc.headersPolicy.ResponseHeadersPolicy.Remove))

@@ -193,7 +193,7 @@ func ValidateTLSProtocolVersions(minVersion, maxVersion string) error {
 func isValidTLSCipher(cipherSpec string) bool {
 	// Equal-preference group: [cipher1|cipher2|...]
 	if strings.HasPrefix(cipherSpec, "[") && strings.HasSuffix(cipherSpec, "]") {
-		for _, cipher := range strings.Split(strings.Trim(cipherSpec, "[]"), "|") {
+		for cipher := range strings.SplitSeq(strings.Trim(cipherSpec, "[]"), "|") {
 			if _, ok := ValidTLSCiphers[cipher]; !ok {
 				return false
 			}

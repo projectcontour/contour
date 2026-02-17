@@ -15,6 +15,7 @@ package deployment
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -81,10 +82,8 @@ func checkPodHasAnnotation(t *testing.T, tmpl core_v1.PodTemplateSpec, key, valu
 func checkContainerHasArg(t *testing.T, container *core_v1.Container, arg string) {
 	t.Helper()
 
-	for _, a := range container.Args {
-		if a == arg {
-			return
-		}
+	if slices.Contains(container.Args, arg) {
+		return
 	}
 	t.Errorf("container is missing argument %q", arg)
 }

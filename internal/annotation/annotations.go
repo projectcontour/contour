@@ -132,7 +132,7 @@ func ParseUpstreamProtocols(m map[string]string) map[string]string {
 	up := make(map[string]string)
 	for _, protocol := range protocols {
 		ports := m[fmt.Sprintf("projectcontour.io/upstream-protocol.%s", protocol)]
-		for _, v := range strings.Split(ports, ",") {
+		for v := range strings.SplitSeq(ports, ",") {
 			port := strings.TrimSpace(v)
 			if port != "" {
 				up[port] = protocol
@@ -164,7 +164,7 @@ func TLSCertNamespace(i *networking_v1.Ingress) string {
 // associated websocket-routes annotation.
 func WebsocketRoutes(i *networking_v1.Ingress) map[string]bool {
 	routes := make(map[string]bool)
-	for _, v := range strings.Split(i.Annotations["projectcontour.io/websocket-routes"], ",") {
+	for v := range strings.SplitSeq(i.Annotations["projectcontour.io/websocket-routes"], ",") {
 		route := strings.TrimSpace(v)
 		if route != "" {
 			routes[route] = true

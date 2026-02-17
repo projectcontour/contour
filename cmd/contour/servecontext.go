@@ -249,7 +249,7 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 		return nil
 	}
 	var ns []string
-	for _, s := range strings.Split(ctx.rootNamespaces, ",") {
+	for s := range strings.SplitSeq(ctx.rootNamespaces, ",") {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
@@ -260,7 +260,7 @@ func (ctx *serveContext) watchedNamespaces() []string {
 		return nil
 	}
 	var ns []string
-	for _, s := range strings.Split(ctx.watchNamespaces, ",") {
+	for s := range strings.SplitSeq(ctx.watchNamespaces, ",") {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns

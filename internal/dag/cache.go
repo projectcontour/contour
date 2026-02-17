@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -806,12 +807,7 @@ func (kc *KubernetesCache) delegationPermitted(secret types.NamespacedName, targ
 		if len(haystack) == 1 && haystack[0] == "*" {
 			return true
 		}
-		for _, h := range haystack {
-			if h == needle {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(haystack, needle)
 	}
 
 	if secret.Namespace == targetNamespace {

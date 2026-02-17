@@ -15,6 +15,7 @@ package model
 
 import (
 	"fmt"
+	"maps"
 )
 
 // ContourConfigurationName returns the name of the ContourConfiguration resource.
@@ -85,9 +86,7 @@ func (c *Contour) EnvoyRBACNames() RBACNames {
 // workloads (i.e. deployment(s)/daemonset).
 func (c *Contour) WorkloadLabels() map[string]string {
 	labels := map[string]string{}
-	for k, v := range c.CommonLabels() {
-		labels[k] = v
-	}
+	maps.Copy(labels, c.CommonLabels())
 
 	labels["app.kubernetes.io/instance"] = c.Name
 	labels["app.kubernetes.io/name"] = "contour"
@@ -105,14 +104,10 @@ func (c *Contour) CommonLabels() map[string]string {
 	labels := map[string]string{}
 
 	// Add user-defined labels
-	for k, v := range c.Spec.ResourceLabels {
-		labels[k] = v
-	}
+	maps.Copy(labels, c.Spec.ResourceLabels)
 
 	// Add owner labels
-	for k, v := range OwnerLabels(c) {
-		labels[k] = v
-	}
+	maps.Copy(labels, OwnerLabels(c))
 
 	return labels
 }
@@ -122,9 +117,7 @@ func (c *Contour) CommonLabels() map[string]string {
 func (c *Contour) CommonAnnotations() map[string]string {
 	annotations := map[string]string{}
 
-	for k, v := range c.Spec.ResourceAnnotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, c.Spec.ResourceAnnotations)
 
 	return annotations
 }

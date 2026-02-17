@@ -14,6 +14,8 @@
 package v3
 
 import (
+	"maps"
+
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -26,9 +28,7 @@ const (
 
 func RuntimeLayers(configurableRuntimeFields map[string]*structpb.Value) []*envoy_service_runtime_v3.Runtime {
 	baseLayer := baseRuntimeLayer()
-	for k, v := range configurableRuntimeFields {
-		baseLayer.Fields[k] = v
-	}
+	maps.Copy(baseLayer.Fields, configurableRuntimeFields)
 	return []*envoy_service_runtime_v3.Runtime{
 		{
 			Name:  DynamicRuntimeLayerName,

@@ -13,6 +13,8 @@
 
 package slice
 
+import "slices"
+
 // RemoveString returns a newly created []string that contains all items from slice that
 // are not equal to s.
 func RemoveString(slice []string, s string) []string {
@@ -33,20 +35,10 @@ func RemoveString(slice []string, s string) []string {
 
 // ContainsString checks if a given slice of strings contains the provided string.
 func ContainsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, s)
 }
 
 // ContainsInt32 checks if a given int32 slice contains the provided int32.
 func ContainsInt32(slice []int32, i int32) bool {
-	for _, item := range slice {
-		if item == i {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, i)
 }

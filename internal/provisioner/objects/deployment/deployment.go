@@ -16,6 +16,7 @@ package deployment
 import (
 	"context"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -307,24 +308,18 @@ func ContourDeploymentPodSelector(contour *model.Contour) *meta_v1.LabelSelector
 // app labels
 func contourPodLabels(contour *model.Contour) map[string]string {
 	labels := ContourDeploymentPodSelector(contour).MatchLabels
-	for k, v := range contour.WorkloadLabels() {
-		labels[k] = v
-	}
+	maps.Copy(labels, contour.WorkloadLabels())
 	return labels
 }
 
 // contourPodAnnotations returns the annotations for contour's pods
 func contourPodAnnotations(contour *model.Contour) map[string]string {
 	annotations := map[string]string{}
-	for k, v := range contour.Spec.ContourPodAnnotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, contour.Spec.ContourPodAnnotations)
 
 	// Annotations specified on the Gateway take precedence
 	// over annotations specified on the GatewayClass/its parameters.
-	for k, v := range contour.CommonAnnotations() {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, contour.CommonAnnotations())
 
 	return annotations
 }

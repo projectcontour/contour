@@ -15,6 +15,7 @@ package role
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	rbac_v1 "k8s.io/api/rbac/v1"
@@ -105,11 +106,8 @@ func TestDesiredRoleFilterResources(t *testing.T) {
 	filterNamespacedGatewayResources := func(policyRules []rbac_v1.PolicyRule) [][]string {
 		gatewayResources := [][]string{}
 		for _, rule := range policyRules {
-			for _, apigroup := range rule.APIGroups {
-				if apigroup == gatewayapi_v1.GroupName {
-					gatewayResources = append(gatewayResources, rule.Resources)
-					break
-				}
+			if slices.Contains(rule.APIGroups, gatewayapi_v1.GroupName) {
+				gatewayResources = append(gatewayResources, rule.Resources)
 			}
 		}
 		return gatewayResources
@@ -118,11 +116,8 @@ func TestDesiredRoleFilterResources(t *testing.T) {
 	filterContourResources := func(policyRules []rbac_v1.PolicyRule) [][]string {
 		contourResources := [][]string{}
 		for _, rule := range policyRules {
-			for _, apigroup := range rule.APIGroups {
-				if apigroup == contour_v1.GroupName {
-					contourResources = append(contourResources, rule.Resources)
-					break
-				}
+			if slices.Contains(rule.APIGroups, contour_v1.GroupName) {
+				contourResources = append(contourResources, rule.Resources)
 			}
 		}
 		return contourResources

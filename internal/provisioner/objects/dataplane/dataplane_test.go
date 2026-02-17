@@ -15,6 +15,7 @@ package dataplane
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -240,10 +241,8 @@ func checkDaemonSecurityContext(t *testing.T, ds *apps_v1.DaemonSet) {
 func checkContainerHasArg(t *testing.T, container *core_v1.Container, arg string) {
 	t.Helper()
 
-	for _, a := range container.Args {
-		if a == arg {
-			return
-		}
+	if slices.Contains(container.Args, arg) {
+		return
 	}
 	t.Errorf("container is missing argument %q", arg)
 }

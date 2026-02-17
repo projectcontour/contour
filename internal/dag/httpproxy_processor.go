@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1374,12 +1375,7 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 	if len(p.source.RootNamespaces) == 0 {
 		return true
 	}
-	for _, ns := range p.source.RootNamespaces {
-		if ns == namespace {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(p.source.RootNamespaces, namespace)
 }
 
 func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.AuthorizationServer, validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy) *ExternalAuthorization {

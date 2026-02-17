@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -401,13 +402,7 @@ type listenerInfo struct {
 }
 
 func (l *listenerInfo) AllowsKind(kind gatewayapi_v1.Kind) bool {
-	for _, allowedKind := range l.allowedKinds {
-		if allowedKind == kind {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(l.allowedKinds, kind)
 }
 
 // isAddressAssigned returns true if either there are no addresses requested in specAddresses,

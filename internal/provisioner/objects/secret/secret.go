@@ -16,6 +16,7 @@ package secret
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 
 	core_v1 "k8s.io/api/core/v1"
@@ -62,9 +63,7 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 		if secret.Labels == nil {
 			secret.Labels = contour.CommonLabels()
 		} else {
-			for k, v := range contour.CommonLabels() {
-				secret.Labels[k] = v
-			}
+			maps.Copy(secret.Labels, contour.CommonLabels())
 		}
 
 		// Add annotation indicating the version the secret was
@@ -75,9 +74,7 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 		}
 		secret.Annotations[generatedByVersionAnnotation] = tagFromImage(image)
 
-		for k, v := range contour.CommonAnnotations() {
-			secret.Annotations[k] = v
-		}
+		maps.Copy(secret.Annotations, contour.CommonAnnotations())
 
 		if err := cli.Create(ctx, secret); err != nil {
 			if !errors.IsAlreadyExists(err) {

@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -349,15 +349,12 @@ func TestParseHTTPVersions(t *testing.T) {
 	}
 
 	for name, testcase := range cases {
-		testcase := testcase
 		t.Run(name, func(t *testing.T) {
 			vers := parseDefaultHTTPVersions(testcase.versions)
 
 			// parseDefaultHTTPVersions doesn't guarantee a stable result, but the order doesn't matter.
-			sort.Slice(vers,
-				func(i, j int) bool { return vers[i] < vers[j] })
-			sort.Slice(testcase.parseVersions,
-				func(i, j int) bool { return testcase.parseVersions[i] < testcase.parseVersions[j] })
+			slices.Sort(vers)
+			slices.Sort(testcase.parseVersions)
 
 			assert.Equal(t, testcase.parseVersions, vers)
 		})

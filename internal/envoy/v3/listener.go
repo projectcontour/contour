@@ -888,7 +888,6 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *envoy_filter_network_http_c
 	}
 
 	for _, provider := range jwtProviders {
-		provider := provider
 		var cacheDuration *durationpb.Duration
 		if provider.RemoteJWKS.CacheDuration != nil {
 			cacheDuration = durationpb.New(*provider.RemoteJWKS.CacheDuration)

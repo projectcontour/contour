@@ -710,7 +710,6 @@ func TestExtensionService(t *testing.T) {
 	}
 
 	for n, f := range subtests {
-		f := f
 		t.Run(n, func(t *testing.T) {
 			var (
 				rh   ResourceEventHandlerWrapper

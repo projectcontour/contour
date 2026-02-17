@@ -15,6 +15,7 @@ package v1
 
 import (
 	"fmt"
+	"maps"
 )
 
 // AuthorizationConfigured returns whether authorization  is
@@ -71,14 +72,10 @@ func (r *Route) GetPrefixReplacements() []ReplacePrefix {
 func (r *Route) AuthorizationContext(parent map[string]string) map[string]string {
 	values := make(map[string]string, len(parent))
 
-	for k, v := range parent {
-		values[k] = v
-	}
+	maps.Copy(values, parent)
 
 	if r.AuthPolicy != nil {
-		for k, v := range r.AuthPolicy.Context {
-			values[k] = v
-		}
+		maps.Copy(values, r.AuthPolicy.Context)
 	}
 
 	if len(values) == 0 {

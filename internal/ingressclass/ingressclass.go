@@ -14,6 +14,8 @@
 package ingressclass
 
 import (
+	"slices"
+
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/utils/ptr"
 
@@ -56,10 +58,5 @@ func matches(objIngressClass string, contourIngressClasses []string) bool {
 	}
 
 	// Otherwise, the object's ingress class must match one of Contour's.
-	for _, contourIngressClass := range contourIngressClasses {
-		if objIngressClass == contourIngressClass {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(contourIngressClasses, objIngressClass)
 }

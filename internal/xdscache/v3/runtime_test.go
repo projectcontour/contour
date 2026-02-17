@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"maps"
 	"testing"
 
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
@@ -62,9 +63,7 @@ func TestRuntimeCacheContents(t *testing.T) {
 				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
 				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
 			}
-			for k, v := range tc.additionalFields {
-				fields[k] = v
-			}
+			maps.Copy(fields, tc.additionalFields)
 			protobuf.ExpectEqual(t, []proto.Message{
 				&envoy_service_runtime_v3.Runtime{
 					Name: "dynamic",
