@@ -144,7 +144,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -200,7 +200,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -256,7 +256,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -313,7 +313,7 @@ func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -530,7 +530,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -584,7 +584,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 					},
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
+					envoy_v3.TLSInspector(nil, nil),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},

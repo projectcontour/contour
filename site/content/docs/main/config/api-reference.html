@@ -7603,6 +7603,34 @@ will be used, which may be updated to keep it secure.</p>
 Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableJA3Fingerprinting</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+When true, populates JA3 hash in dynamic metadata.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>enableJA4Fingerprinting</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+When true, populates JA4 hash in dynamic metadata.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ExtensionProtocolVersion">ExtensionProtocolVersion
