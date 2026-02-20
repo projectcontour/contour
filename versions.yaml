@@ -14,8 +14,18 @@ versions:
         - "1.32"
       gateway-api:
         - "1.3.0"
-  - version: v1.33.1
+  - version: v1.33.2
     supported: "true"
+    dependencies:
+      envoy: "1.35.8"
+      kubernetes:
+        - "1.34"
+        - "1.33"
+        - "1.32"
+      gateway-api:
+        - "1.3.0"
+  - version: v1.33.1
+    supported: "false"
     dependencies:
       envoy: "1.35.8"
       kubernetes:
@@ -34,8 +44,18 @@ versions:
         - "1.32"
       gateway-api:
         - "1.3.0"
-  - version: v1.32.2
+  - version: v1.32.3
     supported: "true"
+    dependencies:
+      envoy: "1.34.12"
+      kubernetes:
+        - "1.33"
+        - "1.32"
+        - "1.31"
+      gateway-api:
+        - "1.2.1"
+  - version: v1.32.2
+    supported: "false"
     dependencies:
       envoy: "1.34.12"
       kubernetes:
@@ -64,8 +84,18 @@ versions:
         - "1.31"
       gateway-api:
         - "1.2.1"
-  - version: v1.31.3
+  - version: v1.31.4
     supported: "true"
+    dependencies:
+      envoy: "1.34.12"
+      kubernetes:
+        - "1.32"
+        - "1.31"
+        - "1.30"
+      gateway-api:
+        - "1.2.1"
+  - version: v1.31.3
+    supported: "false"
     dependencies:
       envoy: "1.34.12"
       kubernetes:
