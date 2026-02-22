@@ -332,6 +332,28 @@ type NetworkPublishing struct {
 	//
 	// +optional
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+
+	// LoadBalancerSourceRanges restricts traffic through the cloud-provider
+	// load balancer to the specified client IPs. This field will be ignored if
+	// the cloud-provider does not support this feature.
+	//
+	// See: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/
+	//
+	// +optional
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
+
+	// LoadBalancerClass is the class of the load balancer implementation this
+	// Service belongs to. This field can only be set when the type is
+	// LoadBalancerService. Setting this field on a Service of a different type
+	// has no effect. This field can only be set when creating or updating a
+	// Service to the LoadBalancerService type. Once set, it cannot be changed.
+	// The value of this field corresponds to the value of the
+	// spec.loadBalancerClass field on the Kubernetes Service.
+	//
+	// See: https://kubernetes.io/docs/concepts/services-networking/service/#load-balancer-class
+	//
+	// +optional
+	LoadBalancerClass *string `json:"loadBalancerClass,omitempty"`
 }
 
 // NetworkPublishingType is a way to publish network endpoints.
