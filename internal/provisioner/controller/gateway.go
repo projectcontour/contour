@@ -308,6 +308,14 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 
 				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
+
+				if len(networkPublishing.LoadBalancerSourceRanges) > 0 {
+					contourModel.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges = networkPublishing.LoadBalancerSourceRanges
+				}
+
+				if networkPublishing.LoadBalancerClass != nil {
+					contourModel.Spec.NetworkPublishing.Envoy.LoadBalancerClass = networkPublishing.LoadBalancerClass
+				}
 			}
 
 			// Node placement
