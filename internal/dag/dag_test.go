@@ -72,6 +72,14 @@ func TestSecureVirtualHostValid(t *testing.T) {
 		TCPProxy: new(TCPProxy),
 	}
 	assert.True(t, vh.Valid())
+
+	vh = SecureVirtualHost{
+		VirtualHost: VirtualHost{
+			Name: "*",
+		},
+		Secret: new(Secret),
+	}
+	assert.True(t, vh.Valid())
 }
 
 func TestPeerValidationContext(t *testing.T) {
