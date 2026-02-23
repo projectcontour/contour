@@ -75,23 +75,6 @@ func TestGatewayConformance(t *testing.T) {
 		// Keep the list of skipped features in sync with
 		// test/scripts/run-gateway-conformance.sh.
 		SkipTests: []string{
-			// Checks for the original request port in the returned Location
-			// header which Envoy is stripping.
-			// See: https://github.com/envoyproxy/envoy/issues/17318
-			tests.HTTPRouteRedirectPortAndScheme.ShortName,
-
-			// Contour supports the positive-case functionality,
-			// but there are some negative cases that aren't fully
-			// implemented plus complications with the test setup itself.
-			// See: https://github.com/projectcontour/contour/issues/5922
-			tests.GatewayStaticAddresses.ShortName,
-
-			// Skip this test as it uses a Gateway with a name that is too long,
-			// adding the name in a label value prevents resources to be
-			// created.
-			// See: https://github.com/kubernetes-sigs/gateway-api/issues/2592
-			tests.HTTPRouteInvalidParentRefSectionNameNotMatchingPort.ShortName,
-
 			// This test currently fails since we do not program any filter chain
 			// for a Gateway Listener that has no attached routes. The test
 			// includes a TLS Listener with no hostname specified and the test
@@ -106,6 +89,23 @@ func TestGatewayConformance(t *testing.T) {
 			// TODO: implement percentage based mirroring
 			// See: https://github.com/projectcontour/contour/issues/7021
 			features.SupportHTTPRouteRequestPercentageMirror,
+
+			// Contour supports the positive-case functionality,
+			// but there are some negative cases that aren't fully
+			// implemented plus complications with the test setup itself.
+			// See: https://github.com/projectcontour/contour/issues/5922
+			features.SupportGatewayStaticAddresses,
+
+			// Checks for the original request port in the returned Location
+			// header which Envoy is stripping.
+			// See: https://github.com/envoyproxy/envoy/issues/17318
+			features.SupportHTTPRoutePortRedirect,
+
+			// Skip this test as it uses a Gateway with a name that is too long,
+			// adding the name in a label value prevents resources to be
+			// created.
+			// See: https://github.com/kubernetes-sigs/gateway-api/issues/2592
+			features.SupportHTTPRouteParentRefPort,
 		),
 	}
 	if os.Getenv("GENERATE_GATEWAY_CONFORMANCE_REPORT") == "true" {
