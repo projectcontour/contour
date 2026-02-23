@@ -95,7 +95,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
-			envoy_v3.TLSInspector(),
+			envoy_v3.TLSInspector(false, false),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", sec1,
