@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -168,6 +169,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("leader-election-resource-name", "The name of the resource (Lease) leader election will lease.").Default("leader-elect").StringVar(&ctx.LeaderElection.Name)
 	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (Lease) leader election will lease.").Default(config.GetenvOr("CONTOUR_NAMESPACE", "projectcontour")).StringVar(&ctx.LeaderElection.Namespace)
 	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.LeaderElection.RetryPeriod)
+
+	serve.Flag("load-balancer-status", "Address to set or the source to inspect for ingress status.").PlaceHolder("<kind:namespace/name|address>").StringVar(&ctx.Config.LoadBalancerStatus)
 
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").PlaceHolder("<ns,ns>").StringVar(&ctx.rootNamespaces)
 
@@ -674,18 +677,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Set up ingress load balancer status writer.
-	lbsw := &loadBalancerStatusWriter{
-		log:               s.log.WithField("context", "loadBalancerStatusWriter"),
-		cache:             s.mgr.GetCache(),
-		lbStatus:          make(chan core_v1.LoadBalancerStatus, 1),
-		ingressClassNames: ingressClassNames,
-		gatewayRef:        gatewayRef,
-		statusUpdater:     sh.Writer(),
-		statusAddress:     contourConfiguration.Ingress.StatusAddress,
-		serviceName:       contourConfiguration.Envoy.Service.Name,
-		serviceNamespace:  contourConfiguration.Envoy.Service.Namespace,
-	}
-	if err := s.mgr.Add(lbsw); err != nil {
+	if err := s.setupIngressLoadBalancerStatusWriter(contourConfiguration, ingressClassNames, gatewayRef, sh.Writer()); err != nil {
 		return err
 	}
 
@@ -710,6 +702,136 @@ func (s *Server) doServe() error {
 
 	// GO!
 	return s.mgr.Start(signals.SetupSignalHandler())
+}
+
+func (s *Server) setupIngressLoadBalancerStatusWriter(
+	contourConfiguration contour_v1alpha1.ContourConfigurationSpec,
+	ingressClassNames []string,
+	gatewayRef *types.NamespacedName,
+	statusUpdater k8s.StatusUpdater,
+) error {
+	lbsw := &loadBalancerStatusWriter{
+		log:               s.log.WithField("context", "loadBalancerStatusWriter"),
+		cache:             s.mgr.GetCache(),
+		lbStatus:          make(chan core_v1.LoadBalancerStatus, 1),
+		ingressClassNames: ingressClassNames,
+		gatewayRef:        gatewayRef,
+		statusUpdater:     statusUpdater,
+		statusAddress:     contourConfiguration.Ingress.StatusAddress,
+		serviceName:       contourConfiguration.Envoy.Service.Name,
+		serviceNamespace:  contourConfiguration.Envoy.Service.Namespace,
+	}
+	if err := s.mgr.Add(lbsw); err != nil {
+		return err
+	}
+
+	elbs := &envoyLoadBalancerStatus{}
+	if lbAddress := contourConfiguration.Ingress.StatusAddress; len(lbAddress) > 0 {
+		elbs.Kind = "hostname"
+		elbs.FQDNs = lbAddress
+	} else if contourConfiguration.Envoy.LoadBalancer != "" {
+		status, err := parseEnvoyLoadBalancerStatus(contourConfiguration.Envoy.LoadBalancer)
+		if err != nil {
+			return err
+		}
+		elbs = status
+	} else {
+		elbs.Kind = "service"
+		elbs.Namespace = contourConfiguration.Envoy.Service.Namespace
+		elbs.Name = contourConfiguration.Envoy.Service.Name
+	}
+	switch strings.ToLower(elbs.Kind) {
+	case "hostname":
+		s.log.WithField("loadbalancer-fqdns", lbAddress).Info("Using supplied hostname for Ingress status")
+		lbsw.lbStatus <- parseStatusFlag(elbs.FQDNs)
+	case "service":
+		// Register an informer to watch supplied service
+		serviceHandler := &k8s.ServiceStatusLoadBalancerWatcher{
+			ServiceName: elbs.Name,
+			LBStatus:    lbsw.lbStatus,
+			Log:         s.log.WithField("context", "serviceStatusLoadBalancerWatcher"),
+		}
+
+		var handler cache.ResourceEventHandler = serviceHandler
+		if elbs.Namespace != "" {
+			handler = k8s.NewNamespaceFilter([]string{elbs.Namespace}, handler)
+		}
+
+		if err := s.informOnResource(&core_v1.Service{}, handler); err != nil {
+			s.log.WithError(err).WithField("resource", "services").Fatal("failed to create services informer")
+		}
+		s.log.Infof("Watching %s for Ingress status", elbs)
+	case "ingress":
+		// Register an informer to watch supplied ingress
+		ingressHandler := &k8s.IngressStatusLoadBalancerWatcher{
+			IngressName: elbs.Name,
+			LBStatus:    lbsw.lbStatus,
+			Log:         s.log.WithField("context", "ingressStatusLoadBalancerWatcher"),
+		}
+
+		var handler cache.ResourceEventHandler = ingressHandler
+		if elbs.Namespace != "" {
+			handler = k8s.NewNamespaceFilter([]string{elbs.Namespace}, handler)
+		}
+
+		if err := s.informOnResource(&networking_v1.Ingress{}, handler); err != nil {
+			s.log.WithError(err).WithField("resource", "ingresses").Fatal("failed to create ingresses informer")
+		}
+		s.log.Infof("Watching %s for Ingress status", elbs)
+	default:
+		return fmt.Errorf("unsupported ingress kind: %s", elbs.Kind)
+	}
+
+	return nil
+}
+
+type envoyLoadBalancerStatus struct {
+	Kind  string
+	FQDNs string
+	config.NamespacedName
+}
+
+func (elbs *envoyLoadBalancerStatus) String() string {
+	if elbs.Kind == "hostname" {
+		return fmt.Sprintf("%s:%s", elbs.Kind, elbs.FQDNs)
+	}
+	return fmt.Sprintf("%s:%s/%s", elbs.Kind, elbs.Namespace, elbs.Name)
+}
+
+func parseEnvoyLoadBalancerStatus(s string) (*envoyLoadBalancerStatus, error) {
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid load-balancer-status: %s", s)
+	}
+
+	if parts[1] == "" {
+		return nil, fmt.Errorf("invalid load-balancer-status: empty object reference")
+	}
+
+	elbs := envoyLoadBalancerStatus{}
+
+	elbs.Kind = strings.ToLower(parts[0])
+	switch elbs.Kind {
+	case "ingress", "service":
+		parts = strings.Split(parts[1], "/")
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid load-balancer-status: %s is not in the format of <namespace>/<name>", s)
+		}
+
+		if parts[0] == "" || parts[1] == "" {
+			return nil, fmt.Errorf("invalid load-balancer-status: <namespace> or <name> is empty")
+		}
+		elbs.Namespace = parts[0]
+		elbs.Name = parts[1]
+	case "hostname":
+		elbs.FQDNs = parts[1]
+	case "":
+		return nil, fmt.Errorf("invalid load-balancer-status: kind is empty")
+	default:
+		return nil, fmt.Errorf("invalid load-balancer-status: unsupported kind: %s", elbs.Kind)
+	}
+
+	return &elbs, nil
 }
 
 func (s *Server) getExtensionSvcConfig(name, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {
