@@ -16,7 +16,7 @@ spec:
         app: kuard
     spec:
       containers:
-      - image: ghcr.io/kubernetes-up-and-running/kuard:green
+      - image: mendhak/http-https-echo:35
         name: kuard
 ---
 apiVersion: v1
