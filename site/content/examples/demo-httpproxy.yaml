@@ -2,35 +2,35 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: kuard
-  name: kuard
+    app: demo
+  name: demo
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: kuard
+      app: demo
   template:
     metadata:
       labels:
-        app: kuard
+        app: demo
     spec:
       containers:
-      - image: mendhak/http-https-echo:35
-        name: kuard
+      - image: mendhak/http-https-echo:39
+        name: demo
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: kuard
-  name: kuard
+    app: demo
+  name: demo
 spec:
   ports:
   - port: 80
     protocol: TCP
     targetPort: 8080
   selector:
-    app: kuard
+    app: demo
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -38,15 +38,15 @@ apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata: 
   labels:
-    app: kuard
-  name: kuard
+    app: demo
+  name: demo
   namespace: default
 spec: 
   virtualhost:
-    fqdn: kuard.local
+    fqdn: demo.local
   routes: 
     - conditions:
       - prefix: /
       services:
-        - name: kuard
+        - name: demo
           port: 80

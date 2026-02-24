@@ -14,7 +14,7 @@ spec:
         app: kuard
     spec:
       containers:
-      - image: mendhak/http-https-echo:35
+      - image: mendhak/http-https-echo:39
         name: kuard
 ---
 apiVersion: apps/v1
@@ -33,5 +33,5 @@ spec:
         app: kuard
     spec:
       containers:
-      - image: mendhak/http-https-echo:35
+      - image: mendhak/http-https-echo:39
         name: kuard
