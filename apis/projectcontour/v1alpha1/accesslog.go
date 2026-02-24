@@ -63,6 +63,8 @@ var jsonFields = map[string]string{
 	"user_agent":               "%REQ(USER-AGENT)%",
 	"x_forwarded_for":          "%REQ(X-FORWARDED-FOR)%",
 	"x_trace_id":               "%REQ(X-TRACE-ID)%",
+	"tls_ja3_fingerprint":      "%TLS_JA3_FINGERPRINT%",
+	"tls_ja4_fingerprint":      "%TLS_JA4_FINGERPRINT%",
 	"contour_config_kind":      "%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.kind)%",
 	"contour_config_namespace": "%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.namespace)%",
 	"contour_config_name":      "%METADATA(ROUTE:envoy.access_loggers.file:io.projectcontour.name)%",
@@ -122,6 +124,8 @@ var envoySimpleOperators = map[string]struct{}{
 	"RESPONSE_TX_DURATION":                          {},
 	"ROUTE_NAME":                                    {},
 	"START_TIME":                                    {},
+	"TLS_JA3_FINGERPRINT":                           {},
+	"TLS_JA4_FINGERPRINT":                           {},
 	"UPSTREAM_CLUSTER":                              {},
 	"UPSTREAM_FILTER_STATE":                         {},
 	"UPSTREAM_HEADER_BYTES_RECEIVED":                {},
@@ -288,7 +292,7 @@ func (s AccessLogFormatString) Validate() error {
 //  2. Operator Name: "START_TIME"
 //  3. Arguments: "(%s)"
 //  4. Truncation length: ":3"
-var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
+var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z0-9_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
 
 func parseAccessLogFormatString(format string) error {
 	// FindAllStringSubmatch will always return a slice with matches where every slice is a slice

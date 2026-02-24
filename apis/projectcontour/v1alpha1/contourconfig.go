@@ -509,15 +509,39 @@ type EnvoyTLS struct {
 	// +optional
 	CipherSuites []string `json:"cipherSuites,omitempty"`
 
-	// EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
+	// Fingerprint defines TLS fingerprinting configuration
+	// for the TLS Inspector listener filter.
+	// +optional
+	Fingerprint *TLSFingerprint `json:"fingerprint,omitempty"`
+}
+
+// TLSFingerprint defines TLS fingerprinting configuration for the TLS Inspector.
+type TLSFingerprint struct {
+	// JA3 enables JA3 fingerprinting in the TLS Inspector.
 	// When true, populates JA3 hash in dynamic metadata.
 	// +optional
-	EnableJA3Fingerprinting *bool `json:"enableJA3Fingerprinting,omitempty"`
+	JA3 *bool `json:"ja3,omitempty"`
 
-	// EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
+	// JA4 enables JA4 fingerprinting in the TLS Inspector.
 	// When true, populates JA4 hash in dynamic metadata.
 	// +optional
-	EnableJA4Fingerprinting *bool `json:"enableJA4Fingerprinting,omitempty"`
+	JA4 *bool `json:"ja4,omitempty"`
+}
+
+// GetJA3 returns the JA3 fingerprinting setting, or nil if not configured.
+func (t *EnvoyTLS) GetJA3() *bool {
+	if t == nil || t.Fingerprint == nil {
+		return nil
+	}
+	return t.Fingerprint.JA3
+}
+
+// GetJA4 returns the JA4 fingerprinting setting, or nil if not configured.
+func (t *EnvoyTLS) GetJA4() *bool {
+	if t == nil || t.Fingerprint == nil {
+		return nil
+	}
+	return t.Fingerprint.JA4
 }
 
 // EnvoyListener defines parameters for an Envoy Listener.

@@ -432,7 +432,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				listener.Port,
 				cfg.PerConnectionBufferLimitBytes,
 				socketOptions,
-				secureProxyProtocol(cfg.UseProxyProto, cfg.EnableJA3Fingerprinting, cfg.EnableJA4Fingerprinting),
+				secureProxyProtocol(cfg),
 			)
 		}
 
@@ -679,6 +679,6 @@ func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool, enableJA3, enableJA4 *bool) []*envoy_config_listener_v3.ListenerFilter {
-	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector(enableJA3, enableJA4))
+func secureProxyProtocol(cfg ListenerConfig) []*envoy_config_listener_v3.ListenerFilter {
+	return append(proxyProtocol(cfg.UseProxyProto), envoy_v3.TLSInspectorWithConfig(cfg.EnableJA3Fingerprinting, cfg.EnableJA4Fingerprinting))
 }

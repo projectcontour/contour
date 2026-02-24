@@ -133,13 +133,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			lf: ListenerFilters(
-				TLSInspector(nil, nil),
+				TLSInspector(),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(nil, nil),
+					TLSInspector(),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -150,14 +150,14 @@ func TestListener(t *testing.T) {
 			port:    9000,
 			lf: ListenerFilters(
 				ProxyProtocol(),
-				TLSInspector(nil, nil),
+				TLSInspector(),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:    "https-proxy",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
 					ProxyProtocol(),
-					TLSInspector(nil, nil),
+					TLSInspector(),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},
@@ -186,14 +186,62 @@ func TestListener(t *testing.T) {
 			port:                          9000,
 			perConnectionBufferLimitBytes: ptr.To(uint32(32768)),
 			lf: ListenerFilters(
-				TLSInspector(nil, nil),
+				TLSInspector(),
 			),
 			want: &envoy_config_listener_v3.Listener{
 				Name:                          "https",
 				Address:                       SocketAddress("0.0.0.0", 9000),
 				PerConnectionBufferLimitBytes: wrapperspb.UInt32(32768),
 				ListenerFilters: ListenerFilters(
-					TLSInspector(nil, nil),
+					TLSInspector(),
+				),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
+			},
+		},
+		"secure listener w/ ja3 fingerprinting": {
+			name:    "https-ja3",
+			address: "0.0.0.0",
+			port:    9000,
+			lf: ListenerFilters(
+				TLSInspectorWithConfig(ptr.To(true), nil),
+			),
+			want: &envoy_config_listener_v3.Listener{
+				Name:    "https-ja3",
+				Address: SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: ListenerFilters(
+					TLSInspectorWithConfig(ptr.To(true), nil),
+				),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
+			},
+		},
+		"secure listener w/ ja4 fingerprinting": {
+			name:    "https-ja4",
+			address: "0.0.0.0",
+			port:    9000,
+			lf: ListenerFilters(
+				TLSInspectorWithConfig(nil, ptr.To(true)),
+			),
+			want: &envoy_config_listener_v3.Listener{
+				Name:    "https-ja4",
+				Address: SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: ListenerFilters(
+					TLSInspectorWithConfig(nil, ptr.To(true)),
+				),
+				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
+			},
+		},
+		"secure listener w/ ja3 and ja4 fingerprinting": {
+			name:    "https-ja3-ja4",
+			address: "0.0.0.0",
+			port:    9000,
+			lf: ListenerFilters(
+				TLSInspectorWithConfig(ptr.To(true), ptr.To(true)),
+			),
+			want: &envoy_config_listener_v3.Listener{
+				Name:    "https-ja3-ja4",
+				Address: SocketAddress("0.0.0.0", 9000),
+				ListenerFilters: ListenerFilters(
+					TLSInspectorWithConfig(ptr.To(true), ptr.To(true)),
 				),
 				SocketOptions: NewSocketOptions().TCPKeepalive().Build(),
 			},

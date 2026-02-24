@@ -419,16 +419,22 @@ spec:
                             items:
                               type: string
                             type: array
-                          enableJA3Fingerprinting:
+                          fingerprint:
                             description: |-
-                              EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
-                              When true, populates JA3 hash in dynamic metadata.
-                            type: boolean
-                          enableJA4Fingerprinting:
-                            description: |-
-                              EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
-                              When true, populates JA4 hash in dynamic metadata.
-                            type: boolean
+                              Fingerprint defines TLS fingerprinting configuration
+                              for the TLS Inspector listener filter.
+                            properties:
+                              ja3:
+                                description: |-
+                                  JA3 enables JA3 fingerprinting in the TLS Inspector.
+                                  When true, populates JA3 hash in dynamic metadata.
+                                type: boolean
+                              ja4:
+                                description: |-
+                                  JA4 enables JA4 fingerprinting in the TLS Inspector.
+                                  When true, populates JA4 hash in dynamic metadata.
+                                type: boolean
+                            type: object
                           maximumProtocolVersion:
                             description: |-
                               MaximumProtocolVersion is the maximum TLS version this vhost should
@@ -667,16 +673,22 @@ spec:
                             items:
                               type: string
                             type: array
-                          enableJA3Fingerprinting:
+                          fingerprint:
                             description: |-
-                              EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
-                              When true, populates JA3 hash in dynamic metadata.
-                            type: boolean
-                          enableJA4Fingerprinting:
-                            description: |-
-                              EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
-                              When true, populates JA4 hash in dynamic metadata.
-                            type: boolean
+                              Fingerprint defines TLS fingerprinting configuration
+                              for the TLS Inspector listener filter.
+                            properties:
+                              ja3:
+                                description: |-
+                                  JA3 enables JA3 fingerprinting in the TLS Inspector.
+                                  When true, populates JA3 hash in dynamic metadata.
+                                type: boolean
+                              ja4:
+                                description: |-
+                                  JA4 enables JA4 fingerprinting in the TLS Inspector.
+                                  When true, populates JA4 hash in dynamic metadata.
+                                type: boolean
+                            type: object
                           maximumProtocolVersion:
                             description: |-
                               MaximumProtocolVersion is the maximum TLS version this vhost should
@@ -4396,16 +4408,22 @@ spec:
                                 items:
                                   type: string
                                 type: array
-                              enableJA3Fingerprinting:
+                              fingerprint:
                                 description: |-
-                                  EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
-                                  When true, populates JA3 hash in dynamic metadata.
-                                type: boolean
-                              enableJA4Fingerprinting:
-                                description: |-
-                                  EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
-                                  When true, populates JA4 hash in dynamic metadata.
-                                type: boolean
+                                  Fingerprint defines TLS fingerprinting configuration
+                                  for the TLS Inspector listener filter.
+                                properties:
+                                  ja3:
+                                    description: |-
+                                      JA3 enables JA3 fingerprinting in the TLS Inspector.
+                                      When true, populates JA3 hash in dynamic metadata.
+                                    type: boolean
+                                  ja4:
+                                    description: |-
+                                      JA4 enables JA4 fingerprinting in the TLS Inspector.
+                                      When true, populates JA4 hash in dynamic metadata.
+                                    type: boolean
+                                type: object
                               maximumProtocolVersion:
                                 description: |-
                                   MaximumProtocolVersion is the maximum TLS version this vhost should
@@ -4644,16 +4662,22 @@ spec:
                                 items:
                                   type: string
                                 type: array
-                              enableJA3Fingerprinting:
+                              fingerprint:
                                 description: |-
-                                  EnableJA3Fingerprinting enables JA3 fingerprinting in the TLS Inspector.
-                                  When true, populates JA3 hash in dynamic metadata.
-                                type: boolean
-                              enableJA4Fingerprinting:
-                                description: |-
-                                  EnableJA4Fingerprinting enables JA4 fingerprinting in the TLS Inspector.
-                                  When true, populates JA4 hash in dynamic metadata.
-                                type: boolean
+                                  Fingerprint defines TLS fingerprinting configuration
+                                  for the TLS Inspector listener filter.
+                                properties:
+                                  ja3:
+                                    description: |-
+                                      JA3 enables JA3 fingerprinting in the TLS Inspector.
+                                      When true, populates JA3 hash in dynamic metadata.
+                                    type: boolean
+                                  ja4:
+                                    description: |-
+                                      JA4 enables JA4 fingerprinting in the TLS Inspector.
+                                      When true, populates JA4 hash in dynamic metadata.
+                                    type: boolean
+                                type: object
                               maximumProtocolVersion:
                                 description: |-
                                   MaximumProtocolVersion is the maximum TLS version this vhost should
