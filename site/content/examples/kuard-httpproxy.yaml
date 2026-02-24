@@ -15,7 +15,7 @@ spec:
         app: kuard
     spec:
       containers:
-      - image: gcr.io/kuar-demo/kuard-amd64:1
+      - image: ghcr.io/kubernetes-up-and-running/kuard:green
         name: kuard
 ---
 apiVersion: v1
