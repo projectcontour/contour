@@ -756,6 +756,7 @@ var _ = Describe("Gateway provisioner", func() {
 			}))
 
 			By("Skip reconciling the TLSRoute if disabledFeatures includes it")
+			f.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "backend-server-cert", "echo-secure")
 			f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 			route := &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: meta_v1.ObjectMeta{

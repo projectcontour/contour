@@ -81,13 +81,10 @@ var _ = Describe("Ingress", func() {
 		var err error
 		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
+		DeferCleanup(f.Deployment.StopLocalContour, contourCmd, contourConfigFile)
 
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
-	})
-
-	AfterEach(func() {
-		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
 	f.NamespacedTest("ingress-tls-wildcard-host", testTLSWildcardHost)

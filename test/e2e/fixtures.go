@@ -159,6 +159,10 @@ func (e *Echo) DeployN(ns, name string, replicas int32) (func(), *apps_v1.Deploy
 	}
 	require.NoError(e.t, e.client.Create(context.TODO(), deployment))
 
+	if err := WaitForDeployment(deployment, e.client); err != nil {
+		require.NoError(e.t, err)
+	}
+
 	service := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: ns,
@@ -297,6 +301,7 @@ func (e *EchoSecure) Deploy(ns, name string, preApplyHook func(deployment *apps_
 			Name:      name,
 		},
 		Spec: apps_v1.DeploymentSpec{
+			Replicas: ptr.To(int32(1)),
 			Selector: &meta_v1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
@@ -421,6 +426,10 @@ func (e *EchoSecure) Deploy(ns, name string, preApplyHook func(deployment *apps_
 	require.NoError(e.t, e.client.Create(context.TODO(), deployment))
 	require.NoError(e.t, e.client.Create(context.TODO(), service))
 
+	if err := WaitForDeployment(deployment, e.client); err != nil {
+		require.NoError(e.t, err)
+	}
+
 	return func() {
 		require.NoError(e.t, e.client.Delete(context.TODO(), service))
 		require.NoError(e.t, e.client.Delete(context.TODO(), deployment))
@@ -513,6 +522,10 @@ func (g *GRPC) Deploy(ns, name string) func() {
 		},
 	}
 	require.NoError(g.t, g.client.Create(context.TODO(), deployment))
+
+	if err := WaitForDeployment(deployment, g.client); err != nil {
+		require.NoError(g.t, err)
+	}
 
 	service := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{

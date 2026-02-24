@@ -18,6 +18,7 @@ package e2e
 import (
 	"fmt"
 	"io"
+	"net"
 	"os/exec"
 	"time"
 
@@ -46,7 +47,34 @@ func (k *Kubectl) StartKubectlPortForward(localPort, containerPort int, namespac
 	}
 	// Wait until port-forward to be up and running.
 	gomega.Eventually(session).Should(gbytes.Say("Forwarding from"))
+
+	// Also wait for the local port to be open.
+	if err := k.WaitPort(localPort); err != nil {
+		session.Terminate().Wait(time.Minute)
+		return nil, err
+	}
+
 	return session, nil
+}
+
+func (k *Kubectl) WaitPort(port int) error {
+	address := net.JoinHostPort("127.0.0.1", fmt.Sprintf("%d", port))
+	timeout := time.After(30 * time.Second)
+	tick := time.NewTicker(100 * time.Millisecond)
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("timed out waiting for port %d to be open", port)
+		case <-tick.C:
+			conn, err := net.DialTimeout("tcp", address, 500*time.Millisecond)
+			if err == nil {
+				conn.Close()
+				return nil
+			}
+		}
+	}
 }
 
 func (k *Kubectl) StopKubectlPortForward(cmd *gexec.Session) {

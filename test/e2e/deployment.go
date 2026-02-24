@@ -326,7 +326,7 @@ func (d *Deployment) EnsureCertgenJob() error {
 			return err
 		}
 	}
-	if err := wait.PollUntilContextTimeout(context.Background(), time.Millisecond*50, time.Minute, true, jobDeleted); err != nil {
+	if err := wait.PollUntilContextTimeout(context.Background(), time.Millisecond*200, time.Minute, true, jobDeleted); err != nil {
 		return err
 	}
 	return d.client.Create(context.TODO(), d.CertgenJob)
@@ -416,6 +416,9 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
 		return err
 	}
+	if err := WaitForDeployment(deployment, d.client); err != nil {
+		return err
+	}
 
 	service := d.RateLimitService.DeepCopy()
 	service.Namespace = setNamespace
@@ -437,6 +440,9 @@ func (d *Deployment) EnsureGlobalExternalAuthResources(namespace string) error {
 	deployment := d.GlobalExtAuthDeployment.DeepCopy()
 	deployment.Namespace = setNamespace
 	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
+		return err
+	}
+	if err := WaitForDeployment(deployment, d.client); err != nil {
 		return err
 	}
 

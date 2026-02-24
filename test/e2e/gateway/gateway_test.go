@@ -125,6 +125,7 @@ var _ = Describe("Gateway API", func() {
 		var err error
 		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
+		DeferCleanup(f.Deployment.StopLocalContour, contourCmd, contourConfigFile)
 
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
@@ -135,12 +136,11 @@ var _ = Describe("Gateway API", func() {
 		gatewayClassCond := func(*gatewayapi_v1.GatewayClass) bool { return true }
 
 		require.True(f.T(), f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond))
-		require.True(f.T(), f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed))
-	})
+		DeferCleanup(f.DeleteGatewayClass, contourGatewayClass, false)
 
-	AfterEach(func() {
-		require.NoError(f.T(), f.DeleteGatewayClass(contourGatewayClass, false))
-		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
+		require.True(f.T(), f.CreateGatewayAndWaitFor(contourGateway, e2e.GatewayProgrammed))
+
+		require.NoError(f.T(), f.WaitForReachable())
 	})
 
 	Describe("Gateway with one HTTP listener", func() {
