@@ -563,6 +563,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
 					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
 					CipherSuites:           cipherSuites,
+					Fingerprint:            tlsFingerprint(ctx.Config.TLS.Fingerprint),
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          ctx.Config.Listener.SocketOptions.TOS,
@@ -642,6 +643,16 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 	}
 
 	return contourConfiguration
+}
+
+func tlsFingerprint(fp config.TLSFingerprint) *contour_v1alpha1.TLSFingerprint {
+	if fp.JA3 == nil && fp.JA4 == nil {
+		return nil
+	}
+	return &contour_v1alpha1.TLSFingerprint{
+		JA3: fp.JA3,
+		JA4: fp.JA4,
+	}
 }
 
 func setMetricsFromConfig(src config.MetricsServerParameters, dst *contour_v1alpha1.MetricsConfig) {

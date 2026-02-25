@@ -1644,3 +1644,240 @@ func TestSocketOptions(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 }
+
+func TestJA3JA4Fingerprinting(t *testing.T) {
+	// Test JA3 only.
+	t.Run("ja3 only", func(t *testing.T) {
+		rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+			conf.EnableJA3Fingerprinting = ptr.To(true)
+		})
+		defer done()
+
+		s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+		svc1 := fixture.NewService("backend").
+			WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+
+		i1 := &networking_v1.Ingress{
+			ObjectMeta: fixture.ObjectMeta("simple"),
+			Spec: networking_v1.IngressSpec{
+				TLS: []networking_v1.IngressTLS{{
+					Hosts:      []string{"kuard.example.com"},
+					SecretName: "secret",
+				}},
+				Rules: []networking_v1.IngressRule{{
+					Host: "kuard.example.com",
+					IngressRuleValue: networking_v1.IngressRuleValue{
+						HTTP: &networking_v1.HTTPIngressRuleValue{
+							Paths: []networking_v1.HTTPIngressPath{{
+								Backend: *featuretests.IngressBackend(svc1),
+							}},
+						},
+					},
+				}},
+			},
+		}
+
+		rh.OnAdd(s1)
+		rh.OnAdd(svc1)
+		rh.OnAdd(i1)
+
+		c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				defaultHTTPListener(),
+				&envoy_config_listener_v3.Listener{
+					Name:    "ingress_https",
+					Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+					ListenerFilters: envoy_v3.ListenerFilters(
+						envoy_v3.TLSInspectorWithConfig(ptr.To(true), nil),
+					),
+					FilterChains: []*envoy_config_listener_v3.FilterChain{
+						filterchaintls("kuard.example.com", s1,
+							httpsFilterFor("kuard.example.com"),
+							nil, "h2", "http/1.1"),
+					},
+					SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+				},
+				statsListener(),
+			),
+			TypeUrl: listenerType,
+		})
+	})
+
+	// Test JA4 only.
+	t.Run("ja4 only", func(t *testing.T) {
+		rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+			conf.EnableJA4Fingerprinting = ptr.To(true)
+		})
+		defer done()
+
+		s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+		svc1 := fixture.NewService("backend").
+			WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+
+		i1 := &networking_v1.Ingress{
+			ObjectMeta: fixture.ObjectMeta("simple"),
+			Spec: networking_v1.IngressSpec{
+				TLS: []networking_v1.IngressTLS{{
+					Hosts:      []string{"kuard.example.com"},
+					SecretName: "secret",
+				}},
+				Rules: []networking_v1.IngressRule{{
+					Host: "kuard.example.com",
+					IngressRuleValue: networking_v1.IngressRuleValue{
+						HTTP: &networking_v1.HTTPIngressRuleValue{
+							Paths: []networking_v1.HTTPIngressPath{{
+								Backend: *featuretests.IngressBackend(svc1),
+							}},
+						},
+					},
+				}},
+			},
+		}
+
+		rh.OnAdd(s1)
+		rh.OnAdd(svc1)
+		rh.OnAdd(i1)
+
+		c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				defaultHTTPListener(),
+				&envoy_config_listener_v3.Listener{
+					Name:    "ingress_https",
+					Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+					ListenerFilters: envoy_v3.ListenerFilters(
+						envoy_v3.TLSInspectorWithConfig(nil, ptr.To(true)),
+					),
+					FilterChains: []*envoy_config_listener_v3.FilterChain{
+						filterchaintls("kuard.example.com", s1,
+							httpsFilterFor("kuard.example.com"),
+							nil, "h2", "http/1.1"),
+					},
+					SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+				},
+				statsListener(),
+			),
+			TypeUrl: listenerType,
+		})
+	})
+
+	// Test both JA3 and JA4.
+	t.Run("ja3 and ja4", func(t *testing.T) {
+		rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+			conf.EnableJA3Fingerprinting = ptr.To(true)
+			conf.EnableJA4Fingerprinting = ptr.To(true)
+		})
+		defer done()
+
+		s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+		svc1 := fixture.NewService("backend").
+			WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+
+		i1 := &networking_v1.Ingress{
+			ObjectMeta: fixture.ObjectMeta("simple"),
+			Spec: networking_v1.IngressSpec{
+				TLS: []networking_v1.IngressTLS{{
+					Hosts:      []string{"kuard.example.com"},
+					SecretName: "secret",
+				}},
+				Rules: []networking_v1.IngressRule{{
+					Host: "kuard.example.com",
+					IngressRuleValue: networking_v1.IngressRuleValue{
+						HTTP: &networking_v1.HTTPIngressRuleValue{
+							Paths: []networking_v1.HTTPIngressPath{{
+								Backend: *featuretests.IngressBackend(svc1),
+							}},
+						},
+					},
+				}},
+			},
+		}
+
+		rh.OnAdd(s1)
+		rh.OnAdd(svc1)
+		rh.OnAdd(i1)
+
+		c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				defaultHTTPListener(),
+				&envoy_config_listener_v3.Listener{
+					Name:    "ingress_https",
+					Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+					ListenerFilters: envoy_v3.ListenerFilters(
+						envoy_v3.TLSInspectorWithConfig(ptr.To(true), ptr.To(true)),
+					),
+					FilterChains: []*envoy_config_listener_v3.FilterChain{
+						filterchaintls("kuard.example.com", s1,
+							httpsFilterFor("kuard.example.com"),
+							nil, "h2", "http/1.1"),
+					},
+					SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+				},
+				statsListener(),
+			),
+			TypeUrl: listenerType,
+		})
+	})
+
+	// Test JA3 and JA4 with PROXY protocol.
+	t.Run("ja3 and ja4 with proxy protocol", func(t *testing.T) {
+		rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+			conf.UseProxyProto = true
+			conf.EnableJA3Fingerprinting = ptr.To(true)
+			conf.EnableJA4Fingerprinting = ptr.To(true)
+		})
+		defer done()
+
+		s1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+		svc1 := fixture.NewService("backend").
+			WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+
+		i1 := &networking_v1.Ingress{
+			ObjectMeta: fixture.ObjectMeta("simple"),
+			Spec: networking_v1.IngressSpec{
+				TLS: []networking_v1.IngressTLS{{
+					Hosts:      []string{"kuard.example.com"},
+					SecretName: "secret",
+				}},
+				Rules: []networking_v1.IngressRule{{
+					Host: "kuard.example.com",
+					IngressRuleValue: networking_v1.IngressRuleValue{
+						HTTP: &networking_v1.HTTPIngressRuleValue{
+							Paths: []networking_v1.HTTPIngressPath{{
+								Backend: *featuretests.IngressBackend(svc1),
+							}},
+						},
+					},
+				}},
+			},
+		}
+
+		rh.OnAdd(s1)
+		rh.OnAdd(svc1)
+		rh.OnAdd(i1)
+
+		httpListener := defaultHTTPListener()
+		httpListener.ListenerFilters = envoy_v3.ListenerFilters(envoy_v3.ProxyProtocol())
+
+		c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				httpListener,
+				&envoy_config_listener_v3.Listener{
+					Name:    "ingress_https",
+					Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+					ListenerFilters: envoy_v3.ListenerFilters(
+						envoy_v3.ProxyProtocol(),
+						envoy_v3.TLSInspectorWithConfig(ptr.To(true), ptr.To(true)),
+					),
+					FilterChains: []*envoy_config_listener_v3.FilterChain{
+						filterchaintls("kuard.example.com", s1,
+							httpsFilterFor("kuard.example.com"),
+							nil, "h2", "http/1.1"),
+					},
+					SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+				},
+				statsListener(),
+			),
+			TypeUrl: listenerType,
+		})
+	})
+}

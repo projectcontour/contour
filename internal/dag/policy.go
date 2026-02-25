@@ -335,6 +335,8 @@ func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 		"UPSTREAM_REMOTE_ADDRESS",
 		"RESPONSE_FLAGS",
 		"RESPONSE_CODE_DETAILS",
+		"TLS_JA3_FINGERPRINT",
+		"TLS_JA4_FINGERPRINT",
 	} {
 		escapedValue = strings.ReplaceAll(escapedValue, "%%"+envoyVar+"%%", "%"+envoyVar+"%")
 	}
