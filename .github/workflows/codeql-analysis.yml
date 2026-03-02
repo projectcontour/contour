@@ -12,12 +12,16 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   GOPROXY: https://proxy.golang.org/
   GO_VERSION: 1.26.0
 
 jobs:
-  CodeQL-Build:
+  CodeQL-for-Go:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -49,3 +53,22 @@ jobs:
       uses: github/codeql-action/autobuild@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
+      with:
+        category: /language:go
+
+  CodeQL-for-Actions:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
+      with:
+        languages: actions
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
+      with:
+        category: /language:actions
