@@ -459,6 +459,28 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 			},
 			expect: true,
 		},
+		{
+			description: "if load balancer source ranges changed",
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.LoadBalancerSourceRanges = []string{"10.0.0.0/8"}
+			},
+			expect: true,
+		},
+		{
+			description: "if load balancer source ranges unchanged",
+			mutate: func(_ *core_v1.Service) {
+				// no-op: cntr is pre-populated with source ranges in the loop below,
+				// so both mutated and expected have the same non-empty value.
+			},
+			expect: false,
+		},
+		{
+			description: "if load balancer class changed",
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.LoadBalancerClass = ptr.To("other.io/lb")
+			},
+			expect: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -466,6 +488,10 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 		cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
 		cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
 		cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
+		cntr.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges = nil
+		if tc.description == "if load balancer source ranges unchanged" {
+			cntr.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges = []string{"10.0.0.0/8"}
+		}
 		if tc.description == "if load balancer IP changed" {
 			loadBalancerIP := "1.2.3.4"
 			cntr = &model.Contour{

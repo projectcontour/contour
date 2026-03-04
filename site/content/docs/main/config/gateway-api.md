@@ -164,6 +164,27 @@ All Gateways provisioned using the `contour-with-envoy-deployment` GatewayClass 
 
 See [the API documentation][6] for all `ContourDeployment` options.
 
+For example, to restrict access to the provisioned Envoy load balancer to specific source IP ranges and to select a specific load balancer implementation class:
+
+```yaml
+kind: ContourDeployment
+apiVersion: projectcontour.io/v1alpha1
+metadata:
+  namespace: projectcontour
+  name: contour-with-lb-params
+spec:
+  envoy:
+    networkPublishing:
+      type: LoadBalancerService
+      loadBalancerSourceRanges:
+        - 10.0.0.0/8
+        - 192.168.0.0/16
+      loadBalancerClass: example.io/my-lb
+```
+
+> **Note:** `loadBalancerClass` is immutable on a Kubernetes Service once set.
+> To change it you must delete and re-create the Gateway.
+
 It's important to note that, per the [GatewayClass spec][10]:
 
 > It is recommended that [GatewayClass] be used as a template for Gateways.

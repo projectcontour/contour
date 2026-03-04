@@ -148,6 +148,48 @@ func checkServiceHasLoadBalancerAddress(t *testing.T, svc *core_v1.Service, addr
 	}
 }
 
+func checkServiceHasLoadBalancerSourceRanges(t *testing.T, svc *core_v1.Service, ranges []string) {
+	t.Helper()
+
+	if len(svc.Spec.LoadBalancerSourceRanges) != len(ranges) {
+		t.Errorf("service has %d loadBalancerSourceRanges, want %d", len(svc.Spec.LoadBalancerSourceRanges), len(ranges))
+		return
+	}
+	for i, r := range ranges {
+		if svc.Spec.LoadBalancerSourceRanges[i] != r {
+			t.Errorf("service loadBalancerSourceRanges[%d] = %s, want %s", i, svc.Spec.LoadBalancerSourceRanges[i], r)
+		}
+	}
+}
+
+func checkServiceHasNoLoadBalancerSourceRanges(t *testing.T, svc *core_v1.Service) {
+	t.Helper()
+
+	if len(svc.Spec.LoadBalancerSourceRanges) != 0 {
+		t.Errorf("service has unexpected loadBalancerSourceRanges: %v", svc.Spec.LoadBalancerSourceRanges)
+	}
+}
+
+func checkServiceHasLoadBalancerClass(t *testing.T, svc *core_v1.Service, class string) {
+	t.Helper()
+
+	if svc.Spec.LoadBalancerClass == nil {
+		t.Errorf("service has nil loadBalancerClass, want %s", class)
+		return
+	}
+	if *svc.Spec.LoadBalancerClass != class {
+		t.Errorf("service loadBalancerClass = %s, want %s", *svc.Spec.LoadBalancerClass, class)
+	}
+}
+
+func checkServiceHasNoLoadBalancerClass(t *testing.T, svc *core_v1.Service) {
+	t.Helper()
+
+	if svc.Spec.LoadBalancerClass != nil {
+		t.Errorf("service has unexpected loadBalancerClass: %s", *svc.Spec.LoadBalancerClass)
+	}
+}
+
 func TestDesiredContourService(t *testing.T) {
 	name := "svc-test"
 	cntr := model.Default(fmt.Sprintf("%s-ns", name), name)
@@ -283,4 +325,35 @@ func TestDesiredEnvoyService(t *testing.T) {
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, core_v1.ServiceTypeClusterIP)
 	checkServiceHasAnnotations(t, svc) // passing no keys means we expect no annotations
+
+	// Test LoadBalancerSourceRanges is set for LoadBalancerService type.
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = model.ProviderLoadBalancerParameters{Type: model.AWSLoadBalancerProvider}
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges = []string{"10.0.0.0/8", "192.168.0.0/16"}
+	svc = DesiredEnvoyService(cntr)
+	checkServiceHasType(t, svc, core_v1.ServiceTypeLoadBalancer)
+	checkServiceHasLoadBalancerSourceRanges(t, svc, []string{"10.0.0.0/8", "192.168.0.0/16"})
+
+	// Test LoadBalancerSourceRanges is NOT set for NodePortService type.
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.NodePortServicePublishingType
+	svc = DesiredEnvoyService(cntr)
+	checkServiceHasNoLoadBalancerSourceRanges(t, svc)
+
+	// Clear source ranges so they don't affect subsequent LoadBalancerClass assertions,
+	// since cntr is shared state across all test blocks in this function.
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges = nil
+
+	// Test LoadBalancerClass is set for LoadBalancerService type.
+	lbClass := "example.io/my-lb"
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancerClass = &lbClass
+	svc = DesiredEnvoyService(cntr)
+	checkServiceHasType(t, svc, core_v1.ServiceTypeLoadBalancer)
+	checkServiceHasLoadBalancerClass(t, svc, lbClass)
+
+	// Test LoadBalancerClass is NOT set for NodePortService type.
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.NodePortServicePublishingType
+	svc = DesiredEnvoyService(cntr)
+	checkServiceHasNoLoadBalancerClass(t, svc)
 }

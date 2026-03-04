@@ -436,6 +436,14 @@ type EnvoyNetworkPublishing struct {
 	//
 	// If unset, defaults to "Local".
 	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicyType
+
+	// LoadBalancerSourceRanges restricts traffic through the cloud-provider
+	// load balancer to the specified client IPs.
+	LoadBalancerSourceRanges []string
+
+	// LoadBalancerClass is the class of the load balancer implementation
+	// this Service belongs to. Once set on a created Service, it cannot be changed.
+	LoadBalancerClass *string
 }
 
 type NetworkPublishingType = contour_v1alpha1.NetworkPublishingType
