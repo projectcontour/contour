@@ -21,7 +21,7 @@ env:
   GO_VERSION: 1.26.0
 
 jobs:
-  CodeQL-for-Go:
+  CodeQL-Build:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
