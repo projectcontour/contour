@@ -116,7 +116,7 @@ func checkServiceHasType(t *testing.T, svc *core_v1.Service, svcType core_v1.Ser
 	}
 }
 
-func checkServiceHasExternalTrafficPolicy(t *testing.T, svc *core_v1.Service, policy core_v1.ServiceExternalTrafficPolicyType) {
+func checkServiceHasExternalTrafficPolicy(t *testing.T, svc *core_v1.Service, policy core_v1.ServiceExternalTrafficPolicy) {
 	t.Helper()
 
 	if svc.Spec.ExternalTrafficPolicy != policy {
@@ -182,7 +182,7 @@ func TestDesiredEnvoyService(t *testing.T) {
 
 	svc := DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, core_v1.ServiceTypeNodePort)
-	checkServiceHasExternalTrafficPolicy(t, svc, core_v1.ServiceExternalTrafficPolicyTypeLocal)
+	checkServiceHasExternalTrafficPolicy(t, svc, core_v1.ServiceExternalTrafficPolicyLocal)
 	checkServiceHasIPFamilyPolicy(t, svc, core_v1.IPFamilyPolicySingleStack)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPPort)
 	checkServiceHasPort(t, svc, EnvoyServiceHTTPSPort)
@@ -204,13 +204,13 @@ func TestDesiredEnvoyService(t *testing.T) {
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).
 	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
-	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = core_v1.ServiceExternalTrafficPolicyTypeCluster
+	cntr.Spec.NetworkPublishing.Envoy.ExternalTrafficPolicy = core_v1.ServiceExternalTrafficPolicyCluster
 	cntr.Spec.NetworkPublishing.Envoy.IPFamilyPolicy = core_v1.IPFamilyPolicyPreferDualStack
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 	svc = DesiredEnvoyService(cntr)
 	checkServiceHasType(t, svc, core_v1.ServiceTypeLoadBalancer)
-	checkServiceHasExternalTrafficPolicy(t, svc, core_v1.ServiceExternalTrafficPolicyTypeCluster)
+	checkServiceHasExternalTrafficPolicy(t, svc, core_v1.ServiceExternalTrafficPolicyCluster)
 	checkServiceHasIPFamilyPolicy(t, svc, core_v1.IPFamilyPolicyPreferDualStack)
 	checkServiceHasAnnotations(t, svc, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
