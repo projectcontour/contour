@@ -18,6 +18,7 @@ package httpproxy
 import (
 	"context"
 	"net/http"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,8 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -105,6 +108,19 @@ func testExternalAuth(namespace string) {
 			},
 		}
 		require.NoError(t, f.Client.Create(context.TODO(), deployment))
+
+		// Wait for the auth testserver deployment to have at least one
+		// ready replica so that Envoy can reach the ext_authz cluster.
+		// Without this, Envoy may return 403 (its default ext_authz
+		// denial code for unreachable auth services) instead of the
+		// expected 401 from the auth server.
+		require.NoError(t, wait.PollUntilContextTimeout(context.Background(), time.Second, 120*time.Second, true, func(ctx context.Context) (bool, error) {
+			d := &apps_v1.Deployment{}
+			if err := f.Client.Get(ctx, client.ObjectKeyFromObject(deployment), d); err != nil {
+				return false, nil
+			}
+			return d.Status.ReadyReplicas > 0, nil
+		}))
 
 		svc := &core_v1.Service{
 			ObjectMeta: meta_v1.ObjectMeta{
