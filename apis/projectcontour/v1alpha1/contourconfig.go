@@ -508,6 +508,24 @@ type EnvoyTLS struct {
 	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
 	// +optional
 	CipherSuites []string `json:"cipherSuites,omitempty"`
+
+	// EnableJA3Fingerprinting enables JA3 TLS fingerprinting in the
+	// TLS Inspector listener filter. When enabled, Envoy will extract JA3
+	// fingerprints from TLS client hellos.
+	// Note: JA3 fingerprinting requires Envoy 1.21.0 or later.
+	//
+	// Contour's default is false.
+	// +optional
+	EnableJA3Fingerprinting *bool `json:"enableJA3Fingerprinting,omitempty"`
+
+	// EnableJA4Fingerprinting enables JA4 TLS fingerprinting in the
+	// TLS Inspector listener filter. When enabled, Envoy will extract JA4
+	// fingerprints from TLS client hellos.
+	// Note: JA4 fingerprinting requires Envoy 1.35.0 or later.
+	//
+	// Contour's default is false.
+	// +optional
+	EnableJA4Fingerprinting *bool `json:"enableJA4Fingerprinting,omitempty"`
 }
 
 // EnvoyListener defines parameters for an Envoy Listener.
