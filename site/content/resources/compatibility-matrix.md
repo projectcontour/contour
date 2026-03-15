@@ -10,7 +10,7 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
 | --------------- | :------------------- | ------------------- | --------------------|
-| main            | [1.35.8][74]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
+| main            | [1.37.1][77]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.2          | [1.35.8][74]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.1          | [1.35.8][74]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.0          | [1.35.2][74]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
@@ -244,6 +244,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [74]: https://www.envoyproxy.io/docs/envoy/v1.35.8/version_history/v1.35/v1.35
 [75]: https://www.envoyproxy.io/docs/envoy/v1.34.12/version_history/v1.34/v1.34
 [76]: https://www.envoyproxy.io/docs/envoy/v1.31.10/version_history/v1.31/v1.31
+[77]: https://www.envoyproxy.io/docs/envoy/v1.37.1/version_history/v1.37/v1.37.1
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

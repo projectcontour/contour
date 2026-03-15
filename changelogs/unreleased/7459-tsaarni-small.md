@@ -1,0 +1,1 @@
+Updates Envoy to v1.37.1 (from the 1.35 track). See the [Envoy 1.36 release notes](https://www.envoyproxy.io/docs/envoy/v1.36.5/version_history/v1.36/v1.36) and [Envoy 1.37 release notes](https://www.envoyproxy.io/docs/envoy/v1.37.1/version_history/v1.37/v1.37.1) for more information about the content of the releases.
