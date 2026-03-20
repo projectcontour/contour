@@ -347,7 +347,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     443,
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-1.provisioner.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									{Name: "https-1-cert"},
@@ -359,7 +359,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     444,
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-2.provisioner.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									{Name: "https-2-cert"},
@@ -738,7 +738,7 @@ var _ = Describe("Gateway provisioner", func() {
 							Name:     "https",
 							Protocol: gatewayapi_v1.TLSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 							AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
