@@ -197,7 +197,7 @@ func ValidateListeners(listeners []gatewayapi_v1.Listener) ValidateListenersResu
 		if !found {
 			result.Ports = append(result.Ports, ListenerPort{
 				Name:          envoyListenerName,
-				Port:          int32(listener.Port),
+				Port:          listener.Port,
 				ContainerPort: toContainerPort(listener.Port),
 				Protocol:      protocol,
 			})
@@ -221,7 +221,7 @@ func toContainerPort(listenerPort gatewayapi_v1.PortNumber) int32 {
 		containerPort += 1023
 	}
 
-	return int32(containerPort)
+	return containerPort
 }
 
 // IsValidHostname validates that a given hostname is syntactically valid.
