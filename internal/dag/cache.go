@@ -864,7 +864,7 @@ func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.
 // namespace-local references are allowed) and is used to match the namespace on the resulting backendTLSPolicy.
 //
 // If a policy is found, true is returned.
-func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName, namespace string) (*gatewayapi_v1alpha3.BackendTLSPolicy, bool) {
+func (kc *KubernetesCache) LookupBackendTLSPolicyByTargetRef(targetRef gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName, namespace string) (*gatewayapi_v1alpha3.BackendTLSPolicy, bool) {
 	var fallbackBackendTLSPolicy *gatewayapi_v1alpha3.BackendTLSPolicy
 	for _, v := range kc.backendtlspolicies {
 		// Make sure the BackendTLSPolicy namespace matches the backend namespace.
