@@ -267,7 +267,7 @@ func BackendTLSPolicyAccepted(btp *gatewayapi_v1alpha3.BackendTLSPolicy) bool {
 	}
 
 	for _, gw := range btp.Status.Ancestors {
-		if conditionExists(gw.Conditions, string(gatewayapi_v1alpha2.PolicyConditionAccepted), meta_v1.ConditionTrue) {
+		if conditionExists(gw.Conditions, string(gatewayapi_v1.PolicyConditionAccepted), meta_v1.ConditionTrue) {
 			return true
 		}
 	}

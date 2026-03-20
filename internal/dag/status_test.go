@@ -5081,7 +5081,7 @@ func TestDAGStatus(t *testing.T) {
 									From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 								},
 							},
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 							},
 						},
@@ -6757,7 +6757,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -6812,7 +6812,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -6892,7 +6892,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -6948,7 +6948,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -7044,7 +7044,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -7140,7 +7140,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -7236,7 +7236,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -7332,7 +7332,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
@@ -9083,7 +9083,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							{
 								Group: ptr.To(gatewayapi_v1.Group("invalid-group")),
@@ -9156,7 +9156,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("nonexistent-secret", "projectcontour"),
 						},
@@ -9398,7 +9398,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", "projectcontour"),
@@ -9463,7 +9463,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 					},
 				}},
@@ -9525,7 +9525,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 					},
 				}},
@@ -10164,7 +10164,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				Name:     "tls-passthrough",
 				Port:     443,
 				Protocol: gatewayapi_v1.TLSProtocolType,
-				TLS: &gatewayapi_v1.GatewayTLSConfig{
+				TLS: &gatewayapi_v1.ListenerTLSConfig{
 					Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 				},
 				AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -10610,7 +10610,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Name:     "tls",
 					Port:     443,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeType("invalid-mode")),
 					},
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{
@@ -12166,16 +12166,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12187,14 +12187,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonAccepted),
+							Reason:  string(gatewayapi_v1.PolicyReasonAccepted),
 							Message: "Accepted BackendTLSPolicy",
 						},
 					},
@@ -12213,16 +12213,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "nonexistent",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12245,16 +12245,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "Invalid",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12266,14 +12266,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "BackendTLSPolicy.Spec.Validation.CACertificateRef.Kind \"Invalid\" is unsupported. Only ConfigMap or Secret Kind is supported.",
 						},
 					},
@@ -12291,16 +12291,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName("missing"),
@@ -12312,14 +12312,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "Could not find CACertificateRef ConfigMap: projectcontour/missing",
 						},
 					},
@@ -12337,16 +12337,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "Secret",
 							Name: gatewayapi_v1.ObjectName("missing"),
@@ -12358,14 +12358,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "Could not find CACertificateRef Secret: projectcontour/missing",
 						},
 					},
@@ -12384,16 +12384,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 							{
 								Kind: "Invalid",
@@ -12415,14 +12415,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "BackendTLSPolicy.Spec.Validation.CACertificateRef.Kind \"Invalid\" is unsupported. Only ConfigMap or Secret Kind is supported., Could not find CACertificateRef ConfigMap: projectcontour/missing",
 						},
 					},
@@ -12441,17 +12441,17 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
-						WellKnownCACertificates: ptr.To(gatewayapi_v1alpha3.WellKnownCACertificatesSystem),
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
+						WellKnownCACertificates: ptr.To(gatewayapi_v1.WellKnownCACertificatesSystem),
 						Hostname:                "example.com",
 					},
 				},
@@ -12459,14 +12459,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "BackendTLSPolicy.Spec.Validation.WellKnownCACertificates is unsupported.",
 						},
 					},
@@ -12485,16 +12485,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12506,14 +12506,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "BackendTLSPolicy.Spec.Validation.Hostname \"-bad-hostname.example.com\" is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed",
 						},
 					},
@@ -12532,16 +12532,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12553,14 +12553,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "BackendTLSPolicy.Spec.Validation.Hostname \"*.example.com\" is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed",
 						},
 					},
@@ -12579,16 +12579,16 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 					Name:      "basic",
 					Namespace: "projectcontour",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "tlssvc",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 						CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
 							Kind: "ConfigMap",
 							Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
@@ -12600,14 +12600,14 @@ func TestGatewayAPIBackendTLSPolicyDAGStatus(t *testing.T) {
 		},
 		wantBackendTLSPolicyConditions: []*status.BackendTLSPolicyStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "basic"},
-			PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+			PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  meta_v1.ConditionFalse,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonInvalid),
+							Reason:  string(gatewayapi_v1.PolicyReasonInvalid),
 							Message: "BackendTLSPolicy.Spec.Validation.Hostname \"127.0.0.1\" is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed",
 						},
 					},
