@@ -83,16 +83,6 @@ var _ = BeforeSuite(func() {
 			core_v1.ResourceMemory: resource.MustParse("2Gi"),
 		},
 	}
-	// Add metrics port to Envoy DaemonSet.
-	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].Ports = append(
-		f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].Ports,
-		core_v1.ContainerPort{
-			Name:          "metrics",
-			HostPort:      8002,
-			ContainerPort: 8002,
-			Protocol:      core_v1.ProtocolTCP,
-		},
-	)
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 

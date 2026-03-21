@@ -82,7 +82,6 @@ spec:
               name: https
               protocol: TCP
             - containerPort: 8002
-              hostPort: 8002
               name: metrics
               protocol: TCP
           readinessProbe:
