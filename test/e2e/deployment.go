@@ -524,10 +524,12 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 
 	if d.EnvoyDeploymentMode == DaemonsetMode {
 		d.EnvoyDaemonSet.Spec.Template = d.mutatePodTemplate(d.EnvoyDaemonSet.Spec.Template)
+		d.addMetricsHostPort(&d.EnvoyDaemonSet.Spec.Template.Spec)
 		return d.EnsureEnvoyDaemonSet()
 	}
 
 	d.EnvoyDeployment.Spec.Template = d.mutatePodTemplate(d.EnvoyDeployment.Spec.Template)
+	d.addMetricsHostPort(&d.EnvoyDeployment.Spec.Template.Spec)
 
 	// The envoy deployment uses host ports, so can have at most
 	// one replica per node, and our cluster only has one worker
@@ -828,6 +830,8 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 	envoyPodSpec.Containers[0].Image = d.contourImage
 	envoyPodSpec.Containers[0].ImagePullPolicy = core_v1.PullIfNotPresent
 
+	d.addMetricsHostPort(envoyPodSpec)
+
 	if d.EnvoyDeploymentMode == DeploymentMode {
 		// The envoy deployment uses host ports, so can have at most
 		// one replica per node, and our cluster only has one worker
@@ -980,6 +984,21 @@ func (d *Deployment) EnvoyResourceAndName() string {
 	}
 
 	return "daemonset/envoy"
+}
+
+// addMetricsHostPort exposes the Envoy stats port via hostPort.
+func (d *Deployment) addMetricsHostPort(podSpec *core_v1.PodSpec) {
+	for i, c := range podSpec.Containers {
+		if c.Name != "envoy" {
+			continue
+		}
+		for j, p := range c.Ports {
+			if p.Name == "metrics" {
+				podSpec.Containers[i].Ports[j].HostPort = 8002
+				return
+			}
+		}
+	}
 }
 
 func randomString(n int) string {
