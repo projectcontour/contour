@@ -1384,7 +1384,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "https",
 					Port:     443,
 					Protocol: gatewayapi_v1.HTTPSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),
@@ -1400,7 +1400,7 @@ func TestGatewayListenersSetAddress(t *testing.T) {
 					Name:     "tls",
 					Port:     8443,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModePassthrough),
 					},
 					AllowedRoutes: &gatewayapi_v1.AllowedRoutes{

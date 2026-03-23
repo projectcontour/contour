@@ -2180,8 +2180,8 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 		backendNamespace = ptr.To(gatewayapi_v1.Namespace(routeNamespace))
 	}
 
-	policyTargetRef := gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
-		LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+	policyTargetRef := gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
+		LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 			Group: backendRefGroup,
 			Kind:  backendRefKind,
 			Name:  backendRef.Name,
@@ -2200,17 +2200,17 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 		backendTLSPolicyAncestorStatus := backendTLSPolicyAccessor.StatusUpdateFor(routeParentRef)
 
 		if backendTLSPolicy.Spec.Validation.WellKnownCACertificates != nil && *backendTLSPolicy.Spec.Validation.WellKnownCACertificates != "" {
-			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, "BackendTLSPolicy.Spec.Validation.WellKnownCACertificates is unsupported.")
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.PolicyReasonInvalid, "BackendTLSPolicy.Spec.Validation.WellKnownCACertificates is unsupported.")
 			return nil, nil
 		}
 
 		if err := gatewayapi.IsValidHostname(string(backendTLSPolicy.Spec.Validation.Hostname)); err != nil {
-			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.Validation.Hostname %q is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed", backendTLSPolicy.Spec.Validation.Hostname))
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.Validation.Hostname %q is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed", backendTLSPolicy.Spec.Validation.Hostname))
 			return nil, nil
 		}
 
 		if strings.Contains(string(backendTLSPolicy.Spec.Validation.Hostname), "*") {
-			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.Validation.Hostname %q is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed", backendTLSPolicy.Spec.Validation.Hostname))
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.Validation.Hostname %q is invalid. Hostname must be a valid RFC 1123 fully qualified domain name. Wildcard domains and numeric IP addresses are not allowed", backendTLSPolicy.Spec.Validation.Hostname))
 			return nil, nil
 		}
 
@@ -2224,7 +2224,7 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 					Namespace: backendTLSPolicy.Namespace,
 				}, backendTLSPolicy.Namespace)
 				if err != nil {
-					backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("Could not find CACertificateRef Secret: %s/%s", backendTLSPolicy.Namespace, certRef.Name))
+					backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.PolicyReasonInvalid, fmt.Sprintf("Could not find CACertificateRef Secret: %s/%s", backendTLSPolicy.Namespace, certRef.Name))
 					isInvalidCertChain = true
 					continue
 				}
@@ -2235,13 +2235,13 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 					Namespace: backendTLSPolicy.Namespace,
 				})
 				if err != nil {
-					backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("Could not find CACertificateRef ConfigMap: %s/%s", backendTLSPolicy.Namespace, certRef.Name))
+					backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.PolicyReasonInvalid, fmt.Sprintf("Could not find CACertificateRef ConfigMap: %s/%s", backendTLSPolicy.Namespace, certRef.Name))
 					isInvalidCertChain = true
 					continue
 				}
 				caSecrets = append(caSecrets, caSecret)
 			default:
-				backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1alpha2.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.Validation.CACertificateRef.Kind %q is unsupported. Only ConfigMap or Secret Kind is supported.", certRef.Kind))
+				backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.PolicyReasonInvalid, fmt.Sprintf("BackendTLSPolicy.Spec.Validation.CACertificateRef.Kind %q is unsupported. Only ConfigMap or Secret Kind is supported.", certRef.Kind))
 				isInvalidCertChain = true
 				continue
 			}
@@ -2259,7 +2259,7 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 
 			upstreamTLS = p.UpstreamTLS
 
-			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionTrue, gatewayapi_v1alpha2.PolicyReasonAccepted, "Accepted BackendTLSPolicy")
+			backendTLSPolicyAncestorStatus.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionTrue, gatewayapi_v1.PolicyReasonAccepted, "Accepted BackendTLSPolicy")
 		}
 	}
 

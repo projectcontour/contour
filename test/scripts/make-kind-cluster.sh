@@ -134,7 +134,7 @@ ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deploymen
 
 if [[ "${SKIP_GATEWAY_API_INSTALL}" != "true" ]]; then
   # Install Gateway API CRDs.
-  ${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
+  ${KUBECTL} apply --server-side -f "${REPO}/examples/gateway/00-crds.yaml"
 fi
 
 # Install Contour CRDs.

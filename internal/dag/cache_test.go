@@ -371,8 +371,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "example-btp",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
@@ -426,8 +426,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						Name:      "example-btp",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "ConfigMap",
@@ -1153,16 +1153,16 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "backendtlspolicy",
 					Namespace: "default",
 				},
-				Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-					TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+				Spec: gatewayapi_v1.BackendTLSPolicySpec{
+					TargetRefs: []gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
 						{
-							LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+							LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 								Kind: "Service",
 								Name: "service",
 							},
 						},
 					},
-					Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{},
+					Validation: gatewayapi_v1.BackendTLSPolicyValidation{},
 				},
 			},
 			want: true,
@@ -1827,8 +1827,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Name:      "backendtlspolicy",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "Secret",
@@ -1868,8 +1868,8 @@ func TestKubernetesCacheRemove(t *testing.T) {
 						Name:      "backendtlspolicy",
 						Namespace: "default",
 					},
-					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
-						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+					Spec: gatewayapi_v1.BackendTLSPolicySpec{
+						Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 								{
 									Kind: "ConfigMap",
@@ -2664,7 +2664,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					},
 					Spec: gatewayapi_v1.GatewaySpec{
 						Listeners: []gatewayapi_v1.Listener{{
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: nil,
 							},
 						}},
@@ -2683,7 +2683,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					},
 					Spec: gatewayapi_v1.GatewaySpec{
 						Listeners: []gatewayapi_v1.Listener{{
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
@@ -2704,7 +2704,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					},
 					Spec: gatewayapi_v1.GatewaySpec{
 						Listeners: []gatewayapi_v1.Listener{{
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
@@ -2997,13 +2997,13 @@ func TestLookupUpstreamValidation(t *testing.T) {
 }
 
 func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
-	targetRef := func(group, kind, name string, sectionName *string) gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName {
+	targetRef := func(group, kind, name string, sectionName *string) gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName {
 		var sn *gatewayapi_v1alpha2.SectionName
 		if sectionName != nil {
 			sn = ptr.To(gatewayapi_v1alpha2.SectionName(*sectionName))
 		}
-		return gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
-			LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+		return gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName{
+			LocalPolicyTargetReference: gatewayapi_v1.LocalPolicyTargetReference{
 				Group: gatewayapi_v1.Group(group),
 				Kind:  gatewayapi_v1alpha2.Kind(kind),
 				Name:  gatewayapi_v1.ObjectName(name),
@@ -3012,19 +3012,19 @@ func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
 		}
 	}
 
-	serviceTargetRef := func(name string, sectionName *string) gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName {
+	serviceTargetRef := func(name string, sectionName *string) gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName {
 		return targetRef("", "Service", name, sectionName)
 	}
 
-	backendTLSPolicy := func(name, namespace string, targetRefs ...gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName) *gatewayapi_v1alpha3.BackendTLSPolicy {
+	backendTLSPolicy := func(name, namespace string, targetRefs ...gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName) *gatewayapi_v1alpha3.BackendTLSPolicy {
 		return &gatewayapi_v1alpha3.BackendTLSPolicy{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
-			Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+			Spec: gatewayapi_v1.BackendTLSPolicySpec{
 				TargetRefs: targetRefs,
-				Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+				Validation: gatewayapi_v1.BackendTLSPolicyValidation{
 					CACertificateRefs: []gatewayapi_v1.LocalObjectReference{
 						{
 							Group: "",
@@ -3039,7 +3039,7 @@ func TestLookupBackendTLSPolicyByTargetRef(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		targetRef          gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName
+		targetRef          gatewayapi_v1.LocalPolicyTargetReferenceWithSectionName
 		namespace          string
 		backendTLSPolicies []*gatewayapi_v1alpha3.BackendTLSPolicy
 		want               *gatewayapi_v1alpha3.BackendTLSPolicy
