@@ -250,8 +250,8 @@ var _ = Describe("When upgrading", func() {
 				require.NoError(f.T(), err)
 
 				By("updating gateway-api CRDs to latest")
-				cmd = exec.Command("kubectl", "apply", "--server-side", "-f", "../../../examples/gateway/00-crds.yaml")
-				sess, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				cmd := exec.Command("kubectl", "apply", "--server-side", "-f", "../../../examples/gateway/00-crds.yaml")
+				sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				require.NoError(f.T(), err)
 				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 
