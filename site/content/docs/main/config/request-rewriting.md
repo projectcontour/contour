@@ -203,6 +203,8 @@ documentation </a> for details of what each of these resolve to:
 * `%RESPONSE_FLAGS%`
 * `%RESPONSE_CODE_DETAILS%`
 * `%UPSTREAM_REMOTE_ADDRESS%`
+* `%TLS_JA3_FINGERPRINT%`
+* `%TLS_JA4_FINGERPRINT%`
 
 Note that Envoy passes variables that can't be expanded through unchanged or
 skips them entirely - for example:
