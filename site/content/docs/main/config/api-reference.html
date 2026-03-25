@@ -7477,6 +7477,23 @@ defaults to 0.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>concurrency</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Concurrency specifies the number of worker threads to run for Envoy.
+If not specified, Envoy defaults to the number of hardware threads on
+the machine. Setting this to a lower value on high-core-count machines
+avoids excessive worker threads and reduces idle CPU and Memory usage.
+defaults to 0 (use Envoy&rsquo;s default behavior).</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>overloadMaxHeapSize</code>
 <br>
 <em>
