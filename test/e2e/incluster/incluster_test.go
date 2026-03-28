@@ -79,25 +79,26 @@ var _ = Describe("Incluster", func() {
 		require.NoError(f.T(), f.Deployment.EnsureContourDeployment())
 		require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
-	})
+		require.NoError(f.T(), f.WaitForReachable())
 
-	AfterEach(func() {
-		require.NoError(f.T(), f.Deployment.DumpContourLogs())
+		DeferCleanup(func() {
+			require.NoError(f.T(), f.Deployment.DumpContourLogs())
 
-		// Clean out contour after each test.
-		require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
-		require.NoError(f.T(), f.Deployment.EnsureDeleted(contourConfig))
-		require.Eventually(f.T(), func() bool {
-			pods := new(core_v1.PodList)
-			podListOptions := &client.ListOptions{
-				LabelSelector: labels.SelectorFromSet(f.Deployment.ContourDeployment.Spec.Selector.MatchLabels),
-				Namespace:     f.Deployment.ContourDeployment.Namespace,
-			}
-			if err := f.Client.List(context.TODO(), pods, podListOptions); err != nil {
-				return false
-			}
-			return len(pods.Items) == 0
-		}, time.Minute, time.Millisecond*50)
+			// Clean out contour after each test.
+			require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
+			require.NoError(f.T(), f.Deployment.EnsureDeleted(contourConfig))
+			require.Eventually(f.T(), func() bool {
+				pods := new(core_v1.PodList)
+				podListOptions := &client.ListOptions{
+					LabelSelector: labels.SelectorFromSet(f.Deployment.ContourDeployment.Spec.Selector.MatchLabels),
+					Namespace:     f.Deployment.ContourDeployment.Namespace,
+				}
+				if err := f.Client.List(context.TODO(), pods, podListOptions); err != nil {
+					return false
+				}
+				return len(pods.Items) == 0
+			}, time.Minute, time.Millisecond*50)
+		})
 	})
 
 	f.NamespacedTest("smoke-test", testSimpleSmoke)
