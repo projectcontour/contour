@@ -16,6 +16,7 @@ package dag
 import (
 	"bytes"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -95,6 +96,44 @@ func validCRLSecret(secret *core_v1.Secret) error {
 	}
 
 	return nil
+}
+
+// validJWKSecret returns an error if the Secret is not of type TLS or Opaque or
+// if it doesn't contain a valid JWKS in the data entry for the given key.
+func validJWKSSecret(secret *core_v1.Secret, key string) error {
+	if secret.Type != core_v1.SecretTypeOpaque {
+		return fmt.Errorf("secret type is not %q", core_v1.SecretTypeOpaque)
+	}
+
+	data, ok := secret.Data[key]
+	if !ok || len(data) == 0 {
+		return fmt.Errorf("missing %q key or empty value", key)
+	}
+
+	return validJWKSData(data)
+}
+
+// validJWKSData returns an error if data is not a JSON JWKS object (RFC 7517)
+func validJWKSData(data []byte) error {
+	trim := bytes.TrimSpace(data)
+	if len(trim) == 0 {
+		return errors.New("empty JWKS")
+	}
+	var v any
+	if err := json.Unmarshal(trim, &v); err != nil {
+		return fmt.Errorf("not valid JSON: %w", err)
+	}
+	obj, ok := v.(map[string]any)
+	if !ok {
+		return errors.New("JWKS must be a JSON object")
+	}
+	if keys, hasKeys := obj["keys"]; hasKeys {
+		if _, ok := keys.([]any); !ok {
+			return errors.New("JWKS \"keys\" must be an array")
+		}
+		return nil
+	}
+	return errors.New("JWKS must contain a \"keys\" array")
 }
 
 // containsPEMHeader returns true if the given slice contains a string

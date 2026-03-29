@@ -563,6 +563,14 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *core_v1.Secret) bool
 			// not a root ingress
 			continue
 		}
+		for _, jp := range vh.JWTProviders {
+			if jp.LocalJWKS == nil || jp.LocalJWKS.SecretName == "" {
+				continue
+			}
+			if secret == k8s.NamespacedNameFrom(jp.LocalJWKS.SecretName, k8s.DefaultNamespace(proxy.Namespace)) {
+				return true
+			}
+		}
 		tls := vh.TLS
 		if tls == nil {
 			// no tls spec
@@ -734,6 +742,27 @@ func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName, targetName
 		return nil, err
 	}
 	return sec, nil
+}
+
+// LookupJWKSFromSecret returns JWKS JSON from the named Secret data entry.
+func (kc *KubernetesCache) LookupJWKSFromSecret(name types.NamespacedName, key string) ([]byte, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidJWKSSecret == nil {
+		sec.ValidJWKSSecret = &SecretValidationStatus{
+			Error: validJWKSSecret(sec.Object, key),
+		}
+	}
+
+	if err := sec.ValidJWKSSecret.Error; err != nil {
+		return nil, err
+	}
+	return sec.Object.Data[key], nil
 }
 
 // LookupUpstreamValidation constructs PeerValidationContext with CA certificate from the cache.

@@ -3478,7 +3478,7 @@ func TestDAGStatus(t *testing.T) {
 						Name:      "provider-1",
 						Issuer:    "jwt.example.com",
 						Audiences: []string{"foo", "bar"},
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "10s",
 							CacheDuration: "1h",
@@ -3526,13 +3526,13 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
@@ -3583,14 +3583,14 @@ func TestDAGStatus(t *testing.T) {
 					{
 						Name:    "provider-1",
 						Default: true,
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
 					{
 						Name:    "provider-2",
 						Default: true,
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
@@ -3640,7 +3640,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: ":/invalid-uri",
 						},
 					},
@@ -3690,7 +3690,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "ftp://jwt.example.com/jwks.json",
 						},
 					},
@@ -3740,7 +3740,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:     "http://jwt.example.com/jwks.json",
 							Timeout: "invalid-timeout-string",
 						},
@@ -3791,7 +3791,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "http://jwt.example.com/jwks.json",
 							CacheDuration: "invalid-duration-string",
 						},
@@ -3842,7 +3842,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:             "http://jwt.example.com/jwks.json",
 							DNSLookupFamily: "v7",
 						},
@@ -3875,6 +3875,171 @@ func TestDAGStatus(t *testing.T) {
 					contour_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSDNSLookupFamilyInvalid",
 					"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value \"v7\", must be auto, all, v4 or v6",
+				),
+		},
+	})
+
+	jwtVerificationJWKSBothSources := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-jwks-both-sources",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: &contour_v1.RemoteJWKS{
+							URI: "https://jwt.example.com/jwks.json",
+						},
+						LocalJWKS: &contour_v1.LocalJWKS{
+							SecretName: fixture.SecretRootsJWKS.Name,
+							Key:        fixture.SecretRootsJWKSKey,
+						},
+					},
+				},
+			},
+			Routes: []contour_v1.Route{
+				{
+					Conditions: []contour_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification both remoteJWKS and localJWKS set", testcase{
+		objs: []any{
+			jwtVerificationJWKSBothSources,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationJWKSBothSources): fixture.NewValidCondition().
+				WithError(
+					contour_v1.ConditionTypeJWTVerificationError,
+					"JWKSSourceConflict",
+					"Spec.VirtualHost.JWTProviders for provider \"provider-1\" is invalid: at most one of remoteJWKS or localJWKS may be set",
+				),
+		},
+	})
+
+	jwtVerificationJWKSNeitherSource := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-jwks-neither-source",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name: "provider-1",
+					},
+				},
+			},
+			Routes: []contour_v1.Route{
+				{
+					Conditions: []contour_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification neither remoteJWKS nor localJWKS set", testcase{
+		objs: []any{
+			jwtVerificationJWKSNeitherSource,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationJWKSNeitherSource): fixture.NewValidCondition().
+				WithError(
+					contour_v1.ConditionTypeJWTVerificationError,
+					"JWKSSourceMissing",
+					"Spec.VirtualHost.JWTProviders for provider \"provider-1\" is invalid: exactly one of remoteJWKS or localJWKS must be set",
+				),
+		},
+	})
+
+	localJWKSInvalidJSONSecretKey := "key"
+	jwtVerificationLocalJWKSInvalidJSONSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "secret-name",
+		},
+		Type: core_v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			localJWKSInvalidJSONSecretKey: []byte(`{not json`),
+		},
+	}
+
+	jwtVerificationLocalJWKSInvalidJSON := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-local-jwks-invalid-json",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						LocalJWKS: &contour_v1.LocalJWKS{
+							SecretName: jwtVerificationLocalJWKSInvalidJSONSecret.Name,
+							Key:        localJWKSInvalidJSONSecretKey,
+						},
+					},
+				},
+			},
+			Routes: []contour_v1.Route{
+				{
+					Conditions: []contour_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification local JWKS invalid JSON", testcase{
+		objs: []any{
+			jwtVerificationLocalJWKSInvalidJSON,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+			jwtVerificationLocalJWKSInvalidJSONSecret,
+		},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationLocalJWKSInvalidJSON): fixture.NewValidCondition().
+				WithError(
+					contour_v1.ConditionTypeJWTVerificationError,
+					"LocalJWKSInvalid",
+					"Spec.VirtualHost.JWTProviders.LocalJWKS for provider \"provider-1\" is invalid: not valid JSON: invalid character 'n' looking for beginning of object key string",
 				),
 		},
 	})
@@ -3936,7 +4101,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "http://jwt.example.com/jwks.json",
 						},
 					},
@@ -3984,7 +4149,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
@@ -4034,7 +4199,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
@@ -4084,7 +4249,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
@@ -4134,7 +4299,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},
@@ -4188,7 +4353,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "http://jwt.example.com/jwks.json",
 							UpstreamValidation: &contour_v1.UpstreamValidation{
 								CACertificate: "foo",
@@ -4245,7 +4410,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 							UpstreamValidation: &contour_v1.UpstreamValidation{
 								CACertificate: "nonexistent",
@@ -4310,7 +4475,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 							UpstreamValidation: &contour_v1.UpstreamValidation{
 								CACertificate: "cacert",
@@ -4375,7 +4540,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 							UpstreamValidation: &contour_v1.UpstreamValidation{
 								CACertificate: "default/cacert",
