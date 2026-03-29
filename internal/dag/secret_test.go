@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	core_v1 "k8s.io/api/core/v1"
 
 	"github.com/projectcontour/contour/internal/fixture"
@@ -295,4 +296,128 @@ func makeTLSSecret(data map[string][]byte) *core_v1.Secret {
 
 func makeOpaqueSecret(data map[string][]byte) *core_v1.Secret {
 	return &core_v1.Secret{Type: core_v1.SecretTypeOpaque, Data: data}
+}
+
+func TestValidJWKS(t *testing.T) {
+	type test struct {
+		secret       *core_v1.Secret
+		key          string
+		want         error
+		wantContains string // when set, assert Contains instead of Equal on Error()
+	}
+
+	var (
+		errJWKSNotOpaque     = errors.New(`secret type is not "Opaque"`)
+		errJWKSMissingJWKS   = errors.New(`missing "jwks" key or empty value`)
+		errJWKSMissingOther  = errors.New(`missing "other" key or empty value`)
+		errJWKEmpty          = errors.New("empty JWKS")
+		errJWKSMustBeObject  = errors.New("JWKS must be a JSON object")
+		errJWKSNeedKeysArray = errors.New("JWKS must contain a \"keys\" array")
+		errJWKSKeysNotArray  = errors.New("JWKS \"keys\" must be an array")
+	)
+
+	makeTest := func(secret *core_v1.Secret, key string, want error) *test {
+		return &test{secret: secret, key: key, want: want}
+	}
+
+	tests := map[string]*test{
+		"Opaque, valid JWKS empty keys": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte(`{"keys":[]}`)}),
+			"jwks",
+			nil,
+		),
+
+		"Opaque, missing data key": makeTest(
+			makeOpaqueSecret(map[string][]byte{"other": []byte("x")}),
+			"jwks",
+			errJWKSMissingJWKS,
+		),
+
+		"Opaque, empty value at key": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte("")}),
+			"jwks",
+			errJWKSMissingJWKS,
+		),
+
+		"Opaque, whitespace-only value": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte("  \n\t ")}),
+			"jwks",
+			errJWKEmpty,
+		),
+
+		"Opaque, invalid JSON": {
+			secret:       makeOpaqueSecret(map[string][]byte{"jwks": []byte(`{not`)}),
+			key:          "jwks",
+			wantContains: "not valid JSON",
+		},
+
+		"Opaque, JSON not an object": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte(`"string"`)}),
+			"jwks",
+			errJWKSMustBeObject,
+		),
+
+		"Opaque, empty JSON object": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte(`{}`)}),
+			"jwks",
+			errJWKSNeedKeysArray,
+		),
+
+		"Opaque, keys field not array": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte(`{"keys":"x"}`)}),
+			"jwks",
+			errJWKSKeysNotArray,
+		),
+
+		"Opaque, single JWK without keys array": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte(`{"kty":"RSA","n":"abc","e":"AQAB"}`)}),
+			"jwks",
+			errJWKSNeedKeysArray,
+		),
+
+		"Opaque, custom key name": makeTest(
+			makeOpaqueSecret(map[string][]byte{"custom": []byte(`{"keys":[]}`)}),
+			"custom",
+			nil,
+		),
+
+		"Opaque, wrong key for existing JWKS": makeTest(
+			makeOpaqueSecret(map[string][]byte{"jwks": []byte(`{"keys":[]}`)}),
+			"other",
+			errJWKSMissingOther,
+		),
+
+		"TLS Secret type rejected": makeTest(
+			makeTLSSecret(map[string][]byte{
+				core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				"jwks":                   []byte(`{"keys":[]}`),
+			}),
+			"jwks",
+			errJWKSNotOpaque,
+		),
+
+		"kubernetes.io/dockercfg type rejected": {
+			secret: &core_v1.Secret{
+				Type: core_v1.SecretTypeDockercfg,
+				Data: map[string][]byte{
+					"jwks": []byte(`{"keys":[]}`),
+				},
+			},
+			key:  "jwks",
+			want: errJWKSNotOpaque,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := validJWKSSecret(tc.secret, tc.key)
+			if tc.wantContains != "" {
+				require.Error(t, got)
+				assert.Contains(t, got.Error(), tc.wantContains)
+				return
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
 }
