@@ -452,7 +452,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				cm := c.envoyGen.HTTPConnectionManagerBuilder().
 					Compression(cfg.Compression).
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
-					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+					AddFilter(envoy_v3.FilterMisdirectedRequests()).
 					DefaultFilters().
 					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
 					AddFilter(authzFilter).
