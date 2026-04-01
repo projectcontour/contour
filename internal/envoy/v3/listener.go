@@ -420,9 +420,11 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			Name: LuaFilterName,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
-					DefaultSourceCode: &envoy_config_core_v3.DataSource{
-						Specifier: &envoy_config_core_v3.DataSource_InlineString{
-							InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+					SourceCodes: map[string]*envoy_config_core_v3.DataSource{
+						cookieRewriteScriptName: {
+							Specifier: &envoy_config_core_v3.DataSource_InlineString{
+								InlineString: cookieRewriteScript,
+							},
 						},
 					},
 				}),

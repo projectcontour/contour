@@ -878,32 +878,9 @@ func containsMatch(s string, ignoreCase bool) *envoy_config_route_v3.HeaderMatch
 	}
 }
 
-func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
-	// Merge route and cluster policies and convert to generic map so we can
-	// create filter context for the Lua filter.
-	mergedPolicies := map[string]any{}
-	for _, p := range append(routePolicies, clusterPolicies...) {
-		merged := map[string]any{}
-		if _, ok := mergedPolicies[p.Name]; ok {
-			merged = mergedPolicies[p.Name].(map[string]any)
-		}
-		// Merge this policy with an existing one.
-		if p.Path != nil {
-			merged["Path"] = *p.Path
-		}
-		if p.Domain != nil {
-			merged["Domain"] = *p.Domain
-		}
-		if p.Secure != nil {
-			merged["Secure"] = *p.Secure
-		}
-		if p.SameSite != nil {
-			merged["SameSite"] = *p.SameSite
-		}
-		mergedPolicies[p.Name] = merged
-	}
-
-	cookieRewriteScript := `
+const (
+	cookieRewriteScriptName = "cookie_rewrite.lua"
+	cookieRewriteScript     = `
 function envoy_on_response(response_handle)
 	local cookie_rewrite_rules = response_handle:filterContext():get("cookie_rewrite_rules")
 	if cookie_rewrite_rules == nil then
@@ -1012,7 +989,33 @@ function envoy_on_response(response_handle)
 		end
 	end
 end
-	`
+`
+)
+
+func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
+	// Merge route and cluster policies and convert to generic map so we can
+	// create filter context for the Lua filter.
+	mergedPolicies := map[string]any{}
+	for _, p := range append(routePolicies, clusterPolicies...) {
+		merged := map[string]any{}
+		if _, ok := mergedPolicies[p.Name]; ok {
+			merged = mergedPolicies[p.Name].(map[string]any)
+		}
+		// Merge this policy with an existing one.
+		if p.Path != nil {
+			merged["Path"] = *p.Path
+		}
+		if p.Domain != nil {
+			merged["Domain"] = *p.Domain
+		}
+		if p.Secure != nil {
+			merged["Secure"] = *p.Secure
+		}
+		if p.SameSite != nil {
+			merged["SameSite"] = *p.SameSite
+		}
+		mergedPolicies[p.Name] = merged
+	}
 
 	filterContext, err := structpb.NewStruct(map[string]any{
 		"cookie_rewrite_rules": mergedPolicies,
@@ -1023,12 +1026,8 @@ end
 	}
 
 	c := &envoy_filter_http_lua_v3.LuaPerRoute{
-		Override: &envoy_filter_http_lua_v3.LuaPerRoute_SourceCode{
-			SourceCode: &envoy_config_core_v3.DataSource{
-				Specifier: &envoy_config_core_v3.DataSource_InlineString{
-					InlineString: cookieRewriteScript,
-				},
-			},
+		Override: &envoy_filter_http_lua_v3.LuaPerRoute_Name{
+			Name: cookieRewriteScriptName,
 		},
 		FilterContext: filterContext,
 	}
