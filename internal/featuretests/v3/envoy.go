@@ -508,7 +508,7 @@ func httpsFilterFor(vhost string) *envoy_config_listener_v3.Filter {
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
-		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
@@ -533,7 +533,7 @@ func httpsFilterForGateway(listener, vhost string) *envoy_config_listener_v3.Fil
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
-		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
 		DefaultFilters().
 		RouteConfigName(path.Join(listener, vhost)).
 		MetricsPrefix(listener).
@@ -549,7 +549,7 @@ func httpsFilterWithXfccFor(vhost string, d *dag.ClientCertificateDetails) *envo
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
-		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
@@ -569,7 +569,7 @@ func authzFilterFor(
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
-		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
 		DefaultFilters().
 		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 			Name: envoy_v3.ExtAuthzFilterName,
@@ -591,7 +591,7 @@ func jwtAuthnFilterFor(
 		XDSClusterName: envoy_v3.DefaultXDSClusterName,
 	})
 	return envoyGen.HTTPConnectionManagerBuilder().
-		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
 		DefaultFilters().
 		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 			Name: envoy_v3.JWTAuthnFilterName,

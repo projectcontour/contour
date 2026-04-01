@@ -91,7 +91,7 @@ func TestListenerVisit(t *testing.T) {
 	})
 	httpsFilterFor := func(vhost string) *envoy_config_listener_v3.Filter {
 		return envoyGen.HTTPConnectionManagerBuilder().
-			AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
+			AddFilter(envoy_v3.FilterMisdirectedRequests()).
 			DefaultFilters().
 			MetricsPrefix(ENVOY_HTTPS_LISTENER).
 			RouteConfigName(path.Join("https", vhost)).
@@ -585,7 +585,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("whatever.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "whatever.example.com")).
@@ -924,7 +924,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -1015,7 +1015,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -1106,7 +1106,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -1197,7 +1197,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -1288,7 +1288,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -1379,7 +1379,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -1933,7 +1933,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2210,7 +2210,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2276,7 +2276,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2341,7 +2341,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2406,7 +2406,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2572,7 +2572,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2698,7 +2698,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -2899,7 +2899,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -3004,7 +3004,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -3340,7 +3340,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
@@ -3417,7 +3417,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 					TransportSocket: transportSocket(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoyGen.HTTPConnectionManagerBuilder().
-						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						AddFilter(envoy_v3.FilterMisdirectedRequests()).
 						DefaultFilters().
 						AddFilter(envoy_v3.FilterJWTAuthN([]dag.JWTProvider{{
 							Name:   jwtProvider.Name,
