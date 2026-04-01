@@ -880,7 +880,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		FilterChains: []*envoy_config_listener_v3.FilterChain{
 			filterchaintls("kuard.example.com", s1,
 				envoyGen.HTTPConnectionManagerBuilder().
-					AddFilter(envoy_v3.FilterMisdirectedRequests("kuard.example.com")).
+					AddFilter(envoy_v3.FilterMisdirectedRequests()).
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
 					MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
