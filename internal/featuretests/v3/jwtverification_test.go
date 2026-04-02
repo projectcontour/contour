@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -99,7 +100,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -245,7 +246,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -353,7 +354,7 @@ func TestJWTVerification(t *testing.T) {
 						Name:    "provider-1",
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -461,7 +462,7 @@ func TestJWTVerification(t *testing.T) {
 						Name:    "provider-1",
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -470,7 +471,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-2",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -586,7 +587,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com:8443/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -731,7 +732,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 							UpstreamValidation: &contour_v1.UpstreamValidation{
 								CACertificate: "cacert",
@@ -897,7 +898,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:             "https://jwt.example.com:8443/jwks.json",
 							Timeout:         "7s",
 							CacheDuration:   "30s",
@@ -1042,7 +1043,7 @@ func TestJWTVerification(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -1246,7 +1247,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -1402,7 +1403,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 					{
 						Name:   "provider-1",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -1520,7 +1521,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Name:    "provider-1",
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -1638,7 +1639,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 						Name:    "provider-1",
 						Default: true,
 						Issuer:  "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -1647,7 +1648,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 					{
 						Name:   "provider-2",
 						Issuer: "issuer.jwt.example.com",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI:           "https://jwt.example.com/jwks.json",
 							Timeout:       "7s",
 							CacheDuration: "30s",
@@ -1758,6 +1759,100 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 					},
 				),
 			),
+		),
+	})
+}
+
+func TestJWTVerificationLocalJWKS(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+	rh.OnAdd(sec1)
+
+	s1 := fixture.NewService("s1").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+	rh.OnAdd(s1)
+
+	const jwksJSON = `{"keys":[]}`
+
+	jwksSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: core_v1.NamespaceDefault,
+			Name:      "jwks-secret",
+		},
+		Type: core_v1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"jwks.json": []byte(jwksJSON),
+		},
+	}
+	rh.OnAdd(jwksSecret)
+
+	proxy := fixture.NewProxy("local-jwks").WithSpec(
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "jwt-local.example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: "secret",
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name:   "provider-local",
+						Issuer: "issuer.local.example.com",
+						LocalJWKS: &contour_v1.LocalJWKS{
+							SecretName: "jwks-secret",
+							Key:        "jwks.json",
+						},
+					},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+				JWTVerificationPolicy: &contour_v1.JWTVerificationPolicy{Require: "provider-local"},
+			}},
+		})
+
+	rh.OnAdd(proxy)
+
+	c.Request(listenerType, "ingress_https").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("jwt-local.example.com", sec1,
+						jwtAuthnFilterFor("jwt-local.example.com", &envoy_filter_http_jwt_authn_v3.JwtAuthentication{
+							Providers: map[string]*envoy_filter_http_jwt_authn_v3.JwtProvider{
+								"provider-local": {
+									Issuer: "issuer.local.example.com",
+									JwksSourceSpecifier: &envoy_filter_http_jwt_authn_v3.JwtProvider_LocalJwks{
+										LocalJwks: &envoy_config_core_v3.DataSource{
+											Specifier: &envoy_config_core_v3.DataSource_InlineString{
+												InlineString: jwksJSON,
+											},
+										},
+									},
+								},
+							},
+							RequirementMap: map[string]*envoy_filter_http_jwt_authn_v3.JwtRequirement{
+								"provider-local": {
+									RequiresType: &envoy_filter_http_jwt_authn_v3.JwtRequirement_ProviderName{
+										ProviderName: "provider-local",
+									},
+								},
+							},
+						}),
+						nil, "h2", "http/1.1"),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
 		),
 	})
 }
