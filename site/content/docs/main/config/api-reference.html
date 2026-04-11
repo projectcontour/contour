@@ -334,7 +334,8 @@ outer scope.</p>
 <p>
 <p>AuthorizationServer configures an external server to authenticate
 client requests. The external server must implement the v3 Envoy
-external authorization GRPC protocol (<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto">https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto</a>).</p>
+external authorization GRPC protocol (<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto">https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto</a>)
+or the HTTP authorization server protocol.</p>
 </p>
 <table>
 <thead>
@@ -361,17 +362,17 @@ ExtensionServiceReference
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>serviceAPIType</code>
+<code>serviceType</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.AuthorizationServiceAPIType">
-AuthorizationServiceAPIType
+<a href="#projectcontour.io/v1.AuthorizationServiceType">
+AuthorizationServiceType
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ServiceAPIType sets the protocol used to communicate with
+<p>ServiceType sets the protocol used to communicate with
 the external authorization server.</p>
 </td>
 </tr>
@@ -513,14 +514,14 @@ bool
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.AuthorizationServiceAPIType">AuthorizationServiceAPIType
+<h3 id="projectcontour.io/v1.AuthorizationServiceType">AuthorizationServiceType
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
 </p>
 <p>
-<p>AuthorizationServiceAPIType indicates the protocol
+<p>AuthorizationServiceType indicates the protocol
 implemented by the external authorization server.</p>
 </p>
 <table>
@@ -1479,8 +1480,8 @@ Host, Method, Path, Content-Length, and Authorization headers are additionally i
 </td>
 <td>
 <em>(Optional)</em>
-<p>AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
-Coexistent headers will be overridden.</p>
+<p>AllowedUpstreamHeaders specifies response headers from the authorization server
+that may be added to the original client request before sending it to the upstream.</p>
 </td>
 </tr>
 </tbody>

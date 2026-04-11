@@ -830,48 +830,17 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 		context = contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context
 	}
 
-	globalExternalAuthConfig := &xdscache_v3.GlobalExternalAuthConfig{
+	var validCond contour_v1.DetailedCondition
+	extAuth := dag.NewExternalAuthorization(contourConfiguration.GlobalExternalAuthorization, &validCond)
+	if len(validCond.Errors) > 0 {
+		return nil, fmt.Errorf("%s", validCond.Errors[0].Message)
+	}
+
+	return &xdscache_v3.GlobalExternalAuthConfig{
 		ExtensionServiceConfig: extensionSvcConfig,
-		FailOpen:               contourConfiguration.GlobalExternalAuthorization.FailOpen,
+		ExternalAuthorization:  *extAuth,
 		Context:                context,
-	}
-
-	switch contourConfiguration.GlobalExternalAuthorization.ServiceAPIType {
-	case contour_v1.AuthorizationGRPCService:
-		globalExternalAuthConfig.ServiceAPIType = contour_v1.AuthorizationGRPCService
-	case contour_v1.AuthorizationHTTPService:
-		globalExternalAuthConfig.ServiceAPIType = contour_v1.AuthorizationHTTPService
-		if contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings != nil {
-			globalExternalAuthConfig.HTTPPathPrefix = contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.PathPrefix
-
-			// globalExternalAuthConfig.HttpServerURI = contourConfiguration.GlobalExternalAuthorization.HttpServerSettings.ServerURI
-
-			if len(contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedAuthorizationHeaders) > 0 {
-				if err := dag.ExternalAuthAllowedHeadersValid(contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
-					return nil, err
-				}
-
-				globalExternalAuthConfig.HTTPAllowedAuthorizationHeaders = contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedAuthorizationHeaders
-			}
-
-			if len(contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedUpstreamHeaders) > 0 {
-				if err := dag.ExternalAuthAllowedHeadersValid(contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
-					return nil, err
-				}
-
-				globalExternalAuthConfig.HTTPAllowedUpstreamHeaders = contourConfiguration.GlobalExternalAuthorization.HTTPServerSettings.AllowedUpstreamHeaders
-			}
-		}
-	}
-
-	if contourConfiguration.GlobalExternalAuthorization.WithRequestBody != nil {
-		globalExternalAuthConfig.WithRequestBody = &dag.AuthorizationServerBufferSettings{
-			PackAsBytes:         contourConfiguration.GlobalExternalAuthorization.WithRequestBody.PackAsBytes,
-			AllowPartialMessage: contourConfiguration.GlobalExternalAuthorization.WithRequestBody.AllowPartialMessage,
-			MaxRequestBytes:     contourConfiguration.GlobalExternalAuthorization.WithRequestBody.MaxRequestBytes,
-		}
-	}
-	return globalExternalAuthConfig, nil
+	}, nil
 }
 
 func (s *Server) setupDebugService(debugConfig contour_v1alpha1.DebugConfig, builder *dag.Builder) error {

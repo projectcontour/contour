@@ -25,7 +25,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/types"
 
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
@@ -203,14 +202,8 @@ type RateLimitConfig struct {
 
 type GlobalExternalAuthConfig struct {
 	ExtensionServiceConfig
-	FailOpen                        bool
-	Context                         map[string]string
-	ServiceAPIType                  contour_v1.AuthorizationServiceAPIType
-	HTTPAllowedAuthorizationHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders
-	HTTPAllowedUpstreamHeaders      []contour_v1.HTTPAuthorizationServerAllowedHeaders
-	HTTPPathPrefix                  string
-	WithRequestBody                 *dag.AuthorizationServerBufferSettings
-	// HttpServerURI                   string
+	dag.ExternalAuthorization
+	Context map[string]string
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -614,9 +607,9 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 		HTTPAllowedAuthorizationHeaders:    config.HTTPAllowedAuthorizationHeaders,
 		HTTPAllowedUpstreamHeaders:         config.HTTPAllowedUpstreamHeaders,
 		HTTPPathPrefix:                     config.HTTPPathPrefix,
-		AuthorizationFailOpen:              config.FailOpen,
+		AuthorizationFailOpen:              config.AuthorizationFailOpen,
 		AuthorizationResponseTimeout:       config.Timeout,
-		AuthorizationServerWithRequestBody: config.WithRequestBody,
+		AuthorizationServerWithRequestBody: config.AuthorizationServerWithRequestBody,
 	})
 }
 

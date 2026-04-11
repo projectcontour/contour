@@ -77,7 +77,7 @@ func authzResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c *Conto
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType:  contour_v1.AuthorizationGRPCService,
+			ServiceType:     contour_v1.AuthorizationGRPCService,
 			ResponseTimeout: "10m",
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
@@ -136,7 +136,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh ResourceEventHandlerWrapper, c
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType:  contour_v1.AuthorizationGRPCService,
+			ServiceType:     contour_v1.AuthorizationGRPCService,
 			ResponseTimeout: "invalid-timeout",
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
@@ -164,8 +164,8 @@ func authzFailOpen(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationGRPCService,
-			FailOpen:       true,
+			ServiceType: contour_v1.AuthorizationGRPCService,
+			FailOpen:    true,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -217,7 +217,7 @@ func authzFallbackIncompat(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationGRPCService,
+			ServiceType: contour_v1.AuthorizationGRPCService,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -249,7 +249,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 		WithCertificate("certificate").
 		WithAuthServer(contour_v1.AuthorizationServer{
 			ExtensionServiceRef: extensionRef,
-			ServiceAPIType:      contour_v1.AuthorizationGRPCService,
+			ServiceType:         contour_v1.AuthorizationGRPCService,
 			AuthPolicy:          &contour_v1.AuthorizationPolicy{Disabled: false},
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
@@ -360,7 +360,7 @@ func authzMergeRouteContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationGRPCService,
+			ServiceType: contour_v1.AuthorizationGRPCService,
 			AuthPolicy: &contour_v1.AuthorizationPolicy{
 				Context: map[string]string{
 					"root-element":   "root",
@@ -441,7 +441,7 @@ func authzInvalidReference(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
 		WithAuthServer(contour_v1.AuthorizationServer{
-			ServiceAPIType: contour_v1.AuthorizationGRPCService,
+			ServiceType: contour_v1.AuthorizationGRPCService,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -532,8 +532,8 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh ResourceEventHandlerWra
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationGRPCService,
-			FailOpen:       true,
+			ServiceType: contour_v1.AuthorizationGRPCService,
+			FailOpen:    true,
 			WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{
 				MaxRequestBytes:     100,
 				AllowPartialMessage: true,
@@ -597,7 +597,7 @@ func AuthzTypeGRPC(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationGRPCService,
+			ServiceType: contour_v1.AuthorizationGRPCService,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -656,7 +656,7 @@ func authzTypeHTTP(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationHTTPService,
+			ServiceType: contour_v1.AuthorizationHTTPService,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -704,7 +704,7 @@ func authzTypeHTTP(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	}).Status(p).IsValid()
 }
 
-func AuthzTypeHTTPWithPathPrefix(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+func authzTypeHTTPWithPathPrefix(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "typehttp.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -715,7 +715,7 @@ func AuthzTypeHTTPWithPathPrefix(t *testing.T, rh ResourceEventHandlerWrapper, c
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationHTTPService,
+			ServiceType: contour_v1.AuthorizationHTTPService,
 			HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
 				PathPrefix: "/auth?",
 			},
@@ -769,7 +769,7 @@ func AuthzTypeHTTPWithPathPrefix(t *testing.T, rh ResourceEventHandlerWrapper, c
 	}).Status(p).IsValid()
 }
 
-func AuthzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+func authzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "typehttp.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -780,7 +780,7 @@ func AuthzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEvent
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationHTTPService,
+			ServiceType: contour_v1.AuthorizationHTTPService,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -869,7 +869,7 @@ func AuthzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEvent
 	}).Status(p).IsValid()
 }
 
-func AuthzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+func authzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "typehttp.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -880,7 +880,7 @@ func AuthzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandl
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationHTTPService,
+			ServiceType: contour_v1.AuthorizationHTTPService,
 		}).
 		WithSpec(contour_v1.HTTPProxySpec{
 			Routes: []contour_v1.Route{{
@@ -973,7 +973,7 @@ func AuthzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandl
 	}).Status(p).IsValid()
 }
 
-func AuthzTypeHTTPWithContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+func authzTypeHTTPWithContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "typehttp.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
@@ -984,7 +984,7 @@ func AuthzTypeHTTPWithContext(t *testing.T, rh ResourceEventHandlerWrapper, c *C
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			ServiceAPIType: contour_v1.AuthorizationHTTPService,
+			ServiceType: contour_v1.AuthorizationHTTPService,
 			AuthPolicy: &contour_v1.AuthorizationPolicy{
 				Context: map[string]string{
 					"k1": "v1",
@@ -1010,6 +1010,68 @@ func AuthzTypeHTTPWithContext(t *testing.T, rh ResourceEventHandlerWrapper, c *C
 	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthContextForHTTP", `Spec.Virtualhost.Authorization.AuthPolicy.Context are only applied to grpc service type`)
 }
 
+// authzTypeUnset tests backwards compatibility: an HTTPProxy with no
+// serviceAPIType set (field absent in older stored objects, Go zero-value "")
+// must be treated as gRPC.
+func authzTypeUnset(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	const fqdn = "typegrpc.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(contour_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			// ServiceAPIType intentionally absent to simulate upgrade from older version where this field didn't exist.
+		}).
+		WithSpec(contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: "app-server",
+					Port: 80,
+				}},
+			}},
+		})
+
+	rh.OnDelete(p)
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls(fqdn,
+						featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							fqdn,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               grpcCluster("extension/auth/extension"),
+								ClearRouteCache:        true,
+								FailureModeAllow:       false,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+}
+
 func TestAuthorization(t *testing.T) {
 	subtests := map[string]func(*testing.T, ResourceEventHandlerWrapper, *Contour){
 		"MissingExtension":                             authzInvalidReference,
@@ -1022,9 +1084,11 @@ func TestAuthorization(t *testing.T) {
 		"AuthzWithRequestBodyBufferSettings":           authzWithRequestBodyBufferSettings,
 		"AuthzTypeGRPC":                                AuthzTypeGRPC,
 		"AuthzTypeHTTP":                                authzTypeHTTP,
-		"AuthzTypeHTTPWithPathPrefix":                  AuthzTypeHTTPWithPathPrefix,
-		"AuthzTypeHTTPWithAllowedAuthorizationHeaders": AuthzTypeHTTPWithAllowedAuthorizationHeaders,
-		"AuthzTypeHTTPWithAllowedUpstreamHeaders":      AuthzTypeHTTPWithAllowedUpstreamHeaders,
+		"AuthzTypeHTTPWithPathPrefix":                  authzTypeHTTPWithPathPrefix,
+		"AuthzTypeHTTPWithAllowedAuthorizationHeaders": authzTypeHTTPWithAllowedAuthorizationHeaders,
+		"AuthzTypeHTTPWithAllowedUpstreamHeaders":      authzTypeHTTPWithAllowedUpstreamHeaders,
+		"AuthzTypeHTTPWithContext":                     authzTypeHTTPWithContext,
+		"AuthzTypeUnset":                               authzTypeUnset,
 	}
 
 	for n, f := range subtests {

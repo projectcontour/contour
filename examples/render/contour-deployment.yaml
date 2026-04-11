@@ -981,11 +981,17 @@ spec:
                                 name.
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                          - message: only one of prefix, suffix, exact, and contains
+                              should be set in the allowedHeader
+                            rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix) ?
+                              1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains)
+                              ? 1 : 0) == 1'
                         type: array
                       allowedUpstreamHeaders:
                         description: |-
-                          AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
-                          Coexistent headers will be overridden.
+                          AllowedUpstreamHeaders specifies response headers from the authorization server
+                          that may be added to the original client request before sending it to the upstream.
                         items:
                           description: |-
                             HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
@@ -1013,6 +1019,12 @@ spec:
                                 name.
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                          - message: only one of prefix, suffix, exact, and contains
+                              should be set in the allowedHeader
+                            rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix) ?
+                              1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains)
+                              ? 1 : 0) == 1'
                         type: array
                       pathPrefix:
                         description: PathPrefix Sets a prefix to the value of authorization
@@ -1027,10 +1039,10 @@ spec:
                       The string "infinity" is also a valid input and specifies no timeout.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                     type: string
-                  serviceAPIType:
+                  serviceType:
                     default: grpc
                     description: |-
-                      ServiceAPIType sets the protocol used to communicate with
+                      ServiceType sets the protocol used to communicate with
                       the external authorization server.
                     enum:
                     - http
@@ -1057,6 +1069,9 @@ spec:
                         type: boolean
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: httpSettings can only be set when serviceType is 'http'
+                  rule: '!has(self.httpSettings) || self.serviceType == ''http'''
               health:
                 description: |-
                   Health defines the endpoints Contour uses to serve health checks.
@@ -5011,11 +5026,17 @@ spec:
                                     header name.
                                   type: string
                               type: object
+                              x-kubernetes-validations:
+                              - message: only one of prefix, suffix, exact, and contains
+                                  should be set in the allowedHeader
+                                rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix)
+                                  ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains)
+                                  ? 1 : 0) == 1'
                             type: array
                           allowedUpstreamHeaders:
                             description: |-
-                              AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
-                              Coexistent headers will be overridden.
+                              AllowedUpstreamHeaders specifies response headers from the authorization server
+                              that may be added to the original client request before sending it to the upstream.
                             items:
                               description: |-
                                 HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
@@ -5043,6 +5064,12 @@ spec:
                                     header name.
                                   type: string
                               type: object
+                              x-kubernetes-validations:
+                              - message: only one of prefix, suffix, exact, and contains
+                                  should be set in the allowedHeader
+                                rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix)
+                                  ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains)
+                                  ? 1 : 0) == 1'
                             type: array
                           pathPrefix:
                             description: PathPrefix Sets a prefix to the value of
@@ -5057,10 +5084,10 @@ spec:
                           The string "infinity" is also a valid input and specifies no timeout.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                         type: string
-                      serviceAPIType:
+                      serviceType:
                         default: grpc
                         description: |-
-                          ServiceAPIType sets the protocol used to communicate with
+                          ServiceType sets the protocol used to communicate with
                           the external authorization server.
                         enum:
                         - http
@@ -5087,6 +5114,9 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: httpSettings can only be set when serviceType is 'http'
+                      rule: '!has(self.httpSettings) || self.serviceType == ''http'''
                   health:
                     description: |-
                       Health defines the endpoints Contour uses to serve health checks.
@@ -8069,11 +8099,17 @@ spec:
                                     header name.
                                   type: string
                               type: object
+                              x-kubernetes-validations:
+                              - message: only one of prefix, suffix, exact, and contains
+                                  should be set in the allowedHeader
+                                rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix)
+                                  ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains)
+                                  ? 1 : 0) == 1'
                             type: array
                           allowedUpstreamHeaders:
                             description: |-
-                              AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
-                              Coexistent headers will be overridden.
+                              AllowedUpstreamHeaders specifies response headers from the authorization server
+                              that may be added to the original client request before sending it to the upstream.
                             items:
                               description: |-
                                 HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
@@ -8101,6 +8137,12 @@ spec:
                                     header name.
                                   type: string
                               type: object
+                              x-kubernetes-validations:
+                              - message: only one of prefix, suffix, exact, and contains
+                                  should be set in the allowedHeader
+                                rule: '(has(self.exact) ? 1 : 0) + (has(self.prefix)
+                                  ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains)
+                                  ? 1 : 0) == 1'
                             type: array
                           pathPrefix:
                             description: PathPrefix Sets a prefix to the value of
@@ -8115,10 +8157,10 @@ spec:
                           The string "infinity" is also a valid input and specifies no timeout.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                         type: string
-                      serviceAPIType:
+                      serviceType:
                         default: grpc
                         description: |-
-                          ServiceAPIType sets the protocol used to communicate with
+                          ServiceType sets the protocol used to communicate with
                           the external authorization server.
                         enum:
                         - http
@@ -8145,6 +8187,9 @@ spec:
                             type: boolean
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: httpSettings can only be set when serviceType is 'http'
+                      rule: '!has(self.httpSettings) || self.serviceType == ''http'''
                   corsPolicy:
                     description: Specifies the cross-origin policy to apply to the
                       VirtualHost.

@@ -48,7 +48,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -839,37 +838,37 @@ end
 	}
 }
 
-// ExternalAuthzAllowedHeaders returns the slice of StringMatcher for a given slice of HTTPAuthorizationServerAllowedHeaders.
-func ExternalAuthzAllowedHeaders(allowedHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders) []*envoy_matcher_v3.StringMatcher {
+// ExternalAuthzAllowedHeaders returns the slice of StringMatcher for a given slice of HeaderNameMatchCondition.
+func ExternalAuthzAllowedHeaders(allowedHeaders []dag.HeaderNameMatchCondition) []*envoy_matcher_v3.StringMatcher {
 	var allowedHeaderPatterns []*envoy_matcher_v3.StringMatcher
 
 	for _, allowedHeader := range allowedHeaders {
-		switch {
-		case allowedHeader.Exact != "":
+		switch allowedHeader.MatchType {
+		case dag.HeaderNameMatchTypeExact:
 			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
 				MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
-					Exact: allowedHeader.Exact,
+					Exact: allowedHeader.Value,
 				},
 				IgnoreCase: allowedHeader.IgnoreCase,
 			})
-		case allowedHeader.Prefix != "":
+		case dag.HeaderNameMatchTypePrefix:
 			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
 				MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{
-					Prefix: allowedHeader.Prefix,
+					Prefix: allowedHeader.Value,
 				},
 				IgnoreCase: allowedHeader.IgnoreCase,
 			})
-		case allowedHeader.Suffix != "":
+		case dag.HeaderNameMatchTypeSuffix:
 			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
 				MatchPattern: &envoy_matcher_v3.StringMatcher_Suffix{
-					Suffix: allowedHeader.Suffix,
+					Suffix: allowedHeader.Value,
 				},
 				IgnoreCase: allowedHeader.IgnoreCase,
 			})
-		case allowedHeader.Contains != "":
+		case dag.HeaderNameMatchTypeContains:
 			allowedHeaderPatterns = append(allowedHeaderPatterns, &envoy_matcher_v3.StringMatcher{
 				MatchPattern: &envoy_matcher_v3.StringMatcher_Contains{
-					Contains: allowedHeader.Contains,
+					Contains: allowedHeader.Value,
 				},
 				IgnoreCase: allowedHeader.IgnoreCase,
 			})
@@ -883,9 +882,6 @@ func ExternalAuthzAllowedHeaders(allowedHeaders []contour_v1.HTTPAuthorizationSe
 // requested parameters.
 func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	authConfig := envoy_filter_http_ext_authz_v3.ExtAuthz{
-		Services: &envoy_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
-			GrpcService: grpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
-		},
 		// Pretty sure we always want this. Why have an
 		// external auth service if it is not going to affect
 		// routing decisions?
@@ -901,22 +897,23 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envo
 	}
 
 	switch externalAuthorization.ServiceAPIType {
-	case contour_v1.AuthorizationGRPCService:
+	case dag.AuthorizationServiceGRPC:
 		authConfig.Services = &envoy_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
 			GrpcService: grpcService(externalAuthorization.AuthorizationService.Name, externalAuthorization.AuthorizationService.SNI, externalAuthorization.AuthorizationResponseTimeout),
 		}
 		authConfig.MetadataContextNamespaces = []string{}
 
-	case contour_v1.AuthorizationHTTPService:
+	case dag.AuthorizationServiceHTTP:
 		extAuthzService := &envoy_filter_http_ext_authz_v3.ExtAuthz_HttpService{
 			HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
 				ServerUri: &envoy_config_core_v3.HttpUri{
-					// Uri: externalAuthorization.HttpServerURI,
+					// Uri is required by the Envoy API but routing is determined by the Cluster field,
+					// so we use a dummy value here.
 					Uri: "http://dummy/",
 					HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
 						Cluster: externalAuthorization.AuthorizationService.Name,
 					},
-					Timeout: envoy.Timeout(externalAuthorization.AuthorizationResponseTimeout),
+					Timeout: httpURITimeout(externalAuthorization.AuthorizationResponseTimeout),
 				},
 			},
 		}
@@ -1056,6 +1053,15 @@ func FilterChainTLSFallback(downstream *envoy_transport_socket_tls_v3.Downstream
 		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
 	}
 	return fc
+}
+
+// httpURITimeout returns a duration for the HttpUri.Timeout field.
+// It returns 0 (infinite) if the timeout is not set.
+func httpURITimeout(d timeout.Setting) *durationpb.Duration {
+	if t := envoy.Timeout(d); t != nil {
+		return t
+	}
+	return durationpb.New(0)
 }
 
 // grpcService returns a envoy_config_core_v3.GrpcService for the given parameters.

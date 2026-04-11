@@ -239,31 +239,33 @@ type ExtensionServiceReference struct {
 	Name string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }
 
-// AuthorizationServiceAPIType indicates the protocol
+// AuthorizationServiceType indicates the protocol
 // implemented by the external authorization server.
-type AuthorizationServiceAPIType string
+type AuthorizationServiceType string
 
 const (
-	AuthorizationGRPCService AuthorizationServiceAPIType = "grpc"
-	AuthorizationHTTPService AuthorizationServiceAPIType = "http"
+	AuthorizationGRPCService AuthorizationServiceType = "grpc"
+	AuthorizationHTTPService AuthorizationServiceType = "http"
 )
 
 // AuthorizationServer configures an external server to authenticate
 // client requests. The external server must implement the v3 Envoy
-// external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto).
+// external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto)
+// or the HTTP authorization server protocol.
+// +kubebuilder:validation:XValidation:message="httpSettings can only be set when serviceType is 'http'",rule="!has(self.httpSettings) || self.serviceType == 'http'"
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
 	// +optional
 	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
 
-	// ServiceAPIType sets the protocol used to communicate with
+	// ServiceType sets the protocol used to communicate with
 	// the external authorization server.
 	//
 	// +optional
 	// +kubebuilder:validation:Enum=http;grpc
 	// +kubebuilder:default=grpc
-	ServiceAPIType AuthorizationServiceAPIType `json:"serviceAPIType,omitempty"`
+	ServiceType AuthorizationServiceType `json:"serviceType,omitempty"`
 
 	// HTTPAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.
 	//
@@ -311,8 +313,8 @@ type HTTPAuthorizationServerSettings struct {
 	// +optional
 	AllowedAuthorizationHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedAuthorizationHeaders,omitempty"`
 
-	// AllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
-	// Coexistent headers will be overridden.
+	// AllowedUpstreamHeaders specifies response headers from the authorization server
+	// that may be added to the original client request before sending it to the upstream.
 	//
 	// +optional
 	AllowedUpstreamHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedUpstreamHeaders,omitempty"`
@@ -321,6 +323,7 @@ type HTTPAuthorizationServerSettings struct {
 // HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
 // in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
 // experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+// +kubebuilder:validation:XValidation:message="only one of prefix, suffix, exact, and contains should be set in the allowedHeader",rule="(has(self.exact) ? 1 : 0) + (has(self.prefix) ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains) ? 1 : 0) == 1"
 type HTTPAuthorizationServerAllowedHeaders struct {
 	// Exact specifies a string that the header name must be equal to.
 	//

@@ -1392,63 +1392,18 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 		return nil
 	}
 
-	ok, respTimeout := determineExternalAuthTimeout(auth.ResponseTimeout, validCond, ext)
-	if !ok {
+	extAuth := NewExternalAuthorization(auth, validCond)
+	if extAuth == nil {
 		return nil
 	}
 
-	globalExternalAuthorization := &ExternalAuthorization{
-		AuthorizationService:         ext,
-		AuthorizationFailOpen:        auth.FailOpen,
-		AuthorizationResponseTimeout: *respTimeout,
+	// If no explicit timeout was configured, fall back to the extension service's own timeout.
+	if extAuth.AuthorizationResponseTimeout.UseDefault() {
+		extAuth.AuthorizationResponseTimeout = ext.RouteTimeoutPolicy.ResponseTimeout
 	}
 
-	switch auth.ServiceAPIType {
-	case contour_v1.AuthorizationGRPCService:
-		globalExternalAuthorization.ServiceAPIType = contour_v1.AuthorizationGRPCService
-	case contour_v1.AuthorizationHTTPService:
-		globalExternalAuthorization.ServiceAPIType = contour_v1.AuthorizationHTTPService
-		if auth.HTTPServerSettings != nil {
-			globalExternalAuthorization.HTTPPathPrefix = auth.HTTPServerSettings.PathPrefix
-
-			// globalExternalAuthorization.HttpServerURI = auth.HttpServerSettings.ServerURI
-
-			if len(auth.HTTPServerSettings.AllowedAuthorizationHeaders) > 0 {
-				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
-					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
-						"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: %s", err)
-
-					return nil
-				}
-
-				globalExternalAuthorization.HTTPAllowedAuthorizationHeaders = auth.HTTPServerSettings.AllowedAuthorizationHeaders
-			}
-
-			if len(auth.HTTPServerSettings.AllowedUpstreamHeaders) > 0 {
-				if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
-					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
-						"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedUpstreamHeaders is invalid: %s", err)
-
-					return nil
-				}
-
-				globalExternalAuthorization.HTTPAllowedUpstreamHeaders = auth.HTTPServerSettings.AllowedUpstreamHeaders
-			}
-		}
-	}
-
-	if auth.WithRequestBody != nil {
-		maxRequestBytes := defaultMaxRequestBytes
-		if auth.WithRequestBody.MaxRequestBytes != 0 {
-			maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
-		}
-		globalExternalAuthorization.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
-			MaxRequestBytes:     maxRequestBytes,
-			AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
-			PackAsBytes:         auth.WithRequestBody.PackAsBytes,
-		}
-	}
-	return globalExternalAuthorization
+	extAuth.AuthorizationService = ext
+	return extAuth
 }
 
 func validateExternalAuthExtensionService(ref contour_v1.ExtensionServiceReference, validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, getExtensionCluster func(name string) *ExtensionCluster) (bool, *ExtensionCluster) {

@@ -457,7 +457,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Name:      nsedName.Name,
 				Namespace: nsedName.Namespace,
 			},
-			ServiceAPIType:  ctx.Config.GlobalExternalAuthorization.ServiceAPIType,
+			ServiceType:     ctx.Config.GlobalExternalAuthorization.ServiceType,
 			ResponseTimeout: ctx.Config.GlobalExternalAuthorization.ResponseTimeout,
 			FailOpen:        ctx.Config.GlobalExternalAuthorization.FailOpen,
 		}
