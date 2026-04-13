@@ -2375,7 +2375,23 @@ RemoteJWKS
 </em>
 </td>
 <td>
-<p>Remote JWKS to use for verifying JWT signatures.</p>
+<em>(Optional)</em>
+<p>Remote JWKS fetches signing keys from an HTTP(S) endpoint.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>localJWKS</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LocalJWKS">
+LocalJWKS
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Local JWKS loads signing keys from a Kubernetes Secret</p>
 </td>
 </tr>
 <tr>
@@ -2498,6 +2514,49 @@ is used.</p>
 supplied list of hash policies is invalid, it will be ignored. If the
 list of hash policies is empty after validation, the load balancing
 strategy will fall back to the default <code>RoundRobin</code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.LocalJWKS">LocalJWKS
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.JWTProvider">JWTProvider</a>)
+</p>
+<p>
+<p>LocalJWKS defines how to fetch a JWKS from a Kubernetes secret.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>secretName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The name of the secret that contains the JWKS.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>key</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The key of the secret that contains the JWKS.</p>
 </td>
 </tr>
 </tbody>

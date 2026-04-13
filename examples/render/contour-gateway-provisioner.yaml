@@ -7893,12 +7893,31 @@ spec:
                             Issuer that JWTs are required to have in the "iss" field.
                             If not provided, JWT issuers are not checked.
                           type: string
+                        localJWKS:
+                          description: Local JWKS loads signing keys from a Kubernetes
+                            Secret
+                          properties:
+                            key:
+                              description: The key of the secret that contains the
+                                JWKS.
+                              minLength: 1
+                              type: string
+                            secretName:
+                              description: The name of the secret that contains the
+                                JWKS.
+                              minLength: 1
+                              type: string
+                          required:
+                          - key
+                          - secretName
+                          type: object
                         name:
                           description: Unique name for the provider.
                           minLength: 1
                           type: string
                         remoteJWKS:
-                          description: Remote JWKS to use for verifying JWT signatures.
+                          description: Remote JWKS fetches signing keys from an HTTP(S)
+                            endpoint.
                           properties:
                             cacheDuration:
                               description: |-
@@ -7979,7 +7998,6 @@ spec:
                           type: object
                       required:
                       - name
-                      - remoteJWKS
                       type: object
                     type: array
                   rateLimitPolicy:

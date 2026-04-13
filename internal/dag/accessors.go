@@ -264,7 +264,9 @@ func (d *DAG) GetDNSNameClusters() []*DNSNameCluster {
 	for _, listener := range d.Listeners {
 		for _, svhost := range listener.SecureVirtualHosts {
 			for _, provider := range svhost.JWTProviders {
-				res = append(res, &provider.RemoteJWKS.Cluster)
+				if provider.RemoteJWKS != nil {
+					res = append(res, &provider.RemoteJWKS.Cluster)
+				}
 			}
 		}
 	}

@@ -391,120 +391,154 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 					defaultJWTProvider = jwtProvider.Name
 				}
 
-				jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.URI)
-				if err != nil {
-					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI is invalid: %s", err)
+				if jwtProvider.RemoteJWKS != nil && jwtProvider.LocalJWKS != nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "JWKSSourceConflict",
+						"Spec.VirtualHost.JWTProviders for provider %q is invalid: at most one of remoteJWKS or localJWKS may be set", jwtProvider.Name)
+					return
+				}
+				if jwtProvider.RemoteJWKS == nil && jwtProvider.LocalJWKS == nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "JWKSSourceMissing",
+						"Spec.VirtualHost.JWTProviders for provider %q is invalid: exactly one of remoteJWKS or localJWKS must be set", jwtProvider.Name)
 					return
 				}
 
-				if jwksURL.Scheme != "http" && jwksURL.Scheme != "https" {
-					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSSchemeInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has invalid scheme %q, must be http or https", jwksURL.Scheme)
-					return
-				}
-
-				var uv *PeerValidationContext
-
-				if jwtProvider.RemoteJWKS.UpstreamValidation != nil {
-					if jwksURL.Scheme == "http" {
-						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation must not be specified when URI scheme is http.")
-						return
-					}
-
-					caCertNamespacedName := k8s.NamespacedNameFrom(jwtProvider.RemoteJWKS.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-					uv, err = p.source.LookupUpstreamValidation(jwtProvider.RemoteJWKS.UpstreamValidation, caCertNamespacedName, proxy.Namespace)
-					if err != nil {
-						if _, ok := err.(DelegationNotPermittedError); ok {
-							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCACertificateNotDelegated",
-								"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
-						} else {
-							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
-								"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: %s", err)
-						}
-						return
-					}
-				}
-
-				jwksTimeout := time.Second
-				if len(jwtProvider.RemoteJWKS.Timeout) > 0 {
-					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.Timeout)
-					if err != nil {
-						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSTimeoutInvalid",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.Timeout is invalid: %s", err)
-						return
-					}
-
-					jwksTimeout = res
-				}
-
-				var cacheDuration *time.Duration
-				if len(jwtProvider.RemoteJWKS.CacheDuration) > 0 {
-					res, err := time.ParseDuration(jwtProvider.RemoteJWKS.CacheDuration)
-					if err != nil {
-						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCacheDurationInvalid",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.CacheDuration is invalid: %s", err)
-						return
-					}
-
-					cacheDuration = &res
-				}
-
-				// Check for a specified port and use it, else use the
-				// standard ports by scheme.
-				var port int
 				switch {
-				case len(jwksURL.Port()) > 0:
-					p, err := strconv.Atoi(jwksURL.Port())
+				case jwtProvider.LocalJWKS != nil:
+					jwksSecretNamespacedName := types.NamespacedName{
+						Name:      jwtProvider.LocalJWKS.SecretName,
+						Namespace: proxy.Namespace,
+					}
+					jwksData, err := p.source.LookupJWKSFromSecret(jwksSecretNamespacedName, jwtProvider.LocalJWKS.Key)
 					if err != nil {
-						// This theoretically shouldn't be possible as jwksURL.Port() will
-						// only return a value if it's numeric, but we need to convert to
-						// int anyway so handle the error.
-						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSPortInvalid",
-							"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has an invalid port: %s", err)
+						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "LocalJWKSInvalid",
+							"Spec.VirtualHost.JWTProviders.LocalJWKS for provider %q is invalid: %s", jwtProvider.Name, err)
 						return
 					}
-					port = p
-				case jwksURL.Scheme == "http":
-					port = 80
-				case jwksURL.Scheme == "https":
-					port = 443
-				}
-
-				// Get the DNS lookup family if specified, otherwise
-				// default to the Contour-wide setting.
-				dnsLookupFamily := ""
-				switch jwtProvider.RemoteJWKS.DNSLookupFamily {
-				case "auto", "v4", "v6", "all":
-					dnsLookupFamily = jwtProvider.RemoteJWKS.DNSLookupFamily
-				case "":
-					dnsLookupFamily = string(p.DNSLookupFamily)
-				default:
-					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSDNSLookupFamilyInvalid",
-						"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, all, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
-					return
-				}
-
-				svhost.JWTProviders = append(svhost.JWTProviders, JWTProvider{
-					Name:      jwtProvider.Name,
-					Issuer:    jwtProvider.Issuer,
-					Audiences: jwtProvider.Audiences,
-					RemoteJWKS: RemoteJWKS{
-						URI:     jwtProvider.RemoteJWKS.URI,
-						Timeout: jwksTimeout,
-						Cluster: DNSNameCluster{
-							Address:            jwksURL.Hostname(),
-							Scheme:             jwksURL.Scheme,
-							Port:               port,
-							DNSLookupFamily:    dnsLookupFamily,
-							UpstreamValidation: uv,
-							UpstreamTLS:        p.UpstreamTLS,
+					svhost.JWTProviders = append(svhost.JWTProviders, JWTProvider{
+						Name:      jwtProvider.Name,
+						Issuer:    jwtProvider.Issuer,
+						Audiences: jwtProvider.Audiences,
+						LocalJWKS: &LocalJWKS{
+							JWKS: jwksData,
 						},
-						CacheDuration: cacheDuration,
-					},
-					ForwardJWT: jwtProvider.ForwardJWT,
-				})
+						ForwardJWT: jwtProvider.ForwardJWT,
+					})
+				case jwtProvider.RemoteJWKS != nil:
+					jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.URI)
+					if err != nil {
+						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI is invalid: %s", err)
+						return
+					}
+
+					if jwksURL.Scheme != "http" && jwksURL.Scheme != "https" {
+						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSSchemeInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has invalid scheme %q, must be http or https", jwksURL.Scheme)
+						return
+					}
+
+					var uv *PeerValidationContext
+
+					if jwtProvider.RemoteJWKS.UpstreamValidation != nil {
+						if jwksURL.Scheme == "http" {
+							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
+								"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation must not be specified when URI scheme is http.")
+							return
+						}
+
+						caCertNamespacedName := k8s.NamespacedNameFrom(jwtProvider.RemoteJWKS.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
+						uv, err = p.source.LookupUpstreamValidation(jwtProvider.RemoteJWKS.UpstreamValidation, caCertNamespacedName, proxy.Namespace)
+						if err != nil {
+							if _, ok := err.(DelegationNotPermittedError); ok {
+								validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCACertificateNotDelegated",
+									"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+							} else {
+								validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSUpstreamValidationInvalid",
+									"Spec.VirtualHost.JWTProviders.RemoteJWKS.UpstreamValidation is invalid: %s", err)
+							}
+							return
+						}
+					}
+
+					jwksTimeout := time.Second
+					if len(jwtProvider.RemoteJWKS.Timeout) > 0 {
+						res, err := time.ParseDuration(jwtProvider.RemoteJWKS.Timeout)
+						if err != nil {
+							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSTimeoutInvalid",
+								"Spec.VirtualHost.JWTProviders.RemoteJWKS.Timeout is invalid: %s", err)
+							return
+						}
+
+						jwksTimeout = res
+					}
+
+					var cacheDuration *time.Duration
+					if len(jwtProvider.RemoteJWKS.CacheDuration) > 0 {
+						res, err := time.ParseDuration(jwtProvider.RemoteJWKS.CacheDuration)
+						if err != nil {
+							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSCacheDurationInvalid",
+								"Spec.VirtualHost.JWTProviders.RemoteJWKS.CacheDuration is invalid: %s", err)
+							return
+						}
+
+						cacheDuration = &res
+					}
+
+					// Check for a specified port and use it, else use the
+					// standard ports by scheme.
+					var port int
+					switch {
+					case len(jwksURL.Port()) > 0:
+						p, err := strconv.Atoi(jwksURL.Port())
+						if err != nil {
+							// This theoretically shouldn't be possible as jwksURL.Port() will
+							// only return a value if it's numeric, but we need to convert to
+							// int anyway so handle the error.
+							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSPortInvalid",
+								"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has an invalid port: %s", err)
+							return
+						}
+						port = p
+					case jwksURL.Scheme == "http":
+						port = 80
+					case jwksURL.Scheme == "https":
+						port = 443
+					}
+
+					// Get the DNS lookup family if specified, otherwise
+					// default to the Contour-wide setting.
+					dnsLookupFamily := ""
+					switch jwtProvider.RemoteJWKS.DNSLookupFamily {
+					case "auto", "v4", "v6", "all":
+						dnsLookupFamily = jwtProvider.RemoteJWKS.DNSLookupFamily
+					case "":
+						dnsLookupFamily = string(p.DNSLookupFamily)
+					default:
+						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSDNSLookupFamilyInvalid",
+							"Spec.VirtualHost.JWTProviders.RemoteJWKS.DNSLookupFamily has an invalid value %q, must be auto, all, v4 or v6", jwtProvider.RemoteJWKS.DNSLookupFamily)
+						return
+					}
+
+					svhost.JWTProviders = append(svhost.JWTProviders, JWTProvider{
+						Name:      jwtProvider.Name,
+						Issuer:    jwtProvider.Issuer,
+						Audiences: jwtProvider.Audiences,
+						RemoteJWKS: &RemoteJWKS{
+							URI:     jwtProvider.RemoteJWKS.URI,
+							Timeout: jwksTimeout,
+							Cluster: DNSNameCluster{
+								Address:            jwksURL.Hostname(),
+								Scheme:             jwksURL.Scheme,
+								Port:               port,
+								DNSLookupFamily:    dnsLookupFamily,
+								UpstreamValidation: uv,
+								UpstreamTLS:        p.UpstreamTLS,
+							},
+							CacheDuration: cacheDuration,
+						},
+						ForwardJWT: jwtProvider.ForwardJWT,
+					})
+				}
 			}
 		}
 	}
