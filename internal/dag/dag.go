@@ -162,6 +162,35 @@ func (hc *HeaderMatchCondition) String() string {
 	return "header: " + details
 }
 
+// AuthorizationServiceType defines whether the external authorization server
+// uses HTTP or gRPC protocol.
+type AuthorizationServiceType int
+
+const (
+	// AuthorizationServiceGRPC indicates the server implements the gRPC ext_authz protocol.
+	AuthorizationServiceGRPC AuthorizationServiceType = iota
+	// AuthorizationServiceHTTP indicates the server implements the raw HTTP ext_authz protocol.
+	AuthorizationServiceHTTP
+)
+
+const (
+	// HeaderNameMatchTypeExact matches a header name exactly.
+	HeaderNameMatchTypeExact = "exact"
+	// HeaderNameMatchTypePrefix matches a header name by prefix.
+	HeaderNameMatchTypePrefix = "prefix"
+	// HeaderNameMatchTypeSuffix matches a header name by suffix.
+	HeaderNameMatchTypeSuffix = "suffix"
+	// HeaderNameMatchTypeContains matches a header name if it contains the provided value.
+	HeaderNameMatchTypeContains = "contains"
+)
+
+// HeaderNameMatchCondition matches an HTTP header name by MatchType.
+type HeaderNameMatchCondition struct {
+	MatchType  string
+	Value      string
+	IgnoreCase bool
+}
+
 const (
 	// QueryParamMatchTypeExact matches a querystring parameter value exactly.
 	QueryParamMatchTypeExact = "exact"
@@ -861,6 +890,28 @@ type IPFilterRule struct {
 // ExternalAuthorization contains the configuration for enabling
 // the ExtAuthz filter.
 type ExternalAuthorization struct {
+	// ServiceAPIType defines the external authorization service API type.
+	// It indicates the protocol implemented by the external server, specifying whether it's a raw HTTP authorization server
+	// or a gRPC authorization server.
+	ServiceAPIType AuthorizationServiceType
+
+	// Note that in addition to the user’s supplied matchers, Host, Method, Path, Content-Length, and Authorization are additionally included in the list.
+	HTTPAllowedAuthorizationHeaders []HeaderNameMatchCondition
+
+	// HTTPAllowedUpstreamHeaders specifies authorization response headers that will be added to the original client request.
+	// Note that coexistent headers will be overridden.
+	HTTPAllowedUpstreamHeaders []HeaderNameMatchCondition
+
+	// HTTPPathPrefix Sets a prefix to the value of authorization request header Path.
+	HTTPPathPrefix string
+
+	// Note: This field is not used by Envoy
+	// https://github.com/envoyproxy/envoy/issues/5357
+	//
+	// HttpServerURI sets the URI of the external HTTP authorization server to which authorization requests must be sent.
+	// Only required for http services.
+	// HttpServerURI string
+
 	// AuthorizationService points to the extension that client
 	// requests are forwarded to for authorization. If nil, no
 	// authorization is enabled for this host.
