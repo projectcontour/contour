@@ -435,6 +435,55 @@ func testAppCookieRewrite(namespace string) {
 	})
 }
 
+func testCookieRewriteLuaInjection(namespace string) {
+	Specify("Lua injection in cookie rewrites is prevented", func() {
+		deployEchoServer(f.T(), f.Client, namespace, "echo")
+
+		// Attempts to inject Lua code into cookie path rewrite value.
+		// Terminates double quote used in templating, adds/evalues Lua
+		// function to append content to returned cookie path attribute.
+		// When input is not properly sanitized, injected Lua code is executed
+		// and path is modified to "injected".
+		injectedScript := `" .. (function() return "injected" end)() .. "`
+
+		p := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "cookie-rewrite-path-injection",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
+					Fqdn: "cookie-rewrite-path-injection.projectcontour.io",
+				},
+				Routes: []contour_v1.Route{
+					{
+						Conditions: []contour_v1.MatchCondition{
+							{Prefix: "/inject-path"},
+						},
+						CookieRewritePolicies: []contour_v1.CookieRewritePolicy{
+							{
+								Name:        "inject-path",
+								PathRewrite: &contour_v1.CookiePathRewrite{Value: injectedScript},
+							},
+						},
+						Services: []contour_v1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
+
+		// Injected Lua script should not be executed and instead treated as a literal string value for the path rewrite.
+		headers := requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/inject-path", "inject-path=bar; Path=/bar; Domain=bar.com; SameSite=None; Secure")
+		checkReturnedSetCookieHeader(headers, "inject-path", "bar", injectedScript, "bar.com", "None", true, nil)
+	})
+}
+
 func testHeaderGlobalRewriteCookieRewrite(namespace string) {
 	Specify("cookies from global header rewrites can be rewritten", func() {
 		f.Fixtures.Echo.Deploy(namespace, "echo")

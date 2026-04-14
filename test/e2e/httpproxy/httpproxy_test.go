@@ -725,6 +725,8 @@ descriptors:
 		})
 
 		f.NamespacedTest("rewrite-headers-cookie-rewrite", testHeaderRewriteCookieRewrite)
+
+		f.NamespacedTest("cookie-rewrite-lua-injection", testCookieRewriteLuaInjection)
 	})
 
 	Context("using root namespaces", func() {
