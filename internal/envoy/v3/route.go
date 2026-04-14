@@ -880,6 +880,13 @@ func containsMatch(s string, ignoreCase bool) *envoy_config_route_v3.HeaderMatch
 	}
 }
 
+// luaStringEscape escapes backslashes and double quotes in a string so it can be safely used in a Lua string literal.
+func luaStringEscape(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `"`, `\"`)
+	return s
+}
+
 func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
 	// Merge route and cluster policies
 	mergedPolicies := map[string]dag.CookieRewritePolicy{}
@@ -917,15 +924,15 @@ function envoy_on_response(response_handle)
 
 	{{range $i, $p := .}}
 	function cookie_{{$i}}_attribute_rewrite(attributes)
-		response_handle:logDebug("rewriting cookie \"{{$p.Name}}\"")
+		response_handle:logDebug("rewriting cookie \"{{luaEscape $p.Name}}\"")
 
-		{{if $p.Path}}attributes["Path"] = "Path={{$p.Path}}"{{end}}
-		{{if $p.Domain}}attributes["Domain"] = "Domain={{$p.Domain}}"{{end}}
-		{{if $p.SameSite}}attributes["SameSite"] = "SameSite={{$p.SameSite}}"{{end}}
+		{{if $p.Path}}attributes["Path"] = "Path={{luaEscape $p.Path}}"{{end}}
+		{{if $p.Domain}}attributes["Domain"] = "Domain={{luaEscape $p.Domain}}"{{end}}
+		{{if $p.SameSite}}attributes["SameSite"] = "SameSite={{luaEscape $p.SameSite}}"{{end}}
 		{{if eq $p.Secure 1}}attributes["Secure"] = nil{{end}}
 		{{if eq $p.Secure 2}}attributes["Secure"] = "Secure"{{end}}
 	end
-	rewrite_table["{{$p.Name}}"] = cookie_{{$i}}_attribute_rewrite
+	rewrite_table["{{luaEscape $p.Name}}"] = cookie_{{$i}}_attribute_rewrite
 	{{end}}
 
 	function rewrite_cookie(original)
@@ -1013,7 +1020,8 @@ end
 	`
 
 	t := new(bytes.Buffer)
-	if err := template.Must(template.New("code").Parse(codeTemplate)).Execute(t, policies); err != nil {
+	funcMap := template.FuncMap{"luaEscape": luaStringEscape}
+	if err := template.Must(template.New("code").Funcs(funcMap).Parse(codeTemplate)).Execute(t, policies); err != nil {
 		// If template execution fails, return empty filter.
 		return nil
 	}
