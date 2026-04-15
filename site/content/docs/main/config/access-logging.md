@@ -125,6 +125,32 @@ For JSON access logging, the following fields can be added (these are Contour-sp
 - `contour_config_namespace`
 - `contour_config_name`
 
+### Logging TLS Fingerprints (JA3/JA4)
+
+When [JA3/JA4 TLS fingerprinting is enabled](../tls-fingerprinting) in the Contour configuration, fingerprints can be logged in access logs.
+
+For text-based access logging, the following command operators can be used:
+- `%TLS_JA3_FINGERPRINT%` - JA3 fingerprint hash (MD5 of the TLS ClientHello)
+- `%TLS_JA4_FINGERPRINT%` - JA4 fingerprint
+
+For JSON access logging, the following built-in fields can be added:
+- `tls_ja3_fingerprint`
+- `tls_ja4_fingerprint`
+
+Example JSON access log configuration:
+```yaml
+accesslog-format: json
+json-fields:
+  - "@timestamp"
+  - "method"
+  - "path"
+  - "response_code"
+  - "tls_ja3_fingerprint"
+  - "tls_ja4_fingerprint"
+```
+
+**Note:** The fingerprint values will be empty (`-`) for non-TLS connections or if the corresponding fingerprinting feature is not enabled.
+
 ## Using Access Log Formatter Extensions
 
 Envoy allows implementing custom access log command operators as extensions.
