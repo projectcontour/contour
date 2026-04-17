@@ -78,6 +78,22 @@ Each Route entry in a HTTPProxy **may** contain one or more conditions.
 These conditions are combined with an AND operator on the route passed to Envoy.
 Conditions can be either a `prefix`, `exact`, `regex`, `header` or a `queryParameter` condition. At most one of `prefix`, `exact` or `regex` can be used in one condition block.
 
+### Match condition precedence
+
+When multiple routes (including routes reached via includes) could match a request, Contour sorts the generated Envoy routes so that the most specific matches are evaluated first. This is necessary because Envoy evaluates routes in the order they are configured.
+
+Match precedence is:
+
+1. Exact path matches first.
+2. Regex path matches next, ordered by expression length (longer expressions are considered more specific).
+3. Prefix path matches next, ordered by prefix length (longer prefixes are considered more specific).
+4. If path matches are equal, routes with a greater number of header match conditions are evaluated first.
+5. If header matches are also equal, routes with a greater number of query parameter match conditions are evaluated first.
+
+For example, an exact match `/api/user` takes precedence over a prefix match `/api`.
+
+This behavior follows Contour's internal route sorting logic and ensures deterministic and predictable request matching.
+
 #### Prefix conditions
 
 Paths defined are matched using prefix conditions.
