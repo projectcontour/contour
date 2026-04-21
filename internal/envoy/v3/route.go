@@ -14,12 +14,10 @@
 package v3
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"sort"
 	"strings"
-	"text/template"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
@@ -880,53 +878,14 @@ func containsMatch(s string, ignoreCase bool) *envoy_config_route_v3.HeaderMatch
 	}
 }
 
-func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
-	// Merge route and cluster policies
-	mergedPolicies := map[string]dag.CookieRewritePolicy{}
-	for _, p := range append(routePolicies, clusterPolicies...) {
-		if _, ok := mergedPolicies[p.Name]; !ok {
-			mergedPolicies[p.Name] = p
-		} else {
-			merged := mergedPolicies[p.Name]
-			// Merge this policy with an existing one.
-			if p.Path != nil {
-				merged.Path = p.Path
-			}
-			if p.Domain != nil {
-				merged.Domain = p.Domain
-			}
-			if p.Secure != 0 {
-				merged.Secure = p.Secure
-			}
-			if p.SameSite != nil {
-				merged.SameSite = p.SameSite
-			}
-			mergedPolicies[p.Name] = merged
-		}
-	}
-	policies := make([]dag.CookieRewritePolicy, len(mergedPolicies))
-	i := 0
-	for _, p := range mergedPolicies {
-		policies[i] = p
-		i++
-	}
-
-	codeTemplate := `
+const (
+	cookieRewriteScriptName = "cookie_rewrite.lua"
+	cookieRewriteScript     = `
 function envoy_on_response(response_handle)
-	rewrite_table = {}
-
-	{{range $i, $p := .}}
-	function cookie_{{$i}}_attribute_rewrite(attributes)
-		response_handle:logDebug("rewriting cookie \"{{$p.Name}}\"")
-
-		{{if $p.Path}}attributes["Path"] = "Path={{$p.Path}}"{{end}}
-		{{if $p.Domain}}attributes["Domain"] = "Domain={{$p.Domain}}"{{end}}
-		{{if $p.SameSite}}attributes["SameSite"] = "SameSite={{$p.SameSite}}"{{end}}
-		{{if eq $p.Secure 1}}attributes["Secure"] = nil{{end}}
-		{{if eq $p.Secure 2}}attributes["Secure"] = "Secure"{{end}}
+	local cookie_rewrite_rules = response_handle:filterContext():get("cookie_rewrite_rules")
+	if cookie_rewrite_rules == nil then
+		return
 	end
-	rewrite_table["{{$p.Name}}"] = cookie_{{$i}}_attribute_rewrite
-	{{end}}
 
 	function rewrite_cookie(original)
 		local original_len = string.len(original)
@@ -936,9 +895,8 @@ function envoy_on_response(response_handle)
 		end
 		local name = string.sub(original, 1, name_end - 1)
 
-		local rewrite_func = rewrite_table[name]
-		-- We don't have a rewrite rule for this cookie.
-		if rewrite_func == nil then
+		local attribute_overrides = cookie_rewrite_rules[name]
+		if attribute_overrides == nil then
 			return original
 		end
 
@@ -984,7 +942,28 @@ function envoy_on_response(response_handle)
 			iter = new_iter + 1
 		end
 
-		rewrite_func(attributes)
+		response_handle:logDebug(string.format("rewriting cookie %q", name))
+
+		local path = attribute_overrides["Path"]
+		if path ~= nil then
+			attributes["Path"] = string.format("Path=%s", path)
+		end
+		local domain = attribute_overrides["Domain"]
+		if domain ~= nil then
+			attributes["Domain"] = string.format("Domain=%s", domain)
+		end
+		local sameSite = attribute_overrides["SameSite"]
+		if sameSite ~= nil then
+			attributes["SameSite"] = string.format("SameSite=%s", sameSite)
+		end
+		local secure = attribute_overrides["Secure"]
+		if secure ~= nil then
+			if secure then
+				attributes["Secure"] = "Secure"
+			else
+				attributes["Secure"] = nil
+			end
+		end
 
 		local rewritten = string.format("%s=%s", name, value)
 		for k, v in next, attributes do
@@ -1010,22 +989,47 @@ function envoy_on_response(response_handle)
 		end
 	end
 end
-	`
+`
+)
 
-	t := new(bytes.Buffer)
-	if err := template.Must(template.New("code").Parse(codeTemplate)).Execute(t, policies); err != nil {
-		// If template execution fails, return empty filter.
+func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *anypb.Any {
+	// Merge route and cluster policies and convert to generic map so we can
+	// create filter context for the Lua filter.
+	mergedPolicies := map[string]any{}
+	for _, p := range append(routePolicies, clusterPolicies...) {
+		merged := map[string]any{}
+		if _, ok := mergedPolicies[p.Name]; ok {
+			merged = mergedPolicies[p.Name].(map[string]any)
+		}
+		// Merge this policy with an existing one.
+		if p.Path != nil {
+			merged["Path"] = *p.Path
+		}
+		if p.Domain != nil {
+			merged["Domain"] = *p.Domain
+		}
+		if p.Secure != nil {
+			merged["Secure"] = *p.Secure
+		}
+		if p.SameSite != nil {
+			merged["SameSite"] = *p.SameSite
+		}
+		mergedPolicies[p.Name] = merged
+	}
+
+	filterContext, err := structpb.NewStruct(map[string]any{
+		"cookie_rewrite_rules": mergedPolicies,
+	})
+	if err != nil {
+		// If struct creation fails, return empty filter.
 		return nil
 	}
 
 	c := &envoy_filter_http_lua_v3.LuaPerRoute{
-		Override: &envoy_filter_http_lua_v3.LuaPerRoute_SourceCode{
-			SourceCode: &envoy_config_core_v3.DataSource{
-				Specifier: &envoy_config_core_v3.DataSource_InlineString{
-					InlineString: t.String(),
-				},
-			},
+		Override: &envoy_filter_http_lua_v3.LuaPerRoute_Name{
+			Name: cookieRewriteScriptName,
 		},
+		FilterContext: filterContext,
 	}
 	return protobuf.MustMarshalAny(c)
 }

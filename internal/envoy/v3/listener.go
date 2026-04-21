@@ -15,7 +15,6 @@ package v3
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -420,9 +419,11 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			Name: LuaFilterName,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
-					DefaultSourceCode: &envoy_config_core_v3.DataSource{
-						Specifier: &envoy_config_core_v3.DataSource_InlineString{
-							InlineString: "-- Placeholder for per-Route or per-Cluster overrides.",
+					SourceCodes: map[string]*envoy_config_core_v3.DataSource{
+						cookieRewriteScriptName: {
+							Specifier: &envoy_config_core_v3.DataSource_InlineString{
+								InlineString: cookieRewriteScript,
+							},
 						},
 					},
 				}),
@@ -786,28 +787,12 @@ func FilterChains(filters ...*envoy_config_listener_v3.Filter) []*envoy_config_l
 	}
 }
 
-func FilterMisdirectedRequests(fqdn string) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
-	var target string
-
-	// fqdn can be "*" to match all hostnames or a wildcard prefix
-	// e.g. "*.foo"
-	if strings.HasPrefix(fqdn, "*") {
-		// When we have a wildcard hostname, we will have already matched
-		// the filter chain on an SNI that falls under the wildcard so we
-		// retrieve that and make sure the :authority header matches.
-		// See: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter#requestedservername
-		target = "request_handle:streamInfo():requestedServerName()"
-	} else {
-		// For specific hostnames we know the SNI we need to match the
-		// :authority header against so we can simplify the code.
-		target = `"` + strings.ToLower(fqdn) + `"`
-	}
-
+func FilterMisdirectedRequests() *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	code := `
 function envoy_on_request(request_handle)
 	local headers = request_handle:headers()
 	local host = string.lower(headers:get(":authority"))
-	local target = %s
+	local target = request_handle:streamInfo():requestedServerName()
 
 	s, e = string.find(host, ":", 1, true)
 	if s ~= nil then
@@ -829,7 +814,7 @@ end
 			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
 				DefaultSourceCode: &envoy_config_core_v3.DataSource{
 					Specifier: &envoy_config_core_v3.DataSource_InlineString{
-						InlineString: fmt.Sprintf(code, target),
+						InlineString: code,
 					},
 				},
 			}),
