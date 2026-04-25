@@ -1939,6 +1939,16 @@ spec:
                     format: int32
                     minimum: 0
                     type: integer
+                  concurrency:
+                    description: |-
+                      Concurrency specifies the number of worker threads to run for Envoy.
+                      If not specified, Envoy defaults to the number of hardware threads on
+                      the machine. Setting this to a lower value on high-core-count machines
+                      avoids excessive worker threads and reduces idle CPU and Memory usage.
+                      defaults to 0 (use Envoy's default behavior).
+                    format: int32
+                    minimum: 0
+                    type: integer
                   daemonSet:
                     description: |-
                       DaemonSet describes the settings for running envoy as a `DaemonSet`.

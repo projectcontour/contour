@@ -48,6 +48,7 @@ func Default(namespace, name string) *Contour {
 			EnvoyReplicas:                 2, // ignored if not provisioning Envoy as a deployment.
 			EnvoyLogLevel:                 contour_v1alpha1.InfoLog,
 			EnvoyBaseID:                   0,
+			EnvoyConcurrency:              0,
 			EnvoyMaxHeapSizeBytes:         0,
 			EnvoyMaxDownstreamConnections: 0,
 			NetworkPublishing: NetworkPublishing{
@@ -244,6 +245,10 @@ type ContourSpec struct {
 	// so that the shared memory regions do not conflict.
 	// defaults to 0.
 	EnvoyBaseID int32
+
+	// EnvoyConcurrency specifies the number of worker threads for Envoy.
+	// defaults to 0 (use Envoy's default behavior).
+	EnvoyConcurrency int32
 
 	// EnvoyMaxHeapSizeBytes defines how much memory the overload manager controls Envoy to allocate at most.
 	// defaults to 0.
