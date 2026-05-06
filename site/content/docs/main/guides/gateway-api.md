@@ -159,9 +159,9 @@ $ kubectl apply -f {{< param github_raw_url>}}/{{< param branch >}}/examples/exa
 ```
 This command creates:
 
-- A Deployment named `kuard` in the default namespace to run kuard as the test application.
-- A Service named `kuard` in the default namespace to expose the kuard application on TCP port 80.
-- An HTTPRoute named `kuard` in the default namespace, attached to the `contour` Gateway, to route requests for `local.projectcontour.io` to the kuard service.
+- A Deployment named `kuard` in the default namespace to run a small echo server as the test application.
+- A Service named `kuard` in the default namespace to expose the test application on TCP port 80.
+- An HTTPRoute named `kuard` in the default namespace, attached to the `contour` Gateway, to route requests for `local.projectcontour.io` to the `kuard` service.
 
 Verify the kuard resources are available:
 ```shell

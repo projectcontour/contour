@@ -16,8 +16,19 @@ spec:
         app: kuard
     spec:
       containers:
-      - image: gcr.io/kuar-demo/kuard-amd64:1
+      # gcr.io/kuar-demo/kuard-amd64 is no longer available upstream
+      # (https://github.com/kubernetes-up-and-running/kuard/issues/59),
+      # so this example now runs a small echo server on port 8080 instead
+      # (same image already used by the blue-green example).
+      - image: stevesloka/echo-server
         name: kuard
+        command: ["echo-server"]
+        args:
+          - --echotext=kuard
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: http
+            containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
