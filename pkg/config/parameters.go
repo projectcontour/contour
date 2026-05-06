@@ -431,11 +431,11 @@ func (p *ClusterParameters) Validate() error {
 	}
 
 	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
-		return fmt.Errorf("invalid max connections per request value %q set on cluster, minimum value is 1", *p.MaxRequestsPerConnection)
+		return fmt.Errorf("invalid max connections per request value %d set on cluster, minimum value is 1", *p.MaxRequestsPerConnection)
 	}
 
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
-		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on cluster, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+		return fmt.Errorf("invalid per connections buffer limit bytes value %d set on cluster, minimum value is 1", *p.PerConnectionBufferLimitBytes)
 	}
 
 	if err := p.UpstreamTLS.Validate(); err != nil {
@@ -526,23 +526,23 @@ func (p *ListenerParameters) Validate() error {
 	}
 
 	if p.MaxRequestsPerConnection != nil && *p.MaxRequestsPerConnection < 1 {
-		return fmt.Errorf("invalid max connections per request value %q set on listener, minimum value is 1", *p.MaxRequestsPerConnection)
+		return fmt.Errorf("invalid max connections per request value %d set on listener, minimum value is 1", *p.MaxRequestsPerConnection)
 	}
 
 	if p.PerConnectionBufferLimitBytes != nil && *p.PerConnectionBufferLimitBytes < 1 {
-		return fmt.Errorf("invalid per connections buffer limit bytes value %q set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
+		return fmt.Errorf("invalid per connections buffer limit bytes value %d set on listener, minimum value is 1", *p.PerConnectionBufferLimitBytes)
 	}
 
 	if p.MaxRequestsPerIOCycle != nil && *p.MaxRequestsPerIOCycle < 1 {
-		return fmt.Errorf("invalid max connections per IO cycle value %q set on listener, minimum value is 1", *p.MaxRequestsPerIOCycle)
+		return fmt.Errorf("invalid max connections per IO cycle value %d set on listener, minimum value is 1", *p.MaxRequestsPerIOCycle)
 	}
 
 	if p.HTTP2MaxConcurrentStreams != nil && *p.HTTP2MaxConcurrentStreams < 1 {
-		return fmt.Errorf("invalid max HTTP/2 concurrent streams value %q set on listener, minimum value is 1", *p.HTTP2MaxConcurrentStreams)
+		return fmt.Errorf("invalid max HTTP/2 concurrent streams value %d set on listener, minimum value is 1", *p.HTTP2MaxConcurrentStreams)
 	}
 
 	if p.MaxConnectionsPerListener != nil && *p.MaxConnectionsPerListener < 1 {
-		return fmt.Errorf("invalid max connections per listener value %q set on listener, minimum value is 1", *p.MaxConnectionsPerListener)
+		return fmt.Errorf("invalid max connections per listener value %d set on listener, minimum value is 1", *p.MaxConnectionsPerListener)
 	}
 
 	return p.SocketOptions.Validate()

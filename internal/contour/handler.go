@@ -60,25 +60,31 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
-	// syncTracker is used to update/query the status of the cache sync.
-	// Uses an internal counter: incremented at item start, decremented at end.
-	// HasSynced returns true if its UpstreamHasSynced returns true and the counter is non-positive.
+	// syncTracker tracks whether the initial set of informer events has been processed:
+	// 1. Upstream informer caches have completed their initial list (notified via UpstreamHasSynced()).
+	// 2. All initial-list items received via OnAdd have been processed in the event loop (tracked by Start/Finished counter).
+	// syncTracker.Done() returns a channel that closes when both conditions are met.
 	syncTracker *synctrack.SingleFileTracker
+
+	// upstreamHasSynced returns true when all informer caches have completed their initial list+watch.
+	// This is a composite of all registered informers HasSynced functions.
+	upstreamHasSynced cache.InformerSynced
 
 	initialDagBuilt atomic.Bool
 }
 
 func NewEventHandler(config EventHandlerConfig, upstreamHasSynced cache.InformerSynced) *EventHandler {
 	return &EventHandler{
-		FieldLogger:     config.Logger,
-		builder:         config.Builder,
-		observer:        config.Observer,
-		holdoffDelay:    config.HoldoffDelay,
-		holdoffMaxDelay: config.HoldoffMaxDelay,
-		statusUpdater:   config.StatusUpdater,
-		update:          make(chan any),
-		sequence:        make(chan int, 1),
-		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: upstreamHasSynced},
+		FieldLogger:       config.Logger,
+		builder:           config.Builder,
+		observer:          config.Observer,
+		holdoffDelay:      config.HoldoffDelay,
+		holdoffMaxDelay:   config.HoldoffMaxDelay,
+		statusUpdater:     config.StatusUpdater,
+		update:            make(chan any),
+		sequence:          make(chan int, 1),
+		syncTracker:       synctrack.NewSingleFileTracker("contour-event-handler"),
+		upstreamHasSynced: upstreamHasSynced,
 	}
 }
 
@@ -146,21 +152,23 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		// run to allow the holdoff timer to batch the updates from
 		// the API informers.
 		lastDAGRebuild = time.Now()
-
-		// initialSyncPollPeriod defines the duration to wait between polling attempts during the initial informer synchronization.
-		initialSyncPollPeriod = 100 * time.Millisecond
-
-		// initialSyncPollTicker is the ticker that will trigger the periodic polling.
-		initialSyncPollTicker = time.NewTicker(initialSyncPollPeriod)
-
-		// initialSyncPoll is the channel that will receive a signal when to poll the initial informer synchronization status.
-		initialSyncPoll = initialSyncPollTicker.C
 	)
 
 	reset := func() (v int) {
 		v, outstanding = outstanding, 0
 		return v
 	}
+
+	// Notify syncTracker once upstream informer caches have synced.
+	// WaitForCacheSync blocks (polling internally) until upstreamHasSynced returns true,
+	// then UpstreamHasSynced() is called exactly once to satisfy the first condition of the syncTracker.
+	// The second condition (all initial-list items processed) is satisfied by Finished() calls in the event loop below.
+	// Once both conditions are met, syncTracker.Done() channel closes.
+	go func() {
+		if cache.WaitForCacheSync(ctx.Done(), e.upstreamHasSynced) {
+			e.syncTracker.UpstreamHasSynced()
+		}
+	}()
 
 	for {
 		// In the main loop one of four things can happen.
@@ -224,12 +232,9 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 			e.incSequence()
 			lastDAGRebuild = time.Now()
-		case <-initialSyncPoll:
-			if e.syncTracker.HasSynced() {
-				// Informer caches are synced, stop the polling and allow xDS server to start.
-				initialSyncPollTicker.Stop()
-				e.initialDagBuilt.Store(true)
-			}
+		case <-e.syncTracker.Done():
+			// Both conditions are now met: upstream informers have synced AND all initial items have been processed.
+			e.initialDagBuilt.Store(true)
 		case <-ctx.Done():
 			// shutdown
 			return nil
