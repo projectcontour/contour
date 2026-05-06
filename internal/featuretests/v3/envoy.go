@@ -313,10 +313,8 @@ func withPrefixRewrite(route *envoy_config_route_v3.Route_Route, replacement str
 
 func withRetryPolicy(route *envoy_config_route_v3.Route_Route, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_config_route_v3.Route_Route {
 	route.Route.RetryPolicy = &envoy_config_route_v3.RetryPolicy{
-		RetryOn: retryOn,
-	}
-	if numRetries > 0 {
-		route.Route.RetryPolicy.NumRetries = wrapperspb.UInt32(numRetries)
+		RetryOn:    retryOn,
+		NumRetries: wrapperspb.UInt32(numRetries),
 	}
 	if perTryTimeout > 0 {
 		route.Route.RetryPolicy.PerTryTimeout = durationpb.New(perTryTimeout)
