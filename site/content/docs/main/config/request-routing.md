@@ -163,6 +163,10 @@ Similar to the `header` conditions, `queryParameter` conditions also require the
 e.g. `search` when the query string looks like `/?search=term` and `term`
 representing the value.
 
+The `name` field is matched **case-sensitively** against the query string —
+`Search` and `search` are different parameters. The `ignoreCase` modifier
+described below applies only to the *value* of the parameter, not its name.
+
 There are six operator fields: `exact`, `prefix`, `suffix`, `regex`, `contains`
 and `present` and a modifier `ignoreCase` which can be used together with all of
 the operator fields except `regex` and `present`.
@@ -187,6 +191,31 @@ the operator fields except `regex` and `present`.
 
 - `ignoreCase` is a boolean, and if set to `true` it will enable case
   insensitive matching for any of the string operator matching methods.
+
+#### Match Condition Precedence
+
+Envoy matches requests against routes in the order it receives them. When a
+single virtualhost has multiple routes whose match conditions could overlap,
+Contour sorts the routes by **specificity** before sending them to Envoy, so
+the most specific match wins regardless of the order they appear in the
+HTTPProxy spec.
+
+The sort order is:
+
+1. **Path matches**, most specific first:
+   1. **Exact** matches.
+   2. **Regex** matches, ordered by expression length (longer regexes first,
+      as a proxy for specificity).
+   3. **Prefix** matches, ordered by prefix length (longer prefixes first).
+2. **Header conditions** — routes with more header conditions win over
+   routes with fewer.
+3. **Query parameter conditions** — routes with more query parameter
+   conditions win over routes with fewer.
+
+This is intentionally similar to Gateway API's [HTTPRouteRule precedence
+spec](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1.HTTPRouteRule),
+so HTTPProxy users moving between the two APIs can rely on the same mental
+model.
 
 ## Request Redirection
 
