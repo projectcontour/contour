@@ -111,7 +111,7 @@ func TestListenerVisit(t *testing.T) {
 	jwtProvider := contour_v1.JWTProvider{
 		Name:   "provider-1",
 		Issuer: "issuer.jwt.example.com",
-		RemoteJWKS: contour_v1.RemoteJWKS{
+		RemoteJWKS: &contour_v1.RemoteJWKS{
 			URI:     "https://jwt.example.com/jwks.json",
 			Timeout: jwksTimeout,
 		},
@@ -3422,7 +3422,7 @@ func TestListenerVisit(t *testing.T) {
 						AddFilter(envoy_v3.FilterJWTAuthN([]dag.JWTProvider{{
 							Name:   jwtProvider.Name,
 							Issuer: jwtProvider.Issuer,
-							RemoteJWKS: dag.RemoteJWKS{
+							RemoteJWKS: &dag.RemoteJWKS{
 								URI: jwtProvider.RemoteJWKS.URI,
 								Cluster: dag.DNSNameCluster{
 									Address: jwksURL.Hostname(),
