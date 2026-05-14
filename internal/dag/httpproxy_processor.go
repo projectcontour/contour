@@ -1388,29 +1388,18 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 		return nil
 	}
 
-	ok, respTimeout := determineExternalAuthTimeout(auth.ResponseTimeout, validCond, ext)
-	if !ok {
+	extAuth := NewExternalAuthorization(auth, validCond)
+	if extAuth == nil {
 		return nil
 	}
 
-	globalExternalAuthorization := &ExternalAuthorization{
-		AuthorizationService:         ext,
-		AuthorizationFailOpen:        auth.FailOpen,
-		AuthorizationResponseTimeout: *respTimeout,
+	// If no explicit timeout was configured, fall back to the extension service's own timeout.
+	if extAuth.AuthorizationResponseTimeout.UseDefault() {
+		extAuth.AuthorizationResponseTimeout = ext.RouteTimeoutPolicy.ResponseTimeout
 	}
 
-	if auth.WithRequestBody != nil {
-		maxRequestBytes := defaultMaxRequestBytes
-		if auth.WithRequestBody.MaxRequestBytes != 0 {
-			maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
-		}
-		globalExternalAuthorization.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
-			MaxRequestBytes:     maxRequestBytes,
-			AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
-			PackAsBytes:         auth.WithRequestBody.PackAsBytes,
-		}
-	}
-	return globalExternalAuthorization
+	extAuth.AuthorizationService = ext
+	return extAuth
 }
 
 func validateExternalAuthExtensionService(ref contour_v1.ExtensionServiceReference, validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, getExtensionCluster func(name string) *ExtensionCluster) (bool, *ExtensionCluster) {

@@ -206,9 +206,8 @@ type RateLimitConfig struct {
 
 type GlobalExternalAuthConfig struct {
 	ExtensionServiceConfig
-	FailOpen        bool
-	Context         map[string]string
-	WithRequestBody *dag.AuthorizationServerBufferSettings
+	dag.ExternalAuthorization
+	Context map[string]string
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -608,9 +607,13 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 			Name: dag.ExtensionClusterName(config.ExtensionService),
 			SNI:  config.SNI,
 		},
-		AuthorizationFailOpen:              config.FailOpen,
+		ServiceAPIType:                     config.ServiceAPIType,
+		HTTPAllowedAuthorizationHeaders:    config.HTTPAllowedAuthorizationHeaders,
+		HTTPAllowedUpstreamHeaders:         config.HTTPAllowedUpstreamHeaders,
+		HTTPPathPrefix:                     config.HTTPPathPrefix,
+		AuthorizationFailOpen:              config.AuthorizationFailOpen,
 		AuthorizationResponseTimeout:       config.Timeout,
-		AuthorizationServerWithRequestBody: config.WithRequestBody,
+		AuthorizationServerWithRequestBody: config.AuthorizationServerWithRequestBody,
 	})
 }
 
