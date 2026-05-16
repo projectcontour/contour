@@ -1452,7 +1452,7 @@ func determineExternalAuthTimeout(responseTimeout string, validCond *contour_v1.
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
-	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && !httpproxy.Spec.VirtualHost.DisableAuthorization() && httpproxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.IsConfigured() {
+	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && httpproxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.IsConfigured() {
 		authorization := p.computeVirtualHostAuthorization(httpproxy.Spec.VirtualHost.Authorization, validCond, httpproxy)
 		if authorization == nil {
 			return false
