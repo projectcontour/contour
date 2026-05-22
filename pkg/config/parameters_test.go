@@ -280,6 +280,22 @@ func TestTLSParametersValidation(t *testing.T) {
 		},
 	}.Validate())
 
+	// ECDH curves validation
+	require.NoError(t, ProtocolParameters{
+		ECDHCurves: []string{},
+	}.Validate())
+	require.NoError(t, ProtocolParameters{
+		ECDHCurves: []string{
+			"X25519",
+			"P-256",
+		},
+	}.Validate())
+	require.Error(t, ProtocolParameters{
+		ECDHCurves: []string{
+			"NOTAVALIDCURVE",
+		},
+	}.Validate())
+
 	// TLS protocol version validation
 	require.NoError(t, ProtocolParameters{
 		MinimumProtocolVersion: "1.2",
@@ -374,6 +390,12 @@ tls:
 `)
 
 	check(`
+tls:
+  ecdh-curves:
+  - NOTVALID
+`)
+
+	check(`
 timeouts:
   request-timeout: none
 `)
@@ -431,6 +453,16 @@ tls:
   maximum-protocol-version: 1.3
   cipher-suites:
   - ECDHE-RSA-AES256-GCM-SHA384
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, ECDHCurvesList{"X25519", "P-256", "X25519MLKEM768"}, conf.TLS.ECDHCurves)
+	}, `
+tls:
+  ecdh-curves:
+  - X25519
+  - P-256
+  - X25519MLKEM768
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
