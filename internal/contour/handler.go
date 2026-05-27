@@ -60,14 +60,13 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
-	// syncTracker tracks whether the initial set of informer events has been processed:
-	// 1. Upstream informer caches have completed their initial list (notified via UpstreamHasSynced()).
-	// 2. All initial-list items received via OnAdd have been processed in the event loop (tracked by Start/Finished counter).
-	// syncTracker.Done() returns a channel that closes when both conditions are met.
+	// syncTracker tracks whether all initial Kubernetes objects have been delivered and processed.
+	// Its Done() channel closes when both conditions are met:
+	// (1) Kubernetes finished sending the initial object list, and
+	// (2) every item from that list has been handled in the event loop.
 	syncTracker *synctrack.SingleFileTracker
 
-	// upstreamHasSynced returns true when all informer caches have completed their initial list+watch.
-	// This is a composite of all registered informers HasSynced functions.
+	// upstreamHasSynced reports whether Kubernetes has finished sending the initial object list.
 	upstreamHasSynced cache.InformerSynced
 
 	initialDagBuilt atomic.Bool
@@ -159,11 +158,12 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		return v
 	}
 
-	// Notify syncTracker once upstream informer caches have synced.
-	// WaitForCacheSync blocks (polling internally) until upstreamHasSynced returns true,
-	// then UpstreamHasSynced() is called exactly once to satisfy the first condition of the syncTracker.
-	// The second condition (all initial-list items processed) is satisfied by Finished() calls in the event loop below.
-	// Once both conditions are met, syncTracker.Done() channel closes.
+	// syncDone closes when all initial Kubernetes objects have been processed.
+	syncDone := e.syncTracker.Done()
+
+	// Wait (in background) for Kubernetes to finish sending us the initial objects,
+	// then notify the tracker. The tracker also needs all items to be processed in
+	// the event loop below (via Finished() calls) before it closes syncDone.
 	go func() {
 		if cache.WaitForCacheSync(ctx.Done(), e.upstreamHasSynced) {
 			e.syncTracker.UpstreamHasSynced()
@@ -232,9 +232,10 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 			e.incSequence()
 			lastDAGRebuild = time.Now()
-		case <-e.syncTracker.Done():
+		case <-syncDone:
 			// Both conditions are now met: upstream informers have synced AND all initial items have been processed.
 			e.initialDagBuilt.Store(true)
+			syncDone = nil
 		case <-ctx.Done():
 			// shutdown
 			return nil
