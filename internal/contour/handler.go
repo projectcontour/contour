@@ -60,25 +60,30 @@ type EventHandler struct {
 	// an event has been received.
 	seq int
 
-	// syncTracker is used to update/query the status of the cache sync.
-	// Uses an internal counter: incremented at item start, decremented at end.
-	// HasSynced returns true if its UpstreamHasSynced returns true and the counter is non-positive.
+	// syncTracker tracks whether all initial Kubernetes objects have been delivered and processed.
+	// Its Done() channel closes when both conditions are met:
+	// (1) Kubernetes finished sending the initial object list, and
+	// (2) every item from that list has been handled in the event loop.
 	syncTracker *synctrack.SingleFileTracker
+
+	// upstreamHasSynced reports whether Kubernetes has finished sending the initial object list.
+	upstreamHasSynced cache.InformerSynced
 
 	initialDagBuilt atomic.Bool
 }
 
 func NewEventHandler(config EventHandlerConfig, upstreamHasSynced cache.InformerSynced) *EventHandler {
 	return &EventHandler{
-		FieldLogger:     config.Logger,
-		builder:         config.Builder,
-		observer:        config.Observer,
-		holdoffDelay:    config.HoldoffDelay,
-		holdoffMaxDelay: config.HoldoffMaxDelay,
-		statusUpdater:   config.StatusUpdater,
-		update:          make(chan any),
-		sequence:        make(chan int, 1),
-		syncTracker:     &synctrack.SingleFileTracker{UpstreamHasSynced: upstreamHasSynced},
+		FieldLogger:       config.Logger,
+		builder:           config.Builder,
+		observer:          config.Observer,
+		holdoffDelay:      config.HoldoffDelay,
+		holdoffMaxDelay:   config.HoldoffMaxDelay,
+		statusUpdater:     config.StatusUpdater,
+		update:            make(chan any),
+		sequence:          make(chan int, 1),
+		syncTracker:       synctrack.NewSingleFileTracker("contour-event-handler"),
+		upstreamHasSynced: upstreamHasSynced,
 	}
 }
 
@@ -146,21 +151,24 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		// run to allow the holdoff timer to batch the updates from
 		// the API informers.
 		lastDAGRebuild = time.Now()
-
-		// initialSyncPollPeriod defines the duration to wait between polling attempts during the initial informer synchronization.
-		initialSyncPollPeriod = 100 * time.Millisecond
-
-		// initialSyncPollTicker is the ticker that will trigger the periodic polling.
-		initialSyncPollTicker = time.NewTicker(initialSyncPollPeriod)
-
-		// initialSyncPoll is the channel that will receive a signal when to poll the initial informer synchronization status.
-		initialSyncPoll = initialSyncPollTicker.C
 	)
 
 	reset := func() (v int) {
 		v, outstanding = outstanding, 0
 		return v
 	}
+
+	// syncDone closes when all initial Kubernetes objects have been processed.
+	syncDone := e.syncTracker.Done()
+
+	// Wait (in background) for Kubernetes to finish sending us the initial objects,
+	// then notify the tracker. The tracker also needs all items to be processed in
+	// the event loop below (via Finished() calls) before it closes syncDone.
+	go func() {
+		if cache.WaitForCacheSync(ctx.Done(), e.upstreamHasSynced) {
+			e.syncTracker.UpstreamHasSynced()
+		}
+	}()
 
 	for {
 		// In the main loop one of four things can happen.
@@ -224,12 +232,10 @@ func (e *EventHandler) Start(ctx context.Context) error {
 
 			e.incSequence()
 			lastDAGRebuild = time.Now()
-		case <-initialSyncPoll:
-			if e.syncTracker.HasSynced() {
-				// Informer caches are synced, stop the polling and allow xDS server to start.
-				initialSyncPollTicker.Stop()
-				e.initialDagBuilt.Store(true)
-			}
+		case <-syncDone:
+			// Both conditions are now met: upstream informers have synced AND all initial items have been processed.
+			e.initialDagBuilt.Store(true)
+			syncDone = nil
 		case <-ctx.Done():
 			// shutdown
 			return nil
