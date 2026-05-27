@@ -547,9 +547,14 @@ func retryPolicy(r *dag.Route) *envoy_config_route_v3.RetryPolicy {
 		RetryOn:              r.RetryPolicy.RetryOn,
 		RetriableStatusCodes: r.RetryPolicy.RetriableStatusCodes,
 	}
-	if r.RetryPolicy.NumRetries > 0 {
-		rp.NumRetries = wrapperspb.UInt32(r.RetryPolicy.NumRetries)
-	}
+	// HTTPProxy documents numRetries: -1 as "disable retries". The DAG
+	// translates -1 to 0 (internal/dag/policy.go), so the DAG value 0
+	// here uniquely means "user asked for no retries". Previously we
+	// only set NumRetries when > 0, and Envoy then defaulted to 1 --
+	// giving exactly one retry instead of none (projectcontour#5944).
+	// Always set NumRetries (including 0) so Envoy respects the
+	// documented contract.
+	rp.NumRetries = wrapperspb.UInt32(r.RetryPolicy.NumRetries)
 	rp.PerTryTimeout = envoy.Timeout(r.RetryPolicy.PerTryTimeout)
 
 	return rp

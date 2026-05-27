@@ -3896,10 +3896,8 @@ func routetimeout(cluster string, timeout time.Duration) *envoy_config_route_v3.
 func routeretry(cluster, retryOn string, numRetries uint32, perTryTimeout time.Duration) *envoy_config_route_v3.Route_Route {
 	r := routecluster(cluster)
 	r.Route.RetryPolicy = &envoy_config_route_v3.RetryPolicy{
-		RetryOn: retryOn,
-	}
-	if numRetries > 0 {
-		r.Route.RetryPolicy.NumRetries = wrapperspb.UInt32(numRetries)
+		RetryOn:    retryOn,
+		NumRetries: wrapperspb.UInt32(numRetries),
 	}
 	if perTryTimeout > 0 {
 		r.Route.RetryPolicy.PerTryTimeout = durationpb.New(perTryTimeout)
