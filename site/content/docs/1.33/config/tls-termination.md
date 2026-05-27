@@ -70,7 +70,8 @@ Some legacy TLS clients do not send the server name, so Envoy does not know how 
 
 _**Note:**
 The minimum TLS protocol version for any fallback request is defined by the `minimum TLS protocol version` set in the Contour configuration file.
-Enabling the fallback certificate is not compatible with TLS client authentication._
+The fallback certificate feature uses a single shared connection manager for all participating virtual hosts.
+Per-virtual host security policies are therefore not supported with fallback certificates, including TLS client authentication, external authorization, and JWT verification._
 
 ### Fallback Certificate Configuration
 

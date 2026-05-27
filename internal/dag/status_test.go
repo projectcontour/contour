@@ -3196,6 +3196,36 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyJWTFallback := fixture.NewProxy("roots/jwt-fallback-incompat").
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "invalid.com",
+				TLS: &contour_v1.TLS{
+					SecretName:                "ssl-cert",
+					EnableFallbackCertificate: true,
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_v1.RemoteJWKS{
+							URI: "https://jwt.example.com/jwks.json",
+						},
+					},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{Name: "app-server", Port: 80}},
+			}},
+		})
+
+	run(t, "fallback and JWT providers are incompatible", testcase{
+		objs: []any{fixture.SecretRootsCert, proxyJWTFallback},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyJWTFallback.Name, Namespace: proxyJWTFallback.Namespace}: fixture.NewValidCondition().WithGeneration(proxyJWTFallback.Generation).
+				WithError(contour_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & JWT providers are incompatible"),
+		},
+	})
+
 	proxyAuthHTTP := fixture.NewProxy("roots/http").
 		WithSpec(contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{

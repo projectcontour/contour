@@ -12,6 +12,8 @@ If verification fails, an HTTP 401 (Unauthorized) will be returned to the client
 
 JWT verification is only supported on TLS-terminating virtual hosts.
 
+JWT verification is not compatible with the [fallback certificate](tls-termination.md#fallback-certificate) feature.
+
 ## Configuring providers and rules
 
 A JWT provider is configured for an HTTPProxy's virtual host, and defines how to verify JWTs:
