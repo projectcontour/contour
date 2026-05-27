@@ -13,7 +13,7 @@ If for any reason this release cadence has to be adjusted (for example due to op
 Patch releases are based on the major/minor release branch. There is no specific release cadence for patch releases. However, the project will create patch releases to address critical community and security issues (for example to address high severity security issues in Contour or in Envoy).The project will issue patch releases for all supported versions of Contour.
 
 ### Release Support Matrix
-Per the [Contour support policy](https://projectcontour.io/resources/support/), the project is in the process of transitioning to supporting three Contour releases. Please see the support policy page to see what versions are currently supported.
+Per the [Contour support policy](https://projectcontour.io/resources/support/), the project supports a single release track at a time. Please see the support policy page for details.
 
 Also, please consult the [Contour Compatibility Matrix](https://projectcontour.io/resources/compatibility-matrix/) for details of what each version of Contour requires for each of its dependencies like Envoy, Kubernetes, and so on.
 
