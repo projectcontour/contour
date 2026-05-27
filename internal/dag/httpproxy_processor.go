@@ -289,6 +289,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				return
 			}
 
+			// Fallback certificates and JWT verification are
+			// incompatible because fallback aggregates routes from
+			// multiple vhosts onto a single HTTPConnectionManager,
+			// and different vhosts may have different JWT providers
+			// that cannot all be installed on one filter chain.
+			if tls.EnableFallbackCertificate && len(proxy.Spec.VirtualHost.JWTProviders) > 0 {
+				validCond.AddError(contour_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
+					"Spec.Virtualhost.TLS fallback & JWT providers are incompatible")
+				return
+			}
+
 			// If FallbackCertificate is enabled, but no cert passed, set error
 			if tls.EnableFallbackCertificate {
 				if p.FallbackCertificate == nil {

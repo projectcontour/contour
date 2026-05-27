@@ -74,6 +74,7 @@ Each virtual host can use a different `ExtensionService`, but only one
 `ExtensionService` can be used by a single virtual host.
 Authorization servers can only be attached to `HTTPProxy` objects that have TLS
 termination enabled.
+Client authorization is not compatible with the [fallback certificate](tls-termination.md#fallback-certificate) feature.
 
 ### Migrating from Application Authorization
 
@@ -93,7 +94,7 @@ The HTTPProxy [authorization policy][6] allows authorization to be
 disabled for both an entire virtual host and for specific routes.
 
 The initial authorization policy is set on the HTTPProxy virtual host
-in the `.spec.virtualhost.authorization.authPolicy` field. 
+in the `.spec.virtualhost.authorization.authPolicy` field.
 This configures whether authorization is enabled, and the default authorization policy context.
 If authorization is disabled on the virtual host, it is also disabled by
 default on all the routes for that virtual host that do not specify an authorization policy.
