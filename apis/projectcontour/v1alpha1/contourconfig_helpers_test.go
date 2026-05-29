@@ -162,6 +162,16 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			"ECDHE-ECDSA-AES128-GCM-SHA256",
 		}
 		require.Error(t, c.Validate())
+
+		// RuntimeSettings: valid custom setting
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				RuntimeSettings: map[string]string{
+					"envoy.reloadable_features.some_feature": "false",
+				},
+			},
+		}
+		require.NoError(t, c.Validate())
 	})
 
 	t.Run("gateway validation", func(t *testing.T) {

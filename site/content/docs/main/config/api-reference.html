@@ -6895,6 +6895,22 @@ configured by [EnvoyConfig.Metrics] and [EnvoyConfig.Health]</p>
 <p>This is disabled by default</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>runtimeSettings</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeSettings allows overriding arbitrary Envoy runtime settings,
+intended for cases such as disabling a new Envoy feature that breaks existing functionality.
+Note that any settings managed by Contour will take precedence and overwrite user-defined values for the same keys.
+See <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime">https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListener">EnvoyListener
