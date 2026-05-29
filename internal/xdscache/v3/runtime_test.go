@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	core_v1 "k8s.io/api/core/v1"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -55,10 +57,20 @@ func TestRuntimeCacheContents(t *testing.T) {
 				MaxRequestsPerIOCycle: nil,
 			},
 		},
+		"custom runtime settings": {
+			runtimeSettings: ConfigurableRuntimeSettings{
+				UserDefinedSettings: map[string]string{
+					"envoy.reloadable_features.some_feature": "false",
+				},
+			},
+			additionalFields: map[string]*structpb.Value{
+				"envoy.reloadable_features.some_feature": structpb.NewStringValue("false"),
+			},
+		},
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			rc := NewRuntimeCache(tc.runtimeSettings)
+			rc := NewRuntimeCache(tc.runtimeSettings, fixture.NewTestLogger(t))
 			fields := map[string]*structpb.Value{
 				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
 				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
@@ -74,6 +86,24 @@ func TestRuntimeCacheContents(t *testing.T) {
 			}, rc.Contents())
 		})
 	}
+}
+
+func TestRuntimeCacheSkipsManagedKeys(t *testing.T) {
+	rc := NewRuntimeCache(ConfigurableRuntimeSettings{
+		MaxRequestsPerIOCycle: ptr.To(uint32(5)),
+		UserDefinedSettings: map[string]string{
+			"http.max_requests_per_io_cycle": "99",
+			"my.custom.setting":              "hello",
+		},
+	}, fixture.NewTestLogger(t))
+
+	messages := rc.Contents()
+	require.Len(t, messages, 1)
+	layer := messages[0].(*envoy_service_runtime_v3.Runtime).Layer
+
+	// Expect the managed key to have priority over the user defined key, therefore the value should be 5 and not "99".
+	require.Equal(t, structpb.NewNumberValue(5), layer.Fields["http.max_requests_per_io_cycle"])
+	require.Equal(t, structpb.NewStringValue("hello"), layer.Fields["my.custom.setting"])
 }
 
 func TestRuntimeVisit(t *testing.T) {
@@ -207,7 +237,7 @@ func TestRuntimeVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			rc := NewRuntimeCache(tc.ConfigurableRuntimeSettings)
+			rc := NewRuntimeCache(tc.ConfigurableRuntimeSettings, fixture.NewTestLogger(t))
 			rc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
 			protobuf.ExpectEqual(t, tc.expected, rc.Contents())
 		})
@@ -254,7 +284,7 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 		},
 	}
 
-	rc := NewRuntimeCache(configurableRuntimeSettings)
+	rc := NewRuntimeCache(configurableRuntimeSettings, fixture.NewTestLogger(t))
 	rc.OnChange(buildDAGFallback(t, nil, objs...))
 	protobuf.ExpectEqual(t, []proto.Message{
 		&envoy_service_runtime_v3.Runtime{

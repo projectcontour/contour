@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -30,6 +31,7 @@ import (
 type ConfigurableRuntimeSettings struct {
 	MaxRequestsPerIOCycle     *uint32
 	MaxConnectionsPerListener *uint32
+	UserDefinedSettings       map[string]string
 }
 
 // RuntimeCache manages the contents of the gRPC RTDS cache.
@@ -40,11 +42,15 @@ type RuntimeCache struct {
 	mu               sync.Mutex
 
 	maxConnectionsPerListener *uint32
+
+	userDefinedSettings map[string]string
+
+	log logrus.FieldLogger
 }
 
 // NewRuntimeCache builds a RuntimeCache with the provided runtime
 // settings that will be set in the runtime layer configured by Contour.
-func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings) *RuntimeCache {
+func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings, log logrus.FieldLogger) *RuntimeCache {
 	runtimeKV := make(map[string]*structpb.Value)
 	dynamicRuntimeKV := make(map[string]*structpb.Value)
 	if runtimeSettings.MaxRequestsPerIOCycle != nil && *runtimeSettings.MaxRequestsPerIOCycle > 0 {
@@ -54,6 +60,8 @@ func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings) *RuntimeCache 
 		runtimeKV:                 runtimeKV,
 		dynamicRuntimeKV:          dynamicRuntimeKV,
 		maxConnectionsPerListener: runtimeSettings.MaxConnectionsPerListener,
+		userDefinedSettings:       runtimeSettings.UserDefinedSettings,
+		log:                       log,
 	}
 }
 
@@ -63,6 +71,15 @@ func (c *RuntimeCache) buildDynamicLayer() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	maps.Copy(values, c.dynamicRuntimeKV)
+	for k, v := range c.userDefinedSettings {
+		if _, exists := values[k]; exists {
+			c.log.WithField("key", k).Warn("user-defined runtime setting overlaps with managed key, skipping")
+			continue
+		}
+		// Envoy can handle values of type string, bool or number as strings,
+		// so we can always convert user defined settings to string values.
+		values[k] = structpb.NewStringValue(v)
+	}
 	return protobuf.AsMessages(envoy_v3.RuntimeLayers(values))
 }
 
