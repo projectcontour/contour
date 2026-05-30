@@ -1467,6 +1467,26 @@ func TestHeadersPolicyRoute(t *testing.T) {
 				Remove:      []string{"Y-Header"},
 			},
 		},
+		{
+			name: "ja3 fingerprint header passthrough",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-JA3-Fingerprint", Value: "%TLS_JA3_FINGERPRINT%"}},
+			},
+			expected: &HeadersPolicy{
+				Set:    map[string]string{"X-Ja3-Fingerprint": "%TLS_JA3_FINGERPRINT%"},
+				Remove: nil,
+			},
+		},
+		{
+			name: "ja4 fingerprint header passthrough",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-JA4-Fingerprint", Value: "%TLS_JA4_FINGERPRINT%"}},
+			},
+			expected: &HeadersPolicy{
+				Set:    map[string]string{"X-Ja4-Fingerprint": "%TLS_JA4_FINGERPRINT%"},
+				Remove: nil,
+			},
+		},
 	}
 
 	for _, tc := range tests {

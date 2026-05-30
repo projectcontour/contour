@@ -69,10 +69,12 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				DisableMergeSlashes:        ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
 				ConnectionBalancer:         "",
-				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: "1.2",
-					MaximumProtocolVersion: "1.3",
-					CipherSuites:           contour_v1alpha1.DefaultTLSCiphers,
+				TLS: &contour_v1alpha1.EnvoyListenerTLS{
+					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
+						MinimumProtocolVersion: "1.2",
+						MaximumProtocolVersion: "1.3",
+						CipherSuites:           contour_v1alpha1.DefaultTLSCiphers,
+					},
 				},
 			},
 			Service: &contour_v1alpha1.NamespacedName{

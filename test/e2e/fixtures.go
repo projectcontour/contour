@@ -579,13 +579,15 @@ func DefaultContourConfiguration() *contour_v1alpha1.ContourConfiguration {
 					UseProxyProto:             ptr.To(false),
 					DisableAllowChunkedLength: ptr.To(false),
 					ConnectionBalancer:        "",
-					TLS: &contour_v1alpha1.EnvoyTLS{
-						MinimumProtocolVersion: "1.2",
-						CipherSuites: []string{
-							"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-							"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-							"ECDHE-ECDSA-AES256-GCM-SHA384",
-							"ECDHE-RSA-AES256-GCM-SHA384",
+					TLS: &contour_v1alpha1.EnvoyListenerTLS{
+						EnvoyTLS: contour_v1alpha1.EnvoyTLS{
+							MinimumProtocolVersion: "1.2",
+							CipherSuites: []string{
+								"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+								"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+								"ECDHE-ECDSA-AES256-GCM-SHA384",
+								"ECDHE-RSA-AES256-GCM-SHA384",
+							},
 						},
 					},
 				},

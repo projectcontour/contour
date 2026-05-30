@@ -1523,7 +1523,14 @@ func TestDetermineUpstreamTLS(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := (*UpstreamTLS)(tc.envoyTLS)
+			var got *UpstreamTLS
+			if tc.envoyTLS != nil {
+				got = &UpstreamTLS{
+					MinimumProtocolVersion: tc.envoyTLS.MinimumProtocolVersion,
+					MaximumProtocolVersion: tc.envoyTLS.MaximumProtocolVersion,
+					CipherSuites:           tc.envoyTLS.CipherSuites,
+				}
+			}
 			assert.Equal(t, tc.want, got)
 		})
 	}

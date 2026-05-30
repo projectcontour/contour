@@ -507,6 +507,14 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		}
 	}
 
+	var fingerprint *contour_v1alpha1.TLSFingerprint
+	if ctx.Config.TLS.Fingerprint != nil {
+		fingerprint = &contour_v1alpha1.TLSFingerprint{
+			JA3: ctx.Config.TLS.Fingerprint.JA3,
+			JA4: ctx.Config.TLS.Fingerprint.JA4,
+		}
+	}
+
 	contourMetrics := contour_v1alpha1.MetricsConfig{
 		Address: ctx.metricsAddr,
 		Port:    ctx.metricsPort,
@@ -559,10 +567,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				MaxRequestsPerIOCycle:         ctx.Config.Listener.MaxRequestsPerIOCycle,
 				HTTP2MaxConcurrentStreams:     ctx.Config.Listener.HTTP2MaxConcurrentStreams,
 				MaxConnectionsPerListener:     ctx.Config.Listener.MaxConnectionsPerListener,
-				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
-					MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
-					CipherSuites:           cipherSuites,
+				TLS: &contour_v1alpha1.EnvoyListenerTLS{
+					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
+						MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
+						MaximumProtocolVersion: ctx.Config.TLS.MaximumProtocolVersion,
+						CipherSuites:           cipherSuites,
+					},
+					Fingerprint: fingerprint,
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          ctx.Config.Listener.SocketOptions.TOS,

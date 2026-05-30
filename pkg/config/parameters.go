@@ -178,6 +178,10 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+
+	// Fingerprint defines TLS fingerprinting configuration.
+	// This only applies to listener TLS (not upstream TLS).
+	Fingerprint *TLSFingerprint `yaml:"fingerprint,omitempty"`
 }
 
 // ProtocolParameters holds configuration details for TLS protocol specifics.
@@ -191,6 +195,17 @@ type ProtocolParameters struct {
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+}
+
+// TLSFingerprint defines TLS fingerprinting configuration.
+type TLSFingerprint struct {
+	// JA3 enables JA3 fingerprinting in the TLS Inspector.
+	// When true, populates JA3 hash in dynamic metadata.
+	JA3 *bool `yaml:"ja3,omitempty"`
+
+	// JA4 enables JA4 fingerprinting in the TLS Inspector.
+	// When true, populates JA4 hash in dynamic metadata.
+	JA4 *bool `yaml:"ja4,omitempty"`
 }
 
 // Validate TLS fallback certificate, client certificate, and cipher suites
