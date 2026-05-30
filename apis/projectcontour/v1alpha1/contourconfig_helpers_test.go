@@ -93,7 +93,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
-					TLS: &contour_v1alpha1.EnvoyTLS{},
+					TLS: &contour_v1alpha1.EnvoyListenerTLS{},
 				},
 			},
 		}

@@ -80,6 +80,10 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 		{"dog=pug", "cat=black"},
 		{"grpc_status"},
 		{"grpc_status_number"},
+		{"tls_ja3_fingerprint"},
+		{"tls_ja4_fingerprint"},
+		{"@timestamp", "ja3=%TLS_JA3_FINGERPRINT%"},
+		{"@timestamp", "ja4=%TLS_JA4_FINGERPRINT%"},
 	}
 
 	for _, c := range successCases {
@@ -133,6 +137,9 @@ func TestAccessLogFormatString(t *testing.T) {
 		"%UPSTREAM_PEER_CERT_V_END%\n",
 		"%UPSTREAM_PEER_CERT%\n",
 		"%UPSTREAM_FILTER_STATE%\n",
+		"%TLS_JA3_FINGERPRINT%\n",
+		"%TLS_JA4_FINGERPRINT%\n",
+		"ja3=%TLS_JA3_FINGERPRINT% ja4=%TLS_JA4_FINGERPRINT%\n",
 	}
 
 	for _, c := range successCases {

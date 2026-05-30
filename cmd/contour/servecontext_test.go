@@ -407,9 +407,11 @@ func defaultContourConfiguration() contour_v1alpha1.ContourConfigurationSpec {
 				DisableAllowChunkedLength:  ptr.To(false),
 				DisableMergeSlashes:        ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
-				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: "",
-					MaximumProtocolVersion: "",
+				TLS: &contour_v1alpha1.EnvoyListenerTLS{
+					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
+						MinimumProtocolVersion: "",
+						MaximumProtocolVersion: "",
+					},
 				},
 				SocketOptions: &contour_v1alpha1.SocketOptions{
 					TOS:          0,
@@ -916,6 +918,22 @@ func TestConvertServeContext(t *testing.T) {
 				cfg.Envoy.OMEnforcedHealth = &contour_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8005,
+				}
+				return cfg
+			},
+		},
+		"tls fingerprinting": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.TLS.Fingerprint = &config.TLSFingerprint{
+					JA3: ptr.To(true),
+					JA4: ptr.To(true),
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.TLS.Fingerprint = &contour_v1alpha1.TLSFingerprint{
+					JA3: ptr.To(true),
+					JA4: ptr.To(true),
 				}
 				return cfg
 			},

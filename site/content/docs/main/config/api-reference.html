@@ -7109,8 +7109,8 @@ for more information.</p>
 <code>tls</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.EnvoyTLS">
-EnvoyTLS
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerTLS">
+EnvoyListenerTLS
 </a>
 </em>
 </td>
@@ -7182,6 +7182,58 @@ uint32
 <em>(Optional)</em>
 <p>Defines the limit on number of active connections to a listener. The limit is applied
 per listener. The default value when this is not set is unlimited.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.EnvoyListenerTLS">EnvoyListenerTLS
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+<p>EnvoyListenerTLS describes TLS parameters for Envoy listeners.
+It extends EnvoyTLS with listener-specific settings like TLS fingerprinting.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>EnvoyTLS</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.EnvoyTLS">
+EnvoyTLS
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>EnvoyTLS</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>fingerprint</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.TLSFingerprint">
+TLSFingerprint
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Fingerprint defines TLS fingerprinting configuration
+for the TLS Inspector listener filter.</p>
 </td>
 </tr>
 </tbody>
@@ -7516,10 +7568,11 @@ they still count against the global limit.</p>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ClusterParameters">ClusterParameters</a>, 
-<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerTLS">EnvoyListenerTLS</a>)
 </p>
 <p>
-<p>EnvoyTLS describes tls parameters for Envoy listneners.</p>
+<p>EnvoyTLS describes TLS protocol parameters shared between
+listener and upstream TLS contexts.</p>
 </p>
 <table>
 <thead>
@@ -8924,6 +8977,53 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Allow serving the xDS gRPC API without TLS.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.TLSFingerprint">TLSFingerprint
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerTLS">EnvoyListenerTLS</a>)
+</p>
+<p>
+<p>TLSFingerprint defines TLS fingerprinting configuration for the TLS Inspector.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>ja3</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>JA3 enables JA3 fingerprinting in the TLS Inspector.
+When true, populates JA3 hash in dynamic metadata.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ja4</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>JA4 enables JA4 fingerprinting in the TLS Inspector.
+When true, populates JA4 hash in dynamic metadata.</p>
 </td>
 </tr>
 </tbody>

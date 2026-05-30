@@ -117,6 +117,7 @@ Contour should provision TLS hosts.
 | fallback-certificate     |          |                                                                                                                   | [Fallback certificate configuration](#fallback-certificate).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | envoy-client-certificate |          |                                                                                                                   | [Client certificate configuration for Envoy](#envoy-client-certificate).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | cipher-suites            | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
+| fingerprint              |          |                                                                                                                   | [TLS fingerprinting configuration](#tls-fingerprint).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Upstream TLS Configuration
 
@@ -143,6 +144,14 @@ The Upstream TLS configuration block can be used to configure default values for
 | name       | string | `""`    | This field specifies the name of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service.      |
 | namespace  | string | `""`    | This field specifies the namespace of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service. |
 
+### TLS Fingerprint
+
+When enabled, TLS fingerprints are computed for HTTPS listeners and can be logged in access logs. See [Logging TLS Fingerprints](config/access-logging#logging-tls-fingerprints-ja3ja4) for more information.
+
+| Field Name | Type    | Default | Description                          |
+| ---------- | ------- | ------- | ------------------------------------ |
+| ja3        | boolean | `false` | Enables JA3 TLS fingerprinting. |
+| ja4        | boolean | `false` | Enables JA4 TLS fingerprinting. |
 
 ### Timeout Configuration
 

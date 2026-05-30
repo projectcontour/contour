@@ -396,7 +396,7 @@ type EnvoyListenerConfig struct {
 
 	// TLS holds various configurable Envoy TLS listener values.
 	// +optional
-	TLS *EnvoyTLS `json:"tls,omitempty"`
+	TLS *EnvoyListenerTLS `json:"tls,omitempty"`
 
 	// SocketOptions defines configurable socket options for the listeners.
 	// Single set of options are applied to all listeners.
@@ -451,7 +451,8 @@ type SocketOptions struct {
 	TrafficClass int32 `json:"trafficClass,omitempty"`
 }
 
-// EnvoyTLS describes tls parameters for Envoy listneners.
+// EnvoyTLS describes TLS protocol parameters shared between
+// listener and upstream TLS contexts.
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
 	// negotiate.
@@ -508,6 +509,46 @@ type EnvoyTLS struct {
 	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
 	// +optional
 	CipherSuites []string `json:"cipherSuites,omitempty"`
+}
+
+// EnvoyListenerTLS describes TLS parameters for Envoy listeners.
+// It extends EnvoyTLS with listener-specific settings like TLS fingerprinting.
+type EnvoyListenerTLS struct {
+	EnvoyTLS `json:",inline"`
+
+	// Fingerprint defines TLS fingerprinting configuration
+	// for the TLS Inspector listener filter.
+	// +optional
+	Fingerprint *TLSFingerprint `json:"fingerprint,omitempty"`
+}
+
+// TLSFingerprint defines TLS fingerprinting configuration for the TLS Inspector.
+type TLSFingerprint struct {
+	// JA3 enables JA3 fingerprinting in the TLS Inspector.
+	// When true, populates JA3 hash in dynamic metadata.
+	// +optional
+	JA3 *bool `json:"ja3,omitempty"`
+
+	// JA4 enables JA4 fingerprinting in the TLS Inspector.
+	// When true, populates JA4 hash in dynamic metadata.
+	// +optional
+	JA4 *bool `json:"ja4,omitempty"`
+}
+
+// GetJA3 returns the JA3 fingerprinting setting, or nil if not configured.
+func (t *EnvoyListenerTLS) GetJA3() *bool {
+	if t == nil || t.Fingerprint == nil {
+		return nil
+	}
+	return t.Fingerprint.JA3
+}
+
+// GetJA4 returns the JA4 fingerprinting setting, or nil if not configured.
+func (t *EnvoyListenerTLS) GetJA4() *bool {
+	if t == nil || t.Fingerprint == nil {
+		return nil
+	}
+	return t.Fingerprint.JA4
 }
 
 // EnvoyListener defines parameters for an Envoy Listener.

@@ -63,12 +63,14 @@ func TestOverlayOnDefaults(t *testing.T) {
 				DisableMergeSlashes:        ptr.To(true),
 				ServerHeaderTransformation: contour_v1alpha1.PassThroughServerHeader,
 				ConnectionBalancer:         "yesplease",
-				TLS: &contour_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: "1.7",
-					MaximumProtocolVersion: "1.7",
-					CipherSuites: []string{
-						"foo",
-						"bar",
+				TLS: &contour_v1alpha1.EnvoyListenerTLS{
+					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
+						MinimumProtocolVersion: "1.7",
+						MaximumProtocolVersion: "1.7",
+						CipherSuites: []string{
+							"foo",
+							"bar",
+						},
 					},
 				},
 			},
