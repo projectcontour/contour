@@ -1406,6 +1406,95 @@ func (p *HTTPProxyProcessor) computeVirtualHostAuthorization(auth *contour_v1.Au
 	return extAuth
 }
 
+// convertHTTPAuthzAllowedHeaders converts API header match types to internal DAG types.
+// Assumes headers have already been validated with ExternalAuthAllowedHeadersValid.
+func convertHTTPAuthzAllowedHeaders(headers []contour_v1.HTTPAuthorizationServerAllowedHeaders) []HeaderNameMatchCondition {
+	var result []HeaderNameMatchCondition
+	for _, h := range headers {
+		var matchType, value string
+		switch {
+		case h.Exact != "":
+			matchType = HeaderNameMatchTypeExact
+			value = h.Exact
+		case h.Prefix != "":
+			matchType = HeaderNameMatchTypePrefix
+			value = h.Prefix
+		case h.Suffix != "":
+			matchType = HeaderNameMatchTypeSuffix
+			value = h.Suffix
+		case h.Contains != "":
+			matchType = HeaderNameMatchTypeContains
+			value = h.Contains
+		}
+
+		result = append(result, HeaderNameMatchCondition{
+			MatchType:  matchType,
+			Value:      value,
+			IgnoreCase: h.IgnoreCase,
+		})
+	}
+	return result
+}
+
+func NewExternalAuthorization(auth *contour_v1.AuthorizationServer, validCond *contour_v1.DetailedCondition) *ExternalAuthorization {
+	tout, err := timeout.Parse(auth.ResponseTimeout)
+	if err != nil {
+		validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
+			"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
+		return nil
+	}
+
+	extAuthz := &ExternalAuthorization{
+		AuthorizationFailOpen:        auth.FailOpen,
+		AuthorizationResponseTimeout: tout,
+	}
+
+	switch auth.ServiceType {
+	case contour_v1.AuthorizationHTTPService:
+		extAuthz.ServiceAPIType = AuthorizationServiceHTTP
+	default:
+		extAuthz.ServiceAPIType = AuthorizationServiceGRPC
+	}
+
+	// Validate Context is only used with gRPC.
+	if auth.AuthPolicy != nil && len(auth.AuthPolicy.Context) > 0 && extAuthz.ServiceAPIType == AuthorizationServiceHTTP {
+		validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthContextForHTTP",
+			"Spec.Virtualhost.Authorization.AuthPolicy.Context are only applied to grpc service type")
+		return nil
+	}
+
+	if auth.HTTPServerSettings != nil {
+		if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
+			validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+				"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: %s", err)
+			return nil
+		}
+		extAuthz.HTTPAllowedAuthorizationHeaders = convertHTTPAuthzAllowedHeaders(auth.HTTPServerSettings.AllowedAuthorizationHeaders)
+
+		if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
+			validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+				"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedUpstreamHeaders is invalid: %s", err)
+			return nil
+		}
+		extAuthz.HTTPAllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(auth.HTTPServerSettings.AllowedUpstreamHeaders)
+
+		extAuthz.HTTPPathPrefix = auth.HTTPServerSettings.PathPrefix
+	}
+
+	if auth.WithRequestBody != nil {
+		maxRequestBytes := defaultMaxRequestBytes
+		if auth.WithRequestBody.MaxRequestBytes != 0 {
+			maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
+		}
+		extAuthz.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
+			MaxRequestBytes:     maxRequestBytes,
+			AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
+			PackAsBytes:         auth.WithRequestBody.PackAsBytes,
+		}
+	}
+	return extAuthz
+}
+
 func validateExternalAuthExtensionService(ref contour_v1.ExtensionServiceReference, validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, getExtensionCluster func(name string) *ExtensionCluster) (bool, *ExtensionCluster) {
 	if ref.APIVersion != contour_v1alpha1.GroupVersion.String() {
 		validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadResourceVersion",
@@ -1427,21 +1516,6 @@ func validateExternalAuthExtensionService(ref contour_v1.ExtensionServiceReferen
 	}
 
 	return true, ext
-}
-
-func determineExternalAuthTimeout(responseTimeout string, validCond *contour_v1.DetailedCondition, ext *ExtensionCluster) (bool, *timeout.Setting) {
-	tout, err := timeout.Parse(responseTimeout)
-	if err != nil {
-		validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
-			"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
-		return false, nil
-	}
-
-	if tout.UseDefault() {
-		return true, &ext.RouteTimeoutPolicy.ResponseTimeout
-	}
-
-	return true, &tout
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, svhost *SecureVirtualHost) bool {

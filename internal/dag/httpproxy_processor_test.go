@@ -811,69 +811,6 @@ func TestValidateExternalAuthExtensionService(t *testing.T) {
 	}
 }
 
-func TestDetermineExternalAuthTimeout(t *testing.T) {
-	tests := map[string]struct {
-		responseTimeout string
-		wantValidCond   *contour_v1.DetailedCondition
-		ext             *ExtensionCluster
-		want            *timeout.Setting
-		wantBool        bool
-	}{
-		"invalid timeout": {
-			responseTimeout: "foo",
-			wantValidCond: &contour_v1.DetailedCondition{
-				Condition: meta_v1.Condition{
-					Status:  contour_v1.ConditionTrue,
-					Reason:  "ErrorPresent",
-					Message: "At least one error present, see Errors for details",
-				},
-				Errors: []contour_v1.SubCondition{
-					{
-						Type:    "AuthError",
-						Reason:  "AuthResponseTimeoutInvalid",
-						Message: "Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string \"foo\": time: invalid duration \"foo\"",
-						Status:  contour_v1.ConditionTrue,
-					},
-				},
-			},
-		},
-		"default timeout": {
-			responseTimeout: "",
-			wantValidCond:   &contour_v1.DetailedCondition{},
-			ext: &ExtensionCluster{
-				Name: "test",
-				RouteTimeoutPolicy: RouteTimeoutPolicy{
-					ResponseTimeout: timeout.DurationSetting(time.Second * 10),
-				},
-			},
-			want:     ptr.To(timeout.DurationSetting(time.Second * 10)),
-			wantBool: true,
-		},
-		"success": {
-			responseTimeout: "20s",
-			wantValidCond:   &contour_v1.DetailedCondition{},
-			ext: &ExtensionCluster{
-				Name: "test",
-				RouteTimeoutPolicy: RouteTimeoutPolicy{
-					ResponseTimeout: timeout.DurationSetting(time.Second * 10),
-				},
-			},
-			want:     ptr.To(timeout.DurationSetting(time.Second * 20)),
-			wantBool: true,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			validCond := &contour_v1.DetailedCondition{}
-			gotBool, got := determineExternalAuthTimeout(tc.responseTimeout, validCond, tc.ext)
-			require.Equal(t, tc.want, got)
-			require.Equal(t, tc.wantBool, gotBool)
-			require.Equal(t, tc.wantValidCond, validCond)
-		})
-	}
-}
-
 func TestToIPFilterRule(t *testing.T) {
 	tests := map[string]struct {
 		allowPolicy       []contour_v1.IPFilterPolicy

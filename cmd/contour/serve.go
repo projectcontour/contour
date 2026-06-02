@@ -836,6 +836,12 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 		return nil, fmt.Errorf("%s", validCond.Errors[0].Message)
 	}
 
+	// If ContourConfiguration.spec.globalExtAuth.responseTimeout is not set,
+	// fall back to ExtensionService.spec.timeoutPolicy.response.
+	if extAuth.AuthorizationResponseTimeout.UseDefault() {
+		extAuth.AuthorizationResponseTimeout = extensionSvcConfig.Timeout
+	}
+
 	return &xdscache_v3.GlobalExternalAuthConfig{
 		ExtensionServiceConfig: extensionSvcConfig,
 		ExternalAuthorization:  *extAuth,

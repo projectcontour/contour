@@ -412,7 +412,6 @@ func queryParameterMatchConditionsValid(conditions []contour_v1.MatchCondition) 
 // any of the following scenarios:
 //   - no conditions are set
 //   - more than one condition is set in the same allowed header condition branch
-//   - invalid regular expression is specified for the Regex condition
 func ExternalAuthAllowedHeadersValid(allowedHeaders []contour_v1.HTTPAuthorizationServerAllowedHeaders) error {
 	for _, allowedHeader := range allowedHeaders {
 		sum := 0
