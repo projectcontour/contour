@@ -18,7 +18,7 @@ concurrency:
 
 env:
   GOPROXY: https://proxy.golang.org/
-  GO_VERSION: 1.26.3
+  GO_VERSION: 1.26.4
 
 jobs:
   CodeQL-Build:
