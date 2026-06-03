@@ -4,8 +4,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly KUBECTL_VERS="v1.35.1"
-readonly KIND_VERS="v0.31.0"
+readonly KUBECTL_VERS="v1.36.1"
+readonly KIND_VERS="v0.32.0"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
