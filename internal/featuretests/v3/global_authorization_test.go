@@ -804,7 +804,7 @@ func TestGlobalAuthorization(t *testing.T) {
 							Timeout:          timeout.DurationSetting(defaultResponseTimeout),
 						},
 						ExternalAuthorization: dag.ExternalAuthorization{
-							ServiceAPIType:  dag.AuthorizationServiceGRPC,
+							ServiceAPIType:               dag.AuthorizationServiceGRPC,
 							AuthorizationResponseTimeout: timeout.DurationSetting(defaultResponseTimeout),
 						},
 						Context: map[string]string{
