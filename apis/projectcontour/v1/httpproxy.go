@@ -239,14 +239,38 @@ type ExtensionServiceReference struct {
 	Name string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }
 
+// AuthorizationServiceType indicates the protocol
+// implemented by the external authorization server.
+type AuthorizationServiceType string
+
+const (
+	AuthorizationGRPCService AuthorizationServiceType = "grpc"
+	AuthorizationHTTPService AuthorizationServiceType = "http"
+)
+
 // AuthorizationServer configures an external server to authenticate
 // client requests. The external server must implement the v3 Envoy
-// external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto).
+// external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto)
+// or the HTTP authorization server protocol.
+// +kubebuilder:validation:XValidation:message="httpSettings can only be set when serviceType is 'http'",rule="!has(self.httpSettings) || self.serviceType == 'http'"
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
 	// +optional
 	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
+
+	// ServiceType sets the protocol used to communicate with
+	// the external authorization server.
+	//
+	// +optional
+	// +kubebuilder:validation:Enum=http;grpc
+	// +kubebuilder:default=grpc
+	ServiceType AuthorizationServiceType `json:"serviceType,omitempty"`
+
+	// HTTPAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.
+	//
+	// +optional
+	HTTPServerSettings *HTTPAuthorizationServerSettings `json:"httpSettings,omitempty"`
 
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.
@@ -274,6 +298,64 @@ type AuthorizationServer struct {
 	// WithRequestBody specifies configuration for sending the client request's body to authorization server.
 	// +optional
 	WithRequestBody *AuthorizationServerBufferSettings `json:"withRequestBody,omitempty"`
+}
+
+// HTTPAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.
+type HTTPAuthorizationServerSettings struct {
+	// PathPrefix Sets a prefix to the value of authorization request header Path.
+	//
+	// +optional
+	PathPrefix string `json:"pathPrefix,omitempty"`
+
+	// AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+	// Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.
+	//
+	// +optional
+	AllowedAuthorizationHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedAuthorizationHeaders,omitempty"`
+
+	// AllowedUpstreamHeaders specifies response headers from the authorization server
+	// that may be added to the original client request before sending it to the upstream.
+	//
+	// +optional
+	AllowedUpstreamHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedUpstreamHeaders,omitempty"`
+}
+
+// HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
+// in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
+// experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+// +kubebuilder:validation:XValidation:message="only one of prefix, suffix, exact, and contains should be set in the allowedHeader",rule="(has(self.exact) ? 1 : 0) + (has(self.prefix) ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains) ? 1 : 0) == 1"
+type HTTPAuthorizationServerAllowedHeaders struct {
+	// Exact specifies a string that the header name must be equal to.
+	//
+	// +optional
+	Exact string `json:"exact,omitempty"`
+
+	// Prefix defines a prefix match for the header name.
+	//
+	// +optional
+	Prefix string `json:"prefix,omitempty"`
+
+	// Suffix defines a suffix match for a header name.
+	//
+	// +optional
+	Suffix string `json:"suffix,omitempty"`
+
+	// To streamline user experience and mitigate potential issues, we do not support regex.
+	// Additionally, it's essential to ensure that any regex patterns adhere to the configured runtime key, re2.max_program_size.error_level
+	// by verifying that the program size is smaller than the specified value.
+	// This necessitates thorough validation of user input.
+	//
+	// Regex string `json:"regex,omitempty"`
+
+	// Contains specifies a substring that must be present in the header name.
+	//
+	// +optional
+	Contains string `json:"contains,omitempty"`
+
+	// IgnoreCase specifies whether string matching should be case-insensitive.
+	//
+	// +optional
+	IgnoreCase bool `json:"ignoreCase,omitempty"`
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client request data and send it as part of authorization request

@@ -436,6 +436,8 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
 
+	f.NamespacedTest("httpproxy-ext-auth-http", testExternalAuthzHTTP)
+
 	f.NamespacedTest("httpproxy-http-health-checks", testHTTPHealthChecks)
 
 	f.NamespacedTest("httpproxy-dynamic-headers", testDynamicHeaders)

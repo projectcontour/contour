@@ -47,6 +47,7 @@ var (
 			Name:      "extension",
 			Namespace: "auth",
 		},
+		ServiceType:     contour_v1.AuthorizationGRPCService,
 		FailOpen:        false,
 		ResponseTimeout: defaultResponseTimeout.String(),
 		AuthPolicy: &contour_v1.AuthorizationPolicy{
@@ -62,6 +63,7 @@ var (
 			Name:      "extension",
 			Namespace: "auth",
 		},
+		ServiceType:     contour_v1.AuthorizationGRPCService,
 		FailOpen:        false,
 		ResponseTimeout: defaultResponseTimeout.String(),
 		AuthPolicy: &contour_v1.AuthorizationPolicy{
@@ -580,6 +582,7 @@ func globalExternalAuthorizationWithTLSAuthOverride(t *testing.T, rh ResourceEve
 						Namespace: "auth",
 						Name:      "extension",
 					},
+					ServiceType:     contour_v1.AuthorizationGRPCService,
 					ResponseTimeout: defaultResponseTimeout.String(),
 					FailOpen:        true,
 					WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{
@@ -800,7 +803,10 @@ func TestGlobalAuthorization(t *testing.T) {
 							ExtensionService: k8s.NamespacedNameFrom("auth/extension"),
 							Timeout:          timeout.DurationSetting(defaultResponseTimeout),
 						},
-						FailOpen: false,
+						ExternalAuthorization: dag.ExternalAuthorization{
+							ServiceAPIType:               dag.AuthorizationServiceGRPC,
+							AuthorizationResponseTimeout: timeout.DurationSetting(defaultResponseTimeout),
+						},
 						Context: map[string]string{
 							"header_type": "root_config",
 							"header_1":    "message_1",

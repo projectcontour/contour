@@ -62,7 +62,7 @@ type ExtensionServiceTarget struct {
 // ExtensionServiceSpec defines the desired state of an ExtensionService resource.
 type ExtensionServiceSpec struct {
 	// Services specifies the set of Kubernetes Service resources that
-	// receive GRPC extension API requests.
+	// receive extension API requests.
 	// If no weights are specified for any of the entries in
 	// this array, traffic will be spread evenly across all the
 	// services.
@@ -78,15 +78,15 @@ type ExtensionServiceSpec struct {
 	UpstreamValidation *contour_v1.UpstreamValidation `json:"validation,omitempty"`
 
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
-	// Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.
+	// Values may be h2, h2c or http/1.1. If omitted, protocol-selection falls back on Service annotations.
 	//
 	// +optional
-	// +kubebuilder:validation:Enum=h2;h2c
+	// +kubebuilder:validation:Enum=http/1.1;h2;h2c
 	Protocol *string `json:"protocol,omitempty"`
 
-	// The policy for load balancing GRPC service requests. Note that the
+	// The policy for load balancing service requests. Note that the
 	// `Cookie` and `RequestHash` load balancing strategies cannot be used
-	// here.
+	// here for GRPC service requests.
 	//
 	// +optional
 	LoadBalancerPolicy *contour_v1.LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`

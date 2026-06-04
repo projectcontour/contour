@@ -847,20 +847,23 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 		context = contourConfiguration.GlobalExternalAuthorization.AuthPolicy.Context
 	}
 
-	globalExternalAuthConfig := &xdscache_v3.GlobalExternalAuthConfig{
-		ExtensionServiceConfig: extensionSvcConfig,
-		FailOpen:               contourConfiguration.GlobalExternalAuthorization.FailOpen,
-		Context:                context,
+	var validCond contour_v1.DetailedCondition
+	extAuth := dag.NewExternalAuthorization(contourConfiguration.GlobalExternalAuthorization, &validCond)
+	if len(validCond.Errors) > 0 {
+		return nil, fmt.Errorf("%s", validCond.Errors[0].Message)
 	}
 
-	if contourConfiguration.GlobalExternalAuthorization.WithRequestBody != nil {
-		globalExternalAuthConfig.WithRequestBody = &dag.AuthorizationServerBufferSettings{
-			PackAsBytes:         contourConfiguration.GlobalExternalAuthorization.WithRequestBody.PackAsBytes,
-			AllowPartialMessage: contourConfiguration.GlobalExternalAuthorization.WithRequestBody.AllowPartialMessage,
-			MaxRequestBytes:     contourConfiguration.GlobalExternalAuthorization.WithRequestBody.MaxRequestBytes,
-		}
+	// If ContourConfiguration.spec.globalExtAuth.responseTimeout is not set,
+	// fall back to ExtensionService.spec.timeoutPolicy.response.
+	if extAuth.AuthorizationResponseTimeout.UseDefault() {
+		extAuth.AuthorizationResponseTimeout = extensionSvcConfig.Timeout
 	}
-	return globalExternalAuthConfig, nil
+
+	return &xdscache_v3.GlobalExternalAuthConfig{
+		ExtensionServiceConfig: extensionSvcConfig,
+		ExternalAuthorization:  *extAuth,
+		Context:                context,
+	}, nil
 }
 
 func (s *Server) setupDebugService(debugConfig contour_v1alpha1.DebugConfig, builder *dag.Builder) error {

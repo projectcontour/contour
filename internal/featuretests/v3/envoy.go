@@ -249,6 +249,20 @@ func h2cCluster(c *envoy_config_cluster_v3.Cluster) *envoy_config_cluster_v3.Clu
 	return c
 }
 
+func http1Cluster(c *envoy_config_cluster_v3.Cluster) *envoy_config_cluster_v3.Cluster {
+	c.TypedExtensionProtocolOptions = map[string]*anypb.Any{
+		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+			&envoy_upstream_http_v3.HttpProtocolOptions{
+				UpstreamProtocolOptions: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+					ExplicitHttpConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+						ProtocolConfig: &envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+					},
+				},
+			}),
+	}
+	return c
+}
+
 func withConnectionTimeout(c *envoy_config_cluster_v3.Cluster, timeout time.Duration, httpVersion envoy_v3.HTTPVersionType) *envoy_config_cluster_v3.Cluster {
 	var config *envoy_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig
 
