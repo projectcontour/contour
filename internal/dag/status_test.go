@@ -3207,7 +3207,7 @@ func TestDAGStatus(t *testing.T) {
 				JWTProviders: []contour_v1.JWTProvider{
 					{
 						Name: "provider-1",
-						RemoteJWKS: contour_v1.RemoteJWKS{
+						RemoteJWKS: &contour_v1.RemoteJWKS{
 							URI: "https://jwt.example.com/jwks.json",
 						},
 					},

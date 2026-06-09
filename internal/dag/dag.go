@@ -1213,7 +1213,7 @@ type Secret struct {
 	ValidTLSSecret  *SecretValidationStatus
 	ValidCASecret   *SecretValidationStatus
 	ValidCRLSecret  *SecretValidationStatus
-	ValidJWKSSecret *SecretValidationStatus
+	ValidJWKSSecret map[string]*SecretValidationStatus
 }
 
 func (s *Secret) Name() string      { return s.Object.Name }

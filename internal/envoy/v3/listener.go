@@ -999,6 +999,16 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *envoy_filter_network_http_c
 					CacheDuration: cacheDuration,
 				},
 			}
+		default:
+			// Programming error: should never happen because the DAG should have rejected it.
+			// Fail closed by providing an empty JWKS that will reject all tokens.
+			envProv.JwksSourceSpecifier = &envoy_filter_http_jwt_authn_v3.JwtProvider_LocalJwks{
+				LocalJwks: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: `{"keys":[]}`,
+					},
+				},
+			}
 		}
 
 		jwtConfig.Providers[provider.Name] = envProv

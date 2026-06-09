@@ -98,7 +98,7 @@ func validCRLSecret(secret *core_v1.Secret) error {
 	return nil
 }
 
-// validJWKSecret returns an error if the Secret is not of type TLS or Opaque or
+// validJWKSecret returns an error if the Secret is not of type Opaque or
 // if it doesn't contain a valid JWKS in the data entry for the given key.
 func validJWKSSecret(secret *core_v1.Secret, key string) error {
 	if secret.Type != core_v1.SecretTypeOpaque {

@@ -8347,6 +8347,10 @@ spec:
                       required:
                       - name
                       type: object
+                      x-kubernetes-validations:
+                      - message: exactly one of remoteJWKS or localJWKS must be set
+                        rule: (has(self.remoteJWKS) && !has(self.localJWKS)) || (!has(self.remoteJWKS)
+                          && has(self.localJWKS))
                     type: array
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.

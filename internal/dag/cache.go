@@ -567,7 +567,8 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *core_v1.Secret) bool
 			if jp.LocalJWKS == nil || jp.LocalJWKS.SecretName == "" {
 				continue
 			}
-			if secret == k8s.NamespacedNameFrom(jp.LocalJWKS.SecretName, k8s.DefaultNamespace(proxy.Namespace)) {
+			// LocalJWKS is always in the same namespace as the proxy, no delegation support via "namespace/secretname".
+			if secret == (types.NamespacedName{Name: jp.LocalJWKS.SecretName, Namespace: proxy.Namespace}) {
 				return true
 			}
 		}
@@ -745,6 +746,7 @@ func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName, targetName
 }
 
 // LookupJWKSFromSecret returns JWKS JSON from the named Secret data entry.
+// The local JWKS is always in the same namespace as the proxy, no delegation permission check needed.
 func (kc *KubernetesCache) LookupJWKSFromSecret(name types.NamespacedName, key string) ([]byte, error) {
 	sec, ok := kc.secrets[name]
 	if !ok {
@@ -754,12 +756,15 @@ func (kc *KubernetesCache) LookupJWKSFromSecret(name types.NamespacedName, key s
 	// Compute and store the validation result if not
 	// already stored.
 	if sec.ValidJWKSSecret == nil {
-		sec.ValidJWKSSecret = &SecretValidationStatus{
+		sec.ValidJWKSSecret = make(map[string]*SecretValidationStatus)
+	}
+	if _, ok := sec.ValidJWKSSecret[key]; !ok {
+		sec.ValidJWKSSecret[key] = &SecretValidationStatus{
 			Error: validJWKSSecret(sec.Object, key),
 		}
 	}
 
-	if err := sec.ValidJWKSSecret.Error; err != nil {
+	if err := sec.ValidJWKSSecret[key].Error; err != nil {
 		return nil, err
 	}
 	return sec.Object.Data[key], nil

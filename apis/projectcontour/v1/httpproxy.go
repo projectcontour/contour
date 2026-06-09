@@ -443,6 +443,7 @@ type VirtualHost struct {
 }
 
 // JWTProvider defines how to verify JWTs on requests.
+// +kubebuilder:validation:XValidation:message="exactly one of remoteJWKS or localJWKS must be set",rule="(has(self.remoteJWKS) && !has(self.localJWKS)) || (!has(self.remoteJWKS) && has(self.localJWKS))"
 type JWTProvider struct {
 	// Unique name for the provider.
 	// +kubebuilder:validation:Required
@@ -488,12 +489,12 @@ type LocalJWKS struct {
 	// The name of the secret that contains the JWKS.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
-	SecretName string `json:"secretName,omitempty"`
+	SecretName string `json:"secretName"`
 
 	// The key of the secret that contains the JWKS.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
-	Key string `json:"key,omitempty"`
+	Key string `json:"key"`
 }
 
 // RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.
