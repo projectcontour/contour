@@ -50,7 +50,7 @@ type RuntimeCache struct {
 
 // NewRuntimeCache builds a RuntimeCache with the provided runtime
 // settings that will be set in the runtime layer configured by Contour.
-func NewRuntimeCache(runtimeSettings ConfigurableRuntimeSettings, log logrus.FieldLogger) *RuntimeCache {
+func NewRuntimeCache(log logrus.FieldLogger, runtimeSettings ConfigurableRuntimeSettings) *RuntimeCache {
 	runtimeKV := make(map[string]*structpb.Value)
 	dynamicRuntimeKV := make(map[string]*structpb.Value)
 	if runtimeSettings.MaxRequestsPerIOCycle != nil && *runtimeSettings.MaxRequestsPerIOCycle > 0 {

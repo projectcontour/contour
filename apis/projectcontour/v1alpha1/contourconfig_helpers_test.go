@@ -168,6 +168,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				RuntimeSettings: map[string]string{
 					"envoy.reloadable_features.some_feature": "false",
+					"not.a.real.envoy.key":                   "value",
 				},
 			},
 		}
