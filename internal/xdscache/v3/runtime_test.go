@@ -70,7 +70,7 @@ func TestRuntimeCacheContents(t *testing.T) {
 	}
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			rc := NewRuntimeCache(tc.runtimeSettings, fixture.NewTestLogger(t))
+			rc := NewRuntimeCache(fixture.NewTestLogger(t), tc.runtimeSettings)
 			fields := map[string]*structpb.Value{
 				"re2.max_program_size.error_level": structpb.NewNumberValue(1 << 20),
 				"re2.max_program_size.warn_level":  structpb.NewNumberValue(1000),
@@ -89,13 +89,13 @@ func TestRuntimeCacheContents(t *testing.T) {
 }
 
 func TestRuntimeCacheSkipsManagedKeys(t *testing.T) {
-	rc := NewRuntimeCache(ConfigurableRuntimeSettings{
+	rc := NewRuntimeCache(fixture.NewTestLogger(t), ConfigurableRuntimeSettings{
 		MaxRequestsPerIOCycle: ptr.To(uint32(5)),
 		UserDefinedSettings: map[string]string{
 			"http.max_requests_per_io_cycle": "99",
 			"my.custom.setting":              "hello",
 		},
-	}, fixture.NewTestLogger(t))
+	})
 
 	messages := rc.Contents()
 	require.Len(t, messages, 1)
@@ -237,7 +237,7 @@ func TestRuntimeVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			rc := NewRuntimeCache(tc.ConfigurableRuntimeSettings, fixture.NewTestLogger(t))
+			rc := NewRuntimeCache(fixture.NewTestLogger(t), tc.ConfigurableRuntimeSettings)
 			rc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
 			protobuf.ExpectEqual(t, tc.expected, rc.Contents())
 		})
@@ -284,7 +284,7 @@ func TestRuntimeCacheOnChangeDelete(t *testing.T) {
 		},
 	}
 
-	rc := NewRuntimeCache(configurableRuntimeSettings, fixture.NewTestLogger(t))
+	rc := NewRuntimeCache(fixture.NewTestLogger(t), configurableRuntimeSettings)
 	rc.OnChange(buildDAGFallback(t, nil, objs...))
 	protobuf.ExpectEqual(t, []proto.Message{
 		&envoy_service_runtime_v3.Runtime{
