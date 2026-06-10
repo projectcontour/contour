@@ -402,19 +402,19 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 					defaultJWTProvider = jwtProvider.Name
 				}
 
-				if jwtProvider.RemoteJWKS != nil && jwtProvider.LocalJWKS != nil {
+				if jwtProvider.RemoteJWKS.URI != "" && jwtProvider.LocalJWKS.SecretName != "" {
 					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "JWKSSourceConflict",
 						"Spec.VirtualHost.JWTProviders for provider %q is invalid: at most one of remoteJWKS or localJWKS may be set", jwtProvider.Name)
 					return
 				}
-				if jwtProvider.RemoteJWKS == nil && jwtProvider.LocalJWKS == nil {
+				if jwtProvider.RemoteJWKS.URI == "" && jwtProvider.LocalJWKS.SecretName == "" {
 					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "JWKSSourceMissing",
 						"Spec.VirtualHost.JWTProviders for provider %q is invalid: exactly one of remoteJWKS or localJWKS must be set", jwtProvider.Name)
 					return
 				}
 
 				switch {
-				case jwtProvider.LocalJWKS != nil:
+				case jwtProvider.LocalJWKS.SecretName != "":
 					jwksSecretNamespacedName := types.NamespacedName{
 						Name:      jwtProvider.LocalJWKS.SecretName,
 						Namespace: proxy.Namespace,
@@ -434,7 +434,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 						},
 						ForwardJWT: jwtProvider.ForwardJWT,
 					})
-				case jwtProvider.RemoteJWKS != nil:
+				case jwtProvider.RemoteJWKS.URI != "":
 					jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.URI)
 					if err != nil {
 						validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSURIInvalid",

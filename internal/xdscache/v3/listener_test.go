@@ -111,7 +111,7 @@ func TestListenerVisit(t *testing.T) {
 	jwtProvider := contour_v1.JWTProvider{
 		Name:   "provider-1",
 		Issuer: "issuer.jwt.example.com",
-		RemoteJWKS: &contour_v1.RemoteJWKS{
+		RemoteJWKS: contour_v1.RemoteJWKS{
 			URI:     "https://jwt.example.com/jwks.json",
 			Timeout: jwksTimeout,
 		},

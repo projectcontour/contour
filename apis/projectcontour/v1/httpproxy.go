@@ -471,11 +471,11 @@ type JWTProvider struct {
 
 	// Remote JWKS fetches signing keys from an HTTP(S) endpoint.
 	// +optional
-	RemoteJWKS *RemoteJWKS `json:"remoteJWKS,omitempty"`
+	RemoteJWKS RemoteJWKS `json:"remoteJWKS,omitempty"`
 
-	// Local JWKS loads signing keys from a Kubernetes Secret
+	// Local JWKS loads signing keys from a Kubernetes Secret.
 	// +optional
-	LocalJWKS *LocalJWKS `json:"localJWKS,omitempty"`
+	LocalJWKS LocalJWKS `json:"localJWKS,omitempty"`
 
 	// Whether the JWT should be forwarded to the backend
 	// service after successful verification. By default,

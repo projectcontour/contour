@@ -564,7 +564,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *core_v1.Secret) bool
 			continue
 		}
 		for _, jp := range vh.JWTProviders {
-			if jp.LocalJWKS == nil || jp.LocalJWKS.SecretName == "" {
+			if jp.LocalJWKS.SecretName == "" {
 				continue
 			}
 			// LocalJWKS is always in the same namespace as the proxy, no delegation support via "namespace/secretname".
