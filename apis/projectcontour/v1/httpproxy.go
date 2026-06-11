@@ -443,6 +443,7 @@ type VirtualHost struct {
 }
 
 // JWTProvider defines how to verify JWTs on requests.
+// +kubebuilder:validation:XValidation:message="exactly one of remoteJWKS or localJWKS must be set",rule="(has(self.remoteJWKS) && !has(self.localJWKS)) || (!has(self.remoteJWKS) && has(self.localJWKS))"
 type JWTProvider struct {
 	// Unique name for the provider.
 	// +kubebuilder:validation:Required
@@ -468,15 +469,32 @@ type JWTProvider struct {
 	// +optional
 	Audiences []string `json:"audiences,omitempty"`
 
-	// Remote JWKS to use for verifying JWT signatures.
-	// +kubebuilder:validation:Required
-	RemoteJWKS RemoteJWKS `json:"remoteJWKS"`
+	// Remote JWKS fetches signing keys from an HTTP(S) endpoint.
+	// +optional
+	RemoteJWKS RemoteJWKS `json:"remoteJWKS,omitempty"`
+
+	// Local JWKS loads signing keys from a Kubernetes Secret.
+	// +optional
+	LocalJWKS LocalJWKS `json:"localJWKS,omitempty"`
 
 	// Whether the JWT should be forwarded to the backend
 	// service after successful verification. By default,
 	// the JWT is not forwarded.
 	// +optional
 	ForwardJWT bool `json:"forwardJWT,omitempty"`
+}
+
+// LocalJWKS defines how to fetch a JWKS from a Kubernetes secret.
+type LocalJWKS struct {
+	// The name of the secret that contains the JWKS.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	SecretName string `json:"secretName"`
+
+	// The key of the secret that contains the JWKS.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Key string `json:"key"`
 }
 
 // RemoteJWKS defines how to fetch a JWKS from an HTTP endpoint.

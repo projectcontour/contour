@@ -563,6 +563,15 @@ func (kc *KubernetesCache) secretTriggersRebuild(secretObj *core_v1.Secret) bool
 			// not a root ingress
 			continue
 		}
+		for _, jp := range vh.JWTProviders {
+			if jp.LocalJWKS.SecretName == "" {
+				continue
+			}
+			// LocalJWKS is always in the same namespace as the proxy, no delegation support via "namespace/secretname".
+			if secret == (types.NamespacedName{Name: jp.LocalJWKS.SecretName, Namespace: proxy.Namespace}) {
+				return true
+			}
+		}
 		tls := vh.TLS
 		if tls == nil {
 			// no tls spec
@@ -734,6 +743,31 @@ func (kc *KubernetesCache) LookupCRLSecret(name types.NamespacedName, targetName
 		return nil, err
 	}
 	return sec, nil
+}
+
+// LookupJWKSFromSecret returns JWKS JSON from the named Secret data entry.
+// The local JWKS is always in the same namespace as the proxy, no delegation permission check needed.
+func (kc *KubernetesCache) LookupJWKSFromSecret(name types.NamespacedName, key string) ([]byte, error) {
+	sec, ok := kc.secrets[name]
+	if !ok {
+		return nil, fmt.Errorf("Secret not found")
+	}
+
+	// Compute and store the validation result if not
+	// already stored.
+	if sec.ValidJWKSSecret == nil {
+		sec.ValidJWKSSecret = make(map[string]*SecretValidationStatus)
+	}
+	if _, ok := sec.ValidJWKSSecret[key]; !ok {
+		sec.ValidJWKSSecret[key] = &SecretValidationStatus{
+			Error: validJWKSSecret(sec.Object, key),
+		}
+	}
+
+	if err := sec.ValidJWKSSecret[key].Error; err != nil {
+		return nil, err
+	}
+	return sec.Object.Data[key], nil
 }
 
 // LookupUpstreamValidation constructs PeerValidationContext with CA certificate from the cache.

@@ -846,7 +846,8 @@ type JWTProvider struct {
 	Name       string
 	Issuer     string
 	Audiences  []string
-	RemoteJWKS RemoteJWKS
+	RemoteJWKS *RemoteJWKS
+	LocalJWKS  *LocalJWKS
 	ForwardJWT bool
 }
 
@@ -855,6 +856,10 @@ type RemoteJWKS struct {
 	Timeout       time.Duration
 	Cluster       DNSNameCluster
 	CacheDuration *time.Duration
+}
+
+type LocalJWKS struct {
+	JWKS []byte
 }
 
 // DNSNameCluster is a cluster that routes directly to a DNS
@@ -1201,13 +1206,14 @@ func (s *ServiceCluster) Rebalance() {
 	}
 }
 
-// Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
+// Secret represents a K8s Secret as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
-	Object         *core_v1.Secret
-	ValidTLSSecret *SecretValidationStatus
-	ValidCASecret  *SecretValidationStatus
-	ValidCRLSecret *SecretValidationStatus
+	Object          *core_v1.Secret
+	ValidTLSSecret  *SecretValidationStatus
+	ValidCASecret   *SecretValidationStatus
+	ValidCRLSecret  *SecretValidationStatus
+	ValidJWKSSecret map[string]*SecretValidationStatus
 }
 
 func (s *Secret) Name() string      { return s.Object.Name }

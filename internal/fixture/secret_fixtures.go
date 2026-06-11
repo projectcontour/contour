@@ -40,3 +40,13 @@ var SecretRootsFallback = &core_v1.Secret{
 		core_v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
 	},
 }
+
+var SecretRootsJWKSKey = "jwks"
+
+var SecretRootsJWKS = &core_v1.Secret{
+	ObjectMeta: ObjectMeta("roots/jwks"),
+	Type:       core_v1.SecretTypeOpaque,
+	Data: map[string][]byte{
+		SecretRootsJWKSKey: []byte(`{"keys":[{"kty":"RSA","n":"abc","e":"AQAB"}]}`),
+	},
+}

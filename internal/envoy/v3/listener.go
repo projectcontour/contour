@@ -967,15 +967,27 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *envoy_filter_network_http_c
 	}
 
 	for _, provider := range jwtProviders {
-		var cacheDuration *durationpb.Duration
-		if provider.RemoteJWKS.CacheDuration != nil {
-			cacheDuration = durationpb.New(*provider.RemoteJWKS.CacheDuration)
-		}
-
-		jwtConfig.Providers[provider.Name] = &envoy_filter_http_jwt_authn_v3.JwtProvider{
+		envProv := &envoy_filter_http_jwt_authn_v3.JwtProvider{
 			Issuer:    provider.Issuer,
 			Audiences: provider.Audiences,
-			JwksSourceSpecifier: &envoy_filter_http_jwt_authn_v3.JwtProvider_RemoteJwks{
+			Forward:   provider.ForwardJWT,
+		}
+
+		switch {
+		case provider.LocalJWKS != nil:
+			envProv.JwksSourceSpecifier = &envoy_filter_http_jwt_authn_v3.JwtProvider_LocalJwks{
+				LocalJwks: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: string(provider.LocalJWKS.JWKS),
+					},
+				},
+			}
+		case provider.RemoteJWKS != nil:
+			var cacheDuration *durationpb.Duration
+			if provider.RemoteJWKS.CacheDuration != nil {
+				cacheDuration = durationpb.New(*provider.RemoteJWKS.CacheDuration)
+			}
+			envProv.JwksSourceSpecifier = &envoy_filter_http_jwt_authn_v3.JwtProvider_RemoteJwks{
 				RemoteJwks: &envoy_filter_http_jwt_authn_v3.RemoteJwks{
 					HttpUri: &envoy_config_core_v3.HttpUri{
 						Uri: provider.RemoteJWKS.URI,
@@ -986,9 +998,20 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *envoy_filter_network_http_c
 					},
 					CacheDuration: cacheDuration,
 				},
-			},
-			Forward: provider.ForwardJWT,
+			}
+		default:
+			// Programming error: should never happen because the DAG should have rejected it.
+			// Fail closed by providing an empty JWKS that will reject all tokens.
+			envProv.JwksSourceSpecifier = &envoy_filter_http_jwt_authn_v3.JwtProvider_LocalJwks{
+				LocalJwks: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineString{
+						InlineString: `{"keys":[]}`,
+					},
+				},
+			}
 		}
+
+		jwtConfig.Providers[provider.Name] = envProv
 
 		// Set up a requirement map so that per-route filter config can refer
 		// to a requirement by name. This is nicer than specifying rules here,

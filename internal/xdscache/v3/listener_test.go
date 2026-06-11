@@ -3422,7 +3422,7 @@ func TestListenerVisit(t *testing.T) {
 						AddFilter(envoy_v3.FilterJWTAuthN([]dag.JWTProvider{{
 							Name:   jwtProvider.Name,
 							Issuer: jwtProvider.Issuer,
-							RemoteJWKS: dag.RemoteJWKS{
+							RemoteJWKS: &dag.RemoteJWKS{
 								URI: jwtProvider.RemoteJWKS.URI,
 								Cluster: dag.DNSNameCluster{
 									Address: jwksURL.Hostname(),
