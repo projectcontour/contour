@@ -9685,7 +9685,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:distroless-v1.38.1
+        image: docker.io/envoyproxy/envoy:distroless-v1.38.2
         imagePullPolicy: IfNotPresent
         name: envoy
         env:
