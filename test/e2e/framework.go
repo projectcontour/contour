@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/bombsimon/logrusr/v4"
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
@@ -74,8 +73,8 @@ type Framework struct {
 	// HTTP provides helpers for making HTTP/HTTPS requests.
 	HTTP *HTTP
 
-	// Certs provides helpers for creating cert-manager certificates
-	// and related resources.
+	// Certs provides helpers for generating TLS Secrets and related
+	// certificate material for e2e tests.
 	Certs *Certs
 
 	// Deployment provides helpers for managing deploying resources that
@@ -108,7 +107,6 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	require.NoError(t, gatewayapi_v1alpha2.Install(scheme))
 	require.NoError(t, gatewayapi_v1alpha3.Install(scheme))
 	require.NoError(t, gatewayapi_v1.Install(scheme))
-	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
 	ipV6Cluster := os.Getenv("IPV6_CLUSTER") == "true"
@@ -262,12 +260,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 			RetryTimeout:       60 * time.Second,
 			t:                  t,
 		},
-		Certs: &Certs{
-			client:        crClient,
-			retryInterval: time.Second,
-			retryTimeout:  60 * time.Second,
-			t:             t,
-		},
+		Certs:       newCerts(crClient, t),
 		Deployment:  deployment,
 		Provisioner: provisioner,
 		Kubectl:     kubectl,

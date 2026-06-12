@@ -16,16 +16,12 @@
 package ingress
 
 import (
-	"context"
 	"testing"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/stretchr/testify/require"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -95,75 +91,17 @@ var _ = Describe("Ingress", func() {
 	f.NamespacedTest("backend-tls", func(namespace string) {
 		Context("with backend tls", func() {
 			BeforeEach(func() {
-				// Top level issuer.
-				selfSignedIssuer := &certmanagerv1.Issuer{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "selfsigned",
+				f.Certs.CreateCAWithIssuer(namespace, "ca-cert", "ca-issuer")
+				f.Certs.CreateCertificate(e2e.CertificateSpec{
+					Namespace:  namespace,
+					Name:       "backend-client-cert",
+					SecretName: "backend-client-cert",
+					CommonName: "client",
+					Usages: []e2e.KeyUsage{
+						e2e.UsageClientAuth,
 					},
-					Spec: certmanagerv1.IssuerSpec{
-						IssuerConfig: certmanagerv1.IssuerConfig{
-							SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-						},
-					},
-				}
-				require.NoError(f.T(), f.Client.Create(context.TODO(), selfSignedIssuer))
-
-				// CA to sign backend certs with.
-				caCertificate := &certmanagerv1.Certificate{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "ca-cert",
-					},
-					Spec: certmanagerv1.CertificateSpec{
-						IsCA: true,
-						Usages: []certmanagerv1.KeyUsage{
-							certmanagerv1.UsageSigning,
-							certmanagerv1.UsageCertSign,
-						},
-						CommonName: "ca-cert",
-						SecretName: "ca-cert",
-						IssuerRef: certmanagermetav1.ObjectReference{
-							Name: "selfsigned",
-						},
-					},
-				}
-				require.NoError(f.T(), f.Client.Create(context.TODO(), caCertificate))
-
-				// Issuer based on CA to generate new certs with.
-				basedOnCAIssuer := &certmanagerv1.Issuer{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "ca-issuer",
-					},
-					Spec: certmanagerv1.IssuerSpec{
-						IssuerConfig: certmanagerv1.IssuerConfig{
-							CA: &certmanagerv1.CAIssuer{
-								SecretName: "ca-cert",
-							},
-						},
-					},
-				}
-				require.NoError(f.T(), f.Client.Create(context.TODO(), basedOnCAIssuer))
-
-				// Backend client cert, can use for upstream validation as well.
-				backendClientCert := &certmanagerv1.Certificate{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Namespace: namespace,
-						Name:      "backend-client-cert",
-					},
-					Spec: certmanagerv1.CertificateSpec{
-						Usages: []certmanagerv1.KeyUsage{
-							certmanagerv1.UsageClientAuth,
-						},
-						CommonName: "client",
-						SecretName: "backend-client-cert",
-						IssuerRef: certmanagermetav1.ObjectReference{
-							Name: "ca-issuer",
-						},
-					},
-				}
-				require.NoError(f.T(), f.Client.Create(context.TODO(), backendClientCert))
+					Issuer: "ca-issuer",
+				})
 
 				contourConfig.TLS = config.TLSParameters{
 					ClientCertificate: config.NamespacedName{

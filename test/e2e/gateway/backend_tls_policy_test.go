@@ -16,11 +16,8 @@
 package gateway
 
 import (
-	"context"
 	"encoding/json"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermeta_v1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,77 +38,18 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 		protocolVersion := "TLSv1.3"
 		t := f.T()
 
-		// Top level issuer.
-		selfSignedIssuer := &certmanagerv1.Issuer{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "selfsigned",
+		f.Certs.CreateCAWithIssuer(namespace, "ca-cert", "ca-issuer")
+		f.Certs.CreateCertificate(e2e.CertificateSpec{
+			Namespace:  namespace,
+			Name:       "backend-server-cert",
+			SecretName: "backend-server-cert",
+			CommonName: "echo-secure",
+			DNSNames:   []string{"echo-secure"},
+			Usages: []e2e.KeyUsage{
+				e2e.UsageServerAuth,
 			},
-			Spec: certmanagerv1.IssuerSpec{
-				IssuerConfig: certmanagerv1.IssuerConfig{
-					SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-				},
-			},
-		}
-		require.NoError(f.T(), f.Client.Create(context.TODO(), selfSignedIssuer))
-
-		// CA to sign backend certs with.
-		caCertificate := &certmanagerv1.Certificate{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "ca-cert",
-			},
-			Spec: certmanagerv1.CertificateSpec{
-				IsCA: true,
-				Usages: []certmanagerv1.KeyUsage{
-					certmanagerv1.UsageSigning,
-					certmanagerv1.UsageCertSign,
-				},
-				CommonName: "ca-cert",
-				SecretName: "ca-cert",
-				IssuerRef: certmanagermeta_v1.ObjectReference{
-					Name: "selfsigned",
-				},
-			},
-		}
-		require.NoError(f.T(), f.Client.Create(context.TODO(), caCertificate))
-
-		// Issuer based on CA to generate new certs with.
-		basedOnCAIssuer := &certmanagerv1.Issuer{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "ca-issuer",
-			},
-			Spec: certmanagerv1.IssuerSpec{
-				IssuerConfig: certmanagerv1.IssuerConfig{
-					CA: &certmanagerv1.CAIssuer{
-						SecretName: "ca-cert",
-					},
-				},
-			},
-		}
-		require.NoError(f.T(), f.Client.Create(context.TODO(), basedOnCAIssuer))
-
-		// Backend server cert signed by CA.
-		backendServerCert := &certmanagerv1.Certificate{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "backend-server-cert",
-			},
-			Spec: certmanagerv1.CertificateSpec{
-				Usages: []certmanagerv1.KeyUsage{
-					certmanagerv1.UsageServerAuth,
-				},
-				CommonName: "echo-secure",
-				DNSNames:   []string{"echo-secure"},
-				SecretName: "backend-server-cert",
-				IssuerRef: certmanagermeta_v1.ObjectReference{
-					Name: "ca-issuer",
-				},
-			},
-		}
-
-		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
+			Issuer: "ca-issuer",
+		})
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", func(_ *apps_v1.Deployment, service *core_v1.Service) {
 			delete(service.Annotations, "projectcontour.io/upstream-protocol.tls")
 		})

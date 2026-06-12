@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"time"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,25 +33,17 @@ import (
 
 func testBackendTLS(namespace string) {
 	Specify("mTLS to backends can be configured", func() {
-		// Backend server cert signed by CA.
-		backendServerCert := &certmanagerv1.Certificate{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "backend-server-cert",
+		f.Certs.CreateCertificate(e2e.CertificateSpec{
+			Namespace:  namespace,
+			Name:       "backend-server-cert",
+			SecretName: "backend-server-cert",
+			CommonName: "echo-secure",
+			DNSNames:   []string{"echo-secure"},
+			Usages: []e2e.KeyUsage{
+				e2e.UsageServerAuth,
 			},
-			Spec: certmanagerv1.CertificateSpec{
-				Usages: []certmanagerv1.KeyUsage{
-					certmanagerv1.UsageServerAuth,
-				},
-				CommonName: "echo-secure",
-				DNSNames:   []string{"echo-secure"},
-				SecretName: "backend-server-cert",
-				IssuerRef: certmanagermetav1.ObjectReference{
-					Name: "ca-issuer",
-				},
-			},
-		}
-		require.NoError(f.T(), f.Client.Create(context.TODO(), backendServerCert))
+			Issuer: "ca-issuer",
+		})
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 
 		p := &contour_v1.HTTPProxy{
