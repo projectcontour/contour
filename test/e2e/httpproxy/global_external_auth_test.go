@@ -124,7 +124,7 @@ func testGlobalExternalAuthTLS(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "https.globalexternalauth.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "https.globalexternalauth.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -310,7 +310,7 @@ func testGlobalExternalAuthTLSAuthDisabled(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "disabled.https.globalexternalauth.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "disabled.https.globalexternalauth.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

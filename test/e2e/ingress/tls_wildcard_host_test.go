@@ -34,7 +34,7 @@ func testTLSWildcardHost(namespace string) {
 		hostSuffix := "wildcardhost.ingress.projectcontour.io"
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one-cert", "*."+hostSuffix)
+		f.Certs.CreateSelfSignedCert(namespace, "echo-one-cert", "*."+hostSuffix)
 
 		i := &networking_v1.Ingress{
 			ObjectMeta: meta_v1.ObjectMeta{

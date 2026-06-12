@@ -709,7 +709,7 @@ func testHeaderRewriteCookieRewrite(namespace string) {
 func testCookieRewriteTLS(namespace string) {
 	Specify("cookies rewrites work on TLS vhosts", func() {
 		deployEchoServer(f.T(), f.Client, namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "cookie-rewrite-tls.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "cookie-rewrite-tls.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

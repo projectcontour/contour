@@ -32,7 +32,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-one")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-one", "sni-enforcement-echo-one.projectcontour.io")
 
 		echoOneProxy := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -72,7 +72,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 
 		// echo-two
 		f.Fixtures.Echo.Deploy(namespace, "echo-two")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-two", "sni-enforcement-echo-two.projectcontour.io")
 
 		echoTwoProxy := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

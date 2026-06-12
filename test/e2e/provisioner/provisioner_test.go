@@ -319,8 +319,8 @@ var _ = Describe("Gateway provisioner", func() {
 
 	f.NamespacedTest("gateway-with-many-listeners", func(namespace string) {
 		Specify("A gateway with many Listeners for different protocols can be provisioned and routes correctly", func() {
-			f.Certs.CreateSelfSignedCert(namespace, "https-1-cert", "https-1-cert", "https-1.provisioner.projectcontour.io")
-			f.Certs.CreateSelfSignedCert(namespace, "https-2-cert", "https-2-cert", "https-2.provisioner.projectcontour.io")
+			f.Certs.CreateSelfSignedCert(namespace, "https-1-cert", "https-1.provisioner.projectcontour.io")
+			f.Certs.CreateSelfSignedCert(namespace, "https-2-cert", "https-2.provisioner.projectcontour.io")
 
 			gateway := &gatewayapi_v1.Gateway{
 				ObjectMeta: meta_v1.ObjectMeta{

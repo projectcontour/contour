@@ -38,7 +38,7 @@ import (
 func testExternalAuthzHTTP(namespace string) {
 	Specify("external HTTP auth can be configured on an HTTPProxy", func() {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "externalauthhttp.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "externalauthhttp.projectcontour.io")
 
 		setHandler := e2e.StartLocalHTTPService(GinkgoT(), f.Client, namespace, "http-auth-mock")
 
@@ -260,7 +260,7 @@ var _ = Describe("httpproxy-ext-auth-http-global", func() {
 
 		Specify("global HTTP ext auth applies to virtual hosts", func() {
 			f.Fixtures.Echo.Deploy(namespace, "echo")
-			f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "globalexternalauthhttp.projectcontour.io")
+			f.Certs.CreateSelfSignedCert(namespace, "echo", "globalexternalauthhttp.projectcontour.io")
 
 			p := &contour_v1.HTTPProxy{
 				ObjectMeta: meta_v1.ObjectMeta{

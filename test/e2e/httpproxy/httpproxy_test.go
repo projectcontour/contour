@@ -16,6 +16,7 @@
 package httpproxy
 
 import (
+	"crypto/x509"
 	"fmt"
 	"strings"
 	"testing"
@@ -24,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -184,7 +186,7 @@ var _ = Describe("HTTPProxy", func() {
 					Namespace: namespace,
 				}
 
-				f.Certs.CreateSelfSignedCert(namespace, "fallback-cert", "fallback-cert", "fallback.projectcontour.io")
+				f.Certs.CreateSelfSignedCert(namespace, "fallback-cert", "fallback.projectcontour.io")
 			})
 
 			testHTTPSFallbackCertificate(namespace)
@@ -193,17 +195,14 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-backend-tls", func(namespace string) {
 		Context("with backend tls", func() {
+			var backendTLSCA *certyaml.Certificate
+
 			BeforeEach(func() {
-				f.Certs.CreateCAWithIssuer(namespace, "ca-cert", "ca-issuer")
-				f.Certs.CreateCertificate(e2e.CertificateSpec{
-					Namespace:  namespace,
-					Name:       "backend-client-cert",
-					SecretName: "backend-client-cert",
-					CommonName: "client",
-					Usages: []e2e.KeyUsage{
-						e2e.UsageClientAuth,
-					},
-					Issuer: "ca-issuer",
+				backendTLSCA = f.Certs.CreateCA(namespace, "ca-cert")
+				f.Certs.CreateCertificate(namespace, "backend-client-cert", &certyaml.Certificate{
+					Subject:     "cn=client",
+					ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+					Issuer:      backendTLSCA,
 				})
 
 				contourConfig.TLS = config.TLSParameters{
@@ -219,22 +218,19 @@ var _ = Describe("HTTPProxy", func() {
 				}
 			})
 
-			testBackendTLS(namespace)
+			testBackendTLS(namespace, func() *certyaml.Certificate { return backendTLSCA })
 		})
 	})
 
 	f.NamespacedTest("httpproxy-backend-tls-version", func(namespace string) {
+		var backendTLSCA *certyaml.Certificate
+
 		BeforeEach(func() {
-			f.Certs.CreateCAWithIssuer(namespace, "ca-cert", "ca-issuer")
-			f.Certs.CreateCertificate(e2e.CertificateSpec{
-				Namespace:  namespace,
-				Name:       "backend-client-cert",
-				SecretName: "backend-client-cert",
-				CommonName: "client",
-				Usages: []e2e.KeyUsage{
-					e2e.UsageClientAuth,
-				},
-				Issuer: "ca-issuer",
+			backendTLSCA = f.Certs.CreateCA(namespace, "ca-cert")
+			f.Certs.CreateCertificate(namespace, "backend-client-cert", &certyaml.Certificate{
+				Subject:     "cn=client",
+				ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+				Issuer:      backendTLSCA,
 			})
 
 			contourConfig.TLS = config.TLSParameters{
@@ -264,7 +260,7 @@ var _ = Describe("HTTPProxy", func() {
 				}
 			})
 
-			testBackendTLSProtocolVersion(namespace, expectedProtocolVersion)
+			testBackendTLSProtocolVersion(namespace, expectedProtocolVersion, func() *certyaml.Certificate { return backendTLSCA })
 		})
 	})
 

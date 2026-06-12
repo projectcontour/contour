@@ -17,12 +17,14 @@ package httpproxy
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,18 +33,13 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-func testBackendTLS(namespace string) {
+func testBackendTLS(namespace string, ca func() *certyaml.Certificate) {
 	Specify("mTLS to backends can be configured", func() {
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "backend-server-cert",
-			SecretName: "backend-server-cert",
-			CommonName: "echo-secure",
-			DNSNames:   []string{"echo-secure"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-issuer",
+		f.Certs.CreateCertificate(namespace, "backend-server-cert", &certyaml.Certificate{
+			Subject:         "cn=echo-secure",
+			SubjectAltNames: []string{"DNS:echo-secure"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          ca(),
 		})
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 
@@ -100,15 +97,14 @@ func testBackendTLS(namespace string) {
 		assert.Equal(f.T(), tlsInfo.TLS.PeerCertificates[0], string(clientSecret.Data["tls.crt"]))
 
 		// Delete client cert so it is rotated.
-		oldUID := clientSecret.UID
 		require.NoError(f.T(), f.Client.Delete(context.TODO(), clientSecret))
-		// Make sure the cert is rotated.
-		require.Eventually(f.T(), func() bool {
-			if err := f.Client.Get(context.TODO(), clientSecretKey, clientSecret); err != nil {
-				return false
-			}
-			return clientSecret.UID != oldUID
-		}, time.Second*10, time.Millisecond*50)
+		// Rotate cert by re-creating the secret with same name but different cert.
+		f.Certs.CreateCertificate(namespace, "backend-client-cert", &certyaml.Certificate{
+			Subject:     "cn=client",
+			ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			Issuer:      ca(),
+		})
+		require.NoError(f.T(), f.Client.Get(context.TODO(), clientSecretKey, clientSecret))
 
 		// Send HTTP request again until we get a 200 and new cert is presented.
 		require.Eventually(f.T(), func() bool {

@@ -97,7 +97,7 @@ func testExternalNameServiceTLS(namespace string) {
 	Specify("external name services work over https", func() {
 		t := f.T()
 
-		f.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "backend-server-cert", "echo")
+		f.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "echo")
 
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-tls", nil)
 

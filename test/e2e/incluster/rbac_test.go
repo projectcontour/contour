@@ -40,7 +40,7 @@ func testProjectcontourResourcesRBAC(namespace string) {
 		otherNS := "another-" + namespace
 		f.CreateNamespace(otherNS)
 		defer f.DeleteNamespace(otherNS, false)
-		f.Certs.CreateSelfSignedCert(otherNS, "delegated-cert", "delegated-cert", "rbac-test.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(otherNS, "delegated-cert", "rbac-test.projectcontour.io")
 
 		// HTTPProxy and TLSCertificateDelegation
 		t := &contour_v1.TLSCertificateDelegation{

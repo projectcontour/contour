@@ -194,7 +194,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitvhosttls.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "globalratelimitvhosttls.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -241,7 +241,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "globalratelimitroutetls.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -307,7 +307,7 @@ func testDefaultGlobalRateLimitingVirtualHostTLS(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "globalratelimitroutetls.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

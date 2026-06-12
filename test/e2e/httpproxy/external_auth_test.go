@@ -37,9 +37,9 @@ func testExternalAuth(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "externalauth.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "externalauth.projectcontour.io")
 
-		f.Certs.CreateSelfSignedCert(namespace, "testserver-cert", "testserver-cert", "testserver")
+		f.Certs.CreateSelfSignedCert(namespace, "testserver-cert", "testserver")
 
 		// auth testserver
 		deployment := &apps_v1.Deployment{

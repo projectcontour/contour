@@ -239,7 +239,7 @@ var _ = Describe("Gateway API", func() {
 			return testWithGateway(gw, gatewayClass, func(namespace string, gateway types.NamespacedName) {
 				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
 					BeforeEach(func() {
-						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
+						f.Certs.CreateSelfSignedCert(namespace, "tlscert", hostname)
 					})
 
 					body(namespace, gateway)
@@ -325,9 +325,9 @@ var _ = Describe("Gateway API", func() {
 
 			return testWithGateway(gateway, gatewayClass, func(namespace string, _ types.NamespacedName) {
 				BeforeEach(func() {
-					f.Certs.CreateSelfSignedCert(namespace, "tlscert-1", "tlscert-1", "https-1.gateway.projectcontour.io")
-					f.Certs.CreateSelfSignedCert(namespace, "tlscert-2", "tlscert-2", "https-2.gateway.projectcontour.io")
-					f.Certs.CreateSelfSignedCert(namespace, "tlscert-3", "tlscert-3", "https-3.gateway.projectcontour.io")
+					f.Certs.CreateSelfSignedCert(namespace, "tlscert-1", "https-1.gateway.projectcontour.io")
+					f.Certs.CreateSelfSignedCert(namespace, "tlscert-2", "https-2.gateway.projectcontour.io")
+					f.Certs.CreateSelfSignedCert(namespace, "tlscert-3", "https-3.gateway.projectcontour.io")
 				})
 
 				body(namespace)

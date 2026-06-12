@@ -16,11 +16,13 @@
 package gateway
 
 import (
+	"crypto/x509"
 	"encoding/json"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,17 +40,12 @@ func testBackendTLSPolicy(namespace string, gateway types.NamespacedName) {
 		protocolVersion := "TLSv1.3"
 		t := f.T()
 
-		f.Certs.CreateCAWithIssuer(namespace, "ca-cert", "ca-issuer")
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "backend-server-cert",
-			SecretName: "backend-server-cert",
-			CommonName: "echo-secure",
-			DNSNames:   []string{"echo-secure"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-issuer",
+		ca := f.Certs.CreateCA(namespace, "ca-cert")
+		f.Certs.CreateCertificate(namespace, "backend-server-cert", &certyaml.Certificate{
+			Subject:         "cn=echo-secure",
+			SubjectAltNames: []string{"DNS:echo-secure"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          ca,
 		})
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", func(_ *apps_v1.Deployment, service *core_v1.Service) {
 			delete(service.Annotations, "projectcontour.io/upstream-protocol.tls")

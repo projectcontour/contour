@@ -138,7 +138,7 @@ func testJWTVerification(setupProvider func(namespace string, jwksJSON []byte) c
 			require.NoError(t, err)
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
-			f.Certs.CreateSelfSignedCert(namespace, "echo-tls", "echo-tls", "jwt.projectcontour.io")
+			f.Certs.CreateSelfSignedCert(namespace, "echo-tls", "jwt.projectcontour.io")
 
 			bearerToken := func(token string) func(*http.Request) {
 				return func(r *http.Request) {
@@ -302,7 +302,7 @@ func testJWTVerificationRemoteJWKSRotation(namespace string) {
 		})
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-tls", "echo-tls", "jwt-rotation.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-tls", "jwt-rotation.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -409,7 +409,7 @@ func testJWTVerificationLocalJWKSRotation(namespace string) {
 		require.NoError(t, f.Client.Create(context.TODO(), secret))
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-tls", "echo-tls", "jwt-rotation-local.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-tls", "jwt-rotation-local.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

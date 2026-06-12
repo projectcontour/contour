@@ -46,7 +46,7 @@ func testGRPCServicePlaintext(namespace string) {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "grpc-echo-plaintext.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "grpc-echo-plaintext.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -128,7 +128,7 @@ func testGRPCWeb(namespace string) {
 		t := f.T()
 
 		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "grpc-web.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "grpc-web.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

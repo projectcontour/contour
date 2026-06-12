@@ -17,11 +17,13 @@ package ingress
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,18 +33,13 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-func testBackendTLS(namespace string) {
+func testBackendTLS(namespace string, ca func() *certyaml.Certificate) {
 	Specify("simple TLS to backends can be configured", func() {
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "backend-server-cert",
-			SecretName: "backend-server-cert",
-			CommonName: "echo-secure",
-			DNSNames:   []string{"echo-secure"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-issuer",
+		f.Certs.CreateCertificate(namespace, "backend-server-cert", &certyaml.Certificate{
+			Subject:         "cn=echo-secure",
+			SubjectAltNames: []string{"DNS:echo-secure"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          ca(),
 		})
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 

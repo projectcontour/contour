@@ -17,11 +17,13 @@ package httpproxy
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -32,116 +34,76 @@ func testClientCertAuth(namespace string) {
 	Specify("client requests can be authenticated", func() {
 		t := f.T()
 
-		f.Certs.CreateCAWithIssuer(namespace, "ca-projectcontour-io", "ca-projectcontour-io")
-		f.Certs.CreateCAWithIssuer(namespace, "ca-notprojectcontour-io", "ca-notprojectcontour-io")
+		caProjectcontour := f.Certs.CreateCA(namespace, "ca-projectcontour-io")
+		caNotProjectcontour := f.Certs.CreateCA(namespace, "ca-notprojectcontour-io")
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-no-auth")
 
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-no-auth-cert",
-			SecretName: "echo-no-auth",
-			DNSNames:   []string{"echo-no-auth.projectcontour.io"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-projectcontour-io",
+		f.Certs.CreateCertificate(namespace, "echo-no-auth", &certyaml.Certificate{
+			Subject:         "cn=echo-no-auth-cert",
+			SubjectAltNames: []string{"DNS:echo-no-auth.projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          caProjectcontour,
 		})
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-with-auth")
 
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-with-auth-cert",
-			SecretName: "echo-with-auth",
-			DNSNames:   []string{"echo-with-auth.projectcontour.io"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-projectcontour-io",
+		f.Certs.CreateCertificate(namespace, "echo-with-auth", &certyaml.Certificate{
+			Subject:         "cn=echo-with-auth-cert",
+			SubjectAltNames: []string{"DNS:echo-with-auth.projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          caProjectcontour,
 		})
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-with-auth-skip-verify")
 
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-with-auth-skip-verify-cert",
-			SecretName: "echo-with-auth-skip-verify",
-			DNSNames:   []string{"echo-with-auth-skip-verify.projectcontour.io"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-projectcontour-io",
+		f.Certs.CreateCertificate(namespace, "echo-with-auth-skip-verify", &certyaml.Certificate{
+			Subject:         "cn=echo-with-auth-skip-verify-cert",
+			SubjectAltNames: []string{"DNS:echo-with-auth-skip-verify.projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          caProjectcontour,
 		})
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-with-auth-skip-verify-with-ca")
 
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-with-auth-skip-verify-with-ca-cert",
-			SecretName: "echo-with-auth-skip-verify-with-ca",
-			DNSNames:   []string{"echo-with-auth-skip-verify-with-ca.projectcontour.io"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-projectcontour-io",
+		f.Certs.CreateCertificate(namespace, "echo-with-auth-skip-verify-with-ca", &certyaml.Certificate{
+			Subject:         "cn=echo-with-auth-skip-verify-with-ca-cert",
+			SubjectAltNames: []string{"DNS:echo-with-auth-skip-verify-with-ca.projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          caProjectcontour,
 		})
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-with-optional-auth")
 
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-with-optional-auth-cert",
-			SecretName: "echo-with-optional-auth",
-			DNSNames:   []string{"echo-with-optional-auth.projectcontour.io"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-projectcontour-io",
+		f.Certs.CreateCertificate(namespace, "echo-with-optional-auth", &certyaml.Certificate{
+			Subject:         "cn=echo-with-optional-auth-cert",
+			SubjectAltNames: []string{"DNS:echo-with-optional-auth.projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          caProjectcontour,
 		})
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-with-optional-auth-no-ca")
 
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-with-optional-auth-no-ca-cert",
-			SecretName: "echo-with-optional-auth-no-ca",
-			DNSNames:   []string{"echo-with-optional-auth-no-ca.projectcontour.io"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-projectcontour-io",
+		f.Certs.CreateCertificate(namespace, "echo-with-optional-auth-no-ca", &certyaml.Certificate{
+			Subject:         "cn=echo-with-optional-auth-no-ca-cert",
+			SubjectAltNames: []string{"DNS:echo-with-optional-auth-no-ca.projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          caProjectcontour,
 		})
 
-		clientCert := e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-client-cert",
-			SecretName: "echo-client",
-			CommonName: "client",
-			EmailAddresses: []string{
-				"client@projectcontour.io",
-			},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageClientAuth,
-			},
-			Issuer: "ca-projectcontour-io",
-		}
-		require.True(f.T(), f.Certs.CreateCertificateAndWait(clientCert))
+		f.Certs.CreateCertificate(namespace, "echo-client", &certyaml.Certificate{
+			Subject:         "cn=client",
+			SubjectAltNames: []string{"email:client@projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			Issuer:          caProjectcontour,
+		})
 
-		clientCertInvalid := e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "echo-client-cert-invalid",
-			SecretName: "echo-client-invalid",
-			CommonName: "badclient",
-			EmailAddresses: []string{
-				"badclient@projectcontour.io",
-			},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageClientAuth,
-			},
-			Issuer: "ca-notprojectcontour-io",
-		}
-		require.True(f.T(), f.Certs.CreateCertificateAndWait(clientCertInvalid))
+		f.Certs.CreateCertificate(namespace, "echo-client-invalid", &certyaml.Certificate{
+			Subject:         "cn=badclient",
+			SubjectAltNames: []string{"email:badclient@projectcontour.io"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			Issuer:          caNotProjectcontour,
+		})
 
 		// This proxy does not require client certificate auth.
 		noAuthProxy := &contour_v1.HTTPProxy{
@@ -324,8 +286,8 @@ func testClientCertAuth(namespace string) {
 		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(optionalAuthNoCAProxy, e2e.HTTPProxyValid))
 
 		// get the valid & invalid client certs
-		validClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCert.SecretName)
-		invalidClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCertInvalid.SecretName)
+		validClientCert, _ := f.Certs.GetTLSCertificate(namespace, "echo-client")
+		invalidClientCert, _ := f.Certs.GetTLSCertificate(namespace, "echo-client-invalid")
 
 		cases := map[string]struct {
 			host       string
