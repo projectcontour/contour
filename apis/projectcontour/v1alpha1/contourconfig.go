@@ -312,6 +312,7 @@ type EnvoyConfig struct {
 	// RuntimeSettings allows overriding arbitrary Envoy runtime settings,
 	// intended for cases such as disabling a new Envoy feature that breaks existing functionality.
 	// Note that any settings managed by Contour will take precedence and overwrite user-defined values for the same keys.
+	// Keys are not validated and unrecognized keys are silently ignored.
 	// See https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime
 	// +optional
 	RuntimeSettings map[string]string `json:"runtimeSettings,omitempty"`
