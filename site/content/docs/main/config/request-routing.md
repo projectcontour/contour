@@ -213,7 +213,7 @@ The sort order is:
    conditions win over routes with fewer.
 
 This is intentionally similar to Gateway API's [HTTPRouteRule precedence
-spec](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io%2fv1.HTTPRouteRule),
+spec](https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#httprouterule),
 so HTTPProxy users moving between the two APIs can rely on the same mental
 model.
 
