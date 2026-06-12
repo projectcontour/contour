@@ -24,7 +24,6 @@ import (
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/pkg/config"
 )
 
 func TestGetDAGBuilder(t *testing.T) {
@@ -309,107 +308,63 @@ func mustGetIngressProcessor(t *testing.T, builder *dag.Builder) *dag.IngressPro
 	return nil
 }
 
-func TestParseEnvoyLoadBalancerStatus(t *testing.T) {
+func TestParseLoadBalancerStatusSource(t *testing.T) {
 	tests := []struct {
-		name   string
-		status string
-		want   envoyLoadBalancerStatus
+		name        string
+		input       string
+		wantKind    string
+		wantAddress string
+		wantNN      types.NamespacedName
 	}{
 		{
-			name:   "Service",
-			status: "service:namespace-1/name-1",
-			want: envoyLoadBalancerStatus{
-				Kind: "service",
-				NamespacedName: config.NamespacedName{
-					Name:      "name-1",
-					Namespace: "namespace-1",
-				},
-			},
+			name:     "service",
+			input:    "service:namespace-1/name-1",
+			wantKind: "service",
+			wantNN:   types.NamespacedName{Namespace: "namespace-1", Name: "name-1"},
 		},
 		{
-			name:   "Ingress",
-			status: "ingress:namespace-1/name-1",
-			want: envoyLoadBalancerStatus{
-				Kind: "ingress",
-				NamespacedName: config.NamespacedName{
-					Name:      "name-1",
-					Namespace: "namespace-1",
-				},
-			},
+			name:     "ingress",
+			input:    "ingress:namespace-1/name-1",
+			wantKind: "ingress",
+			wantNN:   types.NamespacedName{Namespace: "namespace-1", Name: "name-1"},
 		},
 		{
-			name:   "hostname",
-			status: "hostname:example.com",
-			want: envoyLoadBalancerStatus{
-				Kind:  "hostname",
-				FQDNs: "example.com",
-			},
+			name:        "address with hostname",
+			input:       "address:example.com",
+			wantKind:    "address",
+			wantAddress: "example.com",
+		},
+		{
+			name:        "address with IP",
+			input:       "address:1.2.3.4",
+			wantKind:    "address",
+			wantAddress: "1.2.3.4",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, err := parseEnvoyLoadBalancerStatus(tt.status)
+			kind, address, nn, err := parseLoadBalancerStatusSource(tt.input)
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, *r)
+			assert.Equal(t, tt.wantKind, kind)
+			assert.Equal(t, tt.wantAddress, address)
+			assert.Equal(t, tt.wantNN, nn)
 		})
 	}
 
-	tests2 := []struct {
-		name   string
-		status string
-		error  string
+	errors := []struct {
+		name  string
+		input string
 	}{
-		{
-			name:   "Empty",
-			status: "",
-			error:  "invalid",
-		},
-		{
-			name:   "No kind",
-			status: ":n",
-			error:  "kind is empty",
-		},
-		{
-			name:   "Invalid kind",
-			status: "test:n",
-			error:  "unsupported kind",
-		},
-		{
-			name:   "No reference",
-			status: "service:",
-			error:  "empty object reference",
-		},
-		{
-			name:   "No colon",
-			status: "service",
-			error:  "invalid",
-		},
-		{
-			name:   "No slash",
-			status: "service:name-1",
-			error:  "not in the format",
-		},
-		{
-			name:   "starts with slash",
-			status: "service:/name-1",
-			error:  "is empty",
-		},
-		{
-			name:   "ends with slash",
-			status: "service:name-1/",
-			error:  "is empty",
-		},
-		{
-			name:   "two many slashes",
-			status: "service:name/x/y",
-			error:  "not in the format",
-		},
+		{name: "empty string", input: ""},
+		{name: "empty kind", input: ":value"},
+		{name: "empty value", input: "service:"},
+		{name: "no colon", input: "service"},
+		{name: "unsupported kind", input: "unknown:ns/name"},
 	}
-	for _, tt := range tests2 {
+	for _, tt := range errors {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := parseEnvoyLoadBalancerStatus(tt.status)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), tt.error)
+			_, _, _, err := parseLoadBalancerStatusSource(tt.input)
+			assert.Error(t, err)
 		})
 	}
 }

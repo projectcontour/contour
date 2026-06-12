@@ -59,6 +59,8 @@ type loadBalancerStatusWriter struct {
 	statusAddress     string
 	serviceName       string
 	serviceNamespace  string
+	ingressName       string
+	ingressNamespace  string
 }
 
 func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
@@ -66,13 +68,13 @@ func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
 }
 
 func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
-	// Register an informer to watch envoy's service if we haven't been given static details.
+	// Register an informer to watch envoy's service or ingress if we haven't been given static details.
 	// The informer is registered only after leader election to prevent events from being sent before the status writer
 	// is ready to process them.
 	if lbAddress := isw.statusAddress; len(lbAddress) > 0 {
 		isw.log.WithField("loadbalancer-address", lbAddress).Info("Using supplied information for Ingress status")
 		isw.lbStatus <- parseStatusFlag(lbAddress)
-	} else {
+	} else if isw.serviceName != "" {
 		// Register Service informer to watch for status updates.
 		var serviceHandler client_go_cache.ResourceEventHandler = &k8s.ServiceStatusLoadBalancerWatcher{
 			ServiceName: isw.serviceName,
@@ -90,6 +92,26 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 		_, err = inf.AddEventHandler(serviceHandler)
 		if err != nil {
 			isw.log.WithError(err).Fatal("failed to add Service event handler")
+			return err
+		}
+	} else if isw.ingressName != "" {
+		// Register Ingress informer to watch for status updates.
+		var ingressHandler client_go_cache.ResourceEventHandler = &k8s.IngressStatusLoadBalancerWatcher{
+			IngressName: isw.ingressName,
+			LBStatus:    isw.lbStatus,
+			Log:         isw.log.WithField("context", "ingressStatusLoadBalancerWatcher"),
+		}
+		if isw.ingressNamespace != "" {
+			ingressHandler = k8s.NewNamespaceFilter([]string{isw.ingressNamespace}, ingressHandler)
+		}
+		inf, err := isw.cache.GetInformer(ctx, &networking_v1.Ingress{})
+		if err != nil {
+			isw.log.WithError(err).Fatal("failed to get Ingress informer")
+			return err
+		}
+		_, err = inf.AddEventHandler(ingressHandler)
+		if err != nil {
+			isw.log.WithError(err).Fatal("failed to add Ingress event handler")
 			return err
 		}
 	}

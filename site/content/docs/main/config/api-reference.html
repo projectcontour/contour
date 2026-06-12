@@ -6986,11 +6986,13 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>LoadBalancer specifies how Contour should set the ingress status address.
+<p>LoadBalancer specifies the source for ingress status address.
 If provided, the value can be in one of the formats:
-- address:<address,...>: Contour will use the provided comma separated list of addresses directly. The address can be a fully qualified domain name or an IP address.
-- service:<namespace>/<name>: Contour will use the address of the designated service.
-- ingress:<namespace>/<name>: Contour will use the address of the designated ingress.</p>
+- address:<addr,...>: use the provided addresses directly (FQDN or IP).
+- service:<namespace>/<name>: watch the named Service for its LoadBalancer status.
+- ingress:<namespace>/<name>: watch the named Ingress for its LoadBalancer status.</p>
+<p>If spec.ingress.statusAddress is set, it takes precedence over this field.
+If this field is empty, spec.envoy.service is used as default.</p>
 <p>Contour&rsquo;s default is an empty string.</p>
 </td>
 </tr>

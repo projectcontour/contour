@@ -316,7 +316,6 @@ type IngressStatusLoadBalancerWatcher struct {
 func (s *IngressStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 	ingress, ok := obj.(*networking_v1.Ingress)
 	if !ok {
-		// not a service
 		return
 	}
 	if ingress.Name != s.IngressName {
@@ -324,7 +323,7 @@ func (s *IngressStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 	}
 	s.Log.WithField("name", ingress.Name).
 		WithField("namespace", ingress.Namespace).
-		Debug("received new service address")
+		Debug("received new ingress address")
 
 	s.notify(ingress.Status.LoadBalancer)
 }
@@ -332,7 +331,6 @@ func (s *IngressStatusLoadBalancerWatcher) OnAdd(obj any, _ bool) {
 func (s *IngressStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 	ingress, ok := newObj.(*networking_v1.Ingress)
 	if !ok {
-		// not a service
 		return
 	}
 	if ingress.Name != s.IngressName {
@@ -340,7 +338,7 @@ func (s *IngressStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 	}
 	s.Log.WithField("name", ingress.Name).
 		WithField("namespace", ingress.Namespace).
-		Debug("received new service address")
+		Debug("received new ingress address")
 
 	s.notify(ingress.Status.LoadBalancer)
 }
@@ -348,7 +346,6 @@ func (s *IngressStatusLoadBalancerWatcher) OnUpdate(_, newObj any) {
 func (s *IngressStatusLoadBalancerWatcher) OnDelete(obj any) {
 	ingress, ok := obj.(*networking_v1.Ingress)
 	if !ok {
-		// not a service
 		return
 	}
 	if ingress.Name != s.IngressName {

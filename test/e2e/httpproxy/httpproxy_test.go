@@ -381,6 +381,23 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	f.NamespacedTest("httpproxy-load-balancer-status-from-ingress", func(namespace string) {
+		Context("with load-balancer-status sourced from Ingress", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--load-balancer-status=ingress:projectcontour/lb-status-source",
+				}
+				contourConfiguration.Spec.Envoy.LoadBalancerStatus = &contour_v1alpha1.LoadBalancerStatusConfig{
+					Ingress: &contour_v1alpha1.NamespacedName{
+						Namespace: "projectcontour",
+						Name:      "lb-status-source",
+					},
+				}
+			})
+			testLoadBalancerStatusFromIngress(namespace)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-external-name-service-insecure", func(namespace string) {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {

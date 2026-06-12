@@ -239,15 +239,15 @@ type EnvoyConfig struct {
 	// +optional
 	Service *NamespacedName `json:"service,omitempty"`
 
-	// LoadBalancer specifies how Contour should set the ingress status address.
-	// If provided, the value can be in one of the formats:
-	//   - address:<address,...>: Contour will use the provided comma separated list of addresses directly. The address can be a fully qualified domain name or an IP address.
-	//   - service:<namespace>/<name>: Contour will use the address of the designated service.
-	//   - ingress:<namespace>/<name>: Contour will use the address of the designated ingress.
+	// LoadBalancerStatus specifies the source for load balancer status addresses
+	// that Contour will set on HTTPProxy, Ingress, and Gateway resources.
 	//
-	// Contour's default is an empty string.
+	// Exactly one of the fields must be set.
+	//
+	// If spec.ingress.statusAddress is set, it takes precedence over this field.
+	// If this field is empty, spec.envoy.service is used as default.
 	// +optional
-	LoadBalancer string `json:"loadBalancer,omitempty"`
+	LoadBalancerStatus *LoadBalancerStatusConfig `json:"loadBalancerStatus,omitempty"`
 
 	// Defines the HTTP Listener for Envoy.
 	//
@@ -318,6 +318,23 @@ type EnvoyConfig struct {
 	// This is disabled by default
 	// +optional
 	OMEnforcedHealth *HealthConfig `json:"omEnforcedHealth,omitempty"`
+}
+
+// LoadBalancerStatusConfig defines the source for load balancer status addresses.
+// Exactly one of the fields must be set.
+// +kubebuilder:validation:XValidation:message="exactly one of service, ingress, or addresses must be set",rule="[has(self.service), has(self.ingress), has(self.addresses)].exists_one(x, x)"
+type LoadBalancerStatusConfig struct {
+	// Service watches the named Service's status.loadBalancer for addresses.
+	// +optional
+	Service *NamespacedName `json:"service,omitempty"`
+
+	// Ingress watches the named Ingress's status.loadBalancer for addresses.
+	// +optional
+	Ingress *NamespacedName `json:"ingress,omitempty"`
+
+	// Addresses specifies static address(es) to use directly (IP or FQDN).
+	// +optional
+	Addresses []string `json:"addresses,omitempty"`
 }
 
 // DebugConfig contains Contour specific troubleshooting options.
