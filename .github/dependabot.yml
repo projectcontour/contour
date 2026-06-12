@@ -28,7 +28,6 @@ updates:
     day: "sunday"
   cooldown:
     default-days: 3
-    semver-major-days: 15
   labels:
   - area/tooling
   - release-note/none-required
