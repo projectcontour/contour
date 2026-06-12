@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	core_v1 "k8s.io/api/core/v1"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -29,12 +30,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-var (
-	f = e2e.NewFramework(false)
-
-	// Functions called after suite to clean up resources.
-	cleanup []func()
-)
+var f = e2e.NewFramework(false)
 
 func TestInfra(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -60,20 +56,22 @@ var _ = BeforeSuite(func() {
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 
 	// Create certificate and key for metrics over HTTPS.
-	cleanup = append(cleanup,
-		f.Certs.CreateCA("projectcontour", "metrics-ca"),
-		f.Certs.CreateCert("projectcontour", "metrics-server", "metrics-ca", "localhost"),
-		f.Certs.CreateCert("projectcontour", "metrics-client", "metrics-ca"),
-	)
+	metricsCA := f.Certs.CreateCA("projectcontour", "metrics-ca")
+	f.Certs.CreateCertificate("projectcontour", "metrics-server", &certyaml.Certificate{
+		Subject:         "cn=metrics-server",
+		SubjectAltNames: []string{"DNS:localhost"},
+		Issuer:          metricsCA,
+	})
+	f.Certs.CreateCertificate("projectcontour", "metrics-client", &certyaml.Certificate{
+		Subject: "cn=metrics-client",
+		Issuer:  metricsCA,
+	})
 })
 
 var _ = AfterSuite(func() {
 	// Delete resources individually instead of deleting the entire contour
 	// namespace as a performance optimization, because deleting non-empty
 	// namespaces can take up to a couple of minutes to complete.
-	for _, c := range cleanup {
-		c()
-	}
 	require.NoError(f.T(), f.Deployment.DeleteResourcesForLocalContour())
 	gexec.CleanupBuildArtifacts()
 })

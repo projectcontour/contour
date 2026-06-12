@@ -32,7 +32,7 @@ func testHTTPSFallbackCertificate(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "fallback-cert-echo.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "echo", "fallback-cert-echo.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{

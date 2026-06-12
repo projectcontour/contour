@@ -16,29 +16,26 @@
 package httpproxy
 
 import (
+	"crypto/x509"
 	"encoding/json"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tsaarni/certyaml"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-func testBackendTLSProtocolVersion(namespace, protocolVersion string) {
+func testBackendTLSProtocolVersion(namespace, protocolVersion string, ca func() *certyaml.Certificate) {
 	Specify("backend connection uses configured TLS version", func() {
-		f.Certs.CreateCertificate(e2e.CertificateSpec{
-			Namespace:  namespace,
-			Name:       "backend-server-cert",
-			SecretName: "backend-server-cert",
-			CommonName: "echo-secure",
-			DNSNames:   []string{"echo-secure"},
-			Usages: []e2e.KeyUsage{
-				e2e.UsageServerAuth,
-			},
-			Issuer: "ca-issuer",
+		f.Certs.CreateCertificate(namespace, "backend-server-cert", &certyaml.Certificate{
+			Subject:         "cn=echo-secure",
+			SubjectAltNames: []string{"DNS:echo-secure"},
+			ExtKeyUsage:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			Issuer:          ca(),
 		})
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo-secure", nil)
 

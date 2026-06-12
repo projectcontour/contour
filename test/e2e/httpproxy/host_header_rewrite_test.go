@@ -143,7 +143,7 @@ func testHostRewriteHeaderHTTPSService(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-		f.Certs.CreateSelfSignedCert(namespace, "ingress-conformance-echo", "ingress-conformance-echo", "https.hostheaderrewrite.projectcontour.io")
+		f.Certs.CreateSelfSignedCert(namespace, "ingress-conformance-echo", "https.hostheaderrewrite.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
