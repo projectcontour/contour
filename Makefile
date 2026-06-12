@@ -270,7 +270,7 @@ generate-metrics-docs:
 .PHONY: generate-go
 generate-go:
 	@echo "Generating mocks..."
-	@go run github.com/vektra/mockery/v2
+	@go run github.com/vektra/mockery/v3
 
 .PHONY: check-generate
 check-generate: generate
