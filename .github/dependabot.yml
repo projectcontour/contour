@@ -18,6 +18,18 @@ updates:
       patterns:
       - "k8s.io/*"
 - target-branch: main
+  package-ecosystem: "gomod"
+  directory: "/tools"
+  schedule:
+    interval: "weekly"
+    day: "sunday"
+  cooldown:
+    default-days: 3
+    semver-major-days: 15
+  labels:
+  - area/tooling
+  - release-note/none-required
+- target-branch: main
   package-ecosystem: "github-actions"
   directory: "/"
   schedule:
