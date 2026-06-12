@@ -318,6 +318,14 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-ext-auth-http", testExternalAuthzHTTP)
 
+	f.NamespacedTest("httpproxy-jwt-local-jwks", testJWTVerification(localJWKSProvider))
+
+	f.NamespacedTest("httpproxy-jwt-remote-jwks", testJWTVerification(remoteJWKSProvider))
+
+	f.NamespacedTest("httpproxy-jwt-remote-jwks-rotation", testJWTVerificationRemoteJWKSRotation)
+
+	f.NamespacedTest("httpproxy-jwt-local-jwks-rotation", testJWTVerificationLocalJWKSRotation)
+
 	f.NamespacedTest("httpproxy-http-health-checks", testHTTPHealthChecks)
 
 	f.NamespacedTest("httpproxy-dynamic-headers", testDynamicHeaders)
