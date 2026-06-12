@@ -33,7 +33,7 @@ func TestWriteDotEscapesLabels(t *testing.T) {
 	for _, l := range getTestListeners() {
 		d.Listeners[l.Name] = l
 	}
-	b := mocks.DagBuilder{}
+	b := mocks.MockDagBuilder{}
 	b.On("Build").Return(&d)
 
 	dw := &dotWriter{
@@ -63,7 +63,7 @@ func TestWriteDotLineCount(t *testing.T) {
 	for _, l := range getTestListeners() {
 		d.Listeners[l.Name] = l
 	}
-	b := mocks.DagBuilder{}
+	b := mocks.MockDagBuilder{}
 	b.On("Build").Return(&d)
 
 	dw := &dotWriter{

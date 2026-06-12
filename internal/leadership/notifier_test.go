@@ -27,9 +27,9 @@ import (
 )
 
 func TestNotifier(t *testing.T) {
-	toNotify1 := &mocks.NeedLeaderElectionNotification{}
+	toNotify1 := &mocks.MockNeedLeaderElectionNotification{}
 	toNotify1.On("OnElectedLeader").Once()
-	toNotify2 := &mocks.NeedLeaderElectionNotification{}
+	toNotify2 := &mocks.MockNeedLeaderElectionNotification{}
 	toNotify2.On("OnElectedLeader").Once()
 
 	notifier := &leadership.Notifier{

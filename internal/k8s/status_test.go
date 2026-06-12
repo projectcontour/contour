@@ -42,7 +42,7 @@ func TestStatusUpdateHandlerApplyOutputsMetrics(t *testing.T) {
 	}
 	c := fake.NewClientBuilder().WithObjects(fooIngress)
 
-	mockStatusMetrics := mocks.NewStatusMetrics(t)
+	mockStatusMetrics := mocks.NewMockStatusMetrics(t)
 
 	suh := NewStatusUpdateHandler(fixture.NewTestLogger(t), c.Build(), mockStatusMetrics)
 

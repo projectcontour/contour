@@ -517,7 +517,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			suc := StatusUpdateCacher{}
 			assert.True(t, suc.Add(tc.preop.Name, tc.preop.Namespace, tc.preop), "unable to add object to cache")
 
-			mockCache := &mocks.Cache{}
+			mockCache := &mocks.MockCache{}
 			mockCache.
 				On("Get", mock.Anything, client.ObjectKey{Name: string(tc.preop.Spec.GatewayClassName)}, mock.Anything).
 				Return(nil)
@@ -540,7 +540,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			suc := StatusUpdateCacher{}
 			assert.True(t, suc.Add(tc.preop.Name, tc.preop.Namespace, tc.preop), "unable to add object to cache")
 
-			mockCache := &mocks.Cache{}
+			mockCache := &mocks.MockCache{}
 			mockCache.
 				On("Get", mock.Anything, client.ObjectKey{Name: string(tc.preop.Spec.GatewayClassName)}, mock.Anything).
 				Return(nil)
