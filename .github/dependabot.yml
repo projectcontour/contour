@@ -10,6 +10,9 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 3
+    semver-major-days: 15
   labels:
   - area/dependency
   - release-note/none-required
@@ -35,6 +38,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 3
   labels:
   - area/tooling
   - release-note/none-required
@@ -51,6 +56,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 3
   ignore:
   - dependency-name: "*"
     update-types:
@@ -69,6 +76,8 @@ updates:
   schedule:
     interval: "weekly"
     day: "sunday"
+  cooldown:
+    default-days: 3
   ignore:
   - dependency-name: "*"
     update-types:
