@@ -111,11 +111,6 @@ type Deployment struct {
 	RateLimitDeployment       *apps_v1.Deployment
 	RateLimitService          *core_v1.Service
 	RateLimitExtensionService *contour_v1alpha1.ExtensionService
-
-	// Global External Authorization deployment.
-	GlobalExtAuthDeployment       *apps_v1.Deployment
-	GlobalExtAuthService          *core_v1.Service
-	GlobalExtAuthExtensionService *contour_v1alpha1.ExtensionService
 }
 
 // UnmarshalResources unmarshals resources from rendered Contour manifest in
@@ -237,35 +232,7 @@ func (d *Deployment) UnmarshalResources() error {
 		return err
 	}
 
-	// Global external auth
-	globalExtAuthExamplePath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "global-external-auth")
-	globalExtAuthServerDeploymentFile := filepath.Join(globalExtAuthExamplePath, "01-authserver.yaml")
-	globalExtAuthExtSvcFile := filepath.Join(globalExtAuthExamplePath, "02-globalextauth-extsvc.yaml")
-
-	rGlobalExtAuthDeploymentFile, err := os.Open(globalExtAuthServerDeploymentFile)
-	if err != nil {
-		return err
-	}
-	defer rGlobalExtAuthDeploymentFile.Close()
-	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rGlobalExtAuthDeploymentFile)
-	d.GlobalExtAuthDeployment = new(apps_v1.Deployment)
-	if err := decoder.Decode(d.GlobalExtAuthDeployment); err != nil {
-		return err
-	}
-	d.GlobalExtAuthService = new(core_v1.Service)
-	if err := decoder.Decode(d.GlobalExtAuthService); err != nil {
-		return err
-	}
-
-	rGlobalExtAuthExtSvcFile, err := os.Open(globalExtAuthExtSvcFile)
-	if err != nil {
-		return err
-	}
-	defer rGlobalExtAuthExtSvcFile.Close()
-	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rGlobalExtAuthExtSvcFile)
-	d.GlobalExtAuthExtensionService = new(contour_v1alpha1.ExtensionService)
-
-	return decoder.Decode(d.GlobalExtAuthExtensionService)
+	return nil
 }
 
 // Common case of updating object if exists, create otherwise.
@@ -425,30 +392,6 @@ func (d *Deployment) EnsureRateLimitResources(namespace, configContents string) 
 
 	extSvc := d.RateLimitExtensionService.DeepCopy()
 	extSvc.Namespace = setNamespace
-	return d.ensureResource(extSvc, new(contour_v1alpha1.ExtensionService))
-}
-
-func (d *Deployment) EnsureGlobalExternalAuthResources(namespace string) error {
-	setNamespace := d.Namespace.Name
-	if len(namespace) > 0 {
-		setNamespace = namespace
-	}
-
-	deployment := d.GlobalExtAuthDeployment.DeepCopy()
-	deployment.Namespace = setNamespace
-	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
-		return err
-	}
-
-	service := d.GlobalExtAuthService.DeepCopy()
-	service.Namespace = setNamespace
-	if err := d.ensureResource(service, new(core_v1.Service)); err != nil {
-		return err
-	}
-
-	extSvc := d.GlobalExtAuthExtensionService.DeepCopy()
-	extSvc.Namespace = setNamespace
-
 	return d.ensureResource(extSvc, new(contour_v1alpha1.ExtensionService))
 }
 
