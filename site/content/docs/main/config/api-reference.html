@@ -6978,6 +6978,26 @@ NamespacedName
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>loadBalancer</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LoadBalancer specifies the source for ingress status address.
+If provided, the value can be in one of the formats:
+- address:<addr,...>: use the provided addresses directly (FQDN or IP).
+- service:<namespace>/<name>: watch the named Service for its LoadBalancer status.
+- ingress:<namespace>/<name>: watch the named Ingress for its LoadBalancer status.</p>
+<p>If spec.ingress.statusAddress is set, it takes precedence over this field.
+If this field is empty, spec.envoy.service is used as default.</p>
+<p>Contour&rsquo;s default is an empty string.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>http</code>
 <br>
 <em>

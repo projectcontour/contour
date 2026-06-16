@@ -307,3 +307,64 @@ func mustGetIngressProcessor(t *testing.T, builder *dag.Builder) *dag.IngressPro
 	require.FailNow(t, "IngressProcessor not found in list of DAG builder's processors")
 	return nil
 }
+
+func TestParseLoadBalancerStatusSource(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantKind    string
+		wantAddress string
+		wantNN      types.NamespacedName
+	}{
+		{
+			name:     "service",
+			input:    "service:namespace-1/name-1",
+			wantKind: "service",
+			wantNN:   types.NamespacedName{Namespace: "namespace-1", Name: "name-1"},
+		},
+		{
+			name:     "ingress",
+			input:    "ingress:namespace-1/name-1",
+			wantKind: "ingress",
+			wantNN:   types.NamespacedName{Namespace: "namespace-1", Name: "name-1"},
+		},
+		{
+			name:        "address with hostname",
+			input:       "address:example.com",
+			wantKind:    "address",
+			wantAddress: "example.com",
+		},
+		{
+			name:        "address with IP",
+			input:       "address:1.2.3.4",
+			wantKind:    "address",
+			wantAddress: "1.2.3.4",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kind, address, nn, err := parseLoadBalancerStatusSource(tt.input)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantKind, kind)
+			assert.Equal(t, tt.wantAddress, address)
+			assert.Equal(t, tt.wantNN, nn)
+		})
+	}
+
+	errors := []struct {
+		name  string
+		input string
+	}{
+		{name: "empty string", input: ""},
+		{name: "empty kind", input: ":value"},
+		{name: "empty value", input: "service:"},
+		{name: "no colon", input: "service"},
+		{name: "unsupported kind", input: "unknown:ns/name"},
+	}
+	for _, tt := range errors {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, _, err := parseLoadBalancerStatusSource(tt.input)
+			assert.Error(t, err)
+		})
+	}
+}

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
@@ -168,6 +169,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("leader-election-resource-name", "The name of the resource (Lease) leader election will lease.").Default("leader-elect").StringVar(&ctx.LeaderElection.Name)
 	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (Lease) leader election will lease.").Default(config.GetenvOr("CONTOUR_NAMESPACE", "projectcontour")).StringVar(&ctx.LeaderElection.Namespace)
 	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.LeaderElection.RetryPeriod)
+
+	serve.Flag("load-balancer-status", "Address to set or the source to inspect for load balancer status.").PlaceHolder("<kind:namespace/name|address>").StringVar(&ctx.loadBalancerStatus)
 
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").PlaceHolder("<ns,ns>").StringVar(&ctx.rootNamespaces)
 
@@ -675,19 +678,8 @@ func (s *Server) doServe() error {
 		return err
 	}
 
-	// Set up ingress load balancer status writer.
-	lbsw := &loadBalancerStatusWriter{
-		log:               s.log.WithField("context", "loadBalancerStatusWriter"),
-		cache:             s.mgr.GetCache(),
-		lbStatus:          make(chan core_v1.LoadBalancerStatus, 1),
-		ingressClassNames: ingressClassNames,
-		gatewayRef:        gatewayRef,
-		statusUpdater:     sh.Writer(),
-		statusAddress:     contourConfiguration.Ingress.StatusAddress,
-		serviceName:       contourConfiguration.Envoy.Service.Name,
-		serviceNamespace:  contourConfiguration.Envoy.Service.Namespace,
-	}
-	if err := s.mgr.Add(lbsw); err != nil {
+	// Set up load balancer status writer.
+	if err := s.setupLoadBalancerStatusWriter(contourConfiguration, ingressClassNames, gatewayRef, sh.Writer()); err != nil {
 		return err
 	}
 
@@ -712,6 +704,47 @@ func (s *Server) doServe() error {
 
 	// GO!
 	return s.mgr.Start(signals.SetupSignalHandler())
+}
+
+func (s *Server) setupLoadBalancerStatusWriter(
+	contourConfiguration contour_v1alpha1.ContourConfigurationSpec,
+	ingressClassNames []string,
+	gatewayRef *types.NamespacedName,
+	statusUpdater k8s.StatusUpdater,
+) error {
+	lbsw := &loadBalancerStatusWriter{
+		log:               s.log.WithField("context", "loadBalancerStatusWriter"),
+		cache:             s.mgr.GetCache(),
+		lbStatus:          make(chan core_v1.LoadBalancerStatus, 1),
+		ingressClassNames: ingressClassNames,
+		gatewayRef:        gatewayRef,
+		statusUpdater:     statusUpdater,
+	}
+	// Resolve the load balancer status source from configuration.
+	// Priority:
+	// 1. spec.ingress.statusAddress
+	// 2. spec.envoy.loadBalancerStatus
+	// 3. spec.envoy.service
+
+	if lbAddress := contourConfiguration.Ingress.StatusAddress; len(lbAddress) > 0 {
+		lbsw.statusAddress = lbAddress
+	} else if lb := contourConfiguration.Envoy.LoadBalancerStatus; lb != nil {
+		switch {
+		case lb.Service != nil:
+			lbsw.serviceName = lb.Service.Name
+			lbsw.serviceNamespace = lb.Service.Namespace
+		case lb.Ingress != nil:
+			lbsw.ingressName = lb.Ingress.Name
+			lbsw.ingressNamespace = lb.Ingress.Namespace
+		case len(lb.Addresses) > 0:
+			lbsw.statusAddress = strings.Join(lb.Addresses, ",")
+		}
+	} else {
+		lbsw.serviceName = contourConfiguration.Envoy.Service.Name
+		lbsw.serviceNamespace = contourConfiguration.Envoy.Service.Namespace
+	}
+
+	return s.mgr.Add(lbsw)
 }
 
 func (s *Server) getExtensionSvcConfig(name, namespace string) (xdscache_v3.ExtensionServiceConfig, error) {

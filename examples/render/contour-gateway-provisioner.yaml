@@ -486,6 +486,17 @@ spec:
                           Contour's default is false.
                         type: boolean
                     type: object
+                  loadBalancer:
+                    description: |-
+                      LoadBalancer specifies the source for ingress status address.
+                      If provided, the value can be in one of the formats:
+                        - address:<addr,...>: use the provided addresses directly (FQDN or IP).
+                        - service:<namespace>/<name>: watch the named Service for its LoadBalancer status.
+                        - ingress:<namespace>/<name>: watch the named Ingress for its LoadBalancer status.
+                      If spec.ingress.statusAddress is set, it takes precedence over this field.
+                      If this field is empty, spec.envoy.service is used as default.
+                      Contour's default is an empty string.
+                    type: string
                   logging:
                     description: Logging defines how Envoy's logs can be configured.
                     properties:
@@ -4572,6 +4583,17 @@ spec:
                               Contour's default is false.
                             type: boolean
                         type: object
+                      loadBalancer:
+                        description: |-
+                          LoadBalancer specifies the source for ingress status address.
+                          If provided, the value can be in one of the formats:
+                            - address:<addr,...>: use the provided addresses directly (FQDN or IP).
+                            - service:<namespace>/<name>: watch the named Service for its LoadBalancer status.
+                            - ingress:<namespace>/<name>: watch the named Ingress for its LoadBalancer status.
+                          If spec.ingress.statusAddress is set, it takes precedence over this field.
+                          If this field is empty, spec.envoy.service is used as default.
+                          Contour's default is an empty string.
+                        type: string
                       logging:
                         description: Logging defines how Envoy's logs can be configured.
                         properties:

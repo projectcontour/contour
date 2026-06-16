@@ -239,6 +239,16 @@ type EnvoyConfig struct {
 	// +optional
 	Service *NamespacedName `json:"service,omitempty"`
 
+	// LoadBalancerStatus specifies the source for load balancer status addresses
+	// that Contour will set on HTTPProxy, Ingress, and Gateway resources.
+	//
+	// Exactly one of the fields must be set.
+	//
+	// If spec.ingress.statusAddress is set, it takes precedence over this field.
+	// If this field is empty, spec.envoy.service is used as default.
+	// +optional
+	LoadBalancerStatus *LoadBalancerStatusConfig `json:"loadBalancerStatus,omitempty"`
+
 	// Defines the HTTP Listener for Envoy.
 	//
 	// Contour's default is { address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout" }.
@@ -308,6 +318,23 @@ type EnvoyConfig struct {
 	// This is disabled by default
 	// +optional
 	OMEnforcedHealth *HealthConfig `json:"omEnforcedHealth,omitempty"`
+}
+
+// LoadBalancerStatusConfig defines the source for load balancer status addresses.
+// Exactly one of the fields must be set.
+// +kubebuilder:validation:XValidation:message="exactly one of service, ingress, or addresses must be set",rule="[has(self.service), has(self.ingress), has(self.addresses)].exists_one(x, x)"
+type LoadBalancerStatusConfig struct {
+	// Service watches the named Service's status.loadBalancer for addresses.
+	// +optional
+	Service *NamespacedName `json:"service,omitempty"`
+
+	// Ingress watches the named Ingress's status.loadBalancer for addresses.
+	// +optional
+	Ingress *NamespacedName `json:"ingress,omitempty"`
+
+	// Addresses specifies static address(es) to use directly (IP or FQDN).
+	// +optional
+	Addresses []string `json:"addresses,omitempty"`
 }
 
 // DebugConfig contains Contour specific troubleshooting options.

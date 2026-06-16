@@ -607,3 +607,73 @@ func simpleProxyGenerator(name, ingressClass string, lbstatus core_v1.LoadBalanc
 		},
 	}
 }
+
+func TestIngressStatusLoadBalancerWatcher(t *testing.T) {
+	lbstatus := make(chan core_v1.LoadBalancerStatus, 1)
+	sw := IngressStatusLoadBalancerWatcher{
+		IngressName: "envoy",
+		LBStatus:    lbstatus,
+		Log:         fixture.NewTestLogger(t),
+	}
+
+	recv := func() (core_v1.LoadBalancerStatus, bool) {
+		select {
+		case lbs := <-sw.LBStatus:
+			return lbs, true
+		default:
+			return core_v1.LoadBalancerStatus{}, false
+		}
+	}
+
+	ingress := func(name string, status ...networking_v1.IngressLoadBalancerIngress) *networking_v1.Ingress {
+		ing := &networking_v1.Ingress{}
+		ing.Name = name
+		ing.Status.LoadBalancer.Ingress = status
+		return ing
+	}
+
+	t.Run("OnAdd wrong name", func(t *testing.T) {
+		sw.OnAdd(ingress("potato"), false)
+		_, ok := recv()
+		assert.False(t, ok, "expected no notification")
+	})
+
+	t.Run("OnAdd matching name", func(t *testing.T) {
+		sw.OnAdd(ingress("envoy", networking_v1.IngressLoadBalancerIngress{Hostname: "projectcontour.io"}), false)
+		got, ok := recv()
+		assert.True(t, ok, "expected notification")
+		assert.Equal(t, core_v1.LoadBalancerStatus{
+			Ingress: []core_v1.LoadBalancerIngress{{Hostname: "projectcontour.io", Ports: []core_v1.PortStatus{}}},
+		}, got)
+	})
+
+	t.Run("OnUpdate wrong name", func(t *testing.T) {
+		sw.OnUpdate(ingress("potato"), ingress("elephant"))
+		_, ok := recv()
+		assert.False(t, ok, "expected no notification")
+	})
+
+	t.Run("OnUpdate matching name", func(t *testing.T) {
+		sw.OnUpdate(ingress("potato"), ingress("envoy", networking_v1.IngressLoadBalancerIngress{IP: "1.2.3.4"}))
+		got, ok := recv()
+		assert.True(t, ok, "expected notification")
+		assert.Equal(t, core_v1.LoadBalancerStatus{
+			Ingress: []core_v1.LoadBalancerIngress{{IP: "1.2.3.4", Ports: []core_v1.PortStatus{}}},
+		}, got)
+	})
+
+	t.Run("OnDelete wrong name", func(t *testing.T) {
+		sw.OnDelete(ingress("potato"))
+		_, ok := recv()
+		assert.False(t, ok, "expected no notification")
+	})
+
+	t.Run("OnDelete matching name", func(t *testing.T) {
+		sw.OnDelete(ingress("envoy", networking_v1.IngressLoadBalancerIngress{Hostname: "projectcontour.io"}))
+		got, ok := recv()
+		assert.True(t, ok, "expected notification")
+		assert.Equal(t, core_v1.LoadBalancerStatus{
+			Ingress: []core_v1.LoadBalancerIngress{},
+		}, got)
+	})
+}

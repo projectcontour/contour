@@ -165,6 +165,18 @@ func (n NamespacedName) Validate() error {
 	return nil
 }
 
+// LoadBalancerStatusSource defines the source for load balancer status addresses in the config file.
+type LoadBalancerStatusSource struct {
+	// Service watches the named Service's status.loadBalancer for addresses.
+	Service *NamespacedName `yaml:"service,omitempty"`
+
+	// Ingress watches the named Ingress's status.loadBalancer for addresses.
+	Ingress *NamespacedName `yaml:"ingress,omitempty"`
+
+	// Addresses specifies static address(es) to use directly (IP or FQDN).
+	Addresses []string `yaml:"addresses,omitempty"`
+}
+
 // TLSParameters holds configuration file TLS configuration details.
 type TLSParameters struct {
 	ProtocolParameters `yaml:",inline"`
@@ -681,6 +693,9 @@ type Parameters struct {
 
 	// Name of the envoy service to inspect for Ingress status details.
 	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
+
+	// LoadBalancerStatus specifies the source for load balancer status addresses.
+	LoadBalancerStatus LoadBalancerStatusSource `yaml:"load-balancer-status,omitempty"`
 
 	// DefaultHTTPVersions defines the default set of HTTPS
 	// versions the proxy should accept. HTTP versions are

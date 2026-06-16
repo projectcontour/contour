@@ -90,6 +90,9 @@ type serveContext struct {
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
 	PermitInsecureGRPC bool
 
+	// loadBalancerStatus is the CLI flag value for --load-balancer-status, before parsing into a structured format in loadBalancerStatusConfig.
+	loadBalancerStatus string
+
 	// Leader election configuration.
 	LeaderElection LeaderElection
 
@@ -629,7 +632,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				EnvoyAdminPort:            &ctx.Config.Network.EnvoyAdminPort,
 				EnvoyStripTrailingHostDot: &ctx.Config.Network.EnvoyStripTrailingHostDot,
 			},
-			OMEnforcedHealth: envoyOMEnforcedHealthListenerConfig,
+			OMEnforcedHealth:   envoyOMEnforcedHealthListenerConfig,
+			LoadBalancerStatus: ctx.loadBalancerStatusConfig(),
 		},
 		Gateway: gatewayConfig,
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{
@@ -675,5 +679,67 @@ func setMetricsFromConfig(src config.MetricsServerParameters, dst *contour_v1alp
 			KeyFile:  src.ServerKey,
 			CAFile:   src.CABundle,
 		}
+	}
+}
+
+// loadBalancerStatusConfig returns the LoadBalancerStatusConfig, preferring
+// the CLI flag over the config file struct.
+func (ctx *serveContext) loadBalancerStatusConfig() *contour_v1alpha1.LoadBalancerStatusConfig {
+	// CLI flag takes precedence over config file.
+	if ctx.loadBalancerStatus != "" {
+		parts := strings.SplitN(ctx.loadBalancerStatus, ":", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil
+		}
+
+		switch strings.ToLower(parts[0]) {
+		case "service":
+			nn := k8s.NamespacedNameFrom(parts[1])
+			return &contour_v1alpha1.LoadBalancerStatusConfig{
+				Service: &contour_v1alpha1.NamespacedName{
+					Namespace: nn.Namespace,
+					Name:      nn.Name,
+				},
+			}
+		case "ingress":
+			nn := k8s.NamespacedNameFrom(parts[1])
+			return &contour_v1alpha1.LoadBalancerStatusConfig{
+				Ingress: &contour_v1alpha1.NamespacedName{
+					Namespace: nn.Namespace,
+					Name:      nn.Name,
+				},
+			}
+		case "address":
+			return &contour_v1alpha1.LoadBalancerStatusConfig{
+				Addresses: strings.Split(parts[1], ","),
+			}
+		default:
+			return nil
+		}
+	}
+
+	// Fallback to config file.
+	src := ctx.Config.LoadBalancerStatus
+	switch {
+	case src.Service != nil:
+		return &contour_v1alpha1.LoadBalancerStatusConfig{
+			Service: &contour_v1alpha1.NamespacedName{
+				Namespace: src.Service.Namespace,
+				Name:      src.Service.Name,
+			},
+		}
+	case src.Ingress != nil:
+		return &contour_v1alpha1.LoadBalancerStatusConfig{
+			Ingress: &contour_v1alpha1.NamespacedName{
+				Namespace: src.Ingress.Namespace,
+				Name:      src.Ingress.Name,
+			},
+		}
+	case len(src.Addresses) > 0:
+		return &contour_v1alpha1.LoadBalancerStatusConfig{
+			Addresses: src.Addresses,
+		}
+	default:
+		return nil
 	}
 }
