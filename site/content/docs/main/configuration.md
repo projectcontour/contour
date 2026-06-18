@@ -32,7 +32,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--http-port=<port>`                                            | Port the metrics HTTP endpoint will bind to.                                            |
 | `--health-address=<ipaddr>`                                     | Address the health HTTP endpoint will bind to                                           |
 | `--health-port=<port>`                                          | Port the health HTTP endpoint will bind to                                              |
-| `--contour-cafile=</path/to/file\|CONTOUR_CERT_FILE>`           | CA bundle file name for serving gRPC with TLS                                           |
+| `--contour-cafile=</path/to/file\|CONTOUR_CAFILE>`           | CA bundle file name for serving gRPC with TLS                                           |
 | `--contour-cert-file=</path/to/file\|CONTOUR_CERT_FILE>`        | Contour certificate file name for serving gRPC over TLS                                 |
 | `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>`          | Contour key file name for serving gRPC over TLS                                         |
 | `--insecure`                                                    | Allow serving without TLS secured gRPC                                                  |
