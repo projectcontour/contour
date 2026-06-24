@@ -1,0 +1,78 @@
+name: Docs Broken Link Checker
+
+on:
+  pull_request:
+    paths:
+      - "site/content/docs/main/**/*.md"
+
+  schedule:
+    - cron: "0 7 * * 1"
+
+  workflow_dispatch:
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Lychee parses Markdown files, extracts URLs, and checks them via HTTP requests.
+      # The job fails if any broken links are detected.
+      - name: Run Lychee link checker (main docs only)
+        uses: lycheeverse/lychee-action@a8c4c7cb88f0c7386610c35eb25108e448569cb0 # v2.7.0
+        with:
+          args: >
+            --verbose
+            --no-progress
+            --timeout 20
+            --max-retries 3
+            --retry-wait-time 5
+            --exclude-mail
+            --accept 200,206,429
+            --ignore-path .lycheeignore
+            --output lychee-report.md
+            --format markdown
+            "site/content/docs/main/**/*.md"
+
+      # Scheduled runs should create or update a tracking issue instead of opening duplicates.
+      - name: Create or update issue (scheduled runs only)
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+
+            const title = "Broken links found in documentation";
+            const report = fs.readFileSync("lychee-report.md", "utf8");
+
+            // Search for an existing open issue with the same title
+            const search = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open "${title}"`
+            });
+
+            if (search.data.total_count > 0) {
+              const issue = search.data.items[0];
+
+              // Add the latest report as a comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: report
+              });
+
+              console.log(`Updated existing issue #${issue.number}`);
+            } else {
+              // Create a new issue if none exists
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: report,
+                labels: ["documentation", "automated"]
+              });
+
+              console.log("Created new broken-links issue");
+            }
