@@ -922,6 +922,16 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"tls ecdh_curves": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.TLS.ECDHCurves = []string{"X25519", "P-256", "P-512", "X25519MLKEM768"}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.TLS.ECDHCurves = []string{"X25519", "P-256", "P-512", "X25519MLKEM768"}
+				return cfg
+			},
+		},
 		"tls fingerprinting": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.TLS.Fingerprint = &config.TLSFingerprint{

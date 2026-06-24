@@ -334,3 +334,71 @@ func TestFeatureFlagsValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateECDHCurves(t *testing.T) {
+	c := contour_v1alpha1.ContourConfigurationSpec{
+		Envoy: &contour_v1alpha1.EnvoyConfig{
+			Listener: &contour_v1alpha1.EnvoyListenerConfig{
+				TLS: &contour_v1alpha1.EnvoyListenerTLS{},
+			},
+		},
+	}
+
+	// No curves specified is valid.
+	require.NoError(t, c.Validate())
+
+	// All valid curves.
+	c.Envoy.Listener.TLS.ECDHCurves = []string{
+		"X25519",
+		"P-256",
+		"P-384",
+		"P-521",
+		"X25519MLKEM768",
+	}
+	require.NoError(t, c.Validate())
+
+	// Single valid post-quantum curve.
+	c.Envoy.Listener.TLS.ECDHCurves = []string{"X25519MLKEM768", "X25519", "P-256"}
+	require.NoError(t, c.Validate())
+
+	// Invalid curve name.
+	c.Envoy.Listener.TLS.ECDHCurves = []string{"X25519", "INVALID-CURVE"}
+	require.Error(t, c.Validate())
+
+	// Empty string is invalid.
+	c.Envoy.Listener.TLS.ECDHCurves = []string{""}
+	require.Error(t, c.Validate())
+}
+
+func TestSanitizeECDHCurves(t *testing.T) {
+	testCases := map[string]struct {
+		curves []string
+		want   []string
+	}{
+		"no curves returns default (nil)": {
+			curves: nil,
+			want:   contour_v1alpha1.DefaultECDHCurves,
+		},
+		"empty slice returns default (nil)": {
+			curves: []string{},
+			want:   contour_v1alpha1.DefaultECDHCurves,
+		},
+		"valid list": {
+			curves: []string{"X25519MLKEM768", "X25519", "P-256"},
+			want:   []string{"X25519MLKEM768", "X25519", "P-256"},
+		},
+		"curve duplicated": {
+			curves: []string{"X25519", "P-256", "X25519"},
+			want:   []string{"X25519", "P-256"},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			e := &contour_v1alpha1.EnvoyTLS{
+				ECDHCurves: tc.curves,
+			}
+			assert.Equal(t, tc.want, e.SanitizedECDHCurves())
+		})
+	}
+}

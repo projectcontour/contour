@@ -509,6 +509,28 @@ type EnvoyTLS struct {
 	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
 	// +optional
 	CipherSuites []string `json:"cipherSuites,omitempty"`
+
+	// ECDHCurves defines the ECDH curves that Envoy TLS listeners will use
+	// for key exchange during TLS handshakes. This controls the list of
+	// supported key exchange groups advertised to TLS clients. Curves are
+	// validated against the set that Envoy supports via BoringSSL.
+	//
+	// This parameter can be used to enable post-quantum key exchange
+	// (e.g. X25519MLKEM768) on Envoy listeners.
+	//
+	// This field is optional; when it is undefined, Envoy's built-in
+	// defaults are used (currently X25519, P-256).
+	//
+	// Curves provided are validated against the following list:
+	//   - "X25519"
+	//   - "P-256"
+	//   - "P-384"
+	//   - "P-521"
+	//   - "X25519MLKEM768"
+	//
+	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
+	// +optional
+	ECDHCurves []string `json:"ecdhCurves,omitempty"`
 }
 
 // EnvoyListenerTLS describes TLS parameters for Envoy listeners.
