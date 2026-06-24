@@ -498,9 +498,10 @@ func (s *Server) doServe() error {
 		&xdscache_v3.RouteCache{},
 		xdscache_v3.NewClusterCache(envoyGen),
 		endpointHandler,
-		xdscache_v3.NewRuntimeCache(xdscache_v3.ConfigurableRuntimeSettings{
+		xdscache_v3.NewRuntimeCache(s.log.WithField("context", "runtimeCache"), xdscache_v3.ConfigurableRuntimeSettings{
 			MaxRequestsPerIOCycle:     contourConfiguration.Envoy.Listener.MaxRequestsPerIOCycle,
 			MaxConnectionsPerListener: contourConfiguration.Envoy.Listener.MaxConnectionsPerListener,
+			UserDefinedSettings:       contourConfiguration.Envoy.RuntimeSettings,
 		}),
 	}
 

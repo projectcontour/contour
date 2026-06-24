@@ -630,6 +630,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				EnvoyStripTrailingHostDot: &ctx.Config.Network.EnvoyStripTrailingHostDot,
 			},
 			OMEnforcedHealth: envoyOMEnforcedHealthListenerConfig,
+			RuntimeSettings:  ctx.Config.RuntimeSettings,
 		},
 		Gateway: gatewayConfig,
 		HTTPProxy: &contour_v1alpha1.HTTPProxyConfig{

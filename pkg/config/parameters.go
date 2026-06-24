@@ -724,6 +724,9 @@ type Parameters struct {
 	// configured by [Parameters.Metrics.Envoy] or any listeners
 	// configured by [contour_v1alpha1.ContourConfigurationSpec.Envoy]
 	OMEnforcedHealthListener *OMEnforcedHealthListenerConfig `yaml:"omEnforcedHealthListener,omitempty"`
+
+	// RuntimeSettings allows overriding arbitrary Envoy runtime settings,
+	RuntimeSettings map[string]string `yaml:"runtime-settings,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.

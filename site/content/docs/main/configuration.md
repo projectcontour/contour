@@ -325,6 +325,12 @@ By default, this configuration is not enabled.
 | address                 | string | none    | Address that health listener will bind to. |
 | port                    | int    | 0       | Port that health listener will bind to.    |
 
+### Runtime Settings
+
+| Field Name        | Type              | Default | Description                                                                                                                                                                                                                                                                                                                    |
+| ----------------- | ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| runtime-settings  | map[string]string | none    | Allows overriding arbitrary Envoy [runtime settings](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime), intended for cases such as disabling a new Envoy feature that breaks existing functionality. Settings managed by Contour take precedence over user-defined values for the same keys. Keys are not validated and unrecognized keys are silently ignored. |
+
 ### Configuration Example
 
 The following is an example ConfigMap with configuration file included:
