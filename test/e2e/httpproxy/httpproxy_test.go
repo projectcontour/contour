@@ -16,8 +16,10 @@
 package httpproxy
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -26,6 +28,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -775,8 +778,24 @@ descriptors:
 							},
 							ResponseTimeout: "10s",
 						}
-						require.NoError(f.T(),
-							f.Deployment.EnsureGlobalExternalAuthResources(namespace))
+
+						// Start the local gRPC auth service with a deny-all handler.
+						auth := e2e.StartLocalGRPCAuthService(GinkgoT(), f.Client, namespace, "testserver")
+						auth.Deny(http.StatusUnauthorized)
+
+						extSvc := &contour_v1alpha1.ExtensionService{
+							ObjectMeta: meta_v1.ObjectMeta{
+								Name:      "testserver",
+								Namespace: namespace,
+							},
+							Spec: contour_v1alpha1.ExtensionServiceSpec{
+								Protocol: ptr.To("h2c"),
+								Services: []contour_v1alpha1.ExtensionServiceTarget{
+									{Name: "testserver", Port: 9443},
+								},
+							},
+						}
+						require.NoError(f.T(), f.Client.Create(context.TODO(), extSvc))
 					})
 					body(namespace)
 				})
