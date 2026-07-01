@@ -208,6 +208,12 @@ func isValidTLSCipher(cipherSpec string) bool {
 	return true
 }
 
+// isValidECDHCurve returns true if the curve name is in the set of valid ECDH curves.
+func isValidECDHCurve(curve string) bool {
+	_, ok := ValidECDHCurves[curve]
+	return ok
+}
+
 // Validate ensures EnvoyTLS configuration is valid.
 func (e *EnvoyTLS) Validate() error {
 	if err := ValidateTLSProtocolVersions(e.MinimumProtocolVersion, e.MaximumProtocolVersion); err != nil {
@@ -223,6 +229,17 @@ func (e *EnvoyTLS) Validate() error {
 	if len(invalidCipherSuites) > 0 {
 		return fmt.Errorf("invalid cipher suites %q", invalidCipherSuites)
 	}
+
+	var invalidECDHCurves []string
+	for _, c := range e.ECDHCurves {
+		if !isValidECDHCurve(c) {
+			invalidECDHCurves = append(invalidECDHCurves, c)
+		}
+	}
+	if len(invalidECDHCurves) > 0 {
+		return fmt.Errorf("invalid ECDH curves %q", invalidECDHCurves)
+	}
+
 	return nil
 }
 
@@ -243,6 +260,25 @@ func (e *EnvoyTLS) SanitizedCipherSuites() []string {
 		}
 	}
 	return validatedCiphers
+}
+
+// SanitizedECDHCurves returns a deduplicated list of ECDH curves.
+// Order is maintained. If the list is empty/nil, nil is returned
+// which signals that Envoy should use its built-in defaults.
+func (e *EnvoyTLS) SanitizedECDHCurves() []string {
+	if len(e.ECDHCurves) == 0 {
+		return DefaultECDHCurves
+	}
+
+	uniqueCurves := sets.NewString()
+	validatedCurves := []string{}
+	for _, c := range e.ECDHCurves {
+		if !uniqueCurves.Has(c) {
+			uniqueCurves.Insert(c)
+			validatedCurves = append(validatedCurves, c)
+		}
+	}
+	return validatedCurves
 }
 
 func (f FeatureFlags) Validate() error {

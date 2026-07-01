@@ -7920,6 +7920,33 @@ will be used, which may be updated to keep it secure.</p>
 Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ecdhCurves</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ECDHCurves defines the ECDH curves that Envoy TLS listeners will use
+for key exchange during TLS handshakes. This controls the list of
+supported key exchange groups advertised to TLS clients. Curves are
+validated against the set that Envoy supports via BoringSSL.</p>
+<p>This parameter can be used to enable post-quantum key exchange
+(e.g. X25519MLKEM768) on Envoy listeners.</p>
+<p>This field is optional; when it is undefined, Envoy&rsquo;s built-in
+defaults are used (currently X25519, P-256).</p>
+<p>Curves provided are validated against the following list:
+- &ldquo;X25519&rdquo;
+- &ldquo;P-256&rdquo;
+- &ldquo;P-384&rdquo;
+- &ldquo;P-521&rdquo;
+- &ldquo;X25519MLKEM768&rdquo;</p>
+<p>See: <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.ExtensionProtocolVersion">ExtensionProtocolVersion

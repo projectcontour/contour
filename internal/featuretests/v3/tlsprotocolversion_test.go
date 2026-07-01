@@ -134,6 +134,7 @@ func TestTLSProtocolVersion(t *testing.T) {
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
+					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),

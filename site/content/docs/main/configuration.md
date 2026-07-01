@@ -117,6 +117,7 @@ Contour should provision TLS hosts.
 | fallback-certificate     |          |                                                                                                                   | [Fallback certificate configuration](#fallback-certificate).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | envoy-client-certificate |          |                                                                                                                   | [Client certificate configuration for Envoy](#envoy-client-certificate).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | cipher-suites            | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
+| ecdh-curves              | []string | Envoy defaults (X25519, P-256) | This field specifies the ECDH curves for TLS connections. When empty, Envoy's default curves are used. Valid values are: `X25519`, `P-256`, `P-384`, `P-521`, `X25519MLKEM768`. |
 | fingerprint              |          |                                                                                                                   | [TLS fingerprinting configuration](#tls-fingerprint).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Upstream TLS Configuration
@@ -128,6 +129,7 @@ The Upstream TLS configuration block can be used to configure default values for
 | minimum-protocol-version | string   | `1.2` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2. |
 | maximum-protocol-version | string   | `1.3` | This field specifies the maximum TLS protocol version that is allowed. Valid options are `1.2` and `1.3`. Any other value defaults to TLS 1.3. |
 | cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
+| ecdh-curves | []string | Envoy defaults (X25519, P-256) | This field specifies the ECDH curves for upstream TLS connections. When empty, Envoy's default curves are used. Valid values are: `X25519`, `P-256`, `P-384`, `P-521`, `X25519MLKEM768`. |
 
 ### Fallback Certificate
 
@@ -363,6 +365,11 @@ data:
     # - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
     # - 'ECDHE-ECDSA-AES256-GCM-SHA384'
     # - 'ECDHE-RSA-AES256-GCM-SHA384'
+    # ECDH curves to be used by Envoy TLS listeners.
+    # When not specified, Envoy defaults are used (X25519, P-256).
+    # ecdh-curves:
+    # - X25519
+    # - P-256
     # Defines the Kubernetes name/namespace matching a secret to use
     # as the fallback certificate when requests which don't match the
     # SNI defined for a vhost.

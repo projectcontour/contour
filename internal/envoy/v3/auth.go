@@ -48,6 +48,7 @@ func (e *EnvoyGen) UpstreamTLSContext(peerValidationContext *dag.PeerValidationC
 			TlsMinimumProtocolVersion: ParseTLSVersion(upstreamTLS.MinimumProtocolVersion),
 			TlsMaximumProtocolVersion: ParseTLSVersion(upstreamTLS.MaximumProtocolVersion),
 			CipherSuites:              upstreamTLS.CipherSuites,
+			EcdhCurves:                upstreamTLS.ECDHCurves,
 		}
 	}
 
@@ -115,13 +116,14 @@ func validationContext(ca []byte, subjectNames []string, skipVerifyPeerCert bool
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func (e *EnvoyGen) DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxProtoVersion envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
+func (e *EnvoyGen) DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion, tlsMaxProtoVersion envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol, cipherSuites, ecdhCurves []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_transport_socket_tls_v3.DownstreamTlsContext {
 	context := &envoy_transport_socket_tls_v3.DownstreamTlsContext{
 		CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 			TlsParams: &envoy_transport_socket_tls_v3.TlsParameters{
 				TlsMinimumProtocolVersion: tlsMinProtoVersion,
 				TlsMaximumProtocolVersion: tlsMaxProtoVersion,
 				CipherSuites:              cipherSuites,
+				EcdhCurves:                ecdhCurves,
 			},
 			TlsCertificateSdsSecretConfigs: []*envoy_transport_socket_tls_v3.SdsSecretConfig{{
 				Name:      envoy.Secretname(serverSecret),

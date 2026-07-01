@@ -455,6 +455,7 @@ func (s *Server) doServe() error {
 		MinimumTLSVersion:             annotation.TLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
 		MaximumTLSVersion:             annotation.TLSVersion(contourConfiguration.Envoy.Listener.TLS.MaximumProtocolVersion, "1.3"),
 		CipherSuites:                  contourConfiguration.Envoy.Listener.TLS.SanitizedCipherSuites(),
+		ECDHCurves:                    contourConfiguration.Envoy.Listener.TLS.SanitizedECDHCurves(),
 		EnableJA3Fingerprinting:       contourConfiguration.Envoy.Listener.TLS.GetJA3(),
 		EnableJA4Fingerprinting:       contourConfiguration.Envoy.Listener.TLS.GetJA4(),
 		Timeouts:                      timeouts,
@@ -573,6 +574,7 @@ func (s *Server) doServe() error {
 			MinimumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MinimumProtocolVersion, "1.2"),
 			MaximumProtocolVersion: annotation.TLSVersion(contourConfiguration.Envoy.Cluster.UpstreamTLS.MaximumProtocolVersion, "1.3"),
 			CipherSuites:           contourConfiguration.Envoy.Cluster.UpstreamTLS.SanitizedCipherSuites(),
+			ECDHCurves:             contourConfiguration.Envoy.Cluster.UpstreamTLS.SanitizedECDHCurves(),
 		},
 	})
 

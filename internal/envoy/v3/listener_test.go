@@ -482,7 +482,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 		want *envoy_transport_socket_tls_v3.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, nil, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -492,7 +492,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContext, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContext, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -504,7 +504,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContextWithSubjectName, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -516,7 +516,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -528,7 +528,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"skip client cert validation with ca": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -540,7 +540,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"optional client cert validation with ca": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContextOptionalClientCertValidationWithCA, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -552,7 +552,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContextWithCRLCheck, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -564,7 +564,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation with CRL check but only for leaf-certificate": {
-			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
+			envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, cipherSuites, nil, peerValidationContextWithCRLCheckOnlyLeaf, "h2", "http/1.1"),
 			&envoy_transport_socket_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_transport_socket_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,

@@ -73,11 +73,11 @@ func TestDownstreamTLSTransportSocket(t *testing.T) {
 		want *envoy_config_core_v3.TransportSocket
 	}{
 		"default/tls": {
-			ctxt: envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, nil, "client-subject-name", "h2", "http/1.1"),
+			ctxt: envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, nil, nil, "client-subject-name", "h2", "http/1.1"),
 			want: &envoy_config_core_v3.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
 				ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, nil, "client-subject-name", "h2", "http/1.1")),
+					TypedConfig: protobuf.MustMarshalAny(envoyGen.DownstreamTLSContext(serverSecret, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, nil, nil, "client-subject-name", "h2", "http/1.1")),
 				},
 			},
 		},

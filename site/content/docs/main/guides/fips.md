@@ -144,6 +144,7 @@ The critical communication paths and how they are set up to be FIPS compliant ar
   - As of [Contour 1.13.0][16], the ciphers Envoy will accept as a server when negotiating TLS 1.2 are configurable
   - The [default set of ciphers Contour configures][17] includes some ciphers that are not FIPS approved
   - Users must configure FIPS approved ciphers from the list [here][15]
+  - ECDH curves are also configurable via the `ecdh-curves` setting
 
 [0]: https://csrc.nist.gov/publications/detail/fips/140/2/final
 [1]: https://csrc.nist.gov/projects/testing-laboratories
