@@ -2699,6 +2699,37 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyInvalidMultipleAuth := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "multiple-auth",
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "multiple-auth.example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+				AuthPolicy:    &contour_v1.AuthorizationPolicy{},
+				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{},
+			}},
+		},
+	}
+
+	run(t, "Setting both authPolicy and authorizationOverride is invalid", testcase{
+		objs: []any{proxyInvalidMultipleAuth, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyInvalidMultipleAuth.Name, Namespace: proxyInvalidMultipleAuth.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeRouteError, "RouteAuthPolicyNotValid", "must set at most one of route.authPolicy or route.authorizationOverride"),
+		},
+	})
+
 	fallbackCertificate := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "roots",

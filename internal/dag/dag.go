@@ -27,6 +27,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -328,13 +329,8 @@ type Route struct {
 	// over HTTP?
 	HTTPSUpgrade bool
 
-	// AuthDisabled is set if authorization should be disabled
-	// for this route. If authorization is disabled, the AuthContext
-	// field has no effect.
-	AuthDisabled bool
-
-	// AuthContext sets the authorization context (if authorization is enabled).
-	AuthContext map[string]string
+	// AuthzOverride Overrides the virtual host's authorization settings for this route.
+	AuthzOverride *PerRouteAuthzOverride
 
 	// Is this a websocket route?
 	// TODO(dfc) this should go on the service
@@ -421,6 +417,18 @@ func (r *Route) HasPathExact() bool {
 func (r *Route) HasPathRegex() bool {
 	_, ok := r.PathMatchCondition.(*RegexMatchCondition)
 	return ok
+}
+
+type PerRouteAuthzOverride struct {
+	ExtensionCluster                *ExtensionCluster
+	Disabled                        bool
+	Context                         map[string]string
+	ServiceAPIType                  contour_v1.AuthorizationServiceType
+	HTTPAllowedAuthorizationHeaders []HeaderNameMatchCondition
+	HTTPAllowedUpstreamHeaders      []HeaderNameMatchCondition
+	HTTPPathPrefix                  string
+	WithRequestBody                 *AuthorizationServerBufferSettings
+	AuthorizationResponseTimeout    timeout.Setting
 }
 
 // RouteTimeoutPolicy defines the timeout policy for a route.
@@ -1359,4 +1367,61 @@ type CircuitBreakers struct {
 	// PerHostMaxConnections is the maximum number of connections
 	// that Envoy will allow to each individual host in a cluster.
 	PerHostMaxConnections uint32
+}
+
+type ExtensionServiceConfig struct {
+	ExtensionService types.NamespacedName
+	Timeout          timeout.Setting
+	SNI              string
+}
+
+type TracingConfig struct {
+	ExtensionServiceConfig
+
+	ServiceName string
+
+	OverallSampling float64
+
+	ClientSampling float64
+
+	RandomSampling float64
+
+	MaxPathTagLength uint32
+
+	CustomTags []*CustomTag
+}
+
+type CustomTag struct {
+	// TagName is the unique name of the custom tag.
+	TagName string
+
+	// Literal is a static custom tag value.
+	Literal string
+
+	// EnvironmentName indicates that the label value is obtained
+	// from the environment variable.
+	EnvironmentName string
+
+	// RequestHeaderName indicates which request header
+	// the label value is obtained from.
+	RequestHeaderName string
+}
+
+type RateLimitConfig struct {
+	ExtensionServiceConfig
+	Domain                      string
+	FailOpen                    bool
+	EnableXRateLimitHeaders     bool
+	EnableResourceExhaustedCode bool
+}
+
+type ExternalAuthzConfig struct {
+	ExtensionServiceConfig
+	FailOpen                        bool
+	Context                         map[string]string
+	ServiceAPIType                  AuthorizationServiceType
+	HTTPAllowedAuthorizationHeaders []HeaderNameMatchCondition
+	HTTPAllowedUpstreamHeaders      []HeaderNameMatchCondition
+	HTTPPathPrefix                  string
+	WithRequestBody                 *AuthorizationServerBufferSettings
 }

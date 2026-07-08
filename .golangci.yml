@@ -110,6 +110,9 @@ linters:
       - linters:
           - staticcheck
         text: "SA1019.*SubjectName.*migrate to using the plural field subjectNames"
+      - linters:
+          - staticcheck
+        text: "SA1019.*AuthPolicy is deprecated: Use AuthzOverride instead"
     paths:
       - third_party$
       - builtin$
