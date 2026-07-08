@@ -189,7 +189,9 @@ func applyPerRouteAuthPolicy(dagRoute *dag.Route, route *envoy_config_route_v3.R
 	}
 
 	if dagRoute.AuthzOverride != nil {
-		route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzOverride(dagRoute.AuthzOverride)
+		if override := routeAuthzOverride(dagRoute.AuthzOverride); override != nil {
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = override
+		}
 	}
 }
 
@@ -268,6 +270,10 @@ func routeAuthzOverride(authzOverride *dag.PerRouteAuthzOverride) *anypb.Any {
 			AllowPartialMessage: authzOverride.WithRequestBody.AllowPartialMessage,
 			PackAsBytes:         authzOverride.WithRequestBody.PackAsBytes,
 		}
+	}
+
+	if len(checkSettings.ContextExtensions) == 0 && checkSettings.ServiceOverride == nil && checkSettings.WithRequestBody == nil {
+		return nil
 	}
 
 	return protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
@@ -668,13 +674,7 @@ func UpgradeHTTPS() *envoy_config_route_v3.Route_Redirect {
 // DisabledExtAuthConfig returns a route TypedPerFilterConfig that disables ExtAuth
 func DisabledExtAuthConfig() map[string]*anypb.Any {
 	return map[string]*anypb.Any{
-		ExtAuthzFilterName: protobuf.MustMarshalAny(
-			&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
-					Disabled: true,
-				},
-			},
-		),
+		ExtAuthzFilterName: routeAuthzDisabled(),
 	}
 }
 

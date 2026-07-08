@@ -15817,6 +15817,7 @@ func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
 		PathMatchCondition: prefixString(prefix),
 		Clusters:           append([]*Cluster{first}, rest...),
+		AuthzOverride:      &PerRouteAuthzOverride{Disabled: true},
 	}
 }
 
