@@ -1006,8 +1006,10 @@ func TestBuildRouteWithDirectResponse(t *testing.T) {
 					StatusCode: 500,
 					Body:       "Internal Server Error",
 				},
-				AuthContext: map[string]string{
-					"PrincipalName": "user",
+				AuthzOverride: &dag.PerRouteAuthzOverride{
+					Context: map[string]string{
+						"PrincipalName": "user",
+					},
 				},
 				PathMatchCondition: &dag.PrefixMatchCondition{
 					Prefix:          "/foo",
@@ -1018,8 +1020,10 @@ func TestBuildRouteWithDirectResponse(t *testing.T) {
 			secure:    true,
 			want: &envoy_config_route_v3.Route{
 				TypedPerFilterConfig: map[string]*anypb.Any{
-					"envoy.filters.http.ext_authz": routeAuthzContext(map[string]string{
-						"PrincipalName": "user",
+					"envoy.filters.http.ext_authz": routeAuthzOverride(&dag.PerRouteAuthzOverride{
+						Context: map[string]string{
+							"PrincipalName": "user",
+						},
 					}),
 				},
 				Action: routeDirectResponse(&dag.DirectResponse{
@@ -1038,7 +1042,9 @@ func TestBuildRouteWithDirectResponse(t *testing.T) {
 				DirectResponse: &dag.DirectResponse{
 					StatusCode: 403,
 				},
-				AuthDisabled: true,
+				AuthzOverride: &dag.PerRouteAuthzOverride{
+					Disabled: true,
+				},
 				PathMatchCondition: &dag.PrefixMatchCondition{
 					Prefix:          "/foo",
 					PrefixMatchType: dag.PrefixMatchString,

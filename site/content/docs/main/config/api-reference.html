@@ -278,6 +278,7 @@ TLSCertificateDelegationStatus
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.PerRouteAuthorizationServer">PerRouteAuthorizationServer</a>, 
 <a href="#projectcontour.io/v1.Route">Route</a>)
 </p>
 <p>
@@ -460,7 +461,8 @@ AuthorizationServerBufferSettings
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.PerRouteAuthorizationServer">PerRouteAuthorizationServer</a>)
 </p>
 <p>
 <p>AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client request data and send it as part of authorization request</p>
@@ -518,7 +520,8 @@ bool
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.PerRouteAuthorizationServer">PerRouteAuthorizationServer</a>)
 </p>
 <p>
 <p>AuthorizationServiceType indicates the protocol
@@ -1174,7 +1177,8 @@ SkipClientCertValidation is set. Defaults to false.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.PerRouteAuthorizationServer">PerRouteAuthorizationServer</a>)
 </p>
 <p>
 <p>ExtensionServiceReference names an ExtensionService resource.</p>
@@ -1426,7 +1430,8 @@ bool
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.PerRouteAuthorizationServer">PerRouteAuthorizationServer</a>)
 </p>
 <p>
 <p>HTTPAuthorizationServerSettings defines configurations for interacting with an external HTTP authorization server.</p>
@@ -3009,6 +3014,117 @@ No HTTP headers or body content is rewritten.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.PerRouteAuthorizationServer">PerRouteAuthorizationServer
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>extensionRef</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtensionServiceReference">
+ExtensionServiceReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>serviceType</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServiceType">
+AuthorizationServiceType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceType defines the protocol implemented by the external server, specifying
+whether it&rsquo;s a raw HTTP authorization server or a gRPC authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpSettings</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerSettings">
+HTTPAuthorizationServerSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPServerSettings defines configurations for interacting with an external HTTP authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>authPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationPolicy">
+AuthorizationPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AuthPolicy sets a default authorization policy for client requests.
+This policy will be used unless overridden by individual routes.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseTimeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+Timeout durations are expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.
+The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>withRequestBody</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServerBufferSettings">
+AuthorizationServerBufferSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WithRequestBody specifies configuration for sending the client request&rsquo;s body to authorization server.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.QueryParameterHashOptions">QueryParameterHashOptions
 </h3>
 <p>
@@ -3913,6 +4029,26 @@ AuthorizationPolicy
 <p>AuthPolicy updates the authorization policy that was set
 on the root HTTPProxy object for client requests that
 match this route.</p>
+<p>Deprecated: Use AuthzOverride instead.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>authzOverride</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.PerRouteAuthorizationServer">
+PerRouteAuthorizationServer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AuthzOverride enables overriding the external authorization
+service for this route. This allows different routes to use different
+external authorization service backends.
+If specified, this overrides the virtualhost&rsquo;s service configuration
+regardless of the original service type.</p>
 </td>
 </tr>
 <tr>
