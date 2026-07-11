@@ -9478,7 +9478,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9499,7 +9499,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9526,7 +9526,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+						virtualhost("kuard.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9562,7 +9562,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9577,7 +9577,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9592,7 +9592,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9607,7 +9607,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9636,7 +9636,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9660,14 +9660,14 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+						virtualhost("kuard.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("kuard.example.com", sec1, prefixroute("/", service(s1))),
+						securevirtualhost("kuard.example.com", sec1, authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9683,14 +9683,14 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+						virtualhost("kuard.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("kuard.example.com", sec3, prefixroute("/", service(s1))),
+						securevirtualhost("kuard.example.com", sec3, authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9713,7 +9713,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9736,7 +9736,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+						virtualhost("kuard.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9757,8 +9757,8 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", service(s1))),
-						virtualhost("b.example.com", prefixroute("/", service(s1))),
+						virtualhost("a.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
+						virtualhost("b.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9773,8 +9773,8 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", service(s1))),
-						virtualhost("b.example.com", prefixroute("/", service(s1))),
+						virtualhost("a.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
+						virtualhost("b.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9790,14 +9790,14 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", service(s1))),
-						virtualhost("b.example.com", prefixroute("/", service(s1))),
+						virtualhost("a.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
+						virtualhost("b.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
+						securevirtualhost("b.example.com", sec1, authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9813,14 +9813,14 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("a.example.com", prefixroute("/", service(s1))),
-						virtualhost("b.example.com", prefixroute("/", service(s1))),
+						virtualhost("a.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
+						virtualhost("b.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
+						securevirtualhost("b.example.com", sec1, authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9836,7 +9836,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
-							prefixroute("/", service(s1)),
+							authzDisabledRoute(prefixroute("/", service(s1))),
 						),
 					),
 				},
@@ -9854,8 +9854,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
-							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							authzDisabledRoute(prefixroute("/", service(s1))),
+							authzDisabledRoute(prefixroute("/kuarder", service(s2))),
 						),
 					),
 				},
@@ -9871,8 +9871,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
-							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							authzDisabledRoute(prefixroute("/", service(s1))),
+							authzDisabledRoute(prefixroute("/kuarder", service(s2))),
 						),
 					),
 				},
@@ -9896,8 +9896,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("b.example.com", sec1,
-							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							authzDisabledRoute(prefixroute("/", service(s1))),
+							authzDisabledRoute(prefixroute("/kuarder", service(s2))),
 						),
 					),
 				},
@@ -9930,7 +9930,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
+						securevirtualhost("b.example.com", sec1, authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -9944,13 +9944,13 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
+						virtualhost("b.example.com", authzDisabledRoute(routeUpgrade("/", service(s1)))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
+						securevirtualhost("b.example.com", sec1, authzDisabledRoute(routeUpgrade("/", service(s1)))),
 					),
 				},
 			),
@@ -9965,13 +9965,13 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
+						virtualhost("b.example.com", authzDisabledRoute(routeUpgrade("/", service(s1)))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
+						securevirtualhost("b.example.com", sec1, authzDisabledRoute(routeUpgrade("/", service(s1)))),
 					),
 				},
 			),
@@ -10120,7 +10120,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
@@ -10130,7 +10130,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "b.example.com",
 								Routes: routes(
-									prefixroute("/", service(s1)),
+									authzDisabledRoute(prefixroute("/", service(s1))),
 								),
 							},
 							MinTLSVersion: "1.3",
@@ -10153,8 +10153,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", service(s1)),
-							routeWebsocket("/ws1", service(s1)),
+							authzDisabledRoute(prefixroute("/", service(s1))),
+							authzDisabledRoute(routeWebsocket("/ws1", service(s1))),
 						),
 					),
 				},
@@ -10170,10 +10170,10 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-						}),
+						})),
 					),
 				},
 			),
@@ -10188,10 +10188,10 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-						}),
+						})),
 					),
 				},
 			),
@@ -10213,13 +10213,13 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
-						}),
+						})),
 					),
 				},
 			),
@@ -10234,13 +10234,13 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
-						}),
+						})),
 					),
 				},
 			),
@@ -10274,13 +10274,13 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
-						}),
+						})),
 					),
 				},
 			),
@@ -10296,13 +10296,13 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
-						}),
+						})),
 					),
 				},
 			),
@@ -10411,7 +10411,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
@@ -10419,7 +10419,7 @@ func TestDAGInsert(t *testing.T) {
 								NumRetries:    6,
 								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 							},
-						}),
+						})),
 					),
 				},
 			),
@@ -10434,10 +10434,10 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: regex("/[^/]+/invoices(/.*|/?)"),
 							Clusters:           clustermap(s1),
-						}),
+						})),
 					),
 				},
 			),
@@ -10460,35 +10460,35 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							&Route{
+							authzDisabledRoute(&Route{
 								PathMatchCondition: exact("/exact"),
 								Clusters:           clustermap(s1),
-							},
-							&Route{
+							}),
+							authzDisabledRoute(&Route{
 								PathMatchCondition: exact("/exact_with_regex/.*"),
 								Clusters:           clustermap(s1),
-							},
-							&Route{
+							}),
+							authzDisabledRoute(&Route{
 								PathMatchCondition: prefixSegment("/prefix"),
 								Clusters:           clustermap(s1),
-							},
-							&Route{
+							}),
+							authzDisabledRoute(&Route{
 								// Trailing slash is stripped.
 								PathMatchCondition: prefixSegment("/prefix_trailing_slash"),
 								Clusters:           clustermap(s1),
-							},
-							&Route{
+							}),
+							authzDisabledRoute(&Route{
 								PathMatchCondition: prefixSegment("/prefix_with_regex/.*"),
 								Clusters:           clustermap(s1),
-							},
-							&Route{
+							}),
+							authzDisabledRoute(&Route{
 								PathMatchCondition: prefixString("/implementation_specific"),
 								Clusters:           clustermap(s1),
-							},
-							&Route{
+							}),
+							authzDisabledRoute(&Route{
 								PathMatchCondition: regex("/implementation_specific_with_regex/.*"),
 								Clusters:           clustermap(s1),
-							},
+							}),
 						),
 					),
 				},
@@ -10504,8 +10504,8 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(s1))),
-						virtualhost("*.example.com", &Route{
+						virtualhost("*", authzDisabledRoute(prefixroute("/", service(s1)))),
+						virtualhost("*.example.com", authzDisabledRoute(&Route{
 							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{
@@ -10515,7 +10515,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							},
 							Clusters: clusters(service(s1)),
-						}),
+						})),
 					),
 				},
 			),
@@ -10530,8 +10530,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
-							routeUpgrade("/", service(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+							authzDisabledRoute(routeUpgrade("/", service(s13a))),
+							authzDisabledRoute(prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b))),
 						),
 					),
 				}, &Listener{
@@ -10539,8 +10539,8 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
 						securevirtualhost("example.com", sec13,
-							routeUpgrade("/", service(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+							authzDisabledRoute(routeUpgrade("/", service(s13a))),
+							authzDisabledRoute(prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b))),
 						),
 					),
 				},
@@ -10556,7 +10556,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &Service{
+							authzDisabledRoute(prefixroute("/", &Service{
 								Protocol: "h2c",
 								Weighted: WeightedService{
 									Weight:           1,
@@ -10565,7 +10565,7 @@ func TestDAGInsert(t *testing.T) {
 									ServicePort:      s3a.Spec.Ports[0],
 									HealthPort:       s3a.Spec.Ports[0],
 								},
-							}),
+							})),
 						),
 					),
 				},
@@ -10581,7 +10581,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &Service{
+							authzDisabledRoute(prefixroute("/", &Service{
 								Protocol: "h2",
 								Weighted: WeightedService{
 									Weight:           1,
@@ -10590,7 +10590,7 @@ func TestDAGInsert(t *testing.T) {
 									ServicePort:      s3b.Spec.Ports[0],
 									HealthPort:       s3b.Spec.Ports[0],
 								},
-							}),
+							})),
 						),
 					),
 				},
@@ -10606,7 +10606,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &Service{
+							authzDisabledRoute(prefixroute("/", &Service{
 								Protocol: "tls",
 								Weighted: WeightedService{
 									Weight:           1,
@@ -10615,7 +10615,7 @@ func TestDAGInsert(t *testing.T) {
 									ServicePort:      s3c.Spec.Ports[0],
 									HealthPort:       s3c.Spec.Ports[0],
 								},
-							}),
+							})),
 						),
 					),
 				},
@@ -10632,7 +10632,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
-							prefixroute("/", &Service{
+							authzDisabledRoute(prefixroute("/", &Service{
 								Weighted: WeightedService{
 									Weight:           1,
 									ServiceName:      s1b.Name,
@@ -10647,7 +10647,7 @@ func TestDAGInsert(t *testing.T) {
 									MaxRetries:            7,
 									PerHostMaxConnections: 45,
 								},
-							}),
+							})),
 						),
 					),
 				},
@@ -12233,7 +12233,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("example.com", prefixroute("/", service(s9))),
+						virtualhost("example.com", authzDisabledRoute(prefixroute("/", service(s9)))),
 					),
 				},
 				&Listener{
@@ -12718,7 +12718,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+						virtualhost("kuard.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -12746,14 +12746,14 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+						virtualhost("kuard.example.com", authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 				&Listener{
 					Name: HTTPS_LISTENER_NAME,
 					Port: 8443,
 					SecureVirtualHosts: securevirtualhosts(
-						securevirtualhost("kuard.example.com", sec4, prefixroute("/", service(s1))),
+						securevirtualhost("kuard.example.com", sec4, authzDisabledRoute(prefixroute("/", service(s1)))),
 					),
 				},
 			),
@@ -12769,7 +12769,7 @@ func TestDAGInsert(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("example.com", &Route{
+						virtualhost("example.com", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
@@ -12783,7 +12783,7 @@ func TestDAGInsert(t *testing.T) {
 									},
 								},
 							}},
-						}),
+						})),
 					),
 				},
 			),
@@ -14504,7 +14504,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("kuard.projectcontour.io", authzDisabledRoute(prefixroute("/", service(kuardService)))),
 					),
 				},
 			),
@@ -14632,7 +14632,7 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("kuard.projectcontour.io", authzDisabledRoute(prefixroute("/", service(kuardService)))),
 					),
 				},
 			),
@@ -14708,13 +14708,13 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("kuard.projectcontour.io", authzDisabledRoute(prefixroute("/", service(kuardService)))),
 					),
 				},
 				&Listener{
 					Name: "https-443",
 					SecureVirtualHosts: []*SecureVirtualHost{
-						securevirtualhost("kuard.projectcontour.io", sec1, prefixroute("/", service(kuardService))),
+						securevirtualhost("kuard.projectcontour.io", sec1, authzDisabledRoute(prefixroute("/", service(kuardService)))),
 					},
 				},
 			),
@@ -14787,13 +14787,13 @@ func TestGatewayWithHTTPProxyAndIngress(t *testing.T) {
 				&Listener{
 					Name: "http-80",
 					VirtualHosts: virtualhosts(
-						virtualhost("kuard.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("kuard.projectcontour.io", authzDisabledRoute(prefixroute("/", service(kuardService)))),
 					),
 				},
 				&Listener{
 					Name: "https-443",
 					SecureVirtualHosts: []*SecureVirtualHost{
-						securevirtualhost("kuard.projectcontour.io", sec1, prefixroute("/", service(kuardService))),
+						securevirtualhost("kuard.projectcontour.io", sec1, authzDisabledRoute(prefixroute("/", service(kuardService)))),
 					},
 				},
 			),
@@ -15621,11 +15621,11 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 					Name: HTTP_LISTENER_NAME,
 					Port: 8080,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
+						virtualhost("*", authzDisabledRoute(&Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1)),
 						},
-						),
+						)),
 					),
 				},
 			),
@@ -15800,6 +15800,11 @@ func exactrouteGRPCRoute(path string, first *Service, rest ...*Service) *Route {
 	return exactrouteHTTPRoute(path, first, rest...)
 }
 
+func authzDisabledRoute(route *Route) *Route {
+	route.AuthzOverride = &PerRouteAuthzOverride{Disabled: true}
+	return route
+}
+
 func routeProtocol(prefix, protocol string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 
@@ -15817,7 +15822,6 @@ func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
 		PathMatchCondition: prefixString(prefix),
 		Clusters:           append([]*Cluster{first}, rest...),
-		AuthzOverride:      &PerRouteAuthzOverride{Disabled: true},
 	}
 }
 

@@ -170,8 +170,8 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
 						&envoy_config_route_v3.Route{
-							Match:  routeRegex("/[^/]+/invoices(/.*|/?)"),
-							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+							Match:                routeRegex("/[^/]+/invoices(/.*|/?)"),
+							Action:               routecluster("default/kuard/8080/da39a3ee5e"),
 							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
@@ -548,8 +548,8 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("https/www.example.com",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_config_route_v3.Route{
-							Match:  routePrefix("/"),
-							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+							Match:                routePrefix("/"),
+							Action:               routecluster("default/kuard/8080/da39a3ee5e"),
 							TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 						},
 					),
