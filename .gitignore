@@ -34,3 +34,4 @@ gateway-conformance-report/
 
 # coverage report
 coverage.out
+coverage.html

@@ -22,6 +22,7 @@ import (
 	envoy_config_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_filter_http_rbac_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_internal_redirect_previous_routes_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/previous_routes/v3"
 	envoy_internal_redirect_safe_cross_scheme_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/internal_redirect/safe_cross_scheme/v3"
@@ -34,6 +35,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -2810,4 +2812,309 @@ func TestRouteRedirect(t *testing.T) {
 
 func virtualhosts(v ...*envoy_config_route_v3.VirtualHost) []*envoy_config_route_v3.VirtualHost {
 	return v
+}
+
+func TestRouteAuthzOverride(t *testing.T) {
+	grpcCluster := &dag.ExtensionCluster{Name: "extension/authz"}
+	httpCluster := &dag.ExtensionCluster{Name: "extension/http"}
+
+	tests := map[string]struct {
+		override *dag.PerRouteAuthzOverride
+		want     *anypb.Any
+	}{
+		"disabled returns disabled per-route config": {
+			override: &dag.PerRouteAuthzOverride{Disabled: true},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+					Disabled: true,
+				},
+			}),
+		},
+		"disabled ignores other fields": {
+			override: &dag.PerRouteAuthzOverride{
+				Disabled:         true,
+				Context:          map[string]string{"k": "v"},
+				ServiceAPIType:   contour_v1.AuthorizationGRPCService,
+				ExtensionCluster: grpcCluster,
+				WithRequestBody:  &dag.AuthorizationServerBufferSettings{MaxRequestBytes: 1},
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+					Disabled: true,
+				},
+			}),
+		},
+		"empty override returns nil": {
+			override: &dag.PerRouteAuthzOverride{},
+			want:     nil,
+		},
+		"empty service api type with no context or body returns nil": {
+			override: &dag.PerRouteAuthzOverride{
+				ServiceAPIType:   "",
+				ExtensionCluster: grpcCluster,
+			},
+			want: nil,
+		},
+		"context only": {
+			override: &dag.PerRouteAuthzOverride{
+				Context: map[string]string{"PrincipalName": "user"},
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ContextExtensions: map[string]string{"PrincipalName": "user"},
+					},
+				},
+			}),
+		},
+		"with request body only": {
+			override: &dag.PerRouteAuthzOverride{
+				WithRequestBody: &dag.AuthorizationServerBufferSettings{
+					MaxRequestBytes:     1024,
+					AllowPartialMessage: true,
+					PackAsBytes:         true,
+				},
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						WithRequestBody: &envoy_filter_http_ext_authz_v3.BufferSettings{
+							MaxRequestBytes:     1024,
+							AllowPartialMessage: true,
+							PackAsBytes:         true,
+						},
+					},
+				},
+			}),
+		},
+		"grpc service override": {
+			override: &dag.PerRouteAuthzOverride{
+				ServiceAPIType:               contour_v1.AuthorizationGRPCService,
+				ExtensionCluster:             grpcCluster,
+				AuthorizationResponseTimeout: timeout.DurationSetting(5 * time.Second),
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_GrpcService{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
+										ClusterName: "extension/authz",
+										Authority:   "extension.authz",
+									},
+								},
+								Timeout: durationpb.New(5 * time.Second),
+							},
+						},
+					},
+				},
+			}),
+		},
+		"grpc service override with sni and disabled timeout": {
+			override: &dag.PerRouteAuthzOverride{
+				ServiceAPIType:               contour_v1.AuthorizationGRPCService,
+				ExtensionCluster:             &dag.ExtensionCluster{Name: "extension/authz", SNI: "sni.example.com"},
+				AuthorizationResponseTimeout: timeout.DisabledSetting(),
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_GrpcService{
+							GrpcService: &envoy_config_core_v3.GrpcService{
+								TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
+										ClusterName: "extension/authz",
+										Authority:   "sni.example.com",
+									},
+								},
+								Timeout: durationpb.New(0),
+							},
+						},
+					},
+				},
+			}),
+		},
+		"http service override minimal": {
+			override: &dag.PerRouteAuthzOverride{
+				ServiceAPIType:               contour_v1.AuthorizationHTTPService,
+				ExtensionCluster:             httpCluster,
+				AuthorizationResponseTimeout: timeout.DurationSetting(2 * time.Second),
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_HttpService{
+							HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+								ServerUri: &envoy_config_core_v3.HttpUri{
+									Uri: "http://dummy/",
+									HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+										Cluster: "extension/http",
+									},
+									Timeout: durationpb.New(2 * time.Second),
+								},
+							},
+						},
+					},
+				},
+			}),
+		},
+		"http service override with default response timeout yields nil uri timeout": {
+			override: &dag.PerRouteAuthzOverride{
+				ServiceAPIType:   contour_v1.AuthorizationHTTPService,
+				ExtensionCluster: httpCluster,
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_HttpService{
+							HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+								ServerUri: &envoy_config_core_v3.HttpUri{
+									Uri: "http://dummy/",
+									HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+										Cluster: "extension/http",
+									},
+									Timeout: nil,
+								},
+							},
+						},
+					},
+				},
+			}),
+		},
+		"http service override with path prefix allowed headers and request body": {
+			override: &dag.PerRouteAuthzOverride{
+				ServiceAPIType:               contour_v1.AuthorizationHTTPService,
+				ExtensionCluster:             httpCluster,
+				AuthorizationResponseTimeout: timeout.DurationSetting(2 * time.Second),
+				HTTPPathPrefix:               "/authz",
+				HTTPAllowedAuthorizationHeaders: []dag.HeaderNameMatchCondition{
+					{MatchType: dag.HeaderNameMatchTypeExact, Value: "x-exact"},
+					{MatchType: dag.HeaderNameMatchTypePrefix, Value: "x-prefix-", IgnoreCase: true},
+				},
+				HTTPAllowedUpstreamHeaders: []dag.HeaderNameMatchCondition{
+					{MatchType: dag.HeaderNameMatchTypeSuffix, Value: "-suffix"},
+				},
+				WithRequestBody: &dag.AuthorizationServerBufferSettings{
+					MaxRequestBytes: 512,
+				},
+			},
+			want: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+					CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+						ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_HttpService{
+							HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+								ServerUri: &envoy_config_core_v3.HttpUri{
+									Uri: "http://dummy/",
+									HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+										Cluster: "extension/http",
+									},
+									Timeout: durationpb.New(2 * time.Second),
+								},
+								PathPrefix: "/authz",
+								AuthorizationRequest: &envoy_filter_http_ext_authz_v3.AuthorizationRequest{
+									AllowedHeaders: &envoy_matcher_v3.ListStringMatcher{
+										Patterns: []*envoy_matcher_v3.StringMatcher{
+											{MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: "x-exact"}},
+											{MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{Prefix: "x-prefix-"}, IgnoreCase: true},
+										},
+									},
+								},
+								AuthorizationResponse: &envoy_filter_http_ext_authz_v3.AuthorizationResponse{
+									AllowedUpstreamHeaders: &envoy_matcher_v3.ListStringMatcher{
+										Patterns: []*envoy_matcher_v3.StringMatcher{
+											{MatchPattern: &envoy_matcher_v3.StringMatcher_Suffix{Suffix: "-suffix"}},
+										},
+									},
+								},
+							},
+						},
+						WithRequestBody: &envoy_filter_http_ext_authz_v3.BufferSettings{
+							MaxRequestBytes: 512,
+						},
+					},
+				},
+			}),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := routeAuthzOverride(tc.override)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
+func TestApplyPerRouteAuthPolicy(t *testing.T) {
+	corsConfig := protobuf.MustMarshalAny(&envoy_filter_http_cors_v3.Cors{})
+
+	tests := map[string]struct {
+		dagRoute *dag.Route
+		route    *envoy_config_route_v3.Route
+		want     *envoy_config_route_v3.Route
+	}{
+		"no authz override initializes empty typed per filter config": {
+			dagRoute: &dag.Route{},
+			route:    &envoy_config_route_v3.Route{},
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{},
+			},
+		},
+		"no authz override preserves existing typed per filter config": {
+			dagRoute: &dag.Route{},
+			route: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					"envoy.filters.http.cors": corsConfig,
+				},
+			},
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					"envoy.filters.http.cors": corsConfig,
+				},
+			},
+		},
+		"disabled authz override sets ext authz disabled config": {
+			dagRoute: &dag.Route{
+				AuthzOverride: &dag.PerRouteAuthzOverride{Disabled: true},
+			},
+			route: &envoy_config_route_v3.Route{},
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					ExtAuthzFilterName: routeAuthzDisabled(),
+				},
+			},
+		},
+		"context authz override sets ext authz check settings": {
+			dagRoute: &dag.Route{
+				AuthzOverride: &dag.PerRouteAuthzOverride{
+					Context: map[string]string{"PrincipalName": "user"},
+				},
+			},
+			route: &envoy_config_route_v3.Route{},
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{
+					ExtAuthzFilterName: routeAuthzOverride(&dag.PerRouteAuthzOverride{
+						Context: map[string]string{"PrincipalName": "user"},
+					}),
+				},
+			},
+		},
+		"empty authz override does not set ext authz config": {
+			dagRoute: &dag.Route{
+				AuthzOverride: &dag.PerRouteAuthzOverride{},
+			},
+			route: &envoy_config_route_v3.Route{},
+			want: &envoy_config_route_v3.Route{
+				TypedPerFilterConfig: map[string]*anypb.Any{},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			applyPerRouteAuthPolicy(tc.dagRoute, tc.route)
+			protobuf.ExpectEqual(t, tc.want, tc.route)
+		})
+	}
 }
