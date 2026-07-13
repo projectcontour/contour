@@ -399,6 +399,16 @@ type Route struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
+	// GeoFilterAllow determines how the GeoFilterRules should be applied.
+	// If true, traffic is allowed only if it matches a rule.
+	// If false, traffic is allowed only if it doesn't match any rule.
+	GeoFilterAllow bool
+
+	// GeoFilterRules is a list of geolocation filter rules for which matching
+	// requests should be filtered. The behavior of the filters is governed
+	// by GeoFilterAllow.
+	GeoFilterRules []GeoFilterRule
+
 	// Metadata fields that can be used for access logging.
 	Kind      string
 	Namespace string
@@ -774,6 +784,16 @@ type VirtualHost struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
+	// GeoFilterAllow determines how the GeoFilterRules should be applied.
+	// If true, traffic is allowed only if it matches a rule.
+	// If false, traffic is allowed only if it doesn't match any rule.
+	GeoFilterAllow bool
+
+	// GeoFilterRules is a list of geolocation filter rules for which matching
+	// requests should be filtered. The behavior of the filters is governed
+	// by GeoFilterAllow.
+	GeoFilterRules []GeoFilterRule
+
 	Routes map[string]*Route
 }
 
@@ -810,6 +830,24 @@ func conditionsToString(r *Route) string {
 func (v *VirtualHost) Valid() bool {
 	// A VirtualHost is valid if it has at least one route.
 	return len(v.Routes) > 0
+}
+
+// VirtualHostUsesGeoRules reports whether the virtual host, or any of its
+// routes, carries geo filter rules. The GeoIP filter only needs to be added to
+// a virtual host's connection manager when this returns true.
+func VirtualHostUsesGeoRules(v *VirtualHost) bool {
+	if v == nil {
+		return false
+	}
+	if len(v.GeoFilterRules) > 0 {
+		return true
+	}
+	for _, r := range v.Routes {
+		if len(r.GeoFilterRules) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // A SecureVirtualHost represents a HTTP host protected by TLS.
@@ -887,6 +925,31 @@ type IPFilterRule struct {
 
 	// CIDR is a CIDR block of a ipv4 or ipv6 addresses to filter on.
 	CIDR net.IPNet
+}
+
+// GeoFilterDimension identifies a geolocation attribute populated by the
+// GeoIP filter that a GeoFilterRule can match against.
+type GeoFilterDimension string
+
+const (
+	GeoFilterDimensionCountry     GeoFilterDimension = "country"
+	GeoFilterDimensionRegion      GeoFilterDimension = "region"
+	GeoFilterDimensionCity        GeoFilterDimension = "city"
+	GeoFilterDimensionAsn         GeoFilterDimension = "asn"
+	GeoFilterDimensionIsp         GeoFilterDimension = "isp"
+	GeoFilterDimensionAnon        GeoFilterDimension = "anon"
+	GeoFilterDimensionAnonVpn     GeoFilterDimension = "anonVpn"
+	GeoFilterDimensionAnonTor     GeoFilterDimension = "anonTor"
+	GeoFilterDimensionAnonHosting GeoFilterDimension = "anonHosting"
+	GeoFilterDimensionAnonProxy   GeoFilterDimension = "anonProxy"
+)
+
+// GeoFilterRule matches a single geolocation dimension populated by the
+// GeoIP filter. Value is matched exactly against the request header that
+// the GeoIP filter populates for the dimension.
+type GeoFilterRule struct {
+	Dimension GeoFilterDimension
+	Value     string
 }
 
 // ExternalAuthorization contains the configuration for enabling
@@ -1360,3 +1423,80 @@ type CircuitBreakers struct {
 	// that Envoy will allow to each individual host in a cluster.
 	PerHostMaxConnections uint32
 }
+<<<<<<< Updated upstream
+=======
+
+type ExtensionServiceConfig struct {
+	ExtensionService types.NamespacedName
+	Timeout          timeout.Setting
+	SNI              string
+}
+
+type TracingConfig struct {
+	ExtensionServiceConfig
+
+	ServiceName string
+
+	OverallSampling float64
+
+	ClientSampling float64
+
+	RandomSampling float64
+
+	MaxPathTagLength uint32
+
+	CustomTags []*CustomTag
+}
+
+type CustomTag struct {
+	// TagName is the unique name of the custom tag.
+	TagName string
+
+	// Literal is a static custom tag value.
+	Literal string
+
+	// EnvironmentName indicates that the label value is obtained
+	// from the environment variable.
+	EnvironmentName string
+
+	// RequestHeaderName indicates which request header
+	// the label value is obtained from.
+	RequestHeaderName string
+}
+
+type RateLimitConfig struct {
+	ExtensionServiceConfig
+	Domain                      string
+	FailOpen                    bool
+	EnableXRateLimitHeaders     bool
+	EnableResourceExhaustedCode bool
+}
+
+type ExternalAuthzConfig struct {
+	ExtensionServiceConfig
+	FailOpen                        bool
+	Context                         map[string]string
+	ServiceAPIType                  AuthorizationServiceType
+	HTTPAllowedAuthorizationHeaders []HeaderNameMatchCondition
+	HTTPAllowedUpstreamHeaders      []HeaderNameMatchCondition
+	HTTPPathPrefix                  string
+	WithRequestBody                 *AuthorizationServerBufferSettings
+}
+
+// GeoIPConfig holds the configuration for Envoy's GeoIP HTTP filter
+// (envoy.filters.http.geoip). It carries the MaxMind database paths that
+// Contour references when building the filter; the database files must be
+// mounted into the Envoy pod separately.
+type GeoIPConfig struct {
+	// CityDbPath is the path to a GeoIP2/GeoLite2 City database.
+	CityDbPath string
+	// CountryDbPath is the path to a GeoIP2/GeoLite2 Country database.
+	CountryDbPath string
+	// AsnDbPath is the path to a GeoIP2/GeoLite2 ASN database.
+	AsnDbPath string
+	// IspDbPath is the path to a GeoIP2/GeoLite2 ISP database.
+	IspDbPath string
+	// AnonDbPath is the path to a GeoIP2/GeoLite2 Anonymous-IP database.
+	AnonDbPath string
+}
+>>>>>>> Stashed changes

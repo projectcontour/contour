@@ -19,6 +19,59 @@ import (
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
+// GeoIPConfig configures Envoy's GeoIP HTTP filter, which populates request
+// headers with geolocation data derived from the client IP (from
+// X-Forwarded-For using numTrustedHops). Configured globally on
+// ContourConfiguration.spec.geoIP; the filter is only added to TLS virtual
+// hosts that use geoAllowPolicy/geoDenyPolicy. The .mmdb files must be mounted
+// into the Envoy pod separately.
+type GeoIPConfig struct {
+	// Provider configures the GeoIP database provider. Currently only the
+	// MaxMind provider is supported.
+	// +kubebuilder:validation:Required
+	Provider GeoIPProvider `json:"provider"`
+}
+
+// GeoIPProvider configures the GeoIP database provider.
+type GeoIPProvider struct {
+	// MaxMind configures the MaxMind GeoIP2 database provider.
+	// +optional
+	MaxMind *MaxMindGeoIPProvider `json:"maxMind,omitempty"`
+}
+
+// MaxMindGeoIPProvider configures the MaxMind GeoIP2 database file paths.
+// Each path points to an .mmdb file mounted in the Envoy pod. At least one
+// path must be set.
+type MaxMindGeoIPProvider struct {
+	// CityDbPath is the path to a GeoIP2/GeoLite2 City database. When set,
+	// the country, region and city geolocation headers are populated.
+	// +optional
+	CityDbPath string `json:"cityDbPath,omitempty"`
+
+	// CountryDbPath is the path to a GeoIP2/GeoLite2 Country database. When
+	// set, the country geolocation header is populated. If CityDbPath is also
+	// set, the city database is preferred for country lookups.
+	// +optional
+	CountryDbPath string `json:"countryDbPath,omitempty"`
+
+	// AsnDbPath is the path to a GeoIP2/GeoLite2 ASN database. When set, the
+	// asn geolocation header is populated.
+	// +optional
+	AsnDbPath string `json:"asnDbPath,omitempty"`
+
+	// IspDbPath is the path to a GeoIP2/GeoLite2 ISP database. When set, the
+	// isp geolocation header is populated (and the asn header if AsnDbPath is
+	// not set).
+	// +optional
+	IspDbPath string `json:"ispDbPath,omitempty"`
+
+	// AnonDbPath is the path to a GeoIP2/GeoLite2 Anonymous-IP database. When
+	// set, the anon, anonVpn, anonTor, anonHosting and anonProxy geolocation
+	// headers are populated (each set to "true" or "false").
+	// +optional
+	AnonDbPath string `json:"anonDbPath,omitempty"`
+}
+
 // ContourConfigurationSpec represents a configuration of a Contour controller.
 // It contains most of all the options that can be customized, the
 // other remaining options being command line flags.
@@ -66,6 +119,12 @@ type ContourConfigurationSpec struct {
 	// to be enabled for all virtual hosts.
 	// +optional
 	GlobalExternalAuthorization *contour_v1.AuthorizationServer `json:"globalExtAuth,omitempty"`
+
+	// GeoIP configures the global GeoIP HTTP filter. The filter is only added
+	// to TLS virtual hosts that use geoAllowPolicy/geoDenyPolicy. The .mmdb
+	// files must be mounted into the Envoy pod separately.
+	// +optional
+	GeoIP *GeoIPConfig `json:"geoIP,omitempty"`
 
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.

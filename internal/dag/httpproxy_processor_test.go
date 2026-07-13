@@ -928,6 +928,98 @@ func TestToIPFilterRule(t *testing.T) {
 	}
 }
 
+func TestToGeoFilterRule(t *testing.T) {
+	tests := map[string]struct {
+		allowPolicy       []contour_v1.GeoFilterPolicy
+		denyPolicy        []contour_v1.GeoFilterPolicy
+		want              []GeoFilterRule
+		wantAllow         bool
+		wantErr           bool
+		wantConditionErrs []contour_v1.SubCondition
+	}{
+		"no geo policy": {
+			want: nil,
+		},
+		"both allow and deny rules not supported": {
+			allowPolicy: []contour_v1.GeoFilterPolicy{{Dimension: contour_v1.GeoDimensionCountry, Value: "US"}},
+			denyPolicy:  []contour_v1.GeoFilterPolicy{{Dimension: contour_v1.GeoDimensionAnon, Value: "true"}},
+			wantErr:     true,
+			wantConditionErrs: []contour_v1.SubCondition{{
+				Type:    "GeoFilterError",
+				Status:  "True",
+				Reason:  "IncompatibleGeoFilters",
+				Message: "cannot specify both `geoAllowPolicy` and `geoDenyPolicy`",
+			}},
+		},
+		"parses allow rules": {
+			allowPolicy: []contour_v1.GeoFilterPolicy{
+				{Dimension: contour_v1.GeoDimensionCountry, Value: "US"},
+				{Dimension: contour_v1.GeoDimensionAnonVpn, Value: "true"},
+			},
+			wantAllow: true,
+			want: []GeoFilterRule{
+				{Dimension: GeoFilterDimensionCountry, Value: "US"},
+				{Dimension: GeoFilterDimensionAnonVpn, Value: "true"},
+			},
+		},
+		"parses deny rules": {
+			denyPolicy: []contour_v1.GeoFilterPolicy{
+				{Dimension: contour_v1.GeoDimensionAnon, Value: "true"},
+			},
+			wantAllow: false,
+			want: []GeoFilterRule{
+				{Dimension: GeoFilterDimensionAnon, Value: "true"},
+			},
+		},
+		"rejects unknown dimension": {
+			allowPolicy: []contour_v1.GeoFilterPolicy{{Dimension: "bogus", Value: "x"}},
+			wantErr:     true,
+			wantConditionErrs: []contour_v1.SubCondition{{
+				Type:    "GeoFilterError",
+				Status:  "True",
+				Reason:  "InvalidGeoDimension",
+				Message: `unknown geo filter dimension "bogus"`,
+			}},
+		},
+		"rejects empty value": {
+			allowPolicy: []contour_v1.GeoFilterPolicy{{Dimension: contour_v1.GeoDimensionCountry, Value: ""}},
+			wantErr:     true,
+			wantConditionErrs: []contour_v1.SubCondition{{
+				Type:    "GeoFilterError",
+				Status:  "True",
+				Reason:  "InvalidGeoValue",
+				Message: `geo filter dimension "country" requires a non-empty value`,
+			}},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			cond := contour_v1.DetailedCondition{}
+			gotAllow, got, gotErr := toGeoFilterRules(tc.allowPolicy, tc.denyPolicy, &cond)
+			if tc.wantErr {
+				require.Error(t, gotErr)
+			} else {
+				require.NoError(t, gotErr)
+			}
+			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.wantAllow, gotAllow)
+			require.Equal(t, tc.wantConditionErrs, cond.Errors)
+		})
+	}
+}
+
+func TestValidGeoAction(t *testing.T) {
+	// IP and geo rules with the same action are valid.
+	require.True(t, validGeoAction(true, []IPFilterRule{{}}, true, []GeoFilterRule{{}}))
+	require.True(t, validGeoAction(false, []IPFilterRule{{}}, false, []GeoFilterRule{{}}))
+	// Either side empty never conflicts.
+	require.True(t, validGeoAction(true, []IPFilterRule{{}}, true, nil))
+	require.True(t, validGeoAction(true, nil, false, []GeoFilterRule{{}}))
+	// Conflicting actions are invalid.
+	require.False(t, validGeoAction(true, []IPFilterRule{{}}, false, []GeoFilterRule{{}}))
+}
+
 func TestValidateVirtualHostRateLimitPolicy(t *testing.T) {
 	tests := map[string]struct {
 		rateLimitServiceConfig *contour_v1alpha1.RateLimitServiceConfig

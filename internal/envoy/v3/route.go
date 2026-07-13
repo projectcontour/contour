@@ -68,12 +68,12 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 		evh.RateLimits = GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
 	}
 
-	if len(vh.IPFilterRules) > 0 {
+	if len(vh.IPFilterRules) > 0 || len(vh.GeoFilterRules) > 0 {
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
 		}
 		evh.TypedPerFilterConfig[RBACFilterName] = protobuf.MustMarshalAny(
-			ipFilterConfig(vh.IPFilterAllow, vh.IPFilterRules),
+			rbacFilterConfig(vh.IPFilterAllow, vh.IPFilterRules, vh.GeoFilterAllow, vh.GeoFilterRules),
 		)
 	}
 
@@ -176,10 +176,17 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 			})
 		}
 
-		// If IP filtering is enabled, add per-route filtering
-		if len(dagRoute.IPFilterRules) > 0 {
+		// If IP or geo filtering is enabled, add per-route filtering. Geo
+		// filtering is HTTPS-only, so geo rules are excluded on insecure routes.
+		geoRules := dagRoute.GeoFilterRules
+		geoAllow := dagRoute.GeoFilterAllow
+		if !secure {
+			geoRules = nil
+			geoAllow = false
+		}
+		if len(dagRoute.IPFilterRules) > 0 || len(geoRules) > 0 {
 			route.TypedPerFilterConfig[RBACFilterName] = protobuf.MustMarshalAny(
-				ipFilterConfig(dagRoute.IPFilterAllow, dagRoute.IPFilterRules),
+				rbacFilterConfig(dagRoute.IPFilterAllow, dagRoute.IPFilterRules, geoAllow, geoRules),
 			)
 		}
 
@@ -218,22 +225,42 @@ func routeAuthzContext(settings map[string]string) *anypb.Any {
 }
 
 func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rbac_v3.RBACPerRoute {
+	return rbacFilterConfig(allow, rules, allow, nil)
+}
+
+// geoFilterConfig returns an RBACPerRoute that filters requests based on
+// geolocation request headers populated by the GeoIP filter.
+func geoFilterConfig(allow bool, rules []dag.GeoFilterRule) *envoy_filter_http_rbac_v3.RBACPerRoute {
+	return rbacFilterConfig(allow, nil, allow, rules)
+}
+
+// rbacFilterConfig builds an RBACPerRoute from IP CIDR rules and/or geolocation
+// header rules. The two rule types are combined within a single RBAC policy:
+// a request matches if it matches any IP principal or any geo header principal.
+//
+// When both IP and geo rules are present, the DAG processor guarantees they
+// share the same allow/deny action; the action is therefore derived from
+// whichever rule set is non-empty (IP rules take precedence when both are set).
+func rbacFilterConfig(ipAllow bool, ipRules []dag.IPFilterRule, geoAllow bool, geoRules []dag.GeoFilterRule) *envoy_filter_http_rbac_v3.RBACPerRoute {
+	allow := geoAllow
+	if len(ipRules) > 0 {
+		allow = ipAllow
+	}
 	action := envoy_config_rbac_v3.RBAC_ALLOW
 	if !allow {
 		action = envoy_config_rbac_v3.RBAC_DENY
 	}
 
-	principals := make([]*envoy_config_rbac_v3.Principal, 0, len(rules))
+	principals := make([]*envoy_config_rbac_v3.Principal, 0, len(ipRules)+len(geoRules))
 
-	for _, f := range rules {
-		var principal *envoy_config_rbac_v3.Principal
-
+	for _, f := range ipRules {
 		prefixLen, _ := f.CIDR.Mask.Size()
 		cidr := &envoy_config_core_v3.CidrRange{
 			AddressPrefix: f.CIDR.IP.String(),
 			PrefixLen:     wrapperspb.UInt32(uint32(prefixLen)), //nolint:gosec // disable G115
 		}
 
+		var principal *envoy_config_rbac_v3.Principal
 		if f.Remote {
 			principal = &envoy_config_rbac_v3.Principal{
 				Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
@@ -252,12 +279,32 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rba
 		principals = append(principals, principal)
 	}
 
+	for _, g := range geoRules {
+		headerName := geoHeaderName(g.Dimension)
+		if headerName == "" {
+			// Unknown dimension: skip rather than fail the whole policy.
+			continue
+		}
+		principals = append(principals, &envoy_config_rbac_v3.Principal{
+			Identifier: &envoy_config_rbac_v3.Principal_Header{
+				Header: &envoy_config_route_v3.HeaderMatcher{
+					Name: headerName,
+					HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &envoy_matcher_v3.StringMatcher{
+							MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: g.Value},
+						},
+					},
+				},
+			},
+		})
+	}
+
 	return &envoy_filter_http_rbac_v3.RBACPerRoute{
 		Rbac: &envoy_filter_http_rbac_v3.RBAC{
 			Rules: &envoy_config_rbac_v3.RBAC{
 				Action: action,
 				Policies: map[string]*envoy_config_rbac_v3.Policy{
-					"ip-rules": {
+					"filter-rules": {
 						Permissions: []*envoy_config_rbac_v3.Permission{
 							{
 								Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -268,6 +315,36 @@ func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rba
 				},
 			},
 		},
+	}
+}
+
+// geoHeaderName maps a GeoIP filter dimension to the Contour-controlled request
+// header that the GeoIP filter populates for it. Returns "" for an unknown
+// dimension.
+func geoHeaderName(dimension dag.GeoFilterDimension) string {
+	switch dimension {
+	case dag.GeoFilterDimensionCountry:
+		return GeoIPCountryHeader
+	case dag.GeoFilterDimensionRegion:
+		return GeoIPRegionHeader
+	case dag.GeoFilterDimensionCity:
+		return GeoIPCityHeader
+	case dag.GeoFilterDimensionAsn:
+		return GeoIPAsnHeader
+	case dag.GeoFilterDimensionIsp:
+		return GeoIPIspHeader
+	case dag.GeoFilterDimensionAnon:
+		return GeoIPAnonHeader
+	case dag.GeoFilterDimensionAnonVpn:
+		return GeoIPAnonVpnHeader
+	case dag.GeoFilterDimensionAnonTor:
+		return GeoIPAnonTorHeader
+	case dag.GeoFilterDimensionAnonHosting:
+		return GeoIPAnonHostingHeader
+	case dag.GeoFilterDimensionAnonProxy:
+		return GeoIPAnonProxyHeader
+	default:
+		return ""
 	}
 }
 

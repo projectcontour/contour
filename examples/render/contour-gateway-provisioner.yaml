@@ -697,6 +697,54 @@ spec:
                 required:
                 - gatewayRef
                 type: object
+              geoIP:
+                description: |-
+                  GeoIP configures the global GeoIP HTTP filter. The filter is only added
+                  to virtual hosts that use geoAllowPolicy/geoDenyPolicy. The .mmdb files
+                  must be mounted into the Envoy pod separately.
+                properties:
+                  provider:
+                    description: |-
+                      Provider configures the GeoIP database provider. Currently only the
+                      MaxMind provider is supported.
+                    properties:
+                      maxMind:
+                        description: MaxMind configures the MaxMind GeoIP2 database
+                          provider.
+                        properties:
+                          anonDbPath:
+                            description: |-
+                              AnonDbPath is the path to a GeoIP2/GeoLite2 Anonymous-IP database. When
+                              set, the anon, anonVpn, anonTor, anonHosting and anonProxy geolocation
+                              headers are populated (each set to "true" or "false").
+                            type: string
+                          asnDbPath:
+                            description: |-
+                              AsnDbPath is the path to a GeoIP2/GeoLite2 ASN database. When set, the
+                              asn geolocation header is populated.
+                            type: string
+                          cityDbPath:
+                            description: |-
+                              CityDbPath is the path to a GeoIP2/GeoLite2 City database. When set,
+                              the country, region and city geolocation headers are populated.
+                            type: string
+                          countryDbPath:
+                            description: |-
+                              CountryDbPath is the path to a GeoIP2/GeoLite2 Country database. When
+                              set, the country geolocation header is populated. If CityDbPath is also
+                              set, the city database is preferred for country lookups.
+                            type: string
+                          ispDbPath:
+                            description: |-
+                              IspDbPath is the path to a GeoIP2/GeoLite2 ISP database. When set, the
+                              isp geolocation header is populated (and the asn header if AsnDbPath is
+                              not set).
+                            type: string
+                        type: object
+                    type: object
+                required:
+                - provider
+                type: object
               globalExtAuth:
                 description: |-
                   GlobalExternalAuthorization allows envoys external authorization filter
@@ -4784,6 +4832,54 @@ spec:
                     required:
                     - gatewayRef
                     type: object
+                  geoIP:
+                    description: |-
+                      GeoIP configures the global GeoIP HTTP filter. The filter is only added
+                      to virtual hosts that use geoAllowPolicy/geoDenyPolicy. The .mmdb files
+                      must be mounted into the Envoy pod separately.
+                    properties:
+                      provider:
+                        description: |-
+                          Provider configures the GeoIP database provider. Currently only the
+                          MaxMind provider is supported.
+                        properties:
+                          maxMind:
+                            description: MaxMind configures the MaxMind GeoIP2 database
+                              provider.
+                            properties:
+                              anonDbPath:
+                                description: |-
+                                  AnonDbPath is the path to a GeoIP2/GeoLite2 Anonymous-IP database. When
+                                  set, the anon, anonVpn, anonTor, anonHosting and anonProxy geolocation
+                                  headers are populated (each set to "true" or "false").
+                                type: string
+                              asnDbPath:
+                                description: |-
+                                  AsnDbPath is the path to a GeoIP2/GeoLite2 ASN database. When set, the
+                                  asn geolocation header is populated.
+                                type: string
+                              cityDbPath:
+                                description: |-
+                                  CityDbPath is the path to a GeoIP2/GeoLite2 City database. When set,
+                                  the country, region and city geolocation headers are populated.
+                                type: string
+                              countryDbPath:
+                                description: |-
+                                  CountryDbPath is the path to a GeoIP2/GeoLite2 Country database. When
+                                  set, the country geolocation header is populated. If CityDbPath is also
+                                  set, the city database is preferred for country lookups.
+                                type: string
+                              ispDbPath:
+                                description: |-
+                                  IspDbPath is the path to a GeoIP2/GeoLite2 ISP database. When set, the
+                                  isp geolocation header is populated (and the asn header if AsnDbPath is
+                                  not set).
+                                type: string
+                            type: object
+                        type: object
+                    required:
+                    - provider
+                    type: object
                   globalExtAuth:
                     description: |-
                       GlobalExternalAuthorization allows envoys external authorization filter
@@ -6440,6 +6536,104 @@ spec:
                     enableWebsockets:
                       description: Enables websocket support for the route.
                       type: boolean
+                    geoAllowPolicy:
+                      description: |-
+                        GeoAllowFilterPolicy is a list of geolocation filter rules for which
+                        matching requests should be allowed. All other requests will be denied.
+                        Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+                        The rules defined here override any rules set on the root HTTPProxy.
+                      items:
+                        description: |-
+                          GeoFilterPolicy matches a single geolocation dimension populated by the
+                          GeoIP filter (see ContourConfiguration.spec.geoIP). A list of rules is
+                          combined with OR semantics: a request matches the policy if it matches
+                          any rule.
+                          The Value to match depends on the Dimension:
+                            - country: an ISO 3166-1 alpha-2 country code (e.g. "US")
+                            - region: an ISO 3166-2 subdivision code (e.g. "US-CA")
+                            - city: a city name
+                            - asn: an autonomous system number (e.g. "7922")
+                            - isp: an ISP name
+                            - anon, anonVpn, anonTor, anonHosting, anonProxy: "true" or "false"
+                          The GeoIP filter must be configured with a database that populates the
+                          matched dimension, otherwise the header will be absent and the rule will
+                          never match.
+                        properties:
+                          dimension:
+                            description: Dimension is the geolocation attribute to
+                              match.
+                            enum:
+                            - country
+                            - region
+                            - city
+                            - asn
+                            - isp
+                            - anon
+                            - anonVpn
+                            - anonTor
+                            - anonHosting
+                            - anonProxy
+                            type: string
+                          value:
+                            description: |-
+                              Value is the value to match exactly against the populated geolocation
+                              header. See GeoFilterDimension for the value format of each dimension.
+                            minLength: 1
+                            type: string
+                        required:
+                        - dimension
+                        - value
+                        type: object
+                      type: array
+                    geoDenyPolicy:
+                      description: |-
+                        GeoDenyFilterPolicy is a list of geolocation filter rules for which
+                        matching requests should be denied. All other requests will be allowed.
+                        Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+                        The rules defined here override any rules set on the root HTTPProxy.
+                      items:
+                        description: |-
+                          GeoFilterPolicy matches a single geolocation dimension populated by the
+                          GeoIP filter (see ContourConfiguration.spec.geoIP). A list of rules is
+                          combined with OR semantics: a request matches the policy if it matches
+                          any rule.
+                          The Value to match depends on the Dimension:
+                            - country: an ISO 3166-1 alpha-2 country code (e.g. "US")
+                            - region: an ISO 3166-2 subdivision code (e.g. "US-CA")
+                            - city: a city name
+                            - asn: an autonomous system number (e.g. "7922")
+                            - isp: an ISP name
+                            - anon, anonVpn, anonTor, anonHosting, anonProxy: "true" or "false"
+                          The GeoIP filter must be configured with a database that populates the
+                          matched dimension, otherwise the header will be absent and the rule will
+                          never match.
+                        properties:
+                          dimension:
+                            description: Dimension is the geolocation attribute to
+                              match.
+                            enum:
+                            - country
+                            - region
+                            - city
+                            - asn
+                            - isp
+                            - anon
+                            - anonVpn
+                            - anonTor
+                            - anonHosting
+                            - anonProxy
+                            type: string
+                          value:
+                            description: |-
+                              Value is the value to match exactly against the populated geolocation
+                              header. See GeoFilterDimension for the value format of each dimension.
+                            minLength: 1
+                            type: string
+                        required:
+                        - dimension
+                        - value
+                        type: object
+                      type: array
                     healthCheckPolicy:
                       description: The health check policy for this route.
                       properties:
@@ -8123,6 +8317,108 @@ spec:
                       all leaves of the DAG rooted at this object relate to the fqdn.
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  geoAllowPolicy:
+                    description: |-
+                      GeoAllowFilterPolicy is a list of geolocation filter rules for which
+                      matching requests should be allowed. All other requests will be denied.
+                      Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+                      The rules defined here may be overridden in a Route.
+                      GeoIP filtering requires the GeoIP filter to be configured globally
+                      (ContourConfiguration.spec.geoIP) with a database that populates the
+                      matched dimension.
+                    items:
+                      description: |-
+                        GeoFilterPolicy matches a single geolocation dimension populated by the
+                        GeoIP filter (see ContourConfiguration.spec.geoIP). A list of rules is
+                        combined with OR semantics: a request matches the policy if it matches
+                        any rule.
+                        The Value to match depends on the Dimension:
+                          - country: an ISO 3166-1 alpha-2 country code (e.g. "US")
+                          - region: an ISO 3166-2 subdivision code (e.g. "US-CA")
+                          - city: a city name
+                          - asn: an autonomous system number (e.g. "7922")
+                          - isp: an ISP name
+                          - anon, anonVpn, anonTor, anonHosting, anonProxy: "true" or "false"
+                        The GeoIP filter must be configured with a database that populates the
+                        matched dimension, otherwise the header will be absent and the rule will
+                        never match.
+                      properties:
+                        dimension:
+                          description: Dimension is the geolocation attribute to match.
+                          enum:
+                          - country
+                          - region
+                          - city
+                          - asn
+                          - isp
+                          - anon
+                          - anonVpn
+                          - anonTor
+                          - anonHosting
+                          - anonProxy
+                          type: string
+                        value:
+                          description: |-
+                            Value is the value to match exactly against the populated geolocation
+                            header. See GeoFilterDimension for the value format of each dimension.
+                          minLength: 1
+                          type: string
+                      required:
+                      - dimension
+                      - value
+                      type: object
+                    type: array
+                  geoDenyPolicy:
+                    description: |-
+                      GeoDenyFilterPolicy is a list of geolocation filter rules for which
+                      matching requests should be denied. All other requests will be allowed.
+                      Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+                      The rules defined here may be overridden in a Route.
+                      GeoIP filtering requires the GeoIP filter to be configured globally
+                      (ContourConfiguration.spec.geoIP) with a database that populates the
+                      matched dimension.
+                    items:
+                      description: |-
+                        GeoFilterPolicy matches a single geolocation dimension populated by the
+                        GeoIP filter (see ContourConfiguration.spec.geoIP). A list of rules is
+                        combined with OR semantics: a request matches the policy if it matches
+                        any rule.
+                        The Value to match depends on the Dimension:
+                          - country: an ISO 3166-1 alpha-2 country code (e.g. "US")
+                          - region: an ISO 3166-2 subdivision code (e.g. "US-CA")
+                          - city: a city name
+                          - asn: an autonomous system number (e.g. "7922")
+                          - isp: an ISP name
+                          - anon, anonVpn, anonTor, anonHosting, anonProxy: "true" or "false"
+                        The GeoIP filter must be configured with a database that populates the
+                        matched dimension, otherwise the header will be absent and the rule will
+                        never match.
+                      properties:
+                        dimension:
+                          description: Dimension is the geolocation attribute to match.
+                          enum:
+                          - country
+                          - region
+                          - city
+                          - asn
+                          - isp
+                          - anon
+                          - anonVpn
+                          - anonTor
+                          - anonHosting
+                          - anonProxy
+                          type: string
+                        value:
+                          description: |-
+                            Value is the value to match exactly against the populated geolocation
+                            header. See GeoFilterDimension for the value format of each dimension.
+                          minLength: 1
+                          type: string
+                      required:
+                      - dimension
+                      - value
+                      type: object
+                    type: array
                   ipAllowPolicy:
                     description: |-
                       IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching

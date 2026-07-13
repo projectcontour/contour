@@ -483,6 +483,10 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	if listenerConfig.GeoIPConfig, err = s.setupGeoIP(contourConfiguration); err != nil {
+		return err
+	}
+
 	contourMetrics := metrics.NewMetrics(s.registry)
 
 	// Endpoints updates are handled directly by the EndpointSliceTranslator due to the high update volume.
@@ -863,6 +867,30 @@ func (s *Server) setupGlobalExternalAuthentication(contourConfiguration contour_
 		ExtensionServiceConfig: extensionSvcConfig,
 		ExternalAuthorization:  *extAuth,
 		Context:                context,
+	}, nil
+}
+
+// setupGeoIP translates ContourConfiguration.spec.geoIP into the DAG GeoIP
+// config, validating that a MaxMind provider with at least one database path is
+// configured. Returns (nil, nil) when geoIP is unset.
+func (s *Server) setupGeoIP(contourConfiguration contour_v1alpha1.ContourConfigurationSpec) (*dag.GeoIPConfig, error) {
+	geo := contourConfiguration.GeoIP
+	if geo == nil {
+		return nil, nil
+	}
+	if geo.Provider.MaxMind == nil {
+		return nil, fmt.Errorf("spec.geoIP.provider.maxMind is required")
+	}
+	mm := geo.Provider.MaxMind
+	if mm.CityDbPath == "" && mm.CountryDbPath == "" && mm.AsnDbPath == "" && mm.IspDbPath == "" && mm.AnonDbPath == "" {
+		return nil, fmt.Errorf("spec.geoIP.provider.maxMind requires at least one database path")
+	}
+	return &dag.GeoIPConfig{
+		CityDbPath:    mm.CityDbPath,
+		CountryDbPath: mm.CountryDbPath,
+		AsnDbPath:     mm.AsnDbPath,
+		IspDbPath:     mm.IspDbPath,
+		AnonDbPath:    mm.AnonDbPath,
 	}, nil
 }
 

@@ -209,6 +209,21 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		return
 	}
 
+	if len(proxy.Spec.VirtualHost.GeoAllowFilterPolicy) > 0 && len(proxy.Spec.VirtualHost.GeoDenyFilterPolicy) > 0 {
+		validCond.AddError(contour_v1.ConditionTypeGeoFilterError, "IncompatibleGeoFilters",
+			"Spec.VirtualHost.GeoAllowFilterPolicy and Spec.VirtualHost.GeoDenyFilterPolicy cannot both be defined.")
+		return
+	}
+
+	// GeoIP filtering is only supported on HTTPS virtual hosts (like
+	// Authorization): the GeoIP enrichment filter is configured per TLS virtual
+	// host, so geo rules require TLS to terminate.
+	if proxy.Spec.VirtualHost.TLS == nil && proxySpecUsesGeoRules(proxy) {
+		validCond.AddError(contour_v1.ConditionTypeGeoFilterError, "GeoFilterNotPermitted",
+			"Spec.VirtualHost.geoAllowPolicy or geoDenyPolicy can only be defined for root HTTPProxies that terminate TLS")
+		return
+	}
+
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if tls.Passthrough && tls.EnableFallbackCertificate {
@@ -623,6 +638,18 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		if err != nil {
 			validCond.AddErrorf(contour_v1.ConditionTypeIPFilterError, "IPFilterPolicyNotValid",
 				"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
+			return
+		}
+
+		secure.GeoFilterAllow, secure.GeoFilterRules, err = toGeoFilterRules(proxy.Spec.VirtualHost.GeoAllowFilterPolicy, proxy.Spec.VirtualHost.GeoDenyFilterPolicy, validCond)
+		if err != nil {
+			validCond.AddErrorf(contour_v1.ConditionTypeGeoFilterError, "GeoFilterPolicyNotValid",
+				"Spec.VirtualHost.GeoAllowFilterPolicy or Spec.VirtualHost.GeoDenyFilterPolicy is invalid: %s", err)
+			return
+		}
+		if !validGeoAction(secure.IPFilterAllow, secure.IPFilterRules, secure.GeoFilterAllow, secure.GeoFilterRules) {
+			validCond.AddError(contour_v1.ConditionTypeGeoFilterError, "IncompatibleIPAddressFilters",
+				"IP and Geo filter policies on the same scope must both be allow or both be deny")
 			return
 		}
 
@@ -1156,6 +1183,14 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		r.GeoFilterAllow, r.GeoFilterRules, err = toGeoFilterRules(route.GeoAllowFilterPolicy, route.GeoDenyFilterPolicy, validCond)
+		if err != nil {
+			return nil
+		}
+		if !validGeoAction(r.IPFilterAllow, r.IPFilterRules, r.GeoFilterAllow, r.GeoFilterRules) {
+			return nil
+		}
+
 		routes = append(routes, r)
 	}
 
@@ -1212,6 +1247,98 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_v1.IPFilterPolicy, validC
 		filters = nil
 	}
 	return allow, filters, err
+}
+
+// toGeoFilterRules converts geo filter settings from the api into the dag
+// representation. The geo filter rules match the geolocation request headers
+// populated by the global GeoIP filter; the GeoIP filter must be configured
+// with a database that populates the matched dimension for a rule to ever
+// match.
+func toGeoFilterRules(allowPolicy, denyPolicy []contour_v1.GeoFilterPolicy, validCond *contour_v1.DetailedCondition) (allow bool, filters []GeoFilterRule, err error) {
+	var geoPolicies []contour_v1.GeoFilterPolicy
+	switch {
+	case len(allowPolicy) > 0 && len(denyPolicy) > 0:
+		validCond.AddError(contour_v1.ConditionTypeGeoFilterError, "IncompatibleGeoFilters",
+			"cannot specify both `geoAllowPolicy` and `geoDenyPolicy`")
+		err = fmt.Errorf("invalid geo filter")
+		return allow, filters, err
+	case len(allowPolicy) > 0:
+		allow = true
+		geoPolicies = allowPolicy
+	case len(denyPolicy) > 0:
+		allow = false
+		geoPolicies = denyPolicy
+	}
+	if geoPolicies == nil {
+		return allow, filters, err
+	}
+	filters = make([]GeoFilterRule, 0, len(geoPolicies))
+	for _, p := range geoPolicies {
+		if !validGeoDimension(p.Dimension) {
+			validCond.AddErrorf(contour_v1.ConditionTypeGeoFilterError, "InvalidGeoDimension",
+				"unknown geo filter dimension %q", p.Dimension)
+			err = fmt.Errorf("invalid geo filter dimension")
+			continue
+		}
+		if p.Value == "" {
+			validCond.AddErrorf(contour_v1.ConditionTypeGeoFilterError, "InvalidGeoValue",
+				"geo filter dimension %q requires a non-empty value", p.Dimension)
+			err = fmt.Errorf("invalid geo filter value")
+			continue
+		}
+		filters = append(filters, GeoFilterRule{
+			Dimension: GeoFilterDimension(p.Dimension),
+			Value:     p.Value,
+		})
+	}
+	if err != nil {
+		allow = false
+		filters = nil
+	}
+	return allow, filters, err
+}
+
+// validGeoDimension returns true if d is one of the supported geolocation
+// dimensions.
+func validGeoDimension(d contour_v1.GeoFilterDimension) bool {
+	switch d {
+	case contour_v1.GeoDimensionCountry,
+		contour_v1.GeoDimensionRegion,
+		contour_v1.GeoDimensionCity,
+		contour_v1.GeoDimensionAsn,
+		contour_v1.GeoDimensionIsp,
+		contour_v1.GeoDimensionAnon,
+		contour_v1.GeoDimensionAnonVpn,
+		contour_v1.GeoDimensionAnonTor,
+		contour_v1.GeoDimensionAnonHosting,
+		contour_v1.GeoDimensionAnonProxy:
+		return true
+	}
+	return false
+}
+
+// proxySpecUsesGeoRules reports whether the proxy declares geo filter rules on
+// its virtual host or any route.
+func proxySpecUsesGeoRules(proxy *contour_v1.HTTPProxy) bool {
+	if len(proxy.Spec.VirtualHost.GeoAllowFilterPolicy) > 0 || len(proxy.Spec.VirtualHost.GeoDenyFilterPolicy) > 0 {
+		return true
+	}
+	for _, r := range proxy.Spec.Routes {
+		if len(r.GeoAllowFilterPolicy) > 0 || len(r.GeoDenyFilterPolicy) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// validGeoAction returns true when the IP and geo filter rules on a scope can
+// share a single RBAC policy, i.e. they are not both present with conflicting
+// allow/deny actions. An empty rule set on either side never conflicts.
+func validGeoAction(ipAllow bool, ipRules []IPFilterRule, geoAllow bool, geoRules []GeoFilterRule) bool {
+	if len(ipRules) == 0 || len(geoRules) == 0 {
+		return true
+	}
+	return ipAllow == geoAllow
 }
 
 // processHTTPProxyTCPProxy processes the spec.tcpproxy stanza in a HTTPProxy document

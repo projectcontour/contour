@@ -147,6 +147,9 @@ const (
 	// ConditionTypeIPFilterError describes an error condition related to IP filters.
 	ConditionTypeIPFilterError = "IPFilterError"
 
+	// ConditionTypeGeoFilterError describes an error condition related to GeoIP filters.
+	ConditionTypeGeoFilterError = "GeoFilterError"
+
 	// ConditionTypeJWTVerificationError describes an error condition related to JWT verification.
 	ConditionTypeJWTVerificationError = "JWTVerificationError"
 

@@ -1580,7 +1580,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_ALLOW,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1616,7 +1616,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_DENY,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1652,7 +1652,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_ALLOW,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1688,7 +1688,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_DENY,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1724,7 +1724,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_ALLOW,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1760,7 +1760,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_DENY,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1796,7 +1796,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_ALLOW,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1832,7 +1832,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_DENY,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1882,7 +1882,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_ALLOW,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1950,7 +1950,7 @@ func TestIPFilters(t *testing.T) {
 					Rules: &envoy_config_rbac_v3.RBAC{
 						Action: envoy_config_rbac_v3.RBAC_DENY,
 						Policies: map[string]*envoy_config_rbac_v3.Policy{
-							"ip-rules": {
+							"filter-rules": {
 								Permissions: []*envoy_config_rbac_v3.Permission{
 									{
 										Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -1994,6 +1994,169 @@ func TestIPFilters(t *testing.T) {
 			got := ipFilterConfig(tc.allow, tc.ipRules)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestGeoFilters(t *testing.T) {
+	headerPrincipal := func(name, value string) *envoy_config_rbac_v3.Principal {
+		return &envoy_config_rbac_v3.Principal{
+			Identifier: &envoy_config_rbac_v3.Principal_Header{
+				Header: &envoy_config_route_v3.HeaderMatcher{
+					Name: name,
+					HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &envoy_matcher_v3.StringMatcher{
+							MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: value},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	rbacPerRoute := func(action envoy_config_rbac_v3.RBAC_Action, principals ...*envoy_config_rbac_v3.Principal) *envoy_filter_http_rbac_v3.RBACPerRoute {
+		return &envoy_filter_http_rbac_v3.RBACPerRoute{
+			Rbac: &envoy_filter_http_rbac_v3.RBAC{
+				Rules: &envoy_config_rbac_v3.RBAC{
+					Action: action,
+					Policies: map[string]*envoy_config_rbac_v3.Policy{
+						"filter-rules": {
+							Permissions: []*envoy_config_rbac_v3.Permission{
+								{Rule: &envoy_config_rbac_v3.Permission_Any{Any: true}},
+							},
+							Principals: principals,
+						},
+					},
+				},
+			},
+		}
+	}
+
+	tests := map[string]struct {
+		geoRules []dag.GeoFilterRule
+		allow    bool
+		want     *envoy_filter_http_rbac_v3.RBACPerRoute
+	}{
+		"allow country": {
+			geoRules: []dag.GeoFilterRule{
+				{Dimension: dag.GeoFilterDimensionCountry, Value: "US"},
+			},
+			allow: true,
+			want:  rbacPerRoute(envoy_config_rbac_v3.RBAC_ALLOW, headerPrincipal(GeoIPCountryHeader, "US")),
+		},
+		"deny anonymous": {
+			geoRules: []dag.GeoFilterRule{
+				{Dimension: dag.GeoFilterDimensionAnon, Value: "true"},
+			},
+			allow: false,
+			want:  rbacPerRoute(envoy_config_rbac_v3.RBAC_DENY, headerPrincipal(GeoIPAnonHeader, "true")),
+		},
+		"allow multiple countries (OR)": {
+			geoRules: []dag.GeoFilterRule{
+				{Dimension: dag.GeoFilterDimensionCountry, Value: "US"},
+				{Dimension: dag.GeoFilterDimensionCountry, Value: "CA"},
+			},
+			allow: true,
+			want: rbacPerRoute(envoy_config_rbac_v3.RBAC_ALLOW,
+				headerPrincipal(GeoIPCountryHeader, "US"),
+				headerPrincipal(GeoIPCountryHeader, "CA"),
+			),
+		},
+		"deny anon vpn and tor": {
+			geoRules: []dag.GeoFilterRule{
+				{Dimension: dag.GeoFilterDimensionAnonVpn, Value: "true"},
+				{Dimension: dag.GeoFilterDimensionAnonTor, Value: "true"},
+			},
+			allow: false,
+			want: rbacPerRoute(envoy_config_rbac_v3.RBAC_DENY,
+				headerPrincipal(GeoIPAnonVpnHeader, "true"),
+				headerPrincipal(GeoIPAnonTorHeader, "true"),
+			),
+		},
+		"unknown dimension is skipped": {
+			geoRules: []dag.GeoFilterRule{
+				{Dimension: "bogus", Value: "x"},
+				{Dimension: dag.GeoFilterDimensionCountry, Value: "US"},
+			},
+			allow: true,
+			want:  rbacPerRoute(envoy_config_rbac_v3.RBAC_ALLOW, headerPrincipal(GeoIPCountryHeader, "US")),
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := geoFilterConfig(tc.allow, tc.geoRules)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
+func TestRBACFilterConfigCombined(t *testing.T) {
+	// IP and geo rules of the same action combine into a single RBAC policy.
+	ipRules := []dag.IPFilterRule{{
+		Remote: true,
+		CIDR: net.IPNet{
+			IP:   net.IPv4(192, 168, 0, 0),
+			Mask: net.CIDRMask(24, 32),
+		},
+	}}
+	geoRules := []dag.GeoFilterRule{{Dimension: dag.GeoFilterDimensionCountry, Value: "US"}}
+
+	got := rbacFilterConfig(true, ipRules, true, geoRules)
+
+	want := &envoy_filter_http_rbac_v3.RBACPerRoute{
+		Rbac: &envoy_filter_http_rbac_v3.RBAC{
+			Rules: &envoy_config_rbac_v3.RBAC{
+				Action: envoy_config_rbac_v3.RBAC_ALLOW,
+				Policies: map[string]*envoy_config_rbac_v3.Policy{
+					"filter-rules": {
+						Permissions: []*envoy_config_rbac_v3.Permission{
+							{Rule: &envoy_config_rbac_v3.Permission_Any{Any: true}},
+						},
+						Principals: []*envoy_config_rbac_v3.Principal{
+							{
+								Identifier: &envoy_config_rbac_v3.Principal_RemoteIp{
+									RemoteIp: &envoy_config_core_v3.CidrRange{
+										AddressPrefix: "192.168.0.0",
+										PrefixLen:     wrapperspb.UInt32(24),
+									},
+								},
+							},
+							{
+								Identifier: &envoy_config_rbac_v3.Principal_Header{
+									Header: &envoy_config_route_v3.HeaderMatcher{
+										Name: GeoIPCountryHeader,
+										HeaderMatchSpecifier: &envoy_config_route_v3.HeaderMatcher_StringMatch{
+											StringMatch: &envoy_matcher_v3.StringMatcher{
+												MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: "US"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	protobuf.ExpectEqual(t, want, got)
+}
+
+func TestGeoHeaderName(t *testing.T) {
+	tests := map[dag.GeoFilterDimension]string{
+		dag.GeoFilterDimensionCountry:     GeoIPCountryHeader,
+		dag.GeoFilterDimensionRegion:      GeoIPRegionHeader,
+		dag.GeoFilterDimensionCity:        GeoIPCityHeader,
+		dag.GeoFilterDimensionAsn:         GeoIPAsnHeader,
+		dag.GeoFilterDimensionIsp:         GeoIPIspHeader,
+		dag.GeoFilterDimensionAnon:        GeoIPAnonHeader,
+		dag.GeoFilterDimensionAnonVpn:     GeoIPAnonVpnHeader,
+		dag.GeoFilterDimensionAnonTor:     GeoIPAnonTorHeader,
+		dag.GeoFilterDimensionAnonHosting: GeoIPAnonHostingHeader,
+		dag.GeoFilterDimensionAnonProxy:   GeoIPAnonProxyHeader,
+		"unknown":                         "",
+	}
+	for dim, want := range tests {
+		assert.Equal(t, want, geoHeaderName(dim))
 	}
 }
 

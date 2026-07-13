@@ -3250,6 +3250,27 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyGeoHTTP := fixture.NewProxy("roots/geo-http").
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "geo-invalid.com",
+				GeoAllowFilterPolicy: []contour_v1.GeoFilterPolicy{
+					{Dimension: contour_v1.GeoDimensionCountry, Value: "US"},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{Name: "app-server", Port: 80}},
+			}},
+		})
+
+	run(t, "plain HTTP vhost with geo policy is invalid", testcase{
+		objs: []any{fixture.SecretRootsCert, proxyGeoHTTP},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			k8s.NamespacedNameOf(proxyGeoHTTP): fixture.NewValidCondition().WithGeneration(proxyGeoHTTP.Generation).
+				WithError(contour_v1.ConditionTypeGeoFilterError, "GeoFilterNotPermitted", "Spec.VirtualHost.geoAllowPolicy or geoDenyPolicy can only be defined for root HTTPProxies that terminate TLS"),
+		},
+	})
+
 	invalidResponseTimeout := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: fixture.ServiceRootsKuard.Namespace,

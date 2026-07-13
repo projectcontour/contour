@@ -3487,3 +3487,42 @@ func listenermap(listeners ...*envoy_config_listener_v3.Listener) map[string]*en
 	}
 	return m
 }
+
+// TestGeoIPConfigGating verifies geoIPConfigForVhost returns the global config
+// only when it is set and the vhost (or a route) uses geo rules.
+func TestGeoIPConfigGating(t *testing.T) {
+	cfg := &dag.GeoIPConfig{CountryDbPath: "/c.mmdb"}
+	geoRule := []dag.GeoFilterRule{{Dimension: dag.GeoFilterDimensionCountry, Value: "US"}}
+
+	vhWithVhostRules := &dag.VirtualHost{GeoFilterRules: geoRule}
+	vhWithRouteRules := &dag.VirtualHost{
+		Routes: map[string]*dag.Route{
+			"r": {GeoFilterRules: geoRule},
+		},
+	}
+	vhNoRules := &dag.VirtualHost{Routes: map[string]*dag.Route{"r": {}}}
+
+	// geoIPConfigForVhost returns the global config pointer when the filter
+	// should be added, else nil.
+	for name, tc := range map[string]struct {
+		got    *dag.GeoIPConfig
+		wantOK bool
+	}{
+		"vhost with vhost geo rules":  {geoIPConfigForVhost(cfg, vhWithVhostRules), true},
+		"vhost with route geo rules":  {geoIPConfigForVhost(cfg, vhWithRouteRules), true},
+		"vhost with no geo rules":     {geoIPConfigForVhost(cfg, vhNoRules), false},
+		"no global config, geo rules": {geoIPConfigForVhost(nil, vhWithVhostRules), false},
+		"nil vhost":                   {geoIPConfigForVhost(cfg, nil), false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if tc.wantOK && tc.got != cfg {
+				t.Fatalf("expected the global GeoIP config, got %v", tc.got)
+			}
+			if !tc.wantOK && tc.got != nil {
+				t.Fatalf("expected no GeoIP config, got %v", tc.got)
+			}
+		})
+	}
+}
+
+

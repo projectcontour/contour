@@ -150,6 +150,11 @@ type ListenerConfig struct {
 	// used.
 	GlobalExternalAuthConfig *GlobalExternalAuthConfig
 
+	// GeoIPConfig optionally configures the global GeoIP HTTP filter. Added to
+	// a vhost's HCM only when set and the vhost (or one of its routes) uses geo
+	// filter rules.
+	GeoIPConfig *dag.GeoIPConfig
+
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
 	TracingConfig *TracingConfig
@@ -460,6 +465,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// coded into monitoring dashboards.
 				cm := c.envoyGen.HTTPConnectionManagerBuilder().
 					Compression(cfg.Compression).
+					GeoIP(geoIPConfigForVhost(cfg.GeoIPConfig, &vh.VirtualHost)).
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests()).
 					DefaultFilters().
@@ -623,7 +629,23 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 	})
 }
 
+<<<<<<< Updated upstream
 func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
+=======
+// geoIPConfigForVhost returns the GeoIP config for a secure vhost's HCM: the
+// global config if set and the vhost (or a route) uses geo rules, else nil.
+func geoIPConfigForVhost(config *dag.GeoIPConfig, vh *dag.VirtualHost) *dag.GeoIPConfig {
+	if config == nil {
+		return nil
+	}
+	if !dag.VirtualHostUsesGeoRules(vh) {
+		return nil
+	}
+	return config
+}
+
+func envoyGlobalRateLimitConfig(config *dag.RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
+>>>>>>> Stashed changes
 	if config == nil {
 		return nil
 	}

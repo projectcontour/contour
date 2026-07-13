@@ -28,6 +28,7 @@ import (
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_filter_http_geoip_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/geoip/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_filter_http_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
@@ -39,6 +40,8 @@ import (
 	envoy_filter_listener_tls_inspector_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_filter_network_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_geoip_provider_common_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/geoip_providers/common/v3"
+	envoy_geoip_provider_maxmind_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/geoip_providers/maxmind/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
@@ -182,6 +185,25 @@ const (
 	CompressorFilterName      string = "envoy.filters.http.compressor"
 	GRPCWebFilterName         string = "envoy.filters.http.grpc_web"
 	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
+	GeoIPFilterName           string = "envoy.filters.http.geoip"
+)
+
+// GeoIP HTTP filter names. Contour controls the names of the geolocation
+// request headers populated by the GeoIP filter so that HTTPProxy geo
+// allow/deny policies can match against them deterministically. The value
+// of each header is the geolocation data (ISO codes, names) or "true"/"false"
+// for the anonymous-IP flags.
+const (
+	GeoIPCountryHeader     = "x-contour-geo-country"
+	GeoIPRegionHeader      = "x-contour-geo-region"
+	GeoIPCityHeader        = "x-contour-geo-city"
+	GeoIPAsnHeader         = "x-contour-geo-asn"
+	GeoIPIspHeader         = "x-contour-geo-isp"
+	GeoIPAnonHeader        = "x-contour-geo-anon"
+	GeoIPAnonVpnHeader     = "x-contour-geo-anon-vpn"
+	GeoIPAnonTorHeader     = "x-contour-geo-anon-tor"
+	GeoIPAnonHostingHeader = "x-contour-geo-anon-hosting"
+	GeoIPAnonProxyHeader   = "x-contour-geo-anon-proxy"
 )
 
 type httpConnectionManagerBuilder struct {
@@ -208,6 +230,7 @@ type httpConnectionManagerBuilder struct {
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
 	compression                   *contour_v1alpha1.EnvoyCompression
+	geoIPConfig                   *dag.GeoIPConfig
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -303,6 +326,22 @@ func (b *httpConnectionManagerBuilder) Compression(compressor *contour_v1alpha1.
 	return b
 }
 
+// GeoIP configures the builder to add Envoy's GeoIP HTTP filter, which
+// populates request headers with geolocation data derived from the client
+// IP. The filter is inserted at the front of the HTTP filter chain (by
+// DefaultFilters) so that downstream filters such as RBAC and ext_authz can
+// match on the populated headers. The client IP is taken from
+// X-Forwarded-For using the builder's configured numTrustedHops.
+// When chaining builder method calls, this method must be called before
+// DefaultFilters().
+func (b *httpConnectionManagerBuilder) GeoIP(cfg *dag.GeoIPConfig) *httpConnectionManagerBuilder {
+	if len(b.filters) > 0 {
+		panic("GeoIP must be set before adding filters")
+	}
+	b.geoIPConfig = cfg
+	return b
+}
+
 func (b *httpConnectionManagerBuilder) ServerHeaderTransformation(value contour_v1alpha1.ServerHeaderTransformationType) *httpConnectionManagerBuilder {
 	switch value {
 	case contour_v1alpha1.OverwriteServerHeader:
@@ -345,6 +384,14 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	// Add a default set of ordered http filters.
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
+
+	// The GeoIP filter populates request headers with geolocation data from
+	// the client IP. It is added first so that downstream filters (RBAC, which
+	// implements geo allow/deny, and ext_authz) observe the populated headers.
+	if b.geoIPConfig != nil {
+		b.filters = append(b.filters, FilterGeoIP(b.geoIPConfig, b.numTrustedHops))
+	}
+
 	var compressor proto.Message = &envoy_compression_gzip_compressor_v3.Gzip{}
 	compressorName := string(contour_v1alpha1.GzipCompression)
 	if b.compression != nil {
@@ -951,6 +998,79 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envo
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&authConfig),
 		},
+	}
+}
+
+// FilterGeoIP returns an `envoy.filters.http.geoip` filter configured with the
+// supplied MaxMind database paths. The client IP is taken from the
+// X-Forwarded-For header using xffNumTrustedHops (which Contour derives from
+// its global network configuration). Contour controls the names of the
+// geolocation headers that get populated; a header is configured only when the
+// database that populates its dimension is provided.
+func FilterGeoIP(cfg *dag.GeoIPConfig, xffNumTrustedHops uint32) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+	maxmind := &envoy_geoip_provider_maxmind_v3.MaxMindConfig{
+		CityDbPath:           cfg.CityDbPath,
+		CountryDbPath:        cfg.CountryDbPath,
+		AsnDbPath:            cfg.AsnDbPath,
+		IspDbPath:            cfg.IspDbPath,
+		AnonDbPath:           cfg.AnonDbPath,
+		CommonProviderConfig: geoHeadersToAdd(cfg),
+	}
+
+	geoip := &envoy_filter_http_geoip_v3.Geoip{
+		// Contour always sets use_remote_address on the HCM, so derive the
+		// client IP from X-Forwarded-For using the same number of trusted hops.
+		XffConfig: &envoy_filter_http_geoip_v3.Geoip_XffConfig{
+			XffNumTrustedHops: xffNumTrustedHops,
+		},
+		Provider: &envoy_config_core_v3.TypedExtensionConfig{
+			Name:        "envoy.geoip_providers.maxmind",
+			TypedConfig: protobuf.MustMarshalAny(maxmind),
+		},
+	}
+
+	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: GeoIPFilterName,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(geoip),
+		},
+	}
+}
+
+// geoHeadersToAdd builds the CommonGeoipProviderConfig that selects which
+// geolocation request headers the GeoIP filter populates, and their (Contour
+// controlled) names. A header is enabled only when a database capable of
+// populating its dimension is configured, so Envoy never attempts to populate
+// a header it cannot source.
+func geoHeadersToAdd(cfg *dag.GeoIPConfig) *envoy_geoip_provider_common_v3.CommonGeoipProviderConfig {
+	headers := &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{}
+
+	// Country may come from the city or the country database.
+	if cfg.CityDbPath != "" || cfg.CountryDbPath != "" {
+		headers.Country = GeoIPCountryHeader
+	}
+	// Region and city come from the city database.
+	if cfg.CityDbPath != "" {
+		headers.Region = GeoIPRegionHeader
+		headers.City = GeoIPCityHeader
+	}
+	// ASN may come from the ASN or the ISP database.
+	if cfg.AsnDbPath != "" || cfg.IspDbPath != "" {
+		headers.Asn = GeoIPAsnHeader
+	}
+	if cfg.IspDbPath != "" {
+		headers.Isp = GeoIPIspHeader
+	}
+	if cfg.AnonDbPath != "" {
+		headers.Anon = GeoIPAnonHeader
+		headers.AnonVpn = GeoIPAnonVpnHeader
+		headers.AnonTor = GeoIPAnonTorHeader
+		headers.AnonHosting = GeoIPAnonHostingHeader
+		headers.AnonProxy = GeoIPAnonProxyHeader
+	}
+
+	return &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig{
+		GeoHeadersToAdd: headers,
 	}
 }
 

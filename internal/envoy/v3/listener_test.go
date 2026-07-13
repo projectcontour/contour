@@ -23,6 +23,7 @@ import (
 	envoy_compression_gzip_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_filter_http_geoip_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/geoip/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_filter_http_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
@@ -31,6 +32,8 @@ import (
 	envoy_filter_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_filter_network_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_geoip_provider_common_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/geoip_providers/common/v3"
+	envoy_geoip_provider_maxmind_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/geoip_providers/maxmind/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/stretchr/testify/assert"
@@ -1546,6 +1549,134 @@ func TestHTTPConnectionManager(t *testing.T) {
 
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
+	}
+}
+
+func TestFilterGeoIP(t *testing.T) {
+	cfg := &dag.GeoIPConfig{
+		CityDbPath: "/etc/geoip/GeoLite2-City.mmdb",
+		AsnDbPath:  "/etc/geoip/GeoLite2-ASN.mmdb",
+		AnonDbPath: "/etc/geoip/GeoLite2-Anonymous-IP.mmdb",
+	}
+
+	got := FilterGeoIP(cfg, 2)
+
+	want := &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: GeoIPFilterName,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_geoip_v3.Geoip{
+				XffConfig: &envoy_filter_http_geoip_v3.Geoip_XffConfig{
+					XffNumTrustedHops: 2,
+				},
+				Provider: &envoy_config_core_v3.TypedExtensionConfig{
+					Name: "envoy.geoip_providers.maxmind",
+					TypedConfig: protobuf.MustMarshalAny(&envoy_geoip_provider_maxmind_v3.MaxMindConfig{
+						CityDbPath: "/etc/geoip/GeoLite2-City.mmdb",
+						AsnDbPath:  "/etc/geoip/GeoLite2-ASN.mmdb",
+						AnonDbPath: "/etc/geoip/GeoLite2-Anonymous-IP.mmdb",
+						CommonProviderConfig: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig{
+							GeoHeadersToAdd: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{
+								Country:     GeoIPCountryHeader,
+								Region:      GeoIPRegionHeader,
+								City:        GeoIPCityHeader,
+								Asn:         GeoIPAsnHeader,
+								Anon:        GeoIPAnonHeader,
+								AnonVpn:     GeoIPAnonVpnHeader,
+								AnonTor:     GeoIPAnonTorHeader,
+								AnonHosting: GeoIPAnonHostingHeader,
+								AnonProxy:   GeoIPAnonProxyHeader,
+							},
+						},
+					}),
+				},
+			}),
+		},
+	}
+
+	protobuf.ExpectEqual(t, want, got)
+}
+
+func TestGeoHeadersToAdd(t *testing.T) {
+	tests := map[string]struct {
+		cfg  *dag.GeoIPConfig
+		want *envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd
+	}{
+		"country db populates country only": {
+			cfg:  &dag.GeoIPConfig{CountryDbPath: "/c.mmdb"},
+			want: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{Country: GeoIPCountryHeader},
+		},
+		"city db populates country, region, city": {
+			cfg: &dag.GeoIPConfig{CityDbPath: "/city.mmdb"},
+			want: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{
+				Country: GeoIPCountryHeader,
+				Region:  GeoIPRegionHeader,
+				City:    GeoIPCityHeader,
+			},
+		},
+		"isp db populates asn and isp": {
+			cfg: &dag.GeoIPConfig{IspDbPath: "/isp.mmdb"},
+			want: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{
+				Asn: GeoIPAsnHeader,
+				Isp: GeoIPIspHeader,
+			},
+		},
+		"anon db populates all anon headers": {
+			cfg: &dag.GeoIPConfig{AnonDbPath: "/anon.mmdb"},
+			want: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{
+				Anon:        GeoIPAnonHeader,
+				AnonVpn:     GeoIPAnonVpnHeader,
+				AnonTor:     GeoIPAnonTorHeader,
+				AnonHosting: GeoIPAnonHostingHeader,
+				AnonProxy:   GeoIPAnonProxyHeader,
+			},
+		},
+		"empty config populates nothing": {
+			cfg:  &dag.GeoIPConfig{},
+			want: &envoy_geoip_provider_common_v3.CommonGeoipProviderConfig_GeolocationHeadersToAdd{},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := geoHeadersToAdd(tc.cfg).GeoHeadersToAdd
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
+func TestHTTPConnectionManagerBuilderGeoIP(t *testing.T) {
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	// When a GeoIP config is supplied, the GeoIP filter must be the first
+	// filter in the chain, ahead of the compressor and router filters.
+	got := envoyGen.HTTPConnectionManagerBuilder().
+		GeoIP(&dag.GeoIPConfig{CityDbPath: "/city.mmdb"}).
+		NumTrustedHops(1).
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		DefaultFilters().
+		Get()
+
+	hcm := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{}
+	require.NoError(t, got.GetTypedConfig().UnmarshalTo(hcm))
+
+	require.NotEmpty(t, hcm.HttpFilters, "expected filters to be configured")
+	assert.Equal(t, GeoIPFilterName, hcm.HttpFilters[0].Name, "GeoIP filter must be first")
+
+	// The router filter must remain last.
+	assert.Equal(t, "router", hcm.HttpFilters[len(hcm.HttpFilters)-1].Name)
+
+	// When no GeoIP config is supplied, no GeoIP filter is present.
+	none := envoyGen.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		DefaultFilters().
+		Get()
+	hcmNone := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{}
+	require.NoError(t, none.GetTypedConfig().UnmarshalTo(hcmNone))
+	for _, f := range hcmNone.HttpFilters {
+		assert.NotEqual(t, GeoIPFilterName, f.Name, "GeoIP filter should not be present without config")
 	}
 }
 

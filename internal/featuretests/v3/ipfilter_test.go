@@ -74,7 +74,7 @@ func TestIPFilterPolicy(t *testing.T) {
 				Rules: &envoy_config_rbac_v3.RBAC{
 					Action: envoy_config_rbac_v3.RBAC_ALLOW,
 					Policies: map[string]*envoy_config_rbac_v3.Policy{
-						"ip-rules": {
+						"filter-rules": {
 							Permissions: []*envoy_config_rbac_v3.Permission{
 								{
 									Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -137,7 +137,7 @@ func TestIPFilterPolicy(t *testing.T) {
 							Rules: &envoy_config_rbac_v3.RBAC{
 								Action: envoy_config_rbac_v3.RBAC_DENY,
 								Policies: map[string]*envoy_config_rbac_v3.Policy{
-									"ip-rules": {
+									"filter-rules": {
 										Permissions: []*envoy_config_rbac_v3.Permission{
 											{
 												Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},
@@ -161,7 +161,7 @@ func TestIPFilterPolicy(t *testing.T) {
 				Rules: &envoy_config_rbac_v3.RBAC{
 					Action: envoy_config_rbac_v3.RBAC_ALLOW,
 					Policies: map[string]*envoy_config_rbac_v3.Policy{
-						"ip-rules": {
+						"filter-rules": {
 							Permissions: []*envoy_config_rbac_v3.Permission{
 								{
 									Rule: &envoy_config_rbac_v3.Permission_Any{Any: true},

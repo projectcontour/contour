@@ -440,6 +440,26 @@ type VirtualHost struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here may be overridden in a Route.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// GeoAllowFilterPolicy is a list of geolocation filter rules for which
+	// matching requests should be allowed. All other requests will be denied.
+	// Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+	// The rules defined here may be overridden in a Route.
+	//
+	// GeoIP filtering requires TLS on the virtual host, and the GeoIP filter to
+	// be configured globally (ContourConfiguration.spec.geoIP) with a database
+	// that populates the matched dimension.
+	GeoAllowFilterPolicy []GeoFilterPolicy `json:"geoAllowPolicy,omitempty"`
+
+	// GeoDenyFilterPolicy is a list of geolocation filter rules for which
+	// matching requests should be denied. All other requests will be allowed.
+	// Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+	// The rules defined here may be overridden in a Route.
+	//
+	// GeoIP filtering requires TLS on the virtual host, and the GeoIP filter to
+	// be configured globally (ContourConfiguration.spec.geoIP) with a database
+	// that populates the matched dimension.
+	GeoDenyFilterPolicy []GeoFilterPolicy `json:"geoDenyPolicy,omitempty"`
 }
 
 // JWTProvider defines how to verify JWTs on requests.
@@ -725,6 +745,18 @@ type Route struct {
 	// Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 	// The rules defined here override any rules set on the root HTTPProxy.
 	IPDenyFilterPolicy []IPFilterPolicy `json:"ipDenyPolicy,omitempty"`
+
+	// GeoAllowFilterPolicy is a list of geolocation filter rules for which
+	// matching requests should be allowed. All other requests will be denied.
+	// Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+	// The rules defined here override any rules set on the root HTTPProxy.
+	GeoAllowFilterPolicy []GeoFilterPolicy `json:"geoAllowPolicy,omitempty"`
+
+	// GeoDenyFilterPolicy is a list of geolocation filter rules for which
+	// matching requests should be denied. All other requests will be allowed.
+	// Only one of GeoAllowFilterPolicy and GeoDenyFilterPolicy can be defined.
+	// The rules defined here override any rules set on the root HTTPProxy.
+	GeoDenyFilterPolicy []GeoFilterPolicy `json:"geoDenyPolicy,omitempty"`
 }
 
 type JWTVerificationPolicy struct {
@@ -765,6 +797,66 @@ type IPFilterPolicy struct {
 	// CIDR is a CIDR block of ipv4 or ipv6 addresses to filter on. This can also be
 	// a bare IP address (without a mask) to filter on exactly one address.
 	CIDR string `json:"cidr"`
+}
+
+// GeoFilterDimension identifies a geolocation attribute populated by the
+// GeoIP filter that a GeoFilterPolicy can match against.
+type GeoFilterDimension string
+
+const (
+	// GeoDimensionCountry matches the ISO 3166-1 alpha-2 country code
+	// (requires a city or country database).
+	GeoDimensionCountry GeoFilterDimension = "country"
+	// GeoDimensionRegion matches the ISO 3166-2 subdivision code
+	// (requires a city database).
+	GeoDimensionRegion GeoFilterDimension = "region"
+	// GeoDimensionCity matches the city name (requires a city database).
+	GeoDimensionCity GeoFilterDimension = "city"
+	// GeoDimensionAsn matches the autonomous system number (requires an ASN
+	// or ISP database).
+	GeoDimensionAsn GeoFilterDimension = "asn"
+	// GeoDimensionIsp matches the ISP name (requires an ISP database).
+	GeoDimensionIsp GeoFilterDimension = "isp"
+	// GeoDimensionAnon matches the anonymous-IP flag, "true" or "false"
+	// (requires an anonymous-IP database).
+	GeoDimensionAnon GeoFilterDimension = "anon"
+	// GeoDimensionAnonVpn matches the anonymous VPN flag, "true" or "false".
+	GeoDimensionAnonVpn GeoFilterDimension = "anonVpn"
+	// GeoDimensionAnonTor matches the anonymous Tor flag, "true" or "false".
+	GeoDimensionAnonTor GeoFilterDimension = "anonTor"
+	// GeoDimensionAnonHosting matches the anonymous hosting flag, "true" or "false".
+	GeoDimensionAnonHosting GeoFilterDimension = "anonHosting"
+	// GeoDimensionAnonProxy matches the anonymous proxy flag, "true" or "false".
+	GeoDimensionAnonProxy GeoFilterDimension = "anonProxy"
+)
+
+// GeoFilterPolicy matches a single geolocation dimension populated by the
+// GeoIP filter (see ContourConfiguration.spec.geoIP). A list of rules is
+// combined with OR semantics: a request matches the policy if it matches
+// any rule.
+//
+// The Value to match depends on the Dimension:
+//   - country: an ISO 3166-1 alpha-2 country code (e.g. "US")
+//   - region: an ISO 3166-2 subdivision code (e.g. "US-CA")
+//   - city: a city name
+//   - asn: an autonomous system number (e.g. "7922")
+//   - isp: an ISP name
+//   - anon, anonVpn, anonTor, anonHosting, anonProxy: "true" or "false"
+//
+// The GeoIP filter must be configured with a database that populates the
+// matched dimension, otherwise the header will be absent and the rule will
+// never match.
+type GeoFilterPolicy struct {
+	// Dimension is the geolocation attribute to match.
+	// +kubebuilder:validation:Enum=country;region;city;asn;isp;anon;anonVpn;anonTor;anonHosting;anonProxy
+	// +kubebuilder:validation:Required
+	Dimension GeoFilterDimension `json:"dimension"`
+
+	// Value is the value to match exactly against the populated geolocation
+	// header. See GeoFilterDimension for the value format of each dimension.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Value string `json:"value"`
 }
 
 type HTTPDirectResponsePolicy struct {
