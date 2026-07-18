@@ -3,6 +3,7 @@
 - [Serve Flags](#serve-flags)
 - [Configuration File](#configuration-file)
 - [Environment Variables](#environment-variables)
+- [Certificate Generation](#certificate-generation)
 - [Bootstrap Config File](#bootstrap-config-file)
 
 ## Overview
@@ -518,6 +519,90 @@ If present, the value of the `CONTOUR_NAMESPACE` environment variable is used as
 
 The `CONTOUR_NAMESPACE` environment variable is set via the [Downward API][6] in the Contour [example manifests][7].
 
+## Certificate Generation
+
+The `contour certgen` command generates the certificates used to secure the xDS gRPC connection between Contour and Envoy.
+Each invocation creates a new certificate authority (CA), a Contour server certificate, and an Envoy client certificate.
+The CA private key is used to sign the two certificates but is not included in the command's output.
+
+Select at least one of `--pem`, `--yaml`, or `--kube` to persist the generated material.
+Multiple output modes can be selected in one invocation, and all selected modes use the same generated certificates.
+If no output mode is selected, no certificates or Secrets are written.
+
+{{< notice warning >}}
+Each invocation generates a new CA and new Contour and Envoy certificates.
+The `--overwrite` flag replaces existing certificate files or Secrets with this new trust chain.
+Coordinate replacement of both endpoints by following the [certificate rotation procedure](../grpc-tls-howto/#rotating-certificates), and never commit generated private keys to a source repository.
+{{< /notice >}}
+
+### Certgen Output Modes
+
+| Mode | Output |
+| ---- | ------ |
+| `--pem` | Writes `cacert.pem`, `contourcert.pem`, `contourkey.pem`, `envoycert.pem`, and `envoykey.pem` to the output directory. |
+| `--yaml` | Writes the generated Kubernetes Secrets as individual YAML files in the output directory. |
+| `--kube` | Creates the generated Secrets directly in the selected Kubernetes namespace. |
+
+PEM and YAML files are created with permissions `0600`.
+The output directory is the optional positional argument to `certgen` and defaults to `certs`.
+
+Both `--yaml` and `--kube` support two Secret formats:
+
+| Format | Secrets |
+| ------ | ------- |
+| `legacy` | Creates `contourcert`, `envoycert`, and a separate `cacert` Secret. This is the default and is compatible with Contour 1.4 and earlier. |
+| `compact` | Creates `contourcert` and `envoycert` TLS Secrets. Each Secret contains the CA bundle under `ca.crt` in addition to `tls.crt` and `tls.key`. |
+
+The Contour [certificate generation Job][16] uses the `compact` format.
+A value supplied with `--secrets-name-suffix` is appended to each Secret name; for example, with the `compact` format, `--secrets-name-suffix=-blue` produces `contourcert-blue` and `envoycert-blue`.
+
+### Certgen Flags
+
+| Flag or argument | Default | Description |
+| ---------------- | ------- | ----------- |
+| `<outputdir>` | `certs` | Directory for PEM and YAML output files. |
+| `--certificate-lifetime` | `365` | Lifetime of the generated certificates, in days. |
+| `--incluster` | `false` | Use Kubernetes in-cluster credentials instead of a kubeconfig file. |
+| `--kube` | `false` | Apply the generated Secrets directly to a Kubernetes cluster. |
+| `--kubeconfig` | `$HOME/.kube/config` | Path to the kubeconfig file used when running outside a cluster. |
+| `--log-format` | `text` | Log output format. Valid values are `text` and `json`. |
+| `--namespace` | `projectcontour` | Namespace for generated Secrets and certificate DNS names. This can also be set with `CONTOUR_NAMESPACE`. |
+| `--overwrite` | `false` | Replace existing output files or update existing Kubernetes Secrets. Without this flag, existing files cause an error and existing Secrets remain unchanged. |
+| `--pem` | `false` | Write the CA bundle, certificates, and private keys as individual PEM files. |
+| `--secrets-format` | `legacy` | Secret layout for `--yaml` and `--kube`. Valid values are `legacy` and `compact`. |
+| `--secrets-name-suffix` | empty | Suffix appended to each generated Secret name. |
+| `--yaml` | `false` | Write the generated Secrets as YAML files. |
+
+The namespace is included in the DNS names of the generated Contour and Envoy certificates.
+Use the namespace in which the corresponding Services run.
+
+Currently, `certgen` initializes Kubernetes client configuration for every output mode.
+When running outside a cluster, `--kubeconfig` must point to a valid kubeconfig file even when only writing PEM or YAML files.
+
+### Certgen Examples
+
+Write the CA bundle, certificates, and private keys to `./certs`:
+
+```bash
+$ contour certgen --pem ./certs
+```
+
+Render compact Secret manifests to `./secrets` for inspection or later application:
+
+```bash
+$ contour certgen --yaml --secrets-format=compact \
+    --namespace=projectcontour ./secrets
+```
+
+Create compact Secrets directly in the `projectcontour` namespace using the current kubeconfig:
+
+```bash
+$ contour certgen --kube --secrets-format=compact \
+    --namespace=projectcontour
+```
+
+The shipped [certificate generation Job][16] runs `certgen` inside the cluster with `--incluster`, `--overwrite`, and the `compact` format.
+
 ## Bootstrap Config File
 
 The bootstrap configuration file is generated by an initContainer in the Envoy daemonset which runs the `contour bootstrap` command to generate the file.
@@ -564,3 +649,4 @@ connects to Contour:
 [13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
 [14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#config-listener-v3-listener-connectionbalanceconfig
 [15]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
+[16]: {{< param github_url>}}/blob/{{< param branch >}}/examples/contour/02-job-certgen.yaml
