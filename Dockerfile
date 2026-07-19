@@ -30,7 +30,9 @@ ARG BUILD_GOEXPERIMENT
 ARG TARGETOS
 ARG TARGETARCH
 
+# Exclude cloud auth plugins intended for local, out-of-cluster builds.
 RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod make build \
+		GO_TAGS='-tags "osusergo netgo"' \
 	    CGO_ENABLED=${BUILD_CGO_ENABLED} \
 		EXTRA_GO_LDFLAGS="${BUILD_EXTRA_GO_LDFLAGS}" \
 		GOOS=${TARGETOS} \
