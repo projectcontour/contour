@@ -92,6 +92,23 @@ func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 			cond.DeepCopyInto(currCond)
 		}
 
+		// Set the Ready condition for kstatus compatibility (Helm 4, Flux, Argo CD, kubectl wait).
+		// The Ready condition mirrors the Valid condition.
+		if validCond, ok := e.Conditions[ValidCondition]; ok {
+			readyCond := contour_v1.ReadyDetailedConditionFromValid(validCond)
+			if readyCond != nil {
+				readyCond.ObservedGeneration = e.Generation
+				readyCond.LastTransitionTime = e.TransitionTime
+
+				currReadyCond := ext.Status.GetConditionFor(contour_v1.ReadyConditionType)
+				if currReadyCond == nil {
+					ext.Status.Conditions = append(ext.Status.Conditions, *readyCond)
+				} else if currReadyCond.ObservedGeneration <= readyCond.ObservedGeneration {
+					readyCond.DeepCopyInto(currReadyCond)
+				}
+			}
+		}
+
 		return ext
 	})
 

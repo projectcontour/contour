@@ -198,3 +198,36 @@ const (
 	// to the configuration of Listeners.
 	ConditionTypeListenerError = "ListenerError"
 )
+
+// ReadyDetailedConditionFromValid creates a kstatus-compatible Ready DetailedCondition
+// that mirrors the given Valid DetailedCondition including errors and warnings.
+// This enables tools like Helm 4, Flux, and Argo CD to correctly determine
+// when a Contour resource has been successfully reconciled.
+func ReadyDetailedConditionFromValid(valid *DetailedCondition) *DetailedCondition {
+	if valid == nil {
+		return nil
+	}
+
+	ready := &DetailedCondition{
+		Condition: Condition{
+			Type:               ReadyConditionType,
+			Status:             valid.Status,
+			Reason:             valid.Reason,
+			Message:            valid.Message,
+			LastTransitionTime: valid.LastTransitionTime,
+			ObservedGeneration: valid.ObservedGeneration,
+		},
+	}
+
+	// Copy errors and warnings slices
+	if len(valid.Errors) > 0 {
+		ready.Errors = make([]SubCondition, len(valid.Errors))
+		copy(ready.Errors, valid.Errors)
+	}
+	if len(valid.Warnings) > 0 {
+		ready.Warnings = make([]SubCondition, len(valid.Warnings))
+		copy(ready.Warnings, valid.Warnings)
+	}
+
+	return ready
+}

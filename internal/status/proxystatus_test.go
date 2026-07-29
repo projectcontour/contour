@@ -132,7 +132,26 @@ func TestStatusMutator(t *testing.T) {
 					},
 				},
 			},
+			// Ready condition mirrors Valid for kstatus compatibility
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.ReadyConditionType,
+					Status:             contour_v1.ConditionTrue,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "Valid",
+					Message:            "Valid HTTPProxy",
+				},
+				Warnings: []contour_v1.SubCondition{
+					{
+						Type:    "TLSError",
+						Reason:  "TLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+				},
+			},
 		},
+		
 		wantCurrentStatus: string(ProxyStatusValid),
 		wantDescription:   "Valid HTTPProxy",
 	}
@@ -172,6 +191,24 @@ func TestStatusMutator(t *testing.T) {
 			{
 				Condition: contour_v1.Condition{
 					Type:               string(ValidCondition),
+					Status:             contour_v1.ConditionFalse,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "ErrorPresent",
+					Message:            "At least one error present, see Errors for details",
+				},
+				Errors: []contour_v1.SubCondition{
+					{
+						Type:    "TLSError",
+						Reason:  "TLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+				},
+			},
+			// Ready condition mirrors Valid for kstatus compatibility
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.ReadyConditionType,
 					Status:             contour_v1.ConditionFalse,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
@@ -240,6 +277,24 @@ func TestStatusMutator(t *testing.T) {
 					},
 				},
 			},
+			// Ready condition mirrors Valid for kstatus compatibility
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.ReadyConditionType,
+					Status:             contour_v1.ConditionFalse,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "Orphaned",
+					Message:            "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+				},
+				Errors: []contour_v1.SubCondition{
+					{
+						Type:    "Orphaned",
+						Reason:  "Orphaned",
+						Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+					},
+				},
+			},
 		},
 		wantCurrentStatus: string(ProxyStatusOrphaned),
 		wantDescription:   "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
@@ -291,6 +346,24 @@ func TestStatusMutator(t *testing.T) {
 			{
 				Condition: contour_v1.Condition{
 					Type:               string(ValidCondition),
+					Status:             contour_v1.ConditionTrue,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "Valid",
+					Message:            "Valid HTTPProxy",
+				},
+				Warnings: []contour_v1.SubCondition{
+					{
+						Type:    "TLSError",
+						Reason:  "TLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+				},
+			},
+			// Ready condition mirrors Valid for kstatus compatibility
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.ReadyConditionType,
 					Status:             contour_v1.ConditionTrue,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
