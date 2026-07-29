@@ -10,6 +10,7 @@
 #       examples/gateway-provisioner/03-gateway-provisioner.yaml
 
 ---
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -1417,6 +1418,7 @@ spec:
     storage: true
     subresources:
       status: {}
+---
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -5263,6 +5265,7 @@ spec:
     subresources:
       status: {}
 ---
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -5741,6 +5744,7 @@ spec:
     storage: true
     subresources:
       status: {}
+---
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -8623,6 +8627,7 @@ spec:
                                   The supported values are: "TCP", "UDP", "SCTP"
                                 type: string
                             required:
+                            - error
                             - port
                             - protocol
                             type: object
@@ -8641,6 +8646,7 @@ spec:
     storage: true
     subresources:
       status: {}
+---
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
