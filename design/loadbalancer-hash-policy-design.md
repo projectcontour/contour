@@ -172,7 +172,7 @@ type RequestHashPolicy struct {
 }
 ```
 
-While the number of options to support is unlikely to grow quickly, this option was not chosen as it is possible hashing attributes that require multiple fields of configurability would make this solution messy and unweildy.
+While the number of options to support is unlikely to grow quickly, this option was not chosen as it is possible hashing attributes that require multiple fields of configurability would make this solution messy and unwieldy.
 
 ### Only Address Header Hashing, Not Multiple Hash Options
 In order to deliver solely header hashing functionality, we could instead add an additional load balancing strategy `HeaderHash` and a configuration to supply a HTTP header name to hash on.

@@ -151,7 +151,7 @@ func TestStatusMutator(t *testing.T) {
 				},
 			},
 		},
-		
+
 		wantCurrentStatus: string(ProxyStatusValid),
 		wantDescription:   "Valid HTTPProxy",
 	}

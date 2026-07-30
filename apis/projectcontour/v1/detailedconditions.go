@@ -137,14 +137,14 @@ type DetailedCondition struct {
 const (
 	// ValidConditionType describes an valid condition.
 	ValidConditionType = "Valid"
-	
+
 	// ReadyConditionType is the kstatus-compatible condition type.
 	// This condition mirrors the Valid condition to enable compatibility with
 	// tools that use kstatus (Helm 4, Flux, Argo CD, kubectl wait).
 	// kstatus specifically looks for a condition with type "Ready" to determine
 	// if a custom resource has been successfully reconciled.
 	ReadyConditionType = "Ready"
-	
+
 	// ConditionTypeAuthError describes an error condition related to Auth.
 	ConditionTypeAuthError = "AuthError"
 
