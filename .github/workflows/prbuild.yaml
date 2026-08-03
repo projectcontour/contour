@@ -40,12 +40,9 @@ jobs:
       with:
         persist-credentials: false
     - name: Codespell
-      uses: codespell-project/actions-codespell@8f01853be192eb0f849a5c7d721450e7a467c579 # v2.2
-      with:
-        skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum
-        ignore_words_file: './.codespell.ignorewords'
-        check_filenames: true
-        check_hidden: true
+      # Use pipx run to pin the exact codespell version and avoid abrupt CI failures
+      # when a new version is released with an expanded dictionary. See #7649.
+      run: pipx run --spec codespell==2.4.3 codespell --check-filenames --check-hidden --ignore-words ./.codespell.ignorewords --skip '.git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go,go.mod,go.sum'
   codegen:
     runs-on: ubuntu-latest
     steps:
