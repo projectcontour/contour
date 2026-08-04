@@ -48,6 +48,9 @@ updates:
       patterns:
       - "actions/upload-artifact"
       - "actions/download-artifact"
+    codeql-action:
+      patterns:
+      - "github/codeql-action/*"
 
 # release branch targets
 - target-branch: release-1.33
@@ -91,5 +94,8 @@ updates:
       patterns:
       - "actions/upload-artifact"
       - "actions/download-artifact"
+    codeql-action:
+      patterns:
+      - "github/codeql-action/*"
 
 
