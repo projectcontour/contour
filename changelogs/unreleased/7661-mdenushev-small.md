@@ -1,0 +1,1 @@
+Added field selectors for secrets to exclude Helm secrets and Kubernetes service account tokens
