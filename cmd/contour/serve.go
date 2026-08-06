@@ -30,6 +30,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	discovery_v1 "k8s.io/api/discovery/v1"
 	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -235,6 +236,9 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 			// This is useful for saving memory by removing fields that are not needed by Contour.
 			ByObject: map[client.Object]ctrl_cache.ByObject{
 				&core_v1.Secret{}: {
+					Field: fields.ParseSelectorOrDie(
+						"type!=helm.sh/release.v1,type!=kubernetes.io/service-account-token",
+					),
 					Transform: func(obj any) (any, error) {
 						secret, ok := obj.(*core_v1.Secret)
 						// TransformFunc should handle the tombstone of type cache.DeletedFinalStateUnknown
