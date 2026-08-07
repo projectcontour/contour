@@ -136,6 +136,68 @@ func testRequiredFieldValidation(namespace string) {
 		}
 		assert.True(t, isExpectedErr(err))
 
+		// These HTTPProxies use typed Go structs (rather than Unstructured) to
+		// reproduce https://github.com/projectcontour/contour/issues/3674:
+		// since the JSON tags for these fields do not include "omitempty",
+		// serializing a typed struct with an empty string value still
+		// includes the field, so only a minLength validation (not just
+		// "required") can catch it.
+		emptyConditionHeaderName := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "empty-condition-header-name",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
+					{
+						Conditions: []contour_v1.MatchCondition{
+							{
+								Header: &contour_v1.HeaderMatchCondition{
+									Name:    "",
+									Present: true,
+								},
+							},
+						},
+						Services: []contour_v1.Service{
+							{
+								Name: "foo",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		err = f.Client.Create(context.TODO(), emptyConditionHeaderName)
+		require.Error(t, err)
+		isExpectedErr = func(err error) bool {
+			return strings.Contains(err.Error(), "spec.routes.conditions.header.name") ||
+				strings.Contains(err.Error(), "spec.routes[0].conditions[0].header.name")
+		}
+		assert.True(t, isExpectedErr(err))
+
+		emptyIncludesName := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "empty-includes-name",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				Includes: []contour_v1.Include{
+					{
+						Name:      "",
+						Namespace: "foo",
+					},
+				},
+			},
+		}
+		err = f.Client.Create(context.TODO(), emptyIncludesName)
+		require.Error(t, err)
+		isExpectedErr = func(err error) bool {
+			return strings.Contains(err.Error(), "spec.includes.name") ||
+				strings.Contains(err.Error(), "spec.includes[0].name")
+		}
+		assert.True(t, isExpectedErr(err))
+
 		servicePortRange := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
