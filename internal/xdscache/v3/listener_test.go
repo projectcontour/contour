@@ -2422,8 +2422,8 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"insecure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
-				RateLimitConfig: &RateLimitConfig{
-					ExtensionServiceConfig: ExtensionServiceConfig{
+				RateLimitConfig: &dag.RateLimitConfig{
+					ExtensionServiceConfig: dag.ExtensionServiceConfig{
 						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
 						Timeout:          timeout.DurationSetting(7 * time.Second),
 					},
@@ -2493,8 +2493,8 @@ func TestListenerVisit(t *testing.T) {
 
 		"secure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
-				RateLimitConfig: &RateLimitConfig{
-					ExtensionServiceConfig: ExtensionServiceConfig{
+				RateLimitConfig: &dag.RateLimitConfig{
+					ExtensionServiceConfig: dag.ExtensionServiceConfig{
 						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
 						SNI:              "ratelimit-example.com",
 						Timeout:          timeout.DurationSetting(7 * time.Second),
@@ -2614,8 +2614,8 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				RateLimitConfig: &RateLimitConfig{
-					ExtensionServiceConfig: ExtensionServiceConfig{
+				RateLimitConfig: &dag.RateLimitConfig{
+					ExtensionServiceConfig: dag.ExtensionServiceConfig{
 						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
 						Timeout:          timeout.DurationSetting(7 * time.Second),
 					},

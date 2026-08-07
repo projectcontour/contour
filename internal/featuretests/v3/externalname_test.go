@@ -72,8 +72,9 @@ func TestExternalNameService(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routeCluster("default/kuard/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),

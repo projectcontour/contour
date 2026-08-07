@@ -36,6 +36,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -124,19 +125,14 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 		route.TypedPerFilterConfig = map[string]*anypb.Any{}
 		route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
 	case dagRoute.DirectResponse != nil:
-		route.TypedPerFilterConfig = map[string]*anypb.Any{}
-
-		// Apply per-route authorization policy modifications.
-		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
-		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
-		}
+		applyPerRouteAuthPolicy(dagRoute, route)
 
 		route.Action = routeDirectResponse(dagRoute.DirectResponse)
 	case dagRoute.Redirect != nil:
 		// TODO request/response headers?
 		route.Action = routeRedirect(dagRoute.Redirect)
+		applyPerRouteAuthPolicy(dagRoute, route)
+
 	default:
 		route.Action = routeRoute(dagRoute)
 
@@ -160,12 +156,7 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 			route.TypedPerFilterConfig[GlobalRateLimitFilterName] = rateLimitPerRoute(dagRoute.RateLimitPerRoute)
 		}
 
-		// Apply per-route authorization policy modifications.
-		if dagRoute.AuthDisabled {
-			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzDisabled()
-		} else if len(dagRoute.AuthContext) > 0 {
-			route.TypedPerFilterConfig[ExtAuthzFilterName] = routeAuthzContext(dagRoute.AuthContext)
-		}
+		applyPerRouteAuthPolicy(dagRoute, route)
 
 		// If JWT verification is enabled, add per-route filter
 		// config referencing a requirement in the main filter
@@ -192,6 +183,18 @@ func buildRoute(dagRoute *dag.Route, vhostName string, secure bool) *envoy_confi
 	return route
 }
 
+func applyPerRouteAuthPolicy(dagRoute *dag.Route, route *envoy_config_route_v3.Route) {
+	if route.TypedPerFilterConfig == nil {
+		route.TypedPerFilterConfig = map[string]*anypb.Any{}
+	}
+
+	if dagRoute.AuthzOverride != nil {
+		if override := routeAuthzOverride(dagRoute.AuthzOverride); override != nil {
+			route.TypedPerFilterConfig[ExtAuthzFilterName] = override
+		}
+	}
+}
+
 // routeAuthzDisabled returns a per-route config to disable authorization.
 func routeAuthzDisabled() *anypb.Any {
 	return protobuf.MustMarshalAny(
@@ -203,18 +206,81 @@ func routeAuthzDisabled() *anypb.Any {
 	)
 }
 
-// routeAuthzContext returns a per-route config to pass the given
-// context entries in the check request.
-func routeAuthzContext(settings map[string]string) *anypb.Any {
-	return protobuf.MustMarshalAny(
-		&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-				CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
-					ContextExtensions: settings,
+// routeAuthzOverride returns a per-route config to override the
+// virtualhost-level authorization policy
+func routeAuthzOverride(authzOverride *dag.PerRouteAuthzOverride) *anypb.Any {
+	if authzOverride.Disabled {
+		return routeAuthzDisabled()
+	}
+
+	checkSettings := &envoy_filter_http_ext_authz_v3.CheckSettings{}
+	checkSettings.ContextExtensions = authzOverride.Context
+
+	if authzOverride.ServiceAPIType != "" {
+		switch authzOverride.ServiceAPIType {
+		case contour_v1.AuthorizationGRPCService:
+			checkSettings.ServiceOverride = &envoy_filter_http_ext_authz_v3.CheckSettings_GrpcService{
+				GrpcService: grpcService(
+					authzOverride.ExtensionCluster.Name,
+					authzOverride.ExtensionCluster.SNI,
+					authzOverride.AuthorizationResponseTimeout,
+				),
+			}
+
+		case contour_v1.AuthorizationHTTPService:
+			serviceOverride := &envoy_filter_http_ext_authz_v3.CheckSettings_HttpService{
+				HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+					ServerUri: &envoy_config_core_v3.HttpUri{
+						Uri: "http://dummy/",
+						HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+							Cluster: authzOverride.ExtensionCluster.Name,
+						},
+						Timeout: envoy.Timeout(authzOverride.AuthorizationResponseTimeout),
+					},
 				},
-			},
+			}
+
+			if authzOverride.HTTPPathPrefix != "" {
+				serviceOverride.HttpService.PathPrefix = authzOverride.HTTPPathPrefix
+			}
+
+			if len(authzOverride.HTTPAllowedAuthorizationHeaders) > 0 {
+				serviceOverride.HttpService.AuthorizationRequest = &envoy_filter_http_ext_authz_v3.AuthorizationRequest{
+					AllowedHeaders: &envoy_matcher_v3.ListStringMatcher{
+						Patterns: ExternalAuthzAllowedHeaders(authzOverride.HTTPAllowedAuthorizationHeaders),
+					},
+				}
+			}
+
+			if len(authzOverride.HTTPAllowedUpstreamHeaders) > 0 {
+				serviceOverride.HttpService.AuthorizationResponse = &envoy_filter_http_ext_authz_v3.AuthorizationResponse{
+					AllowedUpstreamHeaders: &envoy_matcher_v3.ListStringMatcher{
+						Patterns: ExternalAuthzAllowedHeaders(authzOverride.HTTPAllowedUpstreamHeaders),
+					},
+				}
+			}
+
+			checkSettings.ServiceOverride = serviceOverride
+		}
+	}
+
+	if authzOverride.WithRequestBody != nil {
+		checkSettings.WithRequestBody = &envoy_filter_http_ext_authz_v3.BufferSettings{
+			MaxRequestBytes:     authzOverride.WithRequestBody.MaxRequestBytes,
+			AllowPartialMessage: authzOverride.WithRequestBody.AllowPartialMessage,
+			PackAsBytes:         authzOverride.WithRequestBody.PackAsBytes,
+		}
+	}
+
+	if len(checkSettings.ContextExtensions) == 0 && checkSettings.ServiceOverride == nil && checkSettings.WithRequestBody == nil {
+		return nil
+	}
+
+	return protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+		Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+			CheckSettings: checkSettings,
 		},
-	)
+	})
 }
 
 func ipFilterConfig(allow bool, rules []dag.IPFilterRule) *envoy_filter_http_rbac_v3.RBACPerRoute {
@@ -608,13 +674,7 @@ func UpgradeHTTPS() *envoy_config_route_v3.Route_Redirect {
 // DisabledExtAuthConfig returns a route TypedPerFilterConfig that disables ExtAuth
 func DisabledExtAuthConfig() map[string]*anypb.Any {
 	return map[string]*anypb.Any{
-		ExtAuthzFilterName: protobuf.MustMarshalAny(
-			&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-				Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
-					Disabled: true,
-				},
-			},
-		),
+		ExtAuthzFilterName: routeAuthzDisabled(),
 	}
 }
 

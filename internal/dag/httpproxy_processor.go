@@ -792,7 +792,20 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 	for _, route := range proxy.Spec.Routes {
 		if err := routeActionCountValid(route); err != nil {
-			validCond.AddError(contour_v1.ConditionTypeRouteError, "RouteActionCountNotValid", err.Error())
+			validCond.AddError(
+				contour_v1.ConditionTypeRouteError,
+				"RouteActionCountNotValid",
+				err.Error(),
+			)
+			return nil
+		}
+
+		if err := routeAuthValid(route); err != nil {
+			validCond.AddError(
+				contour_v1.ConditionTypeRouteError,
+				"RouteAuthPolicyNotValid",
+				err.Error(),
+			)
 			return nil
 		}
 
@@ -894,21 +907,22 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.Name = proxy.Name
 		}
 
-		// If the enclosing root proxy enabled authorization,
-		// enable it on the route and propagate defaults
-		// downwards.
-		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() || p.GlobalExternalAuthorization != nil {
-			// Global external or vhost-level authorization is enabled by default
-			// unless an AuthPolicy explicitly disables it. By default, `disabled`
+		// Configure AuthZ on the route if any:
+		//  - there is a route-specific override
+		//  - or the root proxy vhost has authorization configured
+		//  - or there is a global external authorization configured
+		if route.AuthzOverriden() || rootProxy.Spec.VirtualHost.AuthorizationConfigured() || p.GlobalExternalAuthorization != nil {
+			// Global or vhost-level external authorization is enabled by default
+			// unless an AuthPolicy explicitly disables it. By default, `authDisabled`
 			// is set to false, meaning authorization is active. This global setting
 			// can be overridden by vhost-level AuthPolicy, which can further be
 			// overridden by route-specific AuthPolicy.
 			// Therefore, the final authorization state is determined by the
 			// most specific policy applied at the route level.
-			disabled := false
+			authDisabled := false
 
 			if p.GlobalExternalAuthorization != nil && p.GlobalExternalAuthorization.AuthPolicy != nil {
-				disabled = p.GlobalExternalAuthorization.AuthPolicy.Disabled
+				authDisabled = p.GlobalExternalAuthorization.AuthPolicy.Disabled
 			}
 
 			// When the ext_authz filter is added to a
@@ -917,22 +931,52 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			// it at the vhost layer by defaulting the state
 			// from the root proxy.
 			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
-				disabled = rootProxy.Spec.VirtualHost.DisableAuthorization()
+				authDisabled = rootProxy.Spec.VirtualHost.DisableAuthorization()
 			}
 
-			// Take the default for enabling authorization
-			// from the virtualhost/global-extauth. If this
-			// route has a policy, let that override.
-			if route.AuthPolicy != nil {
-				disabled = route.AuthPolicy.Disabled
+			// If authzOverride is set, the deprecated authPolicy is ignored.
+			if route.AuthzOverriden() && route.AuthzOverride.AuthPolicy != nil {
+				authDisabled = route.DisableAuthorization()
+			} else if route.AuthPolicy != nil {
+				authDisabled = route.AuthPolicy.Disabled
 			}
 
-			r.AuthDisabled = disabled
+			if authDisabled {
+				r.AuthzOverride = &PerRouteAuthzOverride{Disabled: authDisabled}
+			} else {
+				r.AuthzOverride = &PerRouteAuthzOverride{}
 
-			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
-				r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
-			} else if p.GlobalExternalAuthorization != nil {
-				r.AuthContext = route.AuthorizationContext(p.GlobalAuthorizationContext())
+				// mergedAuthContext is built from the most specific level:
+				// route -> vhost -> global
+				// vhost-level or global-level authContext is passed to the AuthorizationContext function,
+				// which applies the route-level authContext (if any) and returns the merged authContext.
+				var mergedAuthContext map[string]string
+				if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+					mergedAuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
+				} else if p.GlobalExternalAuthorization != nil {
+					mergedAuthContext = route.AuthorizationContext(p.GlobalAuthorizationContext())
+				}
+
+				// Set mergedAuthContext to be backward compatible.
+				// Then, if `route.AuthzOverride` is set, reassign the whole r.AuthzOverride.
+				r.AuthzOverride.Context = mergedAuthContext
+
+				if route.AuthzOverride != nil {
+					var extensionSvc *ExtensionCluster
+					if route.AuthzOverride.ExtensionServiceRef.IsConfigured() {
+						_, ext := validateExternalAuthExtensionService(defaultExtensionRef(route.AuthzOverride.ExtensionServiceRef),
+							validCond,
+							rootProxy,
+							p.dag.GetExtensionCluster,
+						)
+						extensionSvc = ext
+					}
+					r.AuthzOverride = GetPerRouteAuthorzationOverride(
+						&route,
+						extensionSvc,
+						mergedAuthContext,
+					)
+				}
 			}
 		}
 
@@ -1162,6 +1206,46 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	routes = expandPrefixMatches(routes)
 
 	return routes
+}
+
+// GetPerRouteAuthorzationOverride returns the authorization override settings for this Route.
+func GetPerRouteAuthorzationOverride(route *contour_v1.Route, extensionSvc *ExtensionCluster, mergedAuthContext map[string]string) *PerRouteAuthzOverride {
+	if route.AuthzOverride == nil {
+		return nil
+	}
+
+	authzOverride := PerRouteAuthzOverride{
+		ServiceAPIType: route.AuthzOverride.ServiceType,
+		HTTPPathPrefix: route.AuthzOverride.HTTPServerSettings.PathPrefix,
+	}
+	if extensionSvc != nil {
+		authzOverride.ExtensionCluster = extensionSvc
+		authzOverride.AuthorizationResponseTimeout = extensionSvc.RouteTimeoutPolicy.ResponseTimeout
+	}
+	if mergedAuthContext != nil {
+		authzOverride.Context = mergedAuthContext
+	}
+
+	if route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders != nil {
+		authzOverride.HTTPAllowedAuthorizationHeaders = convertHTTPAuthzAllowedHeaders(route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders)
+	}
+	if route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders != nil {
+		authzOverride.HTTPAllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders)
+	}
+
+	if route.AuthzOverride.HTTPServerSettings.PathPrefix != "" {
+		authzOverride.HTTPPathPrefix = route.AuthzOverride.HTTPServerSettings.PathPrefix
+	}
+
+	if route.AuthzOverride.WithRequestBody != nil {
+		authzOverride.WithRequestBody = &AuthorizationServerBufferSettings{
+			PackAsBytes:         route.AuthzOverride.WithRequestBody.PackAsBytes,
+			AllowPartialMessage: route.AuthzOverride.WithRequestBody.AllowPartialMessage,
+			MaxRequestBytes:     route.AuthzOverride.WithRequestBody.MaxRequestBytes,
+		}
+	}
+
+	return &authzOverride
 }
 
 // toIPFilterRules converts ip filter settings from the api into the
@@ -2028,6 +2112,14 @@ func routeActionCountValid(route contour_v1.Route) error {
 
 	if routeActionCount != 1 {
 		return errors.New("must set exactly one of route.services or route.requestRedirectPolicy or route.directResponsePolicy")
+	}
+	return nil
+}
+
+// routeAuthValid verifies that at most one of route.AuthPolicy and AuthzOverride is set
+func routeAuthValid(route contour_v1.Route) error {
+	if route.AuthPolicy != nil && route.AuthzOverride != nil {
+		return errors.New("must set at most one of route.authPolicy or route.authorizationOverride")
 	}
 	return nil
 }

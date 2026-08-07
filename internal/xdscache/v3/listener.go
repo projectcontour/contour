@@ -23,7 +23,6 @@ import (
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
-	"k8s.io/apimachinery/pkg/types"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
@@ -31,7 +30,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
-	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
 )
 
@@ -144,15 +142,15 @@ type ListenerConfig struct {
 
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
-	RateLimitConfig *RateLimitConfig
+	RateLimitConfig *dag.RateLimitConfig
 
 	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
 	// used.
-	GlobalExternalAuthConfig *GlobalExternalAuthConfig
+	GlobalExternalAuthConfig *dag.ExternalAuthzConfig
 
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
-	TracingConfig *TracingConfig
+	TracingConfig *dag.TracingConfig
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
 	SocketOptions *contour_v1alpha1.SocketOptions
@@ -162,58 +160,6 @@ type ListenerConfig struct {
 
 	// EnableJA4Fingerprinting enables JA4 fingerprinting for HTTPS listeners.
 	EnableJA4Fingerprinting *bool
-}
-
-type ExtensionServiceConfig struct {
-	ExtensionService types.NamespacedName
-	Timeout          timeout.Setting
-	SNI              string
-}
-
-type TracingConfig struct {
-	ExtensionServiceConfig
-
-	ServiceName string
-
-	OverallSampling float64
-
-	ClientSampling float64
-
-	RandomSampling float64
-
-	MaxPathTagLength uint32
-
-	CustomTags []*CustomTag
-}
-
-type CustomTag struct {
-	// TagName is the unique name of the custom tag.
-	TagName string
-
-	// Literal is a static custom tag value.
-	Literal string
-
-	// EnvironmentName indicates that the label value is obtained
-	// from the environment variable.
-	EnvironmentName string
-
-	// RequestHeaderName indicates which request header
-	// the label value is obtained from.
-	RequestHeaderName string
-}
-
-type RateLimitConfig struct {
-	ExtensionServiceConfig
-	Domain                      string
-	FailOpen                    bool
-	EnableXRateLimitHeaders     bool
-	EnableResourceExhaustedCode bool
-}
-
-type GlobalExternalAuthConfig struct {
-	ExtensionServiceConfig
-	dag.ExternalAuthorization
-	Context map[string]string
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -603,7 +549,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	c.Update(listeners)
 }
 
-func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+func httpGlobalExternalAuthConfig(config *dag.ExternalAuthzConfig) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	if config == nil {
 		return nil
 	}
@@ -617,13 +563,13 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 		HTTPAllowedAuthorizationHeaders:    config.HTTPAllowedAuthorizationHeaders,
 		HTTPAllowedUpstreamHeaders:         config.HTTPAllowedUpstreamHeaders,
 		HTTPPathPrefix:                     config.HTTPPathPrefix,
-		AuthorizationFailOpen:              config.AuthorizationFailOpen,
+		AuthorizationFailOpen:              config.FailOpen,
 		AuthorizationResponseTimeout:       config.Timeout,
-		AuthorizationServerWithRequestBody: config.AuthorizationServerWithRequestBody,
+		AuthorizationServerWithRequestBody: config.WithRequestBody,
 	})
 }
 
-func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
+func envoyGlobalRateLimitConfig(config *dag.RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
 	if config == nil {
 		return nil
 	}
@@ -639,7 +585,7 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 	}
 }
 
-func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
+func envoyTracingConfig(config *dag.TracingConfig) *envoy_v3.EnvoyTracingConfig {
 	if config == nil {
 		return nil
 	}
@@ -657,7 +603,7 @@ func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
 	}
 }
 
-func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
+func envoyTracingConfigCustomTag(tags []*dag.CustomTag) []*envoy_v3.CustomTag {
 	if tags == nil {
 		return nil
 	}
