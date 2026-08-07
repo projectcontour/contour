@@ -114,9 +114,17 @@ type ExtensionServiceSpec struct {
 // ExtensionServiceStatus defines the observed state of an
 // ExtensionService resource.
 type ExtensionServiceStatus struct {
+	// ObservedGeneration is the generation that Contour reconciled last.
+	// A value that differs from `metadata.generation` means that Contour did not act on the latest spec yet.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// Conditions contains the current status of the ExtensionService resource.
 	//
-	// Contour will update a single condition, `Valid`, that is in normal-true polarity.
+	// Contour will update the `Valid` and `Stalled` conditions.
+	// `Valid` is in normal-true polarity, that is, when `currentStatus` is `valid`, the `Valid` condition will be `status: true`, and vice versa.
+	// `Stalled` is true when Contour cannot reconcile the resource.
 	//
 	// Contour will not modify any other Conditions set in this block,
 	// in case some other controller wants to add a Condition.
