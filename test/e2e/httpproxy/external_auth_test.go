@@ -19,13 +19,13 @@ import (
 	"context"
 	"net/http"
 
+	envoy_service_auth_v3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -33,103 +33,13 @@ import (
 )
 
 func testExternalAuth(namespace string) {
-	Specify("external auth can be configured on an HTTPRoute", func() {
+	Specify("external auth can be configured on an HTTPProxy", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo", "externalauth.projectcontour.io")
 
-		f.Certs.CreateSelfSignedCert(namespace, "testserver-cert", "testserver")
-
-		// auth testserver
-		deployment := &apps_v1.Deployment{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "testserver",
-				Labels: map[string]string{
-					"app.kubernetes.io/name": "testserver",
-				},
-			},
-			Spec: apps_v1.DeploymentSpec{
-				Selector: &meta_v1.LabelSelector{
-					MatchLabels: map[string]string{"app.kubernetes.io/name": "testserver"},
-				},
-				Template: core_v1.PodTemplateSpec{
-					ObjectMeta: meta_v1.ObjectMeta{
-						Labels: map[string]string{"app.kubernetes.io/name": "testserver"},
-					},
-					Spec: core_v1.PodSpec{
-						Containers: []core_v1.Container{
-							{
-								Name:            "testserver",
-								Image:           "ghcr.io/projectcontour/contour-authserver:v4",
-								ImagePullPolicy: core_v1.PullIfNotPresent,
-								Command: []string{
-									"/contour-authserver",
-								},
-								Args: []string{
-									"testserver",
-									"--address=:9443",
-									"--tls-ca-path=/tls/ca.crt",
-									"--tls-cert-path=/tls/tls.crt",
-									"--tls-key-path=/tls/tls.key",
-								},
-								Ports: []core_v1.ContainerPort{
-									{
-										Name:          "auth",
-										ContainerPort: 9443,
-										Protocol:      core_v1.ProtocolTCP,
-									},
-								},
-								VolumeMounts: []core_v1.VolumeMount{
-									{
-										Name:      "tls",
-										MountPath: "/tls",
-										ReadOnly:  true,
-									},
-								},
-							},
-						},
-						Volumes: []core_v1.Volume{
-							{
-								Name: "tls",
-								VolumeSource: core_v1.VolumeSource{
-									Secret: &core_v1.SecretVolumeSource{
-										SecretName: "testserver-cert",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-		require.NoError(t, f.Client.Create(context.TODO(), deployment))
-
-		svc := &core_v1.Service{
-			ObjectMeta: meta_v1.ObjectMeta{
-				Name:      "testserver",
-				Namespace: namespace,
-				Labels: map[string]string{
-					"app.kubernetes.io/name": "testserver",
-				},
-			},
-			Spec: core_v1.ServiceSpec{
-				Ports: []core_v1.ServicePort{
-					{
-						Name:       "auth",
-						Protocol:   core_v1.ProtocolTCP,
-						Port:       9443,
-						TargetPort: intstr.FromInt(9443),
-					},
-				},
-				Selector: map[string]string{
-					"app.kubernetes.io/name": "testserver",
-				},
-				Type: core_v1.ServiceTypeClusterIP,
-			},
-		}
-		require.NoError(t, f.Client.Create(context.TODO(), svc))
+		auth := e2e.StartLocalGRPCAuthService(GinkgoT(), f.Client, namespace, "testserver")
 
 		extSvc := &contour_v1alpha1.ExtensionService{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -137,6 +47,7 @@ func testExternalAuth(namespace string) {
 				Namespace: namespace,
 			},
 			Spec: contour_v1alpha1.ExtensionServiceSpec{
+				Protocol: ptr.To("h2c"),
 				Services: []contour_v1alpha1.ExtensionServiceTarget{
 					{
 						Name: "testserver",
@@ -246,6 +157,8 @@ func testExternalAuth(namespace string) {
 		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// By default requests to /first should not be authorized.
+		By("auth server denies request")
+		auth.Deny(http.StatusUnauthorized)
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/first",
@@ -254,10 +167,12 @@ func testExternalAuth(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 401 response code, got %d", res.StatusCode)
 
-		// The `testserver` authorization server will accept any request with
-		// "allow" in the path, so this request should succeed. We can tell that
-		// the authorization server processed it by inspecting the context headers
-		// that it injects.
+		By("auth server allows request, context_extensions forwarded to auth service")
+		auth.Handle(func(req *envoy_service_auth_v3.CheckRequest) *envoy_service_auth_v3.CheckResponse {
+			assert.Equal(t, "first", req.Attributes.ContextExtensions["target"])
+			assert.Equal(t, "externalauth.projectcontour.io", req.Attributes.ContextExtensions["hostname"])
+			return e2e.AllowResponse().Build()
+		})
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/first/allow",
@@ -266,11 +181,8 @@ func testExternalAuth(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		body := f.GetEchoResponseBody(res.Body)
-		assert.Equal(t, "first", body.RequestHeaders.Get("Auth-Context-Target"))
-		assert.Equal(t, "externalauth.projectcontour.io", body.RequestHeaders.Get("Auth-Context-Hostname"))
-
-		// THe /second route disables authorization so this request should succeed.
+		By("route with AuthPolicy.Disabled=true bypasses auth")
+		auth.Deny(http.StatusUnauthorized)
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/second",
@@ -288,10 +200,12 @@ func testExternalAuth(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 401 response code, got %d", res.StatusCode)
 
-		// The `testserver` authorization server will accept any request with
-		// "allow" in the path, so this request should succeed. We can tell that
-		// the authorization server processed it by inspecting the context headers
-		// that it injects.
+		By("context_extensions forwarded for the default route")
+		auth.Handle(func(req *envoy_service_auth_v3.CheckRequest) *envoy_service_auth_v3.CheckResponse {
+			assert.Equal(t, "default", req.Attributes.ContextExtensions["target"])
+			assert.Equal(t, "externalauth.projectcontour.io", req.Attributes.ContextExtensions["hostname"])
+			return e2e.AllowResponse().Build()
+		})
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/matches-default-route/allow",
@@ -300,11 +214,8 @@ func testExternalAuth(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		body = f.GetEchoResponseBody(res.Body)
-		assert.Equal(t, "default", body.RequestHeaders.Get("Auth-Context-Target"))
-		assert.Equal(t, "externalauth.projectcontour.io", body.RequestHeaders.Get("Auth-Context-Hostname"))
-
-		// Direct response with external auth enabled should get a 401.
+		By("direct-response route with auth enabled is subject to auth")
+		auth.Deny(http.StatusUnauthorized)
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/direct-response-auth-enabled",
@@ -313,8 +224,8 @@ func testExternalAuth(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 401 response code, got %d", res.StatusCode)
 
-		// Direct response with external auth enabled with "allow" in the path
-		// should succeed.
+		By("direct-response route with auth enabled returns configured status on allow")
+		auth.Allow()
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/direct-response-auth-enabled/allow",
@@ -323,7 +234,8 @@ func testExternalAuth(namespace string) {
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 418 response code, got %d", res.StatusCode)
 
-		// Direct response with external auth disabled should succeed.
+		By("direct-response route with auth disabled bypasses auth")
+		auth.Deny(http.StatusUnauthorized)
 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      "/direct-response-auth-disabled",
@@ -331,5 +243,110 @@ func testExternalAuth(namespace string) {
 		})
 		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 418 response code, got %d", res.StatusCode)
+
+		// Create a Service with no endpoints so Envoy has nothing to connect to,
+		// simulating an unreachable auth server for FailOpen/FailClosed tests.
+		require.NoError(t, f.Client.Create(context.TODO(), &core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{Name: "unreachable-authserver", Namespace: namespace},
+			Spec: core_v1.ServiceSpec{
+				Ports: []core_v1.ServicePort{{Name: "grpc", Protocol: core_v1.ProtocolTCP, Port: 9443}},
+			},
+		}))
+
+		unreachableExtSvc := &contour_v1alpha1.ExtensionService{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      "unreachable-authserver",
+				Namespace: namespace,
+			},
+			Spec: contour_v1alpha1.ExtensionServiceSpec{
+				Protocol: ptr.To("h2c"),
+				Services: []contour_v1alpha1.ExtensionServiceTarget{
+					{Name: "unreachable-authserver", Port: 9443},
+				},
+			},
+		}
+		require.NoError(t, f.Client.Create(context.TODO(), unreachableExtSvc))
+
+		By("FailOpen=false, unreachable auth server returns 503")
+		f.Certs.CreateSelfSignedCert(namespace, "failopen", "failopen.externalauth.projectcontour.io")
+		failOpenFalseProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "external-auth-failopen-false",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
+					Fqdn: "failopen.externalauth.projectcontour.io",
+					TLS: &contour_v1.TLS{
+						SecretName: "failopen",
+					},
+					Authorization: &contour_v1.AuthorizationServer{
+						FailOpen:        false,
+						ResponseTimeout: "500ms",
+						ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+							Name:      unreachableExtSvc.Name,
+							Namespace: unreachableExtSvc.Namespace,
+						},
+					},
+				},
+				Routes: []contour_v1.Route{
+					{
+						Services: []contour_v1.Service{
+							{Name: "echo", Port: 80},
+						},
+					},
+				},
+			},
+		}
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(failOpenFalseProxy, e2e.HTTPProxyValid))
+
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      failOpenFalseProxy.Spec.VirtualHost.Fqdn,
+			Path:      "/test",
+			Condition: e2e.HasStatusCode(503),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 503 response code, got %d", res.StatusCode)
+
+		By("FailOpen=true, unreachable auth server allows request through")
+		f.Certs.CreateSelfSignedCert(namespace, "failopen-true", "failopen-true.externalauth.projectcontour.io")
+		failOpenTrueProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "external-auth-failopen-true",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
+					Fqdn: "failopen-true.externalauth.projectcontour.io",
+					TLS: &contour_v1.TLS{
+						SecretName: "failopen-true",
+					},
+					Authorization: &contour_v1.AuthorizationServer{
+						FailOpen:        true,
+						ResponseTimeout: "500ms",
+						ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+							Name:      unreachableExtSvc.Name,
+							Namespace: unreachableExtSvc.Namespace,
+						},
+					},
+				},
+				Routes: []contour_v1.Route{
+					{
+						Services: []contour_v1.Service{
+							{Name: "echo", Port: 80},
+						},
+					},
+				},
+			},
+		}
+		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(failOpenTrueProxy, e2e.HTTPProxyValid))
+
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      failOpenTrueProxy.Spec.VirtualHost.Fqdn,
+			Path:      "/test",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.NotNil(t, res, "request never succeeded")
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }
