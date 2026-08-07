@@ -15,6 +15,7 @@ package dag
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -98,9 +99,19 @@ func validateExternalName(svc *core_v1.Service, enableExternalNameSvc bool) erro
 		"local.projectcontour.io": {},
 	}
 
-	_, localhost := localhostNames[en]
-	if localhost {
+	// Normalize for comparison: a trailing dot denotes the root,
+	// so "localhost." must also be rejected.
+	normalized := strings.TrimSuffix(en, ".")
+	if _, localhost := localhostNames[normalized]; localhost {
 		return fmt.Errorf("%s/%s is an ExternalName service that points to localhost, this is not allowed", svc.Namespace, svc.Name)
+	}
+
+	// Reject literal IP addresses that would route to the Envoy pod's own
+	// loopback, link-local or unspecified interfaces (e.g. 127.0.0.1, 0.0.0.0).
+	if ip := net.ParseIP(normalized); ip != nil {
+		if ip.IsLoopback() || ip.IsUnspecified() || ip.IsLinkLocalUnicast() {
+			return fmt.Errorf("%s/%s is an ExternalName service that points to a loopback, link-local or unspecified IP address, this is not allowed", svc.Namespace, svc.Name)
+		}
 	}
 
 	return nil

@@ -91,6 +91,54 @@ func TestBuilderLookupService(t *testing.T) {
 		},
 	}
 
+	externalNameLocalhostDot := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "externalnamelocalhostdot",
+			Namespace: "default",
+		},
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
+			ExternalName: "localhost.",
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+		},
+	}
+
+	externalNameLoopbackIP := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "externalnameloopbackip",
+			Namespace: "default",
+		},
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
+			ExternalName: "127.0.0.1",
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+		},
+	}
+
+	externalNameUnspecifiedIP := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "externalnameunspecifiedip",
+			Namespace: "default",
+		},
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
+			ExternalName: "0.0.0.0",
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+		},
+	}
+
+	externalNameLinkLocalIP := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "externalnamelinklocalip",
+			Namespace: "default",
+		},
+		Spec: core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
+			ExternalName: "169.254.169.254",
+			Ports:        []core_v1.ServicePort{makeServicePort("http", "TCP", 80, 80)},
+		},
+	}
+
 	annotatedService := &core_v1.Service{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        "annotated-service",
@@ -148,6 +196,10 @@ func TestBuilderLookupService(t *testing.T) {
 		{Name: "servicehealthcheck", Namespace: "default"}:                   s2,
 		{Name: "externalnamevalid", Namespace: "default"}:                    externalNameValid,
 		{Name: "externalnamelocalhost", Namespace: "default"}:                externalNameLocalhost,
+		{Name: "externalnamelocalhostdot", Namespace: "default"}:             externalNameLocalhostDot,
+		{Name: "externalnameloopbackip", Namespace: "default"}:               externalNameLoopbackIP,
+		{Name: "externalnameunspecifiedip", Namespace: "default"}:            externalNameUnspecifiedIP,
+		{Name: "externalnamelinklocalip", Namespace: "default"}:              externalNameLinkLocalIP,
 		{Name: annotatedService.Name, Namespace: annotatedService.Namespace}: annotatedService,
 		{Name: appProtoService.Name, Namespace: appProtoService.Namespace}:   appProtoService,
 	}
@@ -212,6 +264,30 @@ func TestBuilderLookupService(t *testing.T) {
 			NamespacedName:        types.NamespacedName{Name: "externalnamelocalhost", Namespace: "default"},
 			port:                  80,
 			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed`),
+			enableExternalNameSvc: true,
+		},
+		"When ExternalName Services are enabled but a trailing-dot localhost ExternalName is used an error is returned": {
+			NamespacedName:        types.NamespacedName{Name: "externalnamelocalhostdot", Namespace: "default"},
+			port:                  80,
+			wantErr:               errors.New(`default/externalnamelocalhostdot is an ExternalName service that points to localhost, this is not allowed`),
+			enableExternalNameSvc: true,
+		},
+		"When ExternalName Services are enabled but a loopback IP ExternalName is used an error is returned": {
+			NamespacedName:        types.NamespacedName{Name: "externalnameloopbackip", Namespace: "default"},
+			port:                  80,
+			wantErr:               errors.New(`default/externalnameloopbackip is an ExternalName service that points to a loopback, link-local or unspecified IP address, this is not allowed`),
+			enableExternalNameSvc: true,
+		},
+		"When ExternalName Services are enabled but an unspecified IP ExternalName is used an error is returned": {
+			NamespacedName:        types.NamespacedName{Name: "externalnameunspecifiedip", Namespace: "default"},
+			port:                  80,
+			wantErr:               errors.New(`default/externalnameunspecifiedip is an ExternalName service that points to a loopback, link-local or unspecified IP address, this is not allowed`),
+			enableExternalNameSvc: true,
+		},
+		"When ExternalName Services are enabled but a link-local IP ExternalName is used an error is returned": {
+			NamespacedName:        types.NamespacedName{Name: "externalnamelinklocalip", Namespace: "default"},
+			port:                  80,
+			wantErr:               errors.New(`default/externalnamelinklocalip is an ExternalName service that points to a loopback, link-local or unspecified IP address, this is not allowed`),
 			enableExternalNameSvc: true,
 		},
 		"lookup service by port number with annotated number": {
