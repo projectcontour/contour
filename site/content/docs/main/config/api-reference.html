@@ -970,14 +970,16 @@ of the condition.</p>
 <p><code>errors</code> holds information about sub-conditions which are fatal to that condition and render its state False.</p>
 <p><code>warnings</code> holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.</p>
 <p>Remember that Conditions have a type, a status, and a reason.</p>
-<p>The type is the type of the condition, the most important one in this CRD set is <code>Valid</code>.
-<code>Valid</code> is a positive-polarity condition: when it is <code>status: true</code> there are no problems.</p>
+<p>The type is the type of the condition, the most important ones in this CRD set are <code>Valid</code> and <code>Stalled</code>.</p>
+<p><code>Valid</code> is a positive-polarity condition: when it is <code>status: true</code> there are no problems.</p>
 <p>In more detail, <code>status: true</code> means that the object is has been ingested into Contour with no errors.
 <code>warnings</code> may still be present, and will be indicated in the Reason field. There must be zero entries in the <code>errors</code>
 slice in this case.</p>
 <p><code>Valid</code>, <code>status: false</code> means that the object has had one or more fatal errors during processing into Contour.
 The details of the errors will be present under the <code>errors</code> field. There must be at least one error in the <code>errors</code>
 slice if <code>status</code> is <code>false</code>.</p>
+<p><code>Stalled</code> is true when Contour cannot reconcile the resource. Clients that use the kstatus library read this condition
+together with <code>observedGeneration</code> to determine whether Contour has finished reconciling a resource after an apply operation.</p>
 <p>For DetailedConditions of types other than <code>Valid</code>, the Condition must be in the negative polarity.
 When they have <code>status</code> <code>true</code>, there is an error. There must be at least one entry in the <code>errors</code> Subcondition slice.
 When they have <code>status</code> <code>false</code>, there are no serious errors, and there must be zero entries in the <code>errors</code> slice.
@@ -1866,6 +1868,20 @@ string
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>observedGeneration</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ObservedGeneration is the generation that Contour reconciled last.
+A value that differs from <code>metadata.generation</code> means that Contour did not act on the latest spec yet.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>loadBalancer</code>
 <br>
 <em>
@@ -1893,9 +1909,9 @@ Kubernetes core/v1.LoadBalancerStatus
 <em>(Optional)</em>
 <p>Conditions contains information about the current status of the HTTPProxy,
 in an upstream-friendly container.</p>
-<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.
-That is, when <code>currentStatus</code> is <code>valid</code>, the <code>Valid</code> condition will be <code>status: true</code>,
-and vice versa.</p>
+<p>Contour will update the <code>Valid</code> and <code>Stalled</code> conditions.
+<code>Valid</code> is in normal-true polarity, that is, when <code>currentStatus</code> is <code>valid</code>, the <code>Valid</code> condition will be <code>status: true</code>, and vice versa.
+<code>Stalled</code> is true when Contour cannot reconcile the resource.</p>
 <p>Contour will leave untouched any other Conditions set in this block,
 in case some other controller wants to add a Condition.</p>
 <p>If you are another controller owner and wish to add a condition, you <em>should</em>
@@ -8104,6 +8120,20 @@ ExtensionService resource.</p>
 <tbody>
 <tr>
 <td style="white-space:nowrap">
+<code>observedGeneration</code>
+<br>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ObservedGeneration is the generation that Contour reconciled last.
+A value that differs from <code>metadata.generation</code> means that Contour did not act on the latest spec yet.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>conditions</code>
 <br>
 <em>
@@ -8115,7 +8145,9 @@ ExtensionService resource.</p>
 <td>
 <em>(Optional)</em>
 <p>Conditions contains the current status of the ExtensionService resource.</p>
-<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.</p>
+<p>Contour will update the <code>Valid</code> and <code>Stalled</code> conditions.
+<code>Valid</code> is in normal-true polarity, that is, when <code>currentStatus</code> is <code>valid</code>, the <code>Valid</code> condition will be <code>status: true</code>, and vice versa.
+<code>Stalled</code> is true when Contour cannot reconcile the resource.</p>
 <p>Contour will not modify any other Conditions set in this block,
 in case some other controller wants to add a Condition.</p>
 </td>

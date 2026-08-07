@@ -738,6 +738,11 @@ descriptors:
 
 	f.NamespacedTest("httpproxy-crl", testClientCertRevocation)
 
+	// Status that the kstatus library can compute.
+	f.NamespacedTest("httpproxy-kstatus-current", testKstatusCurrentProxy)
+	f.NamespacedTest("httpproxy-kstatus-failed", testKstatusFailedProxy)
+	f.NamespacedTest("httpproxy-kstatus-in-progress", testKstatusInProgressStatus)
+
 	Context("gRPC tests", func() {
 		f.NamespacedTest("grpc-upstream-plaintext", testGRPCServicePlaintext)
 
