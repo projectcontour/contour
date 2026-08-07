@@ -105,6 +105,8 @@ toc:
         url: /troubleshooting/common-proxy-errors
       - page: Envoy Administration Access
         url: /troubleshooting/envoy-admin-interface
+      - page: Troubleshooting with Envoy Statistics
+        url: /troubleshooting/envoy-statistics
       - page: Contour Debug Logging
         url: /troubleshooting/contour-debug-log
       - page: Envoy Debug Logging
