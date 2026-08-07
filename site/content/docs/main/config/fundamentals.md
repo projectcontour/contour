@@ -119,33 +119,59 @@ httpproxy "basic" deleted
 There are many misconfigurations that could cause an HTTPProxy or delegation to be invalid.
 Contour will make its best effort to process even partially valid configuration and allow traffic to be served for the valid parts.
 To aid users in resolving any issues, Contour updates a `status` field in all HTTPProxy objects.
+Contour reports processing results in `status.conditions` and manages a positive-polarity condition with `type: Valid`.
+A status of `True` means Contour accepted the HTTPProxy without errors, while `False` means one or more errors prevented all or part of it from being accepted.
+The condition's `observedGeneration` identifies the HTTPProxy generation that Contour evaluated.
+Detailed errors and non-fatal warnings appear in the condition's `errors` and `warnings` lists.
 
-If an HTTPProxy object is valid, it will have a status property that looks like this:
+A valid HTTPProxy has a status similar to this:
 
 ```yaml
 status:
   currentStatus: valid
-  description: valid HTTPProxy
+  description: Valid HTTPProxy
+  conditions:
+    - type: Valid
+      status: "True"
+      observedGeneration: 1
+      lastTransitionTime: "2025-01-01T00:00:00Z"
+      reason: Valid
+      message: Valid HTTPProxy
 ```
 
-If the HTTPProxy is invalid, the `currentStatus` field will be `invalid` and the `description` field will provide a description of the issue.
+Contour derives `currentStatus` and `description` from the `Valid` condition.
+Structured details such as errors and warnings are available in `conditions`.
 
-As an example, if an HTTPProxy object has specified a negative value for weighting, the HTTPProxy status will be:
+For example, an HTTPProxy with an unresolved Service reference has a status similar to this:
 
 ```yaml
 status:
   currentStatus: invalid
-  description: "route '/foo': service 'home': weight must be greater than or equal to zero"
+  description: At least one error present, see Errors for details
+  conditions:
+    - type: Valid
+      status: "False"
+      observedGeneration: 1
+      lastTransitionTime: "2025-01-01T00:00:00Z"
+      reason: ErrorPresent
+      message: At least one error present, see Errors for details
+      errors:
+        - type: ServiceError
+          status: "True"
+          reason: ServiceUnresolvedReference
+          message: 'Spec.Routes unresolved service reference: service "default/service-that-does-not-exist" not found'
 ```
+
+Warnings use the same subcondition shape but do not make the `Valid` condition false.
+Contour leaves conditions managed by other controllers unchanged.
+For an orphaned HTTPProxy that is not part of a delegation chain, `currentStatus` is `orphaned` while `Valid` is `False`.
 
 Some examples of invalid configurations that Contour provides statuses for:
 
-- Negative weight provided in the route definition.
-- Invalid port number provided for service.
+- A route refers to a Service or Service port that does not exist.
 - Prefix in parent does not match route in delegated route.
 - Root HTTPProxy created in a namespace other than the allowed root namespaces.
-- A given Route of an HTTPProxy both delegates to another HTTPProxy and has a list of services.
-- Orphaned route.
+- Orphaned child HTTPProxy.
 - Delegation chain produces a cycle.
 - Root HTTPProxy does not specify fqdn.
 - Multiple prefixes cannot be specified on the same set of route conditions.
@@ -183,7 +209,7 @@ spec:
           port: 80
 ```
 
-The `HTTPProxy` will have condition `Valid=false` with detailed error message: `Spec.Routes unresolved service reference: service "default/service-that-does-not-exist" not found`.
+The `HTTPProxy` will have condition `Valid=False` with detailed error message: `Spec.Routes unresolved service reference: service "default/service-that-does-not-exist" not found`.
 Requests received for `http://www.example.com/` will be forwarded to `valid-service` but requests received for `http://www.example.com/subpage` will result in error `503 Service Unavailable` response from Envoy.
 
 ## HTTPProxy API Specification
