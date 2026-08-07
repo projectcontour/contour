@@ -84,6 +84,8 @@ func TestValidateAccessLogJSONFields(t *testing.T) {
 		{"tls_ja4_fingerprint"},
 		{"@timestamp", "ja3=%TLS_JA3_FINGERPRINT%"},
 		{"@timestamp", "ja4=%TLS_JA4_FINGERPRINT%"},
+		{"trace_id", "span_id"},
+		{"@timestamp", "trace=%TRACE_ID%", "span=%SPAN_ID%"},
 	}
 
 	for _, c := range successCases {
@@ -140,6 +142,9 @@ func TestAccessLogFormatString(t *testing.T) {
 		"%TLS_JA3_FINGERPRINT%\n",
 		"%TLS_JA4_FINGERPRINT%\n",
 		"ja3=%TLS_JA3_FINGERPRINT% ja4=%TLS_JA4_FINGERPRINT%\n",
+		"%TRACE_ID%\n",
+		"%SPAN_ID%\n",
+		"trace=%TRACE_ID% span=%SPAN_ID%\n",
 	}
 
 	for _, c := range successCases {
