@@ -115,5 +115,20 @@ func (pu *ProxyUpdate) Mutate(obj client.Object) client.Object {
 		proxy.Status.Description = validCond.Message
 	}
 
+	// Set the Ready condition for kstatus compatibility (Helm 4, Flux, Argo CD, kubectl wait).
+	// The Ready condition mirrors the Valid condition to enable these tools to correctly
+	// determine when the HTTPProxy has been successfully reconciled.
+	if validCond != nil {
+		readyCond := contour_v1.ReadyDetailedConditionFromValid(validCond)
+		if readyCond != nil {
+			currReadyCond := proxy.Status.GetConditionFor(contour_v1.ReadyConditionType)
+			if currReadyCond == nil {
+				proxy.Status.Conditions = append(proxy.Status.Conditions, *readyCond)
+			} else if currReadyCond.ObservedGeneration <= readyCond.ObservedGeneration {
+				readyCond.DeepCopyInto(currReadyCond)
+			}
+		}
+	}
+
 	return proxy
 }
