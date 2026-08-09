@@ -332,6 +332,21 @@ type NetworkPublishing struct {
 	//
 	// +optional
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+
+	// LoadBalancerSourceRanges is an optional list of IP ranges in CIDR form
+	// which are allowed to access the LoadBalancer type Envoy Service.
+	// This maps to Service.spec.loadBalancerSourceRanges.
+	// Only applies when Type is LoadBalancerService.
+	//
+	// +optional
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
+
+	// LoadBalancerClass is the class of the load balancer implementation
+	// to use for the Envoy Service when Type is LoadBalancerService.
+	// This maps to Service.spec.loadBalancerClass.
+	//
+	// +optional
+	LoadBalancerClass *string `json:"loadBalancerClass,omitempty"`
 }
 
 // NetworkPublishingType is a way to publish network endpoints.
