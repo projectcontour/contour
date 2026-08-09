@@ -248,6 +248,45 @@ const (
 	AuthorizationHTTPService AuthorizationServiceType = "http"
 )
 
+type PerRouteAuthorizationServer struct {
+	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
+	//
+	// +optional
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
+
+	// ServiceType defines the protocol implemented by the external server, specifying
+	// whether it's a raw HTTP authorization server or a gRPC authorization server.
+	//
+	// +optional
+	// +kubebuilder:validation:Enum=http;grpc
+	// +kubebuilder:default=grpc
+	ServiceType AuthorizationServiceType `json:"serviceType,omitempty"`
+
+	// HTTPServerSettings defines configurations for interacting with an external HTTP authorization server.
+	//
+	// +optional
+	HTTPServerSettings *HTTPAuthorizationServerSettings `json:"httpSettings,omitempty"`
+
+	// AuthPolicy sets a default authorization policy for client requests.
+	// This policy will be used unless overridden by individual routes.
+	//
+	// +optional
+	AuthPolicy *AuthorizationPolicy `json:"authPolicy,omitempty"`
+
+	// ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string "infinity" is also a valid input and specifies no timeout.
+	//
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	ResponseTimeout string `json:"responseTimeout,omitempty"`
+
+	// WithRequestBody specifies configuration for sending the client request's body to authorization server.
+	// +optional
+	WithRequestBody *AuthorizationServerBufferSettings `json:"withRequestBody,omitempty"`
+}
+
 // AuthorizationServer configures an external server to authenticate
 // client requests. The external server must implement the v3 Envoy
 // external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto)
@@ -630,6 +669,7 @@ type CORSPolicy struct {
 }
 
 // Route contains the set of routes for a virtual host.
+// +kubebuilder:validation:XValidation:rule="!(has(self.authPolicy) && has(self.authzOverride))",message="authPolicy is deprecated; only one of authPolicy or authzOverride may be set"
 type Route struct {
 	// Conditions are a set of rules that are applied to a Route.
 	// When applied, they are merged using AND, with one exception:
@@ -651,8 +691,19 @@ type Route struct {
 	// AuthPolicy updates the authorization policy that was set
 	// on the root HTTPProxy object for client requests that
 	// match this route.
+	//
+	// Deprecated: Use AuthzOverride instead.
+	//
 	// +optional
 	AuthPolicy *AuthorizationPolicy `json:"authPolicy,omitempty"`
+	// AuthzOverride enables overriding the external authorization
+	// service for this route. This allows different routes to use different
+	// external authorization service backends.
+	// If specified, this overrides the virtualhost's service configuration
+	// regardless of the original service type.
+	//
+	// +optional
+	AuthzOverride *PerRouteAuthorizationServer `json:"authzOverride,omitempty"`
 	// The timeout policy for this route.
 	// +optional
 	TimeoutPolicy *TimeoutPolicy `json:"timeoutPolicy,omitempty"`

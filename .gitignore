@@ -31,3 +31,7 @@ gateway-conformance-report/
 
 # Compiled tests from Ginkgo
 *.test
+
+# coverage report
+coverage.out
+coverage.html

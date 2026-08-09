@@ -434,6 +434,147 @@ func TestAddWarningConditions(t *testing.T) {
 	}
 }
 
+func TestRouteAuthzOverriden(t *testing.T) {
+	tests := map[string]struct {
+		route *Route
+		want  bool
+	}{
+		"nil AuthzOverride": {
+			route: &Route{},
+			want:  false,
+		},
+		"set AuthzOverride": {
+			route: &Route{
+				AuthzOverride: &PerRouteAuthorizationServer{},
+			},
+			want: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.route.AuthzOverriden()
+			assert.Equalf(t, tc.want, got, "AuthzOverriden failed in test %s", name)
+		})
+	}
+}
+
+func TestRouteDisableAuthorization(t *testing.T) {
+	tests := map[string]struct {
+		route *Route
+		want  bool
+	}{
+		"no AuthzOverride set": {
+			route: &Route{},
+			want:  false,
+		},
+		"AuthzOverride set but AuthPolicy nil": {
+			route: &Route{
+				AuthzOverride: &PerRouteAuthorizationServer{},
+			},
+			want: false,
+		},
+		"AuthzOverride set with AuthPolicy disabled false": {
+			route: &Route{
+				AuthzOverride: &PerRouteAuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: false,
+					},
+				},
+			},
+			want: false,
+		},
+		"AuthzOverride set with AuthPolicy disabled true": {
+			route: &Route{
+				AuthzOverride: &PerRouteAuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: true,
+					},
+				},
+			},
+			want: true,
+		},
+		"AuthzOverride set with AuthPolicy disabled false and context set": {
+			route: &Route{
+				AuthzOverride: &PerRouteAuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: false,
+						Context: map[string]string{
+							"key": "value",
+						},
+					},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.route.DisableAuthorization()
+			assert.Equalf(t, tc.want, got, "DisableAuthorization failed in test %s", name)
+		})
+	}
+}
+
+func TestVirtualHostDisableAuthorization(t *testing.T) {
+	tests := map[string]struct {
+		vhost *VirtualHost
+		want  bool
+	}{
+		"no authorization configured": {
+			vhost: &VirtualHost{},
+			want:  false,
+		},
+		"authorization configured but AuthPolicy nil": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{},
+			},
+			want: false,
+		},
+		"authorization configured with AuthPolicy disabled false": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: false,
+					},
+				},
+			},
+			want: false,
+		},
+		"authorization configured with AuthPolicy disabled true": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: true,
+					},
+				},
+			},
+			want: true,
+		},
+		"authorization configured with AuthPolicy disabled false and context set": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: false,
+						Context: map[string]string{
+							"key": "value",
+						},
+					},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.vhost.DisableAuthorization()
+			assert.Equalf(t, tc.want, got, "DisableAuthorization failed in test %s", name)
+		})
+	}
+}
+
 func TestGetConditionFor(t *testing.T) {
 	tests := map[string]struct {
 		status   HTTPProxyStatus
