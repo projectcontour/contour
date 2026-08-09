@@ -187,6 +187,16 @@ func LoadBalancerServiceChanged(current, expected *core_v1.Service) (*core_v1.Se
 		changed = true
 	}
 
+	if !apiequality.Semantic.DeepEqual(current.Spec.LoadBalancerSourceRanges, expected.Spec.LoadBalancerSourceRanges) {
+		updated.Spec.LoadBalancerSourceRanges = expected.Spec.LoadBalancerSourceRanges
+		changed = true
+	}
+
+	if !apiequality.Semantic.DeepEqual(current.Spec.LoadBalancerClass, expected.Spec.LoadBalancerClass) {
+		updated.Spec.LoadBalancerClass = expected.Spec.LoadBalancerClass
+		changed = true
+	}
+
 	if !changed {
 		return nil, false
 	}
