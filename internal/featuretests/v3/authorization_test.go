@@ -283,6 +283,52 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 		}),
 	)
 
+	cluster := grpcCluster("extension/auth/extension")
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls(disabled, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							disabled,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               cluster,
+								ClearRouteCache:        true,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+					filterchaintls(enabled, featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							enabled,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               cluster,
+								ClearRouteCache:        true,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	})
+
 	// For each proxy, the `/default` route should have the
 	// same authorization enablement as the root proxy, and
 	// the other path should have the opposite enablement.
