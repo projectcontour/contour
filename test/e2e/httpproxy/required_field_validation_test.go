@@ -32,10 +32,12 @@ func testRequiredFieldValidation(namespace string) {
 	Specify("required fields are validated on creation", func() {
 		t := f.T()
 
-		// This HTTPProxy is expressed as an Unstructured because the JSON
-		// tags for the relevant field do not include "omitempty", so when
-		// a typed Go struct is serialized to JSON the field *is* included
-		// and therefore does not fail validation.
+		// This HTTPProxy is expressed as an Unstructured, rather than a typed
+		// contour_v1.HTTPProxy, so the field can be omitted from the object
+		// entirely and trigger this "Required value" error. A typed struct
+		// always serializes this field, even as an empty string, because its
+		// JSON tag lacks "omitempty"; that case is exercised separately below
+		// and now fails a minLength check instead.
 		missingConditionHeaderName := &unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
@@ -77,10 +79,12 @@ func testRequiredFieldValidation(namespace string) {
 		}
 		assert.True(t, isExpectedErr(err))
 
-		// This HTTPProxy is expressed as an Unstructured because the JSON
-		// tags for the relevant field do not include "omitempty", so when
-		// a typed Go struct is serialized to JSON the field *is* included
-		// and therefore does not fail validation.
+		// This HTTPProxy is expressed as an Unstructured, rather than a typed
+		// contour_v1.HTTPProxy, so the field can be omitted from the object
+		// entirely and trigger this "Required value" error. A typed struct
+		// always serializes this field, even as an empty string, because its
+		// JSON tag lacks "omitempty"; that case is instead rejected by the
+		// field's pattern/minLength validation.
 		missingVirtualHostName := &unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
@@ -103,10 +107,12 @@ func testRequiredFieldValidation(namespace string) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "spec.virtualhost.fqdn: Required value")
 
-		// This HTTPProxy is expressed as an Unstructured because the JSON
-		// tags for the relevant field do not include "omitempty", so when
-		// a typed Go struct is serialized to JSON the field *is* included
-		// and therefore does not fail validation.
+		// This HTTPProxy is expressed as an Unstructured, rather than a typed
+		// contour_v1.HTTPProxy, so the field can be omitted from the object
+		// entirely and trigger this "Required value" error. A typed struct
+		// always serializes this field, even as an empty string, because its
+		// JSON tag lacks "omitempty"; that case is exercised separately below
+		// and now fails a minLength check instead.
 		missingIncludesName := &unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
