@@ -195,6 +195,13 @@ type ProtocolParameters struct {
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+
+	// ECDHCurves defines the ECDH curves to be supported by Envoy TLS
+	// listeners for key exchange.
+	// When not specified, Envoy's built-in defaults are used (X25519, P-256).
+	// When specified, the list must be in order of preference, with the most
+	// preferred curve first.
+	ECDHCurves ECDHCurvesList `yaml:"ecdh-curves,omitempty"`
 }
 
 // TLSFingerprint defines TLS fingerprinting configuration.
@@ -230,6 +237,10 @@ func (t TLSParameters) Validate() error {
 func (t ProtocolParameters) Validate() error {
 	if err := t.CipherSuites.Validate(); err != nil {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
+	}
+
+	if err := t.ECDHCurves.Validate(); err != nil {
+		return fmt.Errorf("invalid ECDH curves: %w", err)
 	}
 
 	return contour_v1alpha1.ValidateTLSProtocolVersions(t.MinimumProtocolVersion, t.MaximumProtocolVersion)

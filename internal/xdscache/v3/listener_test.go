@@ -862,6 +862,59 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			}),
 		},
+		"tls-ecdh-curves from config": {
+			ListenerConfig: ListenerConfig{
+				ECDHCurves: []string{
+					"X25519",
+					"P-256",
+					"X25519MLKEM768",
+				},
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_v1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []contour_v1.Route{{
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				secret,
+				service,
+			},
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:          ENVOY_HTTP_LISTENER,
+				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v3.FilterChains(envoyGen.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo), 0)),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}, &envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_config_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocketWithECDH(envoyGen, "secret", envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2, envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3, nil, []string{"X25519", "P-256", "X25519MLKEM768"}, "h2", "http/1.1"),
+					Filters:         envoy_v3.Filters(httpsFilterFor("www.example.com")),
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
 
 		"httpproxy with fallback certificate and with request timeout set": {
 			fallbackCertificate: &types.NamespacedName{
@@ -3476,7 +3529,24 @@ func transportSocket(envoyGen *envoy_v3.EnvoyGen, secretName string, tlsMinProto
 	}
 
 	return envoy_v3.DownstreamTLSTransportSocket(
-		envoyGen.DownstreamTLSContext(secret, tlsMinProtoVersion, tlsMaxProtoVersion, cipherSuites, nil, alpnprotos...),
+		envoyGen.DownstreamTLSContext(secret, tlsMinProtoVersion, tlsMaxProtoVersion, cipherSuites, nil, nil, alpnprotos...),
+	)
+}
+
+func transportSocketWithECDH(envoyGen *envoy_v3.EnvoyGen, secretName string, tlsMinProtoVersion, tlsMaxProtoVersion envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol, cipherSuites, ecdhCurves []string, alpnprotos ...string) *envoy_config_core_v3.TransportSocket {
+	secret := &dag.Secret{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      secretName,
+				Namespace: "default",
+			},
+			Type: core_v1.SecretTypeTLS,
+			Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		},
+	}
+
+	return envoy_v3.DownstreamTLSTransportSocket(
+		envoyGen.DownstreamTLSContext(secret, tlsMinProtoVersion, tlsMaxProtoVersion, cipherSuites, ecdhCurves, nil, alpnprotos...),
 	)
 }
 

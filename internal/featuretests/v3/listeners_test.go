@@ -408,6 +408,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
+					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
@@ -485,6 +486,87 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 					[]string{"ECDHE-ECDSA-AES256-GCM-SHA384"},
+					nil,
+					nil,
+					"h2", "http/1.1"),
+				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
+			),
+		},
+		SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+	}
+
+	// add service
+	rh.OnAdd(svc1)
+
+	rh.OnAdd(p1)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			defaultHTTPListener(),
+			l1,
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
+func TestTLSListenerECDHCurves(t *testing.T) {
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.ECDHCurves = []string{"X25519", "P-256", "X25519MLKEM768"}
+	})
+	defer done()
+
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+	secret1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+
+	svc1 := fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+
+	// p1 is a tls httpproxy
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "simple",
+			Namespace: secret1.Namespace,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: secret1.Name,
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: svc1.Name,
+					Port: int(svc1.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(secret1)
+
+	l1 := &envoy_config_listener_v3.Listener{
+		Name:    "ingress_https",
+		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v3.ListenerFilters(
+			envoy_v3.TLSInspector(),
+		),
+		FilterChains: []*envoy_config_listener_v3.FilterChain{
+			envoy_v3.FilterChainTLS(
+				"kuard.example.com",
+				envoyGen.DownstreamTLSContext(
+					&dag.Secret{Object: secret1},
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+					nil,
+					[]string{"X25519", "P-256", "X25519MLKEM768"},
 					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
@@ -1036,6 +1118,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					nil,
 					nil,
+					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
@@ -1092,6 +1175,7 @@ func TestHTTPProxyTLSVersion(t *testing.T) {
 					&dag.Secret{Object: secret1},
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
 					envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+					nil,
 					nil,
 					nil,
 					"h2", "http/1.1"),
@@ -1631,6 +1715,7 @@ func TestSocketOptions(t *testing.T) {
 							&dag.Secret{Object: secret1},
 							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
 							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+							nil,
 							nil,
 							nil,
 							"h2", "http/1.1"),
