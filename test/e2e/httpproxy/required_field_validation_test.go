@@ -32,10 +32,12 @@ func testRequiredFieldValidation(namespace string) {
 	Specify("required fields are validated on creation", func() {
 		t := f.T()
 
-		// This HTTPProxy is expressed as an Unstructured because the JSON
-		// tags for the relevant field do not include "omitempty", so when
-		// a typed Go struct is serialized to JSON the field *is* included
-		// and therefore does not fail validation.
+		// This HTTPProxy is expressed as an Unstructured, rather than a typed
+		// contour_v1.HTTPProxy, so the field can be omitted from the object
+		// entirely and trigger this "Required value" error. A typed struct
+		// always serializes this field, even as an empty string, because its
+		// JSON tag lacks "omitempty"; that case is exercised separately below
+		// and now fails a minLength check instead.
 		missingConditionHeaderName := &unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
@@ -77,10 +79,12 @@ func testRequiredFieldValidation(namespace string) {
 		}
 		assert.True(t, isExpectedErr(err))
 
-		// This HTTPProxy is expressed as an Unstructured because the JSON
-		// tags for the relevant field do not include "omitempty", so when
-		// a typed Go struct is serialized to JSON the field *is* included
-		// and therefore does not fail validation.
+		// This HTTPProxy is expressed as an Unstructured, rather than a typed
+		// contour_v1.HTTPProxy, so the field can be omitted from the object
+		// entirely and trigger this "Required value" error. A typed struct
+		// always serializes this field, even as an empty string, because its
+		// JSON tag lacks "omitempty"; that case is instead rejected by the
+		// field's pattern/minLength validation.
 		missingVirtualHostName := &unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
@@ -103,10 +107,12 @@ func testRequiredFieldValidation(namespace string) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "spec.virtualhost.fqdn: Required value")
 
-		// This HTTPProxy is expressed as an Unstructured because the JSON
-		// tags for the relevant field do not include "omitempty", so when
-		// a typed Go struct is serialized to JSON the field *is* included
-		// and therefore does not fail validation.
+		// This HTTPProxy is expressed as an Unstructured, rather than a typed
+		// contour_v1.HTTPProxy, so the field can be omitted from the object
+		// entirely and trigger this "Required value" error. A typed struct
+		// always serializes this field, even as an empty string, because its
+		// JSON tag lacks "omitempty"; that case is exercised separately below
+		// and now fails a minLength check instead.
 		missingIncludesName := &unstructured.Unstructured{
 			Object: map[string]any{
 				"apiVersion": "projectcontour.io/v1",
@@ -133,6 +139,68 @@ func testRequiredFieldValidation(namespace string) {
 		isExpectedErr = func(err error) bool {
 			return strings.Contains(err.Error(), "spec.includes.name: Required value") ||
 				strings.Contains(err.Error(), "spec.includes[0].name: Required value")
+		}
+		assert.True(t, isExpectedErr(err))
+
+		// These HTTPProxies use typed Go structs (rather than Unstructured) to
+		// reproduce https://github.com/projectcontour/contour/issues/3674:
+		// since the JSON tags for these fields do not include "omitempty",
+		// serializing a typed struct with an empty string value still
+		// includes the field, so only a minLength validation (not just
+		// "required") can catch it.
+		emptyConditionHeaderName := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "empty-condition-header-name",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{
+					{
+						Conditions: []contour_v1.MatchCondition{
+							{
+								Header: &contour_v1.HeaderMatchCondition{
+									Name:    "",
+									Present: true,
+								},
+							},
+						},
+						Services: []contour_v1.Service{
+							{
+								Name: "foo",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		err = f.Client.Create(context.TODO(), emptyConditionHeaderName)
+		require.Error(t, err)
+		isExpectedErr = func(err error) bool {
+			return strings.Contains(err.Error(), "spec.routes.conditions.header.name") ||
+				strings.Contains(err.Error(), "spec.routes[0].conditions[0].header.name")
+		}
+		assert.True(t, isExpectedErr(err))
+
+		emptyIncludesName := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "empty-includes-name",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				Includes: []contour_v1.Include{
+					{
+						Name:      "",
+						Namespace: "foo",
+					},
+				},
+			},
+		}
+		err = f.Client.Create(context.TODO(), emptyIncludesName)
+		require.Error(t, err)
+		isExpectedErr = func(err error) bool {
+			return strings.Contains(err.Error(), "spec.includes.name") ||
+				strings.Contains(err.Error(), "spec.includes[0].name")
 		}
 		assert.True(t, isExpectedErr(err))
 

@@ -1367,6 +1367,7 @@ spec:
                                               description: |-
                                                 Name is the name of the header to match against. Name is required.
                                                 Header names are case insensitive.
+                                              minLength: 1
                                               type: string
                                             notcontains:
                                               description: |-
@@ -5495,6 +5496,7 @@ spec:
                                                   description: |-
                                                     Name is the name of the header to match against. Name is required.
                                                     Header names are case insensitive.
+                                                  minLength: 1
                                                   type: string
                                                 notcontains:
                                                   description: |-
@@ -6372,6 +6374,7 @@ spec:
                                 description: |-
                                   Name is the name of the header to match against. Name is required.
                                   Header names are case insensitive.
+                                minLength: 1
                                 type: string
                               notcontains:
                                 description: |-
@@ -6469,6 +6472,7 @@ spec:
                       type: array
                     name:
                       description: Name of the HTTPProxy
+                      minLength: 1
                       type: string
                     namespace:
                       description: Namespace of the HTTPProxy to include. Defaults
@@ -6552,6 +6556,7 @@ spec:
                                 description: |-
                                   Name is the name of the header to match against. Name is required.
                                   Header names are case insensitive.
+                                minLength: 1
                                 type: string
                               notcontains:
                                 description: |-
@@ -7150,6 +7155,7 @@ spec:
                                                     description: |-
                                                       Name is the name of the header to match against. Name is required.
                                                       Header names are case insensitive.
+                                                    minLength: 1
                                                     type: string
                                                   notcontains:
                                                     description: |-
@@ -8415,6 +8421,7 @@ spec:
                     description: |-
                       The fully qualified domain name of the root of the ingress tree
                       all leaves of the DAG rooted at this object relate to the fqdn.
+                    minLength: 1
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
                   ipAllowPolicy:
@@ -8735,6 +8742,7 @@ spec:
                                                   description: |-
                                                     Name is the name of the header to match against. Name is required.
                                                     Header names are case insensitive.
+                                                  minLength: 1
                                                   type: string
                                                 notcontains:
                                                   description: |-

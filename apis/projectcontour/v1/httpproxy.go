@@ -66,6 +66,7 @@ type Namespace string
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
 type Include struct {
 	// Name of the HTTPProxy
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 	// Namespace of the HTTPProxy to include. Defaults to the current namespace if not supplied.
 	// +optional
@@ -117,6 +118,7 @@ type MatchCondition struct {
 type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
 	// Header names are case insensitive.
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// Present specifies that condition is true when the named header
@@ -400,6 +402,7 @@ type VirtualHost struct {
 	// all leaves of the DAG rooted at this object relate to the fqdn.
 	//
 	// +kubebuilder:validation:Pattern="^(\\*\\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+	// +kubebuilder:validation:MinLength=1
 	Fqdn string `json:"fqdn"`
 
 	// If present the fields describes TLS properties of the virtual
