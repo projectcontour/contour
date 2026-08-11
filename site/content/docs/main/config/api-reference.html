@@ -7448,6 +7448,19 @@ uint32
 per listener. The default value when this is not set is unlimited.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxConnectionsToAcceptPerSocketEvent</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxConnectionsToAcceptPerSocketEvent defines the maximum number of connections Envoy will accept from the kernel per event loop iteration. If no value is provided, Envoy will accept all pending connections at once. It is recommended to set this to a low value.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListenerTLS">EnvoyListenerTLS

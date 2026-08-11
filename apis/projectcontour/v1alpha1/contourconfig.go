@@ -430,6 +430,12 @@ type EnvoyListenerConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxConnectionsPerListener *uint32 `json:"maxConnectionsPerListener,omitempty"`
+
+	// MaxConnectionsToAcceptPerSocketEvent defines the maximum number of connections Envoy will accept from the kernel per event loop iteration. If no value is provided, Envoy will accept all pending connections at once. It is recommended to set this to a low value.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxConnectionsToAcceptPerSocketEvent *uint32 `json:"maxConnectionsToAcceptPerSocketEvent,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.
