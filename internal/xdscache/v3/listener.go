@@ -169,7 +169,7 @@ type ListenerConfig struct {
 	EnableJA4Fingerprinting *bool
 
 	// MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
-    MaxConnectionsToAcceptPerSocketEvent *uint32
+	MaxConnectionsToAcceptPerSocketEvent *uint32
 }
 
 type ExtensionServiceConfig struct {

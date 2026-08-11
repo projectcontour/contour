@@ -584,9 +584,11 @@ spec:
                         minimum: 1
                         type: integer
                       maxConnectionsToAcceptPerSocketEvent:
-                        description: |-
-                          MaxConnectionsToAcceptPerSocketEvent defines the maximum number of
-                          connections Envoy will accept per socket event.
+                        description: MaxConnectionsToAcceptPerSocketEvent defines
+                          the maximum number of connections Envoy will accept from
+                          the kernel per event loop iteration. If no value is provided,
+                          Envoy will accept all pending connections at once. It is
+                          recommended to set this to a low value.
                         format: int32
                         minimum: 1
                         type: integer
@@ -4718,9 +4720,11 @@ spec:
                             minimum: 1
                             type: integer
                           maxConnectionsToAcceptPerSocketEvent:
-                            description: |-
-                              MaxConnectionsToAcceptPerSocketEvent defines the maximum number of
-                              connections Envoy will accept per socket event.
+                            description: MaxConnectionsToAcceptPerSocketEvent defines
+                              the maximum number of connections Envoy will accept
+                              from the kernel per event loop iteration. If no value
+                              is provided, Envoy will accept all pending connections
+                              at once. It is recommended to set this to a low value.
                             format: int32
                             minimum: 1
                             type: integer

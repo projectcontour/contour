@@ -1,0 +1,1 @@
+Add `maxConnectionsToAcceptPerSocketEvent` field to ContourConfiguration CRD and `max-connections-to-accept-per-socket-event` to the Contour configuration file.  This configures the maximum number of connections Envoy will accept from the kernel per event loop iteration.
