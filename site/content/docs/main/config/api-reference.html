@@ -7174,6 +7174,13 @@ intended for cases such as disabling a new Envoy feature that breaks existing fu
 Note that any settings managed by Contour will take precedence and overwrite user-defined values for the same keys.
 Keys are not validated and unrecognized keys are silently ignored.
 See <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime">https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime</a></p>
+<p>The following runtime keys are managed by Contour and cannot be overridden:</p>
+<ul>
+<li>re2.max_program_size.error_level (always set)</li>
+<li>re2.max_program_size.warn_level (always set)</li>
+<li>http.max_requests_per_io_cycle (set when spec.envoy.listener.maxRequestsPerIOCycle is configured)</li>
+<li>envoy.resource_limits.listener.<name>.connection_limit (set when spec.envoy.listener.maxConnectionsPerListener is configured)</li>
+</ul>
 </td>
 </tr>
 </tbody>

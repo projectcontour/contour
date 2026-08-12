@@ -314,6 +314,13 @@ type EnvoyConfig struct {
 	// Note that any settings managed by Contour will take precedence and overwrite user-defined values for the same keys.
 	// Keys are not validated and unrecognized keys are silently ignored.
 	// See https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime
+	//
+	// The following runtime keys are managed by Contour and cannot be overridden:
+	//
+	// - re2.max_program_size.error_level (always set)
+	// - re2.max_program_size.warn_level (always set)
+	// - http.max_requests_per_io_cycle (set when spec.envoy.listener.maxRequestsPerIOCycle is configured)
+	// - envoy.resource_limits.listener.<name>.connection_limit (set when spec.envoy.listener.maxConnectionsPerListener is configured)
 	// +optional
 	RuntimeSettings map[string]string `json:"runtimeSettings,omitempty"`
 }
