@@ -744,6 +744,18 @@ type Parameters struct {
 	// configured by [Parameters.Metrics.Envoy] or any listeners
 	// configured by [contour_v1alpha1.ContourConfigurationSpec.Envoy]
 	OMEnforcedHealthListener *OMEnforcedHealthListenerConfig `yaml:"omEnforcedHealthListener,omitempty"`
+
+	// RuntimeSettings allows overriding arbitrary Envoy runtime settings,
+	// intended for cases such as disabling a new Envoy feature that breaks existing functionality.
+	// Settings managed by Contour take precedence over user-defined values for the same keys.
+	// Keys are not validated and unrecognized keys are silently ignored.
+	//
+	// The following runtime keys are managed by Contour and cannot be overridden:
+	//   - re2.max_program_size.error_level (always set)
+	//   - re2.max_program_size.warn_level (always set)
+	//   - http.max_requests_per_io_cycle (set when listener.max-requests-per-io-cycle is configured)
+	//   - envoy.resource_limits.listener.<name>.connection_limit (set when listener.max-connections-per-listener is configured)
+	RuntimeSettings map[string]string `yaml:"runtime-settings,omitempty"`
 }
 
 // Tracing defines properties for exporting trace data to OpenTelemetry.

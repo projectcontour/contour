@@ -328,6 +328,21 @@ By default, this configuration is not enabled.
 | address                 | string | none    | Address that health listener will bind to. |
 | port                    | int    | 0       | Port that health listener will bind to.    |
 
+### Runtime Settings
+
+| Field Name        | Type              | Default | Description                                                                                                                                                                                                                                                                                                                    |
+| ----------------- | ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| runtime-settings  | map[string]string | none    | Allows overriding arbitrary Envoy [runtime settings](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/operations/runtime), intended for cases such as disabling a new Envoy feature that breaks existing functionality. Settings managed by Contour take precedence over user-defined values for the same keys. Keys are not validated and unrecognized keys are silently ignored. |
+
+The following runtime keys are managed by Contour and cannot be overridden:
+
+| Key | Condition |
+| --- | --------- |
+| `re2.max_program_size.error_level` | Always set |
+| `re2.max_program_size.warn_level` | Always set |
+| `http.max_requests_per_io_cycle` | Set when `listener.max-requests-per-io-cycle` is configured |
+| `envoy.resource_limits.listener.<name>.connection_limit` | Set when `listener.max-connections-per-listener` is configured |
+
 ### Configuration Example
 
 The following is an example ConfigMap with configuration file included:

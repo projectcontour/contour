@@ -1,0 +1,1 @@
+Add support for configuring arbitrary Envoy runtime settings via `runtime-settings` in the Contourconfig file or `spec.envoy.runtimeSettings` in `ContourConfiguration` CRD, intended for cases such as disabling a new Envoy feature that breaks existing functionality.
