@@ -323,5 +323,72 @@ var _ = Describe("httpproxy-ext-auth-http-global", func() {
 			Expect(res).NotTo(BeNil(), "request never succeeded")
 			Expect(ok).To(BeTrue(), "expected 200 (auth bypassed), got %d", res.StatusCode)
 		})
+
+		Specify("virtualhost authPolicy can opt out of global auth while a route re-enables it", func() {
+			f.Fixtures.Echo.Deploy(namespace, "echo")
+			f.Certs.CreateSelfSignedCert(namespace, "echo", "globalextauthvhostoptout.projectcontour.io")
+
+			p := &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "global-ext-auth-http-vhost-optout",
+				},
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						Fqdn: "globalextauthvhostoptout.projectcontour.io",
+						TLS:  &contour_v1.TLS{SecretName: "echo"},
+						Authorization: &contour_v1.AuthorizationServer{
+							AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: true},
+						},
+					},
+					Routes: []contour_v1.Route{
+						{
+							Conditions: []contour_v1.MatchCondition{{Prefix: "/protected"}},
+							AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: false},
+							Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
+						},
+						{
+							Conditions: []contour_v1.MatchCondition{{Prefix: "/public"}},
+							Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
+						},
+					},
+				},
+			}
+			Expect(f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)).To(BeTrue())
+
+			setHandler(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusUnauthorized)
+			})
+
+			By("re-enabled route enforces global auth")
+			res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+				Host:      p.Spec.VirtualHost.Fqdn,
+				Path:      "/protected",
+				Condition: e2e.HasStatusCode(401),
+			})
+			Expect(res).NotTo(BeNil(), "request never succeeded")
+			Expect(ok).To(BeTrue(), "expected 401, got %d", res.StatusCode)
+
+			By("route inheriting the vhost opt-out has no authorization")
+			res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+				Host:      p.Spec.VirtualHost.Fqdn,
+				Path:      "/public",
+				Condition: e2e.HasStatusCode(200),
+			})
+			Expect(res).NotTo(BeNil(), "request never succeeded")
+			Expect(ok).To(BeTrue(), "expected 200, got %d", res.StatusCode)
+
+			By("re-enabled route allows the request when the auth server approves")
+			setHandler(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+			res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+				Host:      p.Spec.VirtualHost.Fqdn,
+				Path:      "/protected",
+				Condition: e2e.HasStatusCode(200),
+			})
+			Expect(res).NotTo(BeNil(), "request never succeeded")
+			Expect(ok).To(BeTrue(), "expected 200, got %d", res.StatusCode)
+		})
 	})
 })
