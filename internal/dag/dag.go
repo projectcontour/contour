@@ -424,6 +424,7 @@ type PerRouteAuthzOverride struct {
 	Disabled                        bool
 	Context                         map[string]string
 	ServiceAPIType                  contour_v1.AuthorizationServiceType
+	HeadersToAdd                    map[string]string
 	HTTPAllowedAuthorizationHeaders []HeaderNameMatchCondition
 	HTTPAllowedUpstreamHeaders      []HeaderNameMatchCondition
 	HTTPPathPrefix                  string

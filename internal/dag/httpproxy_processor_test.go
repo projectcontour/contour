@@ -1488,7 +1488,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType:        contour_v1.AuthorizationGRPCService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{},
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
 				},
 			},
 			want: &PerRouteAuthzOverride{
@@ -1499,7 +1499,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType:        contour_v1.AuthorizationHTTPService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{},
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
 				},
 			},
 			want: &PerRouteAuthzOverride{
@@ -1510,7 +1510,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType: contour_v1.AuthorizationHTTPService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
 						PathPrefix: "/check",
 					},
 				},
@@ -1524,7 +1524,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType:        contour_v1.AuthorizationGRPCService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{},
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
 				},
 			},
 			extensionSvc: &ExtensionCluster{
@@ -1548,7 +1548,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType:        contour_v1.AuthorizationGRPCService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{},
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
 				},
 			},
 			mergedAuthContext: map[string]string{
@@ -1565,7 +1565,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType: contour_v1.AuthorizationHTTPService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
 						AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
 							{Exact: "x-exact"},
 							{Prefix: "x-prefix-", IgnoreCase: true},
@@ -1589,7 +1589,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType: contour_v1.AuthorizationHTTPService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
 						AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
 							{Exact: "x-upstream"},
 						},
@@ -1607,7 +1607,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType:        contour_v1.AuthorizationHTTPService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{},
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
 					WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{
 						MaxRequestBytes:     2048,
 						AllowPartialMessage: true,
@@ -1628,7 +1628,7 @@ func TestGetPerRouteAuthorizationOverride(t *testing.T) {
 			route: &contour_v1.Route{
 				AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
 					ServiceType: contour_v1.AuthorizationHTTPService,
-					HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
 						PathPrefix: "/authz",
 						AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
 							{Exact: "x-exact"},

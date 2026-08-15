@@ -265,7 +265,7 @@ type PerRouteAuthorizationServer struct {
 	// HTTPServerSettings defines configurations for interacting with an external HTTP authorization server.
 	//
 	// +optional
-	HTTPServerSettings *HTTPAuthorizationServerSettings `json:"httpSettings,omitempty"`
+	HTTPServerSettings *PerRouteHTTPAuthorizationServerSettings `json:"httpSettings,omitempty"`
 
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.
@@ -359,10 +359,34 @@ type HTTPAuthorizationServerSettings struct {
 	AllowedUpstreamHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedUpstreamHeaders,omitempty"`
 }
 
+type PerRouteHTTPAuthorizationServerSettings struct {
+	// PathPrefix Sets a prefix to the value of authorization request header Path.
+	//
+	// +optional
+	PathPrefix string `json:"pathPrefix,omitempty"`
+
+	// AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
+	// Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.
+	//
+	// +optional
+	AllowedAuthorizationHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedAuthorizationHeaders,omitempty"`
+
+	// Sets a list of headers that will be included in the request to the authorization service.
+	// Client request headers with the same key will be overridden.
+	// The keys should be also passed in allowedAuthorizationHeaders.
+	// +optional
+	HeadersToAdd map[string]string `json:"headersToAdd,omitempty"`
+
+	// AllowedUpstreamHeaders specifies response headers from the authorization server
+	// that may be added to the original client request before sending it to the upstream.
+	//
+	// +optional
+	AllowedUpstreamHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedUpstreamHeaders,omitempty"`
+}
+
 // HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
 // in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
 // experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
-// +kubebuilder:validation:XValidation:message="only one of prefix, suffix, exact, and contains should be set in the allowedHeader",rule="(has(self.exact) ? 1 : 0) + (has(self.prefix) ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains) ? 1 : 0) == 1"
 type HTTPAuthorizationServerAllowedHeaders struct {
 	// Exact specifies a string that the header name must be equal to.
 	//

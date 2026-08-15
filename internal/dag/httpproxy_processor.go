@@ -962,6 +962,19 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				r.AuthzOverride.Context = mergedAuthContext
 
 				if route.AuthzOverride != nil {
+					if route.AuthzOverride.HTTPServerSettings != nil {
+						if err := ExternalAuthAllowedHeadersValid(route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
+							validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+								"Spec.Routes.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: %s", err)
+							return nil
+						}
+						if err := ExternalAuthAllowedHeadersValid(route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
+							validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+								"Spec.Routes.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders is invalid: %s", err)
+							return nil
+						}
+					}
+
 					var extensionSvc *ExtensionCluster
 					if route.AuthzOverride.ExtensionServiceRef.IsConfigured() {
 						_, ext := validateExternalAuthExtensionService(defaultExtensionRef(route.AuthzOverride.ExtensionServiceRef),
@@ -1216,7 +1229,6 @@ func GetPerRouteAuthorzationOverride(route *contour_v1.Route, extensionSvc *Exte
 
 	authzOverride := PerRouteAuthzOverride{
 		ServiceAPIType: route.AuthzOverride.ServiceType,
-		HTTPPathPrefix: route.AuthzOverride.HTTPServerSettings.PathPrefix,
 	}
 	if extensionSvc != nil {
 		authzOverride.ExtensionCluster = extensionSvc
@@ -1226,15 +1238,15 @@ func GetPerRouteAuthorzationOverride(route *contour_v1.Route, extensionSvc *Exte
 		authzOverride.Context = mergedAuthContext
 	}
 
-	if route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders != nil {
-		authzOverride.HTTPAllowedAuthorizationHeaders = convertHTTPAuthzAllowedHeaders(route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders)
-	}
-	if route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders != nil {
-		authzOverride.HTTPAllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders)
-	}
-
-	if route.AuthzOverride.HTTPServerSettings.PathPrefix != "" {
+	if route.AuthzOverride.HTTPServerSettings != nil {
 		authzOverride.HTTPPathPrefix = route.AuthzOverride.HTTPServerSettings.PathPrefix
+		authzOverride.HeadersToAdd = route.AuthzOverride.HTTPServerSettings.HeadersToAdd
+		if route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders != nil {
+			authzOverride.HTTPAllowedAuthorizationHeaders = convertHTTPAuthzAllowedHeaders(route.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders)
+		}
+		if route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders != nil {
+			authzOverride.HTTPAllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(route.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders)
+		}
 	}
 
 	if route.AuthzOverride.WithRequestBody != nil {

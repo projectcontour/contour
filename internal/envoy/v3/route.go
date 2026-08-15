@@ -216,7 +216,7 @@ func routeAuthzOverride(authzOverride *dag.PerRouteAuthzOverride) *anypb.Any {
 	checkSettings := &envoy_filter_http_ext_authz_v3.CheckSettings{}
 	checkSettings.ContextExtensions = authzOverride.Context
 
-	if authzOverride.ServiceAPIType != "" {
+	if authzOverride.ServiceAPIType != "" && authzOverride.ExtensionCluster != nil {
 		switch authzOverride.ServiceAPIType {
 		case contour_v1.AuthorizationGRPCService:
 			checkSettings.ServiceOverride = &envoy_filter_http_ext_authz_v3.CheckSettings_GrpcService{
@@ -244,11 +244,12 @@ func routeAuthzOverride(authzOverride *dag.PerRouteAuthzOverride) *anypb.Any {
 				serviceOverride.HttpService.PathPrefix = authzOverride.HTTPPathPrefix
 			}
 
-			if len(authzOverride.HTTPAllowedAuthorizationHeaders) > 0 {
+			if authzOverride.HeadersToAdd != nil || len(authzOverride.HTTPAllowedAuthorizationHeaders) > 0 {
 				serviceOverride.HttpService.AuthorizationRequest = &envoy_filter_http_ext_authz_v3.AuthorizationRequest{
 					AllowedHeaders: &envoy_matcher_v3.ListStringMatcher{
 						Patterns: ExternalAuthzAllowedHeaders(authzOverride.HTTPAllowedAuthorizationHeaders),
 					},
+					HeadersToAdd: headerList(authzOverride.HeadersToAdd),
 				}
 			}
 
@@ -699,6 +700,27 @@ func headerValueList(hvm map[string]string, app bool) []*envoy_config_core_v3.He
 
 	sort.Slice(hvs, func(i, j int) bool {
 		return hvs[i].Header.Key < hvs[j].Header.Key
+	})
+
+	return hvs
+}
+
+// headerList creates a list of Envoy HeaderValues from the provided map.
+func headerList(hvm map[string]string) []*envoy_config_core_v3.HeaderValue {
+	if hvm == nil {
+		return nil
+	}
+	var hvs []*envoy_config_core_v3.HeaderValue
+
+	for key, value := range hvm {
+		hvs = append(hvs, &envoy_config_core_v3.HeaderValue{
+			Key:   key,
+			Value: value,
+		})
+	}
+
+	sort.Slice(hvs, func(i, j int) bool {
+		return hvs[i].Key < hvs[j].Key
 	})
 
 	return hvs

@@ -869,8 +869,112 @@ func authzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEvent
 	}).Status(p).IsValid()
 }
 
-func authzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+func authzRouteOverrideWithAllowedHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "typehttp.projectcontour.io"
+
+	newProxyWithRouteAuthzOverride := func(settings *contour_v1.PerRouteHTTPAuthorizationServerSettings) *contour_v1.HTTPProxy {
+		return fixture.NewProxy("proxy").
+			WithFQDN(fqdn).
+			WithCertificate("certificate").
+			WithAuthServer(contour_v1.AuthorizationServer{
+				ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+					Namespace: "auth",
+					Name:      "extension",
+				},
+				ServiceType: contour_v1.AuthorizationHTTPService,
+			}).
+			WithSpec(contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{{
+						Name: "app-server",
+						Port: 80,
+					}},
+					AuthzOverride: &contour_v1.PerRouteAuthorizationServer{
+						ServiceType:        contour_v1.AuthorizationHTTPService,
+						HTTPServerSettings: settings,
+					},
+				}},
+			})
+	}
+
+	// No match type set: invalid.
+	p := newProxyWithRouteAuthzOverride(&contour_v1.PerRouteHTTPAuthorizationServerSettings{
+		AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+			{IgnoreCase: false},
+		},
+	})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, statsListener()),
+	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader", `Spec.Routes.AuthzOverride.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: one of prefix, suffix, exact or contains is required for each allowedHeader`)
+
+	// More than one match type set: invalid.
+	rh.OnDelete(p)
+	p = newProxyWithRouteAuthzOverride(&contour_v1.PerRouteHTTPAuthorizationServerSettings{
+		AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+			{Exact: "test", Prefix: "test", IgnoreCase: false},
+		},
+	})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, statsListener()),
+	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader", `Spec.Routes.AuthzOverride.HTTPServerSettings.AllowedUpstreamHeaders is invalid: only one of prefix, suffix, exact, and contains should be set in the allowedHeader`)
+
+	// Exactly one match type set: valid. The allowed headers are applied
+	// via per-route filter config, so the listener matches the plain
+	// HTTP authz case; just assert the proxy is valid and the listener
+	// contains the authz filter without allowed_headers.
+	rh.OnDelete(p)
+	p = newProxyWithRouteAuthzOverride(&contour_v1.PerRouteHTTPAuthorizationServerSettings{
+		AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+			{Prefix: "test1", IgnoreCase: false},
+			{Exact: "test2", IgnoreCase: true},
+		},
+	})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls(fqdn,
+						featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							fqdn,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               httpCluster("extension/auth/extension"),
+								ClearRouteCache:        true,
+								FailureModeAllow:       false,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+}
+
+func authzTypeHTTPWithAllowedUpstreamHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {	const fqdn = "typehttp.projectcontour.io"
 
 	p := fixture.NewProxy("proxy").
 		WithFQDN(fqdn).
@@ -1087,6 +1191,7 @@ func TestAuthorization(t *testing.T) {
 		"AuthzTypeHTTPWithPathPrefix":                  authzTypeHTTPWithPathPrefix,
 		"AuthzTypeHTTPWithAllowedAuthorizationHeaders": authzTypeHTTPWithAllowedAuthorizationHeaders,
 		"AuthzTypeHTTPWithAllowedUpstreamHeaders":      authzTypeHTTPWithAllowedUpstreamHeaders,
+		"AuthzRouteOverrideWithAllowedHeaders":         authzRouteOverrideWithAllowedHeaders,
 		"AuthzTypeHTTPWithContext":                     authzTypeHTTPWithContext,
 		"AuthzTypeUnset":                               authzTypeUnset,
 	}
