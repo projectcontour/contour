@@ -142,7 +142,7 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 // RequestUntil will retry requests to account for eventual consistency and
 // other ephemeral issues.
 func (h *HTTP) Request(opts *HTTPRequestOpts) (*HTTPResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -281,7 +281,7 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 // SecureRequestUntil will retry requests to account for eventual consistency and
 // other ephemeral issues.
 func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
+	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host

@@ -218,6 +218,7 @@ data:
     #  socket-options:
     #    tos: 64
     #    traffic-class: 64
+    #  max-request-body-bytes: 1000
     #
     # omEnforcedHealthListener:
     #   address: 0.0.0.0
@@ -590,6 +591,13 @@ spec:
                           Envoy will accept all pending connections at once. It is
                           recommended to set this to a low value.
                         format: int32
+                        minimum: 1
+                        type: integer
+                      maxRequestBodyBytes:
+                        description: |-
+                          MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
+                          If not specified, there is no limit.
+                        format: int64
                         minimum: 1
                         type: integer
                       maxRequestsPerConnection:
@@ -4741,6 +4749,13 @@ spec:
                               is provided, Envoy will accept all pending connections
                               at once. It is recommended to set this to a low value.
                             format: int32
+                            minimum: 1
+                            type: integer
+                          maxRequestBodyBytes:
+                            description: |-
+                              MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
+                              If not specified, there is no limit.
+                            format: int64
                             minimum: 1
                             type: integer
                           maxRequestsPerConnection:

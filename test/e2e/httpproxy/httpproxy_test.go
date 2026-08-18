@@ -42,6 +42,7 @@ func TestHTTPProxy(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].Image = "docker.io/envoyproxy/envoy:distroless-dev"
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 
@@ -147,6 +148,21 @@ var _ = Describe("HTTPProxy", func() {
 			})
 
 			f.NamespacedTest("httpproxy-disable-merge-slashes", testDisableMergeSlashes(true))
+		})
+	})
+
+	Context("maxRequestBodyBytes option", func() {
+		Context("not set", func() {
+			f.NamespacedTest("httpproxy-no-request-body-size-limit", testRequestBodySizeLimit(false))
+		})
+
+		Context("set to a limit", func() {
+			BeforeEach(func() {
+				contourConfig.Listener.MaxRequestBodyBytes = ptr.To(uint64(requestBodySizeLimitBytes))
+				contourConfiguration.Spec.Envoy.Listener.MaxRequestBodyBytes = ptr.To(uint64(requestBodySizeLimitBytes))
+			})
+
+			f.NamespacedTest("httpproxy-request-body-size-limit", testRequestBodySizeLimit(true))
 		})
 	})
 
