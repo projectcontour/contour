@@ -545,6 +545,10 @@ type ListenerParameters struct {
 	// Envoy will accept from the kernel per socket event.
 	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto
 	MaxConnectionsToAcceptPerSocketEvent *uint32 `yaml:"max-connections-to-accept-per-socket-event,omitempty"`
+
+	// Defines the maximum request body size in bytes for all routes.
+	// If not specified, there is no limit.
+	MaxRequestBodyBytes *uint64 `yaml:"max-request-body-bytes,omitempty"`
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -578,6 +582,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.MaxConnectionsToAcceptPerSocketEvent != nil && *p.MaxConnectionsToAcceptPerSocketEvent == 0 {
 		return fmt.Errorf("max-connections-to-accept-per-socket-event must be greater than 0")
+	}
+
+	if p.MaxRequestBodyBytes != nil && *p.MaxRequestBodyBytes < 1 {
+		return fmt.Errorf("invalid max request body bytes value %d set on listener, minimum value is 1", *p.MaxRequestBodyBytes)
 	}
 
 	return p.SocketOptions.Validate()

@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -21,8 +22,10 @@ import (
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compression_gzip_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
+	envoy_filter_http_body_size_limit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/body_size_limit/v3"
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
+	envoy_filter_http_filter_chain_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/filter_chain/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_filter_http_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
@@ -1982,6 +1985,197 @@ func TestAddFilter(t *testing.T) {
 	assert.Panics(t, func() {
 		envoygen.HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(routerFilter)
 	})
+}
+
+// TestAddBodySizeLimitFilter checks that the body size limit filter is only
+// added when a limit is configured, and that it is wrapped in a filter chain
+// filter as Envoy expects.
+func TestAddBodySizeLimitFilter(t *testing.T) {
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	routerFilter := &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: "router",
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_router_v3.Router{}),
+		},
+	}
+	grpcWebFilter := &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: GRPCWebFilterName,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_grpc_web_v3.GrpcWeb{}),
+		},
+	}
+
+	tests := map[string]struct {
+		builder             *httpConnectionManagerBuilder
+		maxRequestBodyBytes *uint64
+		want                []*envoy_filter_network_http_connection_manager_v3.HttpFilter
+	}{
+		"nil limit adds no filter to an empty builder": {
+			builder:             envoygen.HTTPConnectionManagerBuilder(),
+			maxRequestBodyBytes: nil,
+			want:                nil,
+		},
+		"nil limit leaves an existing filter list untouched": {
+			builder:             envoygen.HTTPConnectionManagerBuilder().AddFilter(grpcWebFilter).AddFilter(routerFilter),
+			maxRequestBodyBytes: nil,
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				grpcWebFilter,
+				routerFilter,
+			},
+		},
+		"limit adds the filter to an empty builder": {
+			builder:             envoygen.HTTPConnectionManagerBuilder(),
+			maxRequestBodyBytes: ptr.To(uint64(1024)),
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				bodySizeLimitFilter(1024),
+			},
+		},
+		"a zero limit still adds the filter": {
+			builder:             envoygen.HTTPConnectionManagerBuilder(),
+			maxRequestBodyBytes: ptr.To(uint64(0)),
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				bodySizeLimitFilter(0),
+			},
+		},
+		"the maximum uint64 limit is preserved": {
+			builder:             envoygen.HTTPConnectionManagerBuilder(),
+			maxRequestBodyBytes: ptr.To(uint64(math.MaxUint64)),
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				bodySizeLimitFilter(math.MaxUint64),
+			},
+		},
+		"the filter is inserted before an existing router filter": {
+			builder:             envoygen.HTTPConnectionManagerBuilder().AddFilter(routerFilter),
+			maxRequestBodyBytes: ptr.To(uint64(2048)),
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				bodySizeLimitFilter(2048),
+				routerFilter,
+			},
+		},
+		"the filter is appended after non-terminating filters": {
+			builder:             envoygen.HTTPConnectionManagerBuilder().AddFilter(grpcWebFilter),
+			maxRequestBodyBytes: ptr.To(uint64(2048)),
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
+				grpcWebFilter,
+				bodySizeLimitFilter(2048),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.builder.AddBodySizeLimitFilter(tc.maxRequestBodyBytes)
+
+			// The builder is fluent, so the same instance must be returned.
+			assert.Same(t, tc.builder, got)
+
+			require.Len(t, got.filters, len(tc.want))
+			for i := range tc.want {
+				protobuf.ExpectEqual(t, tc.want[i], got.filters[i])
+			}
+		})
+	}
+}
+
+// TestAddBodySizeLimitFilterDefaultFilters checks that adding the body size
+// limit filter to the default filter set keeps the router filter last, so the
+// resulting connection manager is still valid.
+func TestAddBodySizeLimitFilterDefaultFilters(t *testing.T) {
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	defaultOnly := envoygen.HTTPConnectionManagerBuilder().DefaultFilters()
+	require.NoError(t, defaultOnly.Validate())
+
+	withLimit := envoygen.HTTPConnectionManagerBuilder().
+		DefaultFilters().
+		AddBodySizeLimitFilter(ptr.To(uint64(4096)))
+
+	require.NoError(t, withLimit.Validate(),
+		"connection manager with a body size limit filter failed validation")
+	require.Len(t, withLimit.filters, len(defaultOnly.filters)+1)
+
+	// The body size limit filter is inserted just before the router filter,
+	// leaving the order of the default filters unchanged.
+	names := make([]string, 0, len(withLimit.filters))
+	for _, f := range withLimit.filters {
+		names = append(names, f.GetName())
+	}
+
+	wantNames := make([]string, 0, len(defaultOnly.filters)+1)
+	for _, f := range defaultOnly.filters[:len(defaultOnly.filters)-1] {
+		wantNames = append(wantNames, f.GetName())
+	}
+	wantNames = append(wantNames, FilterChainFilterName, "router")
+
+	assert.Equal(t, wantNames, names)
+
+	protobuf.ExpectEqual(t, bodySizeLimitFilter(4096), withLimit.filters[len(withLimit.filters)-2])
+
+	// Not configuring a limit must not change the default filters at all.
+	withoutLimit := envoygen.HTTPConnectionManagerBuilder().
+		DefaultFilters().
+		AddBodySizeLimitFilter(nil)
+	assert.Equal(t, defaultOnly.filters, withoutLimit.filters)
+}
+
+// TestAddBodySizeLimitFilterTypedConfig unmarshals the generated filter to
+// verify the nested configuration Envoy actually consumes.
+func TestAddBodySizeLimitFilterTypedConfig(t *testing.T) {
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	const limit uint64 = 12345
+
+	filters := envoygen.HTTPConnectionManagerBuilder().
+		AddBodySizeLimitFilter(ptr.To(limit)).
+		filters
+
+	require.Len(t, filters, 1)
+	assert.Equal(t, FilterChainFilterName, filters[0].GetName())
+
+	chainConfig := &envoy_filter_http_filter_chain_v3.FilterChainConfig{}
+	require.NoError(t, filters[0].GetTypedConfig().UnmarshalTo(chainConfig))
+
+	// The limit applies to all requests, so it goes in the default chain.
+	require.NotNil(t, chainConfig.GetDefaultFilterChain())
+	require.Len(t, chainConfig.GetDefaultFilterChain().GetFilters(), 1)
+
+	nested := chainConfig.GetDefaultFilterChain().GetFilters()[0]
+	assert.Equal(t, "body_size_limit", nested.GetName())
+
+	bodySizeLimit := &envoy_filter_http_body_size_limit_v3.BodySizeLimit{}
+	require.NoError(t, nested.GetTypedConfig().UnmarshalTo(bodySizeLimit))
+
+	require.NotNil(t, bodySizeLimit.GetMaxRequestBytes())
+	assert.Equal(t, limit, bodySizeLimit.GetMaxRequestBytes().GetValue())
+}
+
+// bodySizeLimitFilter returns the HTTP filter that AddBodySizeLimitFilter is
+// expected to generate for the given limit.
+func bodySizeLimitFilter(maxRequestBytes uint64) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: FilterChainFilterName,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_filter_chain_v3.FilterChainConfig{
+				DefaultFilterChain: &envoy_filter_http_filter_chain_v3.FilterChain{
+					Filters: []*envoy_config_core_v3.TypedExtensionConfig{
+						{
+							Name: "body_size_limit",
+							TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_body_size_limit_v3.BodySizeLimit{
+								MaxRequestBytes: wrapperspb.UInt64(maxRequestBytes),
+							}),
+						},
+					},
+				},
+			}),
+		},
+	}
 }
 
 func authzFilter(extras ...any) *envoy_filter_network_http_connection_manager_v3.HttpFilter {

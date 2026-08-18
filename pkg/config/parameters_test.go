@@ -678,6 +678,15 @@ func TestListenerValidation(t *testing.T) {
 		MaxConnectionsPerListener: ptr.To(uint32(0)),
 	}
 	require.Error(t, l.Validate())
+
+	l = &ListenerParameters{
+		MaxRequestBodyBytes: ptr.To(uint64(1)),
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		MaxRequestBodyBytes: ptr.To(uint64(0)),
+	}
+	require.Error(t, l.Validate())
 }
 
 func TestClusterParametersValidation(t *testing.T) {
