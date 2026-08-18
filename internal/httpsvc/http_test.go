@@ -139,7 +139,7 @@ func TestHTTPSService(t *testing.T) {
 	caCertPool.AddCert(&ca)
 
 	// Wrap the first HTTP request in Eventually() since the server takes bit time to start.
-	assert.Eventually(t, func() bool {
+	require.Eventually(t, func() bool {
 		resp, err := tryGet("https://localhost:8001/test", trustedTLSClientCert, caCertPool)
 		if err != nil {
 			return false
@@ -150,7 +150,7 @@ func TestHTTPSService(t *testing.T) {
 		assert.GreaterOrEqual(t, uint16(tls.VersionTLS13), resp.TLS.Version)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		return true
-	}, 1*time.Second, 100*time.Millisecond)
+	}, 5*time.Second, 100*time.Millisecond)
 
 	// Rotate server certificates.
 	err = contourCertAfterRotation.WritePEM(svc.Cert, svc.Key)
