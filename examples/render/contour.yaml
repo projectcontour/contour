@@ -4210,13 +4210,12 @@ spec:
                           a single IP family on single-stack clusters), or "RequireDualStack"
                           (two IP families on dual-stack configured clusters, otherwise fail).
                         type: string
-                      serviceAnnotations:
-                        additionalProperties:
-                          type: string
+                      loadBalancerClass:
                         description: |-
-                          ServiceAnnotations is the annotations to add to
-                          the provisioned Envoy service.
-                        type: object
+                          LoadBalancerClass is the class of the load balancer implementation
+                          to use for the Envoy Service when Type is LoadBalancerService.
+                          This maps to Service.spec.loadBalancerClass.
+                        type: string
                       loadBalancerSourceRanges:
                         description: |-
                           LoadBalancerSourceRanges is an optional list of IP ranges in CIDR form
@@ -4226,12 +4225,13 @@ spec:
                         items:
                           type: string
                         type: array
-                      loadBalancerClass:
+                      serviceAnnotations:
+                        additionalProperties:
+                          type: string
                         description: |-
-                          LoadBalancerClass is the class of the load balancer implementation
-                          to use for the Envoy Service when Type is LoadBalancerService.
-                          This maps to Service.spec.loadBalancerClass.
-                        type: string
+                          ServiceAnnotations is the annotations to add to
+                          the provisioned Envoy service.
+                        type: object
                       type:
                         description: |-
                           NetworkPublishingType is the type of publishing strategy to use. Valid values are:
