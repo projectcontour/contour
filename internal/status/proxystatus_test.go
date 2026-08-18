@@ -61,11 +61,12 @@ func TestConditionFor(t *testing.T) {
 
 func TestStatusMutator(t *testing.T) {
 	type testcase struct {
-		testProxy         contour_v1.HTTPProxy
-		proxyUpdate       ProxyUpdate
-		wantConditions    []contour_v1.DetailedCondition
-		wantCurrentStatus string
-		wantDescription   string
+		testProxy              contour_v1.HTTPProxy
+		proxyUpdate            ProxyUpdate
+		wantConditions         []contour_v1.DetailedCondition
+		wantCurrentStatus      string
+		wantDescription        string
+		wantObservedGeneration int64
 	}
 
 	testTransitionTime := meta_v1.NewTime(time.Now())
@@ -79,6 +80,7 @@ func TestStatusMutator(t *testing.T) {
 			assert.Equal(t, tc.wantConditions, o.Status.Conditions, desc)
 			assert.Equal(t, tc.wantCurrentStatus, o.Status.CurrentStatus, desc)
 			assert.Equal(t, tc.wantDescription, o.Status.Description, desc)
+			assert.Equal(t, tc.wantObservedGeneration, o.Status.ObservedGeneration, desc)
 		default:
 			t.Fatal("Got a non-HTTPProxy object.")
 		}
@@ -132,9 +134,20 @@ func TestStatusMutator(t *testing.T) {
 					},
 				},
 			},
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.StalledConditionType,
+					Status:             contour_v1.ConditionFalse,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "Valid",
+					Message:            "No errors present",
+				},
+			},
 		},
-		wantCurrentStatus: string(ProxyStatusValid),
-		wantDescription:   "Valid HTTPProxy",
+		wantCurrentStatus:      string(ProxyStatusValid),
+		wantDescription:        "Valid HTTPProxy",
+		wantObservedGeneration: testGeneration,
 	}
 	run("valid with one warning", validConditionWarning)
 
@@ -186,9 +199,20 @@ func TestStatusMutator(t *testing.T) {
 					},
 				},
 			},
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.StalledConditionType,
+					Status:             contour_v1.ConditionTrue,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "ErrorPresent",
+					Message:            "At least one error present, see Errors for details",
+				},
+			},
 		},
-		wantCurrentStatus: string(ProxyStatusInvalid),
-		wantDescription:   "At least one error present, see Errors for details",
+		wantCurrentStatus:      string(ProxyStatusInvalid),
+		wantDescription:        "At least one error present, see Errors for details",
+		wantObservedGeneration: testGeneration,
 	}
 	run("invalid status, one error", inValidConditionError)
 
@@ -240,9 +264,20 @@ func TestStatusMutator(t *testing.T) {
 					},
 				},
 			},
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.StalledConditionType,
+					Status:             contour_v1.ConditionTrue,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "Orphaned",
+					Message:            "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+				},
+			},
 		},
-		wantCurrentStatus: string(ProxyStatusOrphaned),
-		wantDescription:   "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+		wantCurrentStatus:      string(ProxyStatusOrphaned),
+		wantDescription:        "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+		wantObservedGeneration: testGeneration,
 	}
 
 	run("orphaned HTTPProxy", orphanedCondition)
@@ -305,9 +340,20 @@ func TestStatusMutator(t *testing.T) {
 					},
 				},
 			},
+			{
+				Condition: contour_v1.Condition{
+					Type:               contour_v1.StalledConditionType,
+					Status:             contour_v1.ConditionFalse,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
+					Reason:             "Valid",
+					Message:            "No errors present",
+				},
+			},
 		},
-		wantCurrentStatus: string(ProxyStatusValid),
-		wantDescription:   "Valid HTTPProxy",
+		wantCurrentStatus:      string(ProxyStatusValid),
+		wantDescription:        "Valid HTTPProxy",
+		wantObservedGeneration: testGeneration,
 	}
 
 	run("Test updating existing Valid Condition", updateExistingValidCond)

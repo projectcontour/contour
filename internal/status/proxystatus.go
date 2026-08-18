@@ -75,28 +75,12 @@ func (pu *ProxyUpdate) Mutate(obj client.Object) client.Object {
 
 	proxy := o.DeepCopy()
 
-	for condType, cond := range pu.Conditions {
-		cond.ObservedGeneration = pu.Generation
-		cond.LastTransitionTime = pu.TransitionTime
-
-		currCond := proxy.Status.GetConditionFor(string(condType))
-		if currCond == nil {
-			proxy.Status.Conditions = append(proxy.Status.Conditions, *cond)
-			continue
-		}
-
-		// Don't update the condition if our observation is stale.
-		if currCond.ObservedGeneration > cond.ObservedGeneration {
-			continue
-		}
-
-		cond.DeepCopyInto(currCond)
-
-	}
+	proxy.Status.Conditions = computeConditions(proxy.Status.Conditions, pu.Generation, pu.TransitionTime, pu.Conditions)
+	proxy.Status.ObservedGeneration = pu.Generation
 
 	// Set the old status fields using the Valid DetailedCondition's details.
 	// Other conditions are not relevant for these two fields.
-	validCond := proxy.Status.GetConditionFor(contour_v1.ValidConditionType)
+	validCond := getConditionFor(proxy.Status.Conditions, contour_v1.ValidConditionType)
 
 	switch validCond.Status {
 	case contour_v1.ConditionTrue:

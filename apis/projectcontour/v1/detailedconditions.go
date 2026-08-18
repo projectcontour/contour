@@ -99,7 +99,8 @@ type SubCondition struct {
 //
 // Remember that Conditions have a type, a status, and a reason.
 //
-// The type is the type of the condition, the most important one in this CRD set is `Valid`.
+// The type is the type of the condition, the most important ones in this CRD set are `Valid` and `Stalled`.
+//
 // `Valid` is a positive-polarity condition: when it is `status: true` there are no problems.
 //
 // In more detail, `status: true` means that the object is has been ingested into Contour with no errors.
@@ -109,6 +110,9 @@ type SubCondition struct {
 // `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
 // The details of the errors will be present under the `errors` field. There must be at least one error in the `errors`
 // slice if `status` is `false`.
+//
+// `Stalled` is true when Contour cannot reconcile the resource. Clients that use the kstatus library read this condition
+// together with `observedGeneration` to determine whether Contour has finished reconciling a resource after an apply operation.
 //
 // For DetailedConditions of types other than `Valid`, the Condition must be in the negative polarity.
 // When they have `status` `true`, there is an error. There must be at least one entry in the `errors` Subcondition slice.
@@ -137,6 +141,9 @@ type DetailedCondition struct {
 const (
 	// ValidConditionType describes an valid condition.
 	ValidConditionType = "Valid"
+
+	// StalledConditionType is true when Contour cannot reconcile the resource.
+	StalledConditionType = "Stalled"
 
 	// ConditionTypeAuthError describes an error condition related to Auth.
 	ConditionTypeAuthError = "AuthError"
