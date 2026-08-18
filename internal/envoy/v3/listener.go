@@ -25,9 +25,11 @@ import (
 	envoy_compression_brotli_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/brotli/compressor/v3"
 	envoy_compression_gzip_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
 	envoy_compression_zstd_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
+	envoy_filter_http_body_size_limit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/body_size_limit/v3"
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_filter_http_filter_chain_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/filter_chain/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
 	envoy_filter_http_grpc_web_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_web/v3"
 	envoy_filter_http_jwt_authn_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/jwt_authn/v3"
@@ -182,6 +184,7 @@ const (
 	CompressorFilterName      string = "envoy.filters.http.compressor"
 	GRPCWebFilterName         string = "envoy.filters.http.grpc_web"
 	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
+	FilterChainFilterName     string = "envoy.filters.http.filter_chain"
 )
 
 type httpConnectionManagerBuilder struct {
@@ -459,6 +462,34 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	)
 
 	return b
+}
+
+// AddBodySizeLimitFilter adds a body size limit filter,  with the given limit.
+// If the limit is nil, no filter is added.
+func (b *httpConnectionManagerBuilder) AddBodySizeLimitFilter(maxRequestBodyBytes *uint64) *httpConnectionManagerBuilder {
+	if maxRequestBodyBytes == nil {
+		return b
+	}
+
+	filter := &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: FilterChainFilterName,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_filter_chain_v3.FilterChainConfig{
+				DefaultFilterChain: &envoy_filter_http_filter_chain_v3.FilterChain{
+					Filters: []*envoy_config_core_v3.TypedExtensionConfig{
+						{
+							Name: "body_size_limit",
+							TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_body_size_limit_v3.BodySizeLimit{
+								MaxRequestBytes: wrapperspb.UInt64(*maxRequestBodyBytes),
+							}),
+						},
+					},
+				},
+			}),
+		},
+	}
+
+	return b.AddFilter(filter)
 }
 
 // AddFilter appends f to the list of filters for this HTTPConnectionManager. f

@@ -153,6 +153,21 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	Context("maxRequestBodyBytes option", func() {
+		Context("not set", func() {
+			f.NamespacedTest("httpproxy-no-request-body-size-limit", testRequestBodySizeLimit(false))
+		})
+
+		Context("set to a limit", func() {
+			BeforeEach(func() {
+				contourConfig.Listener.MaxRequestBodyBytes = ptr.To(uint64(requestBodySizeLimitBytes))
+				contourConfiguration.Spec.Envoy.Listener.MaxRequestBodyBytes = ptr.To(uint64(requestBodySizeLimitBytes))
+			})
+
+			f.NamespacedTest("httpproxy-request-body-size-limit", testRequestBodySizeLimit(true))
+		})
+	})
+
 	f.NamespacedTest("httpproxy-client-cert-auth", testClientCertAuth)
 
 	f.NamespacedTest("httpproxy-tcproute-https-termination", testTCPRouteHTTPSTermination)
