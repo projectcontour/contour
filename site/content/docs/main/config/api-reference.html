@@ -8896,6 +8896,37 @@ map[string]string
 the provisioned Envoy service.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>loadBalancerSourceRanges</code>
+<br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LoadBalancerSourceRanges is an optional list of IP ranges in CIDR form
+which are allowed to access the LoadBalancer type Envoy Service.
+This maps to Service.spec.loadBalancerSourceRanges.
+Only applies when Type is LoadBalancerService.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>loadBalancerClass</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LoadBalancerClass is the class of the load balancer implementation
+to use for the Envoy Service when Type is LoadBalancerService.
+This maps to Service.spec.loadBalancerClass.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.NetworkPublishingType">NetworkPublishingType
