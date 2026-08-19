@@ -351,6 +351,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				contourModel.Spec.EnvoyBaseID = envoyParams.BaseID
 			}
 
+			if envoyParams.Concurrency > 0 {
+				contourModel.Spec.EnvoyConcurrency = envoyParams.Concurrency
+			}
+
 			if envoyParams.OverloadMaxHeapSize > 0 {
 				contourModel.Spec.EnvoyMaxHeapSizeBytes = envoyParams.OverloadMaxHeapSize
 			}
