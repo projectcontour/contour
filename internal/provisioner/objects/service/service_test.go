@@ -303,3 +303,20 @@ func TestDesiredEnvoyServiceLoadBalancerFields(t *testing.T) {
 		t.Fatalf("unexpected loadBalancerClass: %v", svc.Spec.LoadBalancerClass)
 	}
 }
+
+func TestDesiredEnvoyServiceLoadBalancerFieldsIgnoredForClusterIP(t *testing.T) {
+	// LoadBalancer-only fields must not leak onto non-LB publishing types.
+	cntr := model.Default(fmt.Sprintf("%s-%s", "test", "ns"), "test-contour")
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges = []string{"10.0.0.0/8"}
+	lbClass := "internal-nlb"
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancerClass = &lbClass
+
+	svc := DesiredEnvoyService(cntr)
+	if len(svc.Spec.LoadBalancerSourceRanges) != 0 {
+		t.Fatalf("expected no source ranges on ClusterIP service, got %v", svc.Spec.LoadBalancerSourceRanges)
+	}
+	if svc.Spec.LoadBalancerClass != nil {
+		t.Fatalf("expected nil loadBalancerClass on ClusterIP service, got %v", *svc.Spec.LoadBalancerClass)
+	}
+}
