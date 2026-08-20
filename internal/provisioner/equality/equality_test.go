@@ -459,6 +459,20 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 			},
 			expect: true,
 		},
+		{
+			description: "if load balancer source ranges changed",
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.LoadBalancerSourceRanges = []string{"10.0.0.0/8"}
+			},
+			expect: true,
+		},
+		{
+			description: "if load balancer class changed",
+			mutate: func(svc *core_v1.Service) {
+				svc.Spec.LoadBalancerClass = ptr.To("service.k8s.aws/nlb")
+			},
+			expect: true,
+		},
 	}
 
 	for _, tc := range testCases {
