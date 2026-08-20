@@ -51,6 +51,9 @@ func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bo
 
 	evh := VirtualHost(vh.Name, envoyRoutes...)
 
+	evh.IncludeRequestAttemptCount = vh.IncludeRequestAttemptCount
+	evh.IncludeAttemptCountInResponse = vh.IncludeAttemptCountInResponse
+
 	if vh.CORSPolicy != nil {
 		if evh.TypedPerFilterConfig == nil {
 			evh.TypedPerFilterConfig = map[string]*anypb.Any{}
