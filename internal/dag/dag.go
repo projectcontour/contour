@@ -774,6 +774,15 @@ type VirtualHost struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
+	// IncludeRequestAttemptCount instructs Envoy to include the
+	// x-envoy-attempt-count header in requests forwarded to the upstream.
+	IncludeRequestAttemptCount bool
+
+	// IncludeAttemptCountInResponse instructs Envoy to include the
+	// x-envoy-attempt-count header in responses returned to the downstream
+	// client.
+	IncludeAttemptCountInResponse bool
+
 	Routes map[string]*Route
 }
 
