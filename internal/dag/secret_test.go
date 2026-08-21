@@ -50,25 +50,29 @@ func TestValidSecrets(t *testing.T) {
 				core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 			}),
-			nil, errEmptyCAKey, errEmptyCRLKey),
+			nil, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, empty": makeTest(
 			makeTLSSecret(map[string][]byte{}),
-			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey),
+			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate plus CA in bundle": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(pemBundle(fixture.CERTIFICATE, fixture.CA_CERT)),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 			}),
-			nil, errEmptyCAKey, errEmptyCRLKey),
+			nil, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate plus CA with no CN in bundle": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(pemBundle(fixture.CERTIFICATE, fixture.CA_CERT_NO_CN)),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 			}),
-			nil, errEmptyCAKey, errEmptyCRLKey),
+			nil, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, single certificate plus CA in ca.crt key": makeTest(
 			makeTLSSecret(map[string][]byte{
@@ -76,7 +80,8 @@ func TestValidSecrets(t *testing.T) {
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 				CACertificateKey:         []byte(fixture.CA_CERT),
 			}),
-			nil, nil, errEmptyCRLKey),
+			nil, nil, errEmptyCRLKey,
+		),
 
 		"TLS Secret, single certificate plus CA with no CN in ca.crt key": makeTest(
 			makeTLSSecret(map[string][]byte{
@@ -84,69 +89,79 @@ func TestValidSecrets(t *testing.T) {
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 				CACertificateKey:         []byte(fixture.CA_CERT_NO_CN),
 			}),
-			nil, nil, errEmptyCRLKey),
+			nil, nil, errEmptyCRLKey,
+		),
 
 		"TLS Secret, missing CN": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.MISSING_CN_CERT),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.MISSING_CN_KEY),
 			}),
-			errors.New(`invalid TLS certificate: certificate has no common name or subject alt name`), errEmptyCAKey, errEmptyCRLKey),
+			errors.New(`invalid TLS certificate: certificate has no common name or subject alt name`), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, CA cert": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.CA_CERT),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.CA_KEY),
 			}),
-			nil, errEmptyCAKey, errEmptyCRLKey),
+			nil, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, CA cert, missing CN": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.CA_CERT_NO_CN),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.CA_KEY_NO_CN),
 			}),
-			errors.New("invalid TLS certificate: certificate has no common name or subject alt name"), errEmptyCAKey, errEmptyCRLKey),
+			errors.New("invalid TLS certificate: certificate has no common name or subject alt name"), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"EC cert with SubjectAltName only": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.EC_CERTIFICATE),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.EC_PRIVATE_KEY),
 			}),
-			nil, errEmptyCAKey, errEmptyCRLKey),
+			nil, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate, missing key": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey: []byte(fixture.CERTIFICATE),
 			}),
-			errors.New(`missing TLS private key`), errEmptyCAKey, errEmptyCRLKey),
+			errors.New(`missing TLS private key`), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate, multiple keys, RSA and EC": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY + "\n" + fixture.EC_PRIVATE_KEY + "\n" + fixture.PKCS8_PRIVATE_KEY),
 			}),
-			errors.New(`invalid TLS private key: multiple private keys`), errEmptyCAKey, errEmptyCRLKey),
+			errors.New(`invalid TLS private key: multiple private keys`), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate, multiple keys, PKCS1 and PKCS8": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY + "\n" + fixture.PKCS8_PRIVATE_KEY),
 			}),
-			errors.New("invalid TLS private key: multiple private keys"), errEmptyCAKey, errEmptyCRLKey),
+			errors.New("invalid TLS private key: multiple private keys"), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate, invalid key": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
 				core_v1.TLSPrivateKeyKey: []byte("-----BEGIN RSA PRIVATE KEY-----\ninvalid\n-----END RSA PRIVATE KEY-----"),
 			}),
-			errors.New("invalid TLS private key: failed to parse PEM block"), errEmptyCAKey, errEmptyCRLKey),
+			errors.New("invalid TLS private key: failed to parse PEM block"), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, certificate, only EC parameters": makeTest(
 			makeTLSSecret(map[string][]byte{
 				core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.EC_PARAMETERS),
 			}),
-			errors.New("invalid TLS private key: failed to locate private key"), errEmptyCAKey, errEmptyCRLKey),
+			errors.New("invalid TLS private key: failed to locate private key"), errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		// The next two test cases are to cover
 		// #3496.
@@ -156,7 +171,8 @@ func TestValidSecrets(t *testing.T) {
 				core_v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
 				core_v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
 			}),
-			nil, errEmptyCAKey, errEmptyCRLKey),
+			nil, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"TLS Secret, wildcard cert with different SANs plus CA cert": makeTest(
 			makeTLSSecret(map[string][]byte{
@@ -164,44 +180,52 @@ func TestValidSecrets(t *testing.T) {
 				core_v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
 				CACertificateKey:         []byte(fixture.CA_CERT),
 			}),
-			nil, nil, errEmptyCRLKey),
+			nil, nil, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, CA Cert": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				CACertificateKey: []byte(fixture.CA_CERT),
 			}),
-			errTLSCertMissing, nil, errEmptyCRLKey),
+			errTLSCertMissing, nil, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, CA Cert with explanatory text": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				CACertificateKey: []byte(fixture.CERTIFICATE_WITH_TEXT),
 			}),
-			errTLSCertMissing, nil, errEmptyCRLKey),
+			errTLSCertMissing, nil, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, CA Cert with No CN": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				CACertificateKey: []byte(fixture.CA_CERT_NO_CN),
 			}),
-			errTLSCertMissing, nil, errEmptyCRLKey),
+			errTLSCertMissing, nil, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, CA Cert with non-PEM data": makeTest(
 			makeOpaqueSecret(caBundleData(fixture.CERTIFICATE, fixture.CERTIFICATE, fixture.CERTIFICATE, fixture.CERTIFICATE)),
-			errTLSCertMissing, nil, errEmptyCRLKey),
+			errTLSCertMissing, nil, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, CA Cert with non-PEM data and no certificates": makeTest(
 			makeOpaqueSecret(caBundleData()),
-			errTLSCertMissing, errors.New(`invalid CA certificate bundle: failed to locate certificate`), errEmptyCRLKey),
+			errTLSCertMissing, errors.New(`invalid CA certificate bundle: failed to locate certificate`), errEmptyCRLKey,
+		),
 		"Opaque Secret, zero length CA Cert": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				CACertificateKey: []byte(""),
 			}),
-			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey),
+			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, no CA Cert": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				"some-other-key": []byte("value"),
 			}),
-			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey),
+			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"Opaque Secret, with TLS Cert and Key": makeTest(
 			makeOpaqueSecret(map[string][]byte{
@@ -209,19 +233,22 @@ func TestValidSecrets(t *testing.T) {
 				core_v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
 				CACertificateKey:         []byte(fixture.CA_CERT),
 			}),
-			nil, nil, errEmptyCRLKey),
+			nil, nil, errEmptyCRLKey,
+		),
 
 		"Opaque Secret with CRL": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				CRLKey: []byte(fixture.CRL),
 			}),
-			errTLSCertMissing, errEmptyCAKey, nil),
+			errTLSCertMissing, errEmptyCAKey, nil,
+		),
 
 		"Opaque Secret with zero-length CRL": makeTest(
 			makeOpaqueSecret(map[string][]byte{
 				CRLKey: []byte(""),
 			}),
-			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey),
+			errTLSCertMissing, errEmptyCAKey, errEmptyCRLKey,
+		),
 
 		"kubernetes.io/dockercfg Secret, with TLS cert, CA cert and CRL": {
 			secret: &core_v1.Secret{
@@ -266,7 +293,7 @@ func caBundleData(cert ...string) map[string][]byte {
 	data.WriteString("start of CA bundle\n")
 
 	for n, c := range cert {
-		data.WriteString(fmt.Sprintf("certificate %d\n", n))
+		fmt.Fprintf(&data, "certificate %d\n", n)
 		data.WriteString(c)
 		data.WriteString("\n")
 	}

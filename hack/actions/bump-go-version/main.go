@@ -151,7 +151,7 @@ func updateFiles(version, hash string) {
 		updated = goVersionRegexp.ReplaceAllString(updated, "${1}"+ver)
 
 		if updated != string(content) {
-			if err := os.WriteFile(file, []byte(updated), 0o600); err != nil {
+			if err := os.WriteFile(file, []byte(updated), 0o600); err != nil { //nolint:gosec // G703: Path traversal via taint analysis
 				log.WithError(err).WithField("file", file).Fatal("Failed to write file")
 			}
 			log.Infof("Updated file: %s", file)

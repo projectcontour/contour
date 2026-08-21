@@ -443,14 +443,15 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 
 func timeoutPolicy(tp *contour_v1.TimeoutPolicy, connectTimeout time.Duration) (RouteTimeoutPolicy, ClusterTimeoutPolicy, error) {
 	if tp == nil {
-		return RouteTimeoutPolicy{
-				ResponseTimeout:   timeout.DefaultSetting(),
-				IdleStreamTimeout: timeout.DefaultSetting(),
-			}, ClusterTimeoutPolicy{
-				IdleConnectionTimeout: timeout.DefaultSetting(),
-				ConnectTimeout:        connectTimeout,
-			},
-			nil
+		rtp := RouteTimeoutPolicy{
+			ResponseTimeout:   timeout.DefaultSetting(),
+			IdleStreamTimeout: timeout.DefaultSetting(),
+		}
+		ctp := ClusterTimeoutPolicy{
+			IdleConnectionTimeout: timeout.DefaultSetting(),
+			ConnectTimeout:        connectTimeout,
+		}
+		return rtp, ctp, nil
 	}
 
 	responseTimeout, err := timeout.Parse(tp.Response)
@@ -468,13 +469,15 @@ func timeoutPolicy(tp *contour_v1.TimeoutPolicy, connectTimeout time.Duration) (
 		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle connection timeout: %w", err)
 	}
 
-	return RouteTimeoutPolicy{
-			ResponseTimeout:   responseTimeout,
-			IdleStreamTimeout: idleStreamTimeout,
-		}, ClusterTimeoutPolicy{
-			IdleConnectionTimeout: idleConnectionTimeout,
-			ConnectTimeout:        connectTimeout,
-		}, nil
+	rtp := RouteTimeoutPolicy{
+		ResponseTimeout:   responseTimeout,
+		IdleStreamTimeout: idleStreamTimeout,
+	}
+	ctp := ClusterTimeoutPolicy{
+		IdleConnectionTimeout: idleConnectionTimeout,
+		ConnectTimeout:        connectTimeout,
+	}
+	return rtp, ctp, nil
 }
 
 func httpHealthCheckPolicy(hc *contour_v1.HTTPHealthCheckPolicy) (*HTTPHealthCheckPolicy, error) {
