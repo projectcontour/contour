@@ -299,7 +299,8 @@ func (p *GatewayAPIProcessor) processRoute(
 				gatewayapi_v1.RouteConditionResolvedRefs,
 				meta_v1.ConditionTrue,
 				gatewayapi_v1.RouteReasonResolvedRefs,
-				"References resolved")
+				"References resolved",
+			)
 		}
 
 		// Check for an existing "Accepted" condition, add one if one does
@@ -1472,7 +1473,8 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				responseHeaderPolicy,
 				mirrorPolicies,
 				pathRewritePolicy,
-				timeoutPolicy)
+				timeoutPolicy,
+			)
 		}
 
 		// Check all the routes whether there is conflict against previous rules.

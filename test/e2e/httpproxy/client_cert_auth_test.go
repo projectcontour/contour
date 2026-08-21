@@ -114,7 +114,7 @@ func testClientCertAuth(namespace string) {
 			Spec: contour_v1.HTTPProxySpec{
 				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "echo-no-auth.projectcontour.io",
-					TLS: &contour_v1.TLS{
+					TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName: "echo-no-auth",
 					},
 				},
@@ -141,7 +141,7 @@ func testClientCertAuth(namespace string) {
 			Spec: contour_v1.HTTPProxySpec{
 				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "echo-with-auth.projectcontour.io",
-					TLS: &contour_v1.TLS{
+					TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName: "echo-with-auth",
 						ClientValidation: &contour_v1.DownstreamValidation{
 							CACertificate: "echo-with-auth",
@@ -171,7 +171,7 @@ func testClientCertAuth(namespace string) {
 			Spec: contour_v1.HTTPProxySpec{
 				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "echo-with-auth-skip-verify.projectcontour.io",
-					TLS: &contour_v1.TLS{
+					TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName: "echo-with-auth-skip-verify",
 						ClientValidation: &contour_v1.DownstreamValidation{
 							SkipClientCertValidation: true,
@@ -201,7 +201,7 @@ func testClientCertAuth(namespace string) {
 			Spec: contour_v1.HTTPProxySpec{
 				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "echo-with-auth-skip-verify-with-ca.projectcontour.io",
-					TLS: &contour_v1.TLS{
+					TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName: "echo-with-auth-skip-verify-with-ca",
 						ClientValidation: &contour_v1.DownstreamValidation{
 							SkipClientCertValidation: true,
@@ -232,7 +232,7 @@ func testClientCertAuth(namespace string) {
 			Spec: contour_v1.HTTPProxySpec{
 				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "echo-with-optional-auth.projectcontour.io",
-					TLS: &contour_v1.TLS{
+					TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName: "echo-with-optional-auth",
 						ClientValidation: &contour_v1.DownstreamValidation{
 							OptionalClientCertificate: true,
@@ -263,7 +263,7 @@ func testClientCertAuth(namespace string) {
 			Spec: contour_v1.HTTPProxySpec{
 				VirtualHost: &contour_v1.VirtualHost{
 					Fqdn: "echo-with-optional-auth-no-ca.projectcontour.io",
-					TLS: &contour_v1.TLS{
+					TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName: "echo-with-optional-auth-no-ca",
 						ClientValidation: &contour_v1.DownstreamValidation{
 							OptionalClientCertificate: true,

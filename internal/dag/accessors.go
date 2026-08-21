@@ -306,7 +306,8 @@ func (d *DAG) GetServiceClusters() []*ServiceCluster {
 					Name:      cluster.Upstream.Weighted.ServiceName,
 					Namespace: cluster.Upstream.Weighted.ServiceNamespace,
 				},
-				cluster.Upstream.Weighted.ServicePort.Name),
+				cluster.Upstream.Weighted.ServicePort.Name,
+			),
 			Services: []WeightedService{
 				cluster.Upstream.Weighted,
 			},

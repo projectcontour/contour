@@ -2724,7 +2724,8 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"HTTPProxy with cross-namespace CRL secret reference triggers rebuild": {
 			cache: cache(
 				tlsCertificateDelegation("default", "crl", "thatnamespace", "thisnamespace"),
-				httpProxyWithClientValidation("thisnamespace", "proxy", "default/crl")),
+				httpProxyWithClientValidation("thisnamespace", "proxy", "default/crl"),
+			),
 			secret: secret("default", "crl"),
 			want:   true,
 		},

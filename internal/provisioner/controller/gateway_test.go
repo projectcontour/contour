@@ -648,7 +648,7 @@ func TestGatewayReconcile(t *testing.T) {
 				},
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					Contour: &contour_v1alpha1.ContourSettings{
-						Replicas: 3,
+						Replicas: 3, //nolint:staticcheck // SA1019: intentionally testing the deprecated Replicas field
 						Deployment: &contour_v1alpha1.DeploymentSettings{
 							Replicas: 4,
 							Strategy: &apps_v1.DeploymentStrategy{
@@ -972,7 +972,7 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					Envoy: &contour_v1alpha1.EnvoySettings{
 						WorkloadType: contour_v1alpha1.WorkloadTypeDeployment,
-						Replicas:     7,
+						Replicas:     7, //nolint:staticcheck // SA1019: intentionally testing the deprecated Replicas field
 					},
 				},
 			},
@@ -1018,7 +1018,7 @@ func TestGatewayReconcile(t *testing.T) {
 				Spec: contour_v1alpha1.ContourDeploymentSpec{
 					Envoy: &contour_v1alpha1.EnvoySettings{
 						WorkloadType: contour_v1alpha1.WorkloadTypeDeployment,
-						Replicas:     7,
+						Replicas:     7, //nolint:staticcheck // SA1019: intentionally testing the deprecated Replicas field
 						Deployment: &contour_v1alpha1.DeploymentSettings{
 							Replicas: 6,
 							Strategy: &apps_v1.DeploymentStrategy{

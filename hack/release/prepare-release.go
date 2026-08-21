@@ -33,7 +33,7 @@ import (
 
 func must(err error) {
 	if err != nil {
-		log.Fatalf("%s", err.Error())
+		log.Fatalf("%s", err.Error()) //nolint:gosec // G706: Log injection via taint analysis
 	}
 }
 
@@ -86,7 +86,7 @@ func updateMappingForTOC(filePath, vers, toc string) error {
 		},
 	)
 
-	return os.WriteFile(filePath, []byte(rn.MustString()), 0o600)
+	return os.WriteFile(filePath, []byte(rn.MustString()), 0o600) //nolint:gosec // G703: Path traversal via taint analysis
 }
 
 // InsertAfter is like yaml.ElementAppender except it inserts after the named node.
@@ -148,11 +148,11 @@ func updateConfigForSite(filePath, vers string) error {
 		log.Fatalf("%s", err)
 	}
 
-	return os.WriteFile(filePath, []byte(rn.MustString()), 0o600)
+	return os.WriteFile(filePath, []byte(rn.MustString()), 0o600) //nolint:gosec // G703: Path traversal via taint analysis
 }
 
 func updateIndexFile(filePath, newVers string) error {
-	data, err := os.ReadFile(filePath)
+	data, err := os.ReadFile(filePath) //nolint:gosec // G703: Path traversal via taint analysis
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func updateIndexFile(filePath, newVers string) error {
 	upd := strings.ReplaceAll(string(data), "version: main", fmt.Sprintf("version: \"%s\"", newVers))
 	upd = strings.ReplaceAll(upd, "branch: main", "branch: release-"+newVers)
 
-	return os.WriteFile(filePath, []byte(upd), 0o600)
+	return os.WriteFile(filePath, []byte(upd), 0o600) //nolint:gosec // G703: Path traversal via taint analysis
 }
 
 func main() {
@@ -171,7 +171,7 @@ func main() {
 
 	version, err := semver.NewVersion(os.Args[1])
 	if err != nil {
-		log.Fatalf("invalid version string %q: %s", os.Args[1], err)
+		log.Fatalf("invalid version string %q: %s", os.Args[1], err) //nolint:gosec // G706: Log injection via taint analysis
 	}
 
 	kubeMinVers := os.Args[2]
@@ -191,7 +191,7 @@ func main() {
 	if version.Patch() == 0 && version.Prerelease() == "" {
 		docsVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 
-		log.Printf("Creating versioned documentation for %s...", docsVersion)
+		log.Printf("Creating versioned documentation for %s...", docsVersion) //nolint:gosec // G706: Log injection via taint analysis
 
 		// Jekyll hates it when the TOC file name contains a dot.
 		tocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", docsVersion), ".", "-")

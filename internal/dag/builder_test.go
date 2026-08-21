@@ -1590,7 +1590,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
-						)),
+						),
+					),
 					EnableWebsockets: true,
 				},
 			),
@@ -11238,7 +11239,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
@@ -11305,7 +11307,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
@@ -11338,7 +11341,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
@@ -11374,7 +11378,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
@@ -11410,7 +11415,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
@@ -11447,7 +11453,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
@@ -11489,7 +11496,8 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 								Routes: routes(
-									routeUpgrade("/", service(s1))),
+									routeUpgrade("/", service(s1)),
+								),
 							},
 							MinTLSVersion: "1.2",
 							MaxTLSVersion: "1.3",
