@@ -1,0 +1,1 @@
+The example test application used in the deployment and Gateway API guides is now `registry.k8s.io/gateway-api/conformance/echo-basic`, replacing the unavailable `gcr.io/kuar-demo/kuard-amd64` image. 

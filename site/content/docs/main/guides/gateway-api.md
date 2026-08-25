@@ -155,27 +155,27 @@ See the next section ([Testing the Gateway API](#test-routing)) for how to deplo
 
 Deploy the test application:
 ```shell
-$ kubectl apply -f {{< param github_raw_url>}}/{{< param branch >}}/examples/example-workload/gatewayapi/kuard/kuard.yaml
+$ kubectl apply -f {{< param github_raw_url>}}/{{< param branch >}}/examples/example-workload/gatewayapi/echo/echo.yaml
 ```
 This command creates:
 
-- A Deployment named `kuard` in the default namespace to run a small echo server as the test application.
-- A Service named `kuard` in the default namespace to expose the test application on TCP port 80.
-- An HTTPRoute named `kuard` in the default namespace, attached to the `contour` Gateway, to route requests for `local.projectcontour.io` to the `kuard` service.
+- A Deployment named `echo` in the default namespace to run a small echo server as the test application.
+- A Service named `echo` in the default namespace to expose the test application on TCP port 80.
+- An HTTPRoute named `echo` in the default namespace, attached to the `contour` Gateway, to route requests for `local.projectcontour.io` to the `echo` service.
 
-Verify the kuard resources are available:
+Verify the echo resources are available:
 ```shell
-$ kubectl get po,svc,httproute -l app=kuard
-NAME                         READY   STATUS    RESTARTS   AGE
-pod/kuard-798585497b-78x6x   1/1     Running   0          21s
-pod/kuard-798585497b-7gktg   1/1     Running   0          21s
-pod/kuard-798585497b-zw42m   1/1     Running   0          21s
+$ kubectl get po,svc,httproute -l app=echo
+NAME                        READY   STATUS    RESTARTS   AGE
+pod/echo-798585497b-78x6x   1/1     Running   0          21s
+pod/echo-798585497b-7gktg   1/1     Running   0          21s
+pod/echo-798585497b-zw42m   1/1     Running   0          21s
 
-NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-service/kuard   ClusterIP   172.30.168.168   <none>        80/TCP    21s
+NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/echo   ClusterIP   172.30.168.168   <none>        80/TCP    21s
 
-NAME                                        HOSTNAMES
-httproute.gateway.networking.k8s.io/kuard   ["local.projectcontour.io"]
+NAME                                       HOSTNAMES
+httproute.gateway.networking.k8s.io/echo   ["local.projectcontour.io"]
 ```
 
 ## Test Routing
@@ -195,7 +195,7 @@ In another terminal, make a request to the application via the forwarded port (n
 ```shell
 $ curl -i http://local.projectcontour.io:8888
 ```
-You should receive a 200 response code along with the HTML body of the main `kuard` page.
+You should receive a 200 response code along with a JSON body describing the request Envoy forwarded to the application.
 
 You can also open http://local.projectcontour.io:8888/ in a browser.
 

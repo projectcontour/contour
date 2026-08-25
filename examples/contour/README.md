@@ -39,7 +39,7 @@ This will:
 
 ## Test
 
-1. Install a workload (see the kuard example in the [main deployment guide](https://projectcontour.io/docs/main/deploy-options/#test-with-httpproxy)).
+1. Install a workload (see the echo example in the [main deployment guide](https://projectcontour.io/docs/main/deploy-options/#test-with-httpproxy)).
 
 ## Deploying with Host Networking enabled for Envoy
 

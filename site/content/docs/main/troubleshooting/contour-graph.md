@@ -15,11 +15,11 @@ $ kubectl -n projectcontour port-forward $CONTOUR_POD 6060
 $ curl localhost:6060/debug/dag | dot -T png > contour-dag.png
 ```
 
-The following is an example of a DAG that maps `http://kuard.local:80/` to the
-`kuard` service in the `default` namespace:
+The following is an example of a DAG that maps `http://echo.local:80/` to the
+`echo` service in the `default` namespace:
 
 ![Sample DAG][4]
 
 [2]: https://en.wikipedia.org/wiki/DOT
 [3]: https://graphviz.gitlab.io/
-[4]: /img/kuard-dag.png
+[4]: /img/echo-dag.png

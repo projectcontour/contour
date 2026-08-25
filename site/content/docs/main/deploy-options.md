@@ -106,65 +106,65 @@ _Note: We've created a public DNS record (`local.projectcontour.io`) which is co
 
 ### Test with Ingress
 
-The Contour repository contains an example deployment of the Kubernetes Up and Running demo application, [kuard][5].
-To test your Contour deployment, deploy `kuard` with the following command:
+The Contour repository contains an example deployment of an [echo server][5] that returns a JSON description of each request it receives.
+To test your Contour deployment, deploy it with the following command:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
+$ kubectl apply -f https://projectcontour.io/examples/echo.yaml
 ```
 
 Then monitor the progress of the deployment with:
 
 ```bash
-$ kubectl get po,svc,ing -l app=kuard
+$ kubectl get po,svc,ing -l app=echo
 ```
 
 You should see something like:
 
 ```
-NAME                       READY     STATUS    RESTARTS   AGE
-po/kuard-370091993-ps2gf   1/1       Running   0          4m
-po/kuard-370091993-r63cm   1/1       Running   0          4m
-po/kuard-370091993-t4dqk   1/1       Running   0          4m
+NAME                        READY   STATUS    RESTARTS   AGE
+pod/echo-5667fbf86b-9gmt7   1/1     Running   0          4s
+pod/echo-5667fbf86b-9r6l4   1/1     Running   0          4s
+pod/echo-5667fbf86b-dpsff   1/1     Running   0          4s
 
-NAME        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
-svc/kuard   10.110.67.121   <none>        80/TCP    4m
+NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/echo   ClusterIP   10.96.85.239   <none>        80/TCP    4s
 
-NAME        HOSTS     ADDRESS     PORTS     AGE
-ing/kuard   *         10.0.0.47   80        4m
+NAME                             CLASS    HOSTS   ADDRESS   PORTS   AGE
+ingress.networking.k8s.io/echo   <none>   *                 80      4s
 ```
 
 ... showing that there are three Pods, one Service, and one Ingress that is bound to all virtual hosts (`*`).
 
-In your browser, navigate your browser to the IP or DNS address of the Contour Service to interact with the demo application.
+In your browser, navigate to the IP or DNS address of the Contour Service to see the response from the demo application.
 
 ### Test with HTTPProxy
 
 To test your Contour deployment with [HTTPProxy][9], run the following command:
 
 ```sh
-$ kubectl apply -f https://projectcontour.io/examples/kuard-httpproxy.yaml
+$ kubectl apply -f https://projectcontour.io/examples/echo-httpproxy.yaml
 ```
 
 Then monitor the progress of the deployment with:
 
 ```sh
-$ kubectl get po,svc,httpproxy -l app=kuard
+$ kubectl get po,svc,httpproxy -l app=echo
 ```
 
 You should see something like:
 
 ```sh
-NAME                        READY     STATUS    RESTARTS   AGE
-pod/kuard-bcc7bf7df-9hj8d   1/1       Running   0          1h
-pod/kuard-bcc7bf7df-bkbr5   1/1       Running   0          1h
-pod/kuard-bcc7bf7df-vkbtl   1/1       Running   0          1h
+NAME                        READY   STATUS    RESTARTS   AGE
+pod/echo-5667fbf86b-4s2gp   1/1     Running   0          63s
+pod/echo-5667fbf86b-kmdk4   1/1     Running   0          63s
+pod/echo-5667fbf86b-nz8z8   1/1     Running   0          63s
 
-NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-service/kuard   ClusterIP   10.102.239.168   <none>        80/TCP    1h
+NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+service/echo   ClusterIP   10.96.108.13   <none>        80/TCP    63s
 
-NAME                                    FQDN                TLS SECRET                  FIRST ROUTE  STATUS  STATUS DESCRIPT
-httpproxy.projectcontour.io/kuard      kuard.local         <SECRET NAME IF TLS USED>                valid   valid HTTPProxy
+NAME                               FQDN         TLS SECRET   STATUS   STATUS DESCRIPTION
+httpproxy.projectcontour.io/echo   echo.local                valid    Valid HTTPProxy
 ```
 
 ... showing that there are three Pods, one Service, and one HTTPProxy .
@@ -172,7 +172,7 @@ httpproxy.projectcontour.io/kuard      kuard.local         <SECRET NAME IF TLS U
 In your terminal, use curl with the IP or DNS address of the Contour Service to send a request to the demo application:
 
 ```sh
-$ curl -H 'Host: kuard.local' ${CONTOUR_IP}
+$ curl -H 'Host: echo.local' ${CONTOUR_IP}
 ```
 
 ## Running without a Kubernetes LoadBalancer
@@ -367,7 +367,7 @@ $ kubectl delete ns projectcontour
 [2]: {{< param github_url>}}/tree/{{< param branch >}}/examples/render/contour.yaml
 [3]: #host-networking
 [4]: guides/proxy-proto.md
-[5]: https://github.com/kubernetes-up-and-running/kuard
+[5]: https://github.com/kubernetes-sigs/gateway-api-conformance-images
 [7]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour/02-service-envoy.yaml
 [8]: /getting-started
 [9]: config/fundamentals.md

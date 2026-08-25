@@ -2,58 +2,60 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: kuard
-  name: kuard
+    app: echo
+  name: echo
   namespace: default
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: kuard
+      app: echo
   template:
     metadata:
       labels:
-        app: kuard
+        app: echo
     spec:
       containers:
-      # gcr.io/kuar-demo/kuard-amd64 is no longer available upstream
-      # (https://github.com/kubernetes-up-and-running/kuard/issues/59),
-      # so this example now runs a small echo server on port 8080 instead
-      # (same image already used by the blue-green example).
-      - image: stevesloka/echo-server
-        name: kuard
-        command: ["echo-server"]
-        args:
-          - --echotext=kuard
+      - image: registry.k8s.io/gateway-api/conformance/echo-basic:v0.1.0
+        name: echo
         imagePullPolicy: IfNotPresent
         ports:
           - name: http
-            containerPort: 8080
+            containerPort: 3000
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: kuard
-  name: kuard
+    app: echo
+  name: echo
   namespace: default
 spec:
   ports:
   - port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
   selector:
-    app: kuard
+    app: echo
   sessionAffinity: None
   type: ClusterIP
 ---
 kind: HTTPRoute
 apiVersion: gateway.networking.k8s.io/v1
 metadata:
-  name: kuard
+  name: echo
   namespace: default
   labels:
-    app: kuard
+    app: echo
 spec:
   parentRefs:
   - group: gateway.networking.k8s.io
@@ -69,5 +71,5 @@ spec:
         value: /
     backendRefs:
     - kind: Service
-      name: kuard
+      name: echo
       port: 80
