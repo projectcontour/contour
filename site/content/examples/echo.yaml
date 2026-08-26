@@ -1,8 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app: echo
   name: echo
-  namespace: default
 spec:
   replicas: 3
   selector:
@@ -30,34 +31,31 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: echo
+  name: echo
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: echo
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: echo
-  namespace: marketing
+  labels:
+    app: echo
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: echo
-  template:
-    metadata:
-      labels:
-        app: echo
-    spec:
-      containers:
-      - image: registry.k8s.io/gateway-api/conformance/echo-basic:v0.1.0
-        name: echo
-        imagePullPolicy: IfNotPresent
-        ports:
-          - name: http
-            containerPort: 3000
-        env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+  defaultBackend:
+    service:
+      name: echo
+      port:
+        number: 80

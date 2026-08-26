@@ -1,8 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app: echo
   name: echo
-  namespace: default
 spec:
   replicas: 3
   selector:
@@ -30,34 +31,35 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
+  labels:
+    app: echo
   name: echo
-  namespace: marketing
 spec:
-  replicas: 3
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 3000
   selector:
-    matchLabels:
-      app: echo
-  template:
-    metadata:
-      labels:
-        app: echo
-    spec:
-      containers:
-      - image: registry.k8s.io/gateway-api/conformance/echo-basic:v0.1.0
-        name: echo
-        imagePullPolicy: IfNotPresent
-        ports:
-          - name: http
-            containerPort: 3000
-        env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+    app: echo
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata: 
+  labels:
+    app: echo
+  name: echo
+  namespace: default
+spec: 
+  virtualhost:
+    fqdn: echo.local
+  routes: 
+    - conditions:
+      - prefix: /
+      services:
+        - name: echo
+          port: 80

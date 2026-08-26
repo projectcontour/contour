@@ -5,12 +5,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -19,12 +19,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -33,12 +33,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -47,12 +47,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -61,12 +61,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -75,12 +75,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -89,12 +89,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -103,12 +103,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -117,12 +117,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -131,12 +131,12 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -145,9 +145,9 @@ metadata:
   namespace: marketing
 spec:
   selector:
-    app: kuard
+    app: echo
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: 3000

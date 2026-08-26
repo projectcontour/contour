@@ -37,7 +37,7 @@ $ kubectl get service envoy --namespace=projectcontour -o jsonpath='{.status.loa
 
 You can now test your NLB.
 
-1. Install a workload (see the kuard example in the [main deployment guide][2]).
+1. Install a workload (see the echo example in the [main deployment guide][2]).
 2. Look up the address for your NLB in the AWS console and enter it in your browser.
   - Notice that Envoy fills out `X-Forwarded-For`, because it was the first to see the traffic directly from the browser.
 
