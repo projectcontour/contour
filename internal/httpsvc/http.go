@@ -84,7 +84,7 @@ func (svc *Service) Start(ctx context.Context) (err error) {
 		TLSConfig:         tlsConfig,
 	}
 
-	go func() {
+	go func() { //nolint:gosec // G118: Goroutine uses context.Background/TODO while request-scoped context is available
 		// wait for stop signal from group.
 		<-ctx.Done()
 

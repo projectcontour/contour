@@ -205,20 +205,22 @@ func setup(t *testing.T, opts ...any) (ResourceEventHandlerWrapper, *Contour, fu
 		statusUpdateCacher:   statusUpdateCacher,
 	}
 
-	return rh, &Contour{
-			T:                 t,
-			ClientConn:        cc,
-			statusUpdateCache: statusUpdateCacher,
-		}, func() {
-			// close client connection
-			cc.Close()
+	contour := &Contour{
+		T:                 t,
+		ClientConn:        cc,
+		statusUpdateCache: statusUpdateCacher,
+	}
+	cleanup := func() {
+		// close client connection
+		cc.Close()
 
-			// stop server
-			cancel()
+		// stop server
+		cancel()
 
-			// wait for everything to gracefully stop.
-			wg.Wait()
-		}
+		// wait for everything to gracefully stop.
+		wg.Wait()
+	}
+	return rh, contour, cleanup
 }
 
 // resourceEventHandler composes a contour.EventHandler and a contour.EndpointSliceTranslator

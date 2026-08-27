@@ -50,7 +50,7 @@ func testProjectcontourResourcesRBAC(namespace string) {
 			},
 			Spec: contour_v1.TLSCertificateDelegationSpec{
 				Delegations: []contour_v1.CertificateDelegation{
-					{
+					{ //nolint:gosec // G101: Potential hardcoded credentials
 						SecretName:       "delegated-cert",
 						TargetNamespaces: []string{namespace},
 					},

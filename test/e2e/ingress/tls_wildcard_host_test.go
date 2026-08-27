@@ -43,7 +43,7 @@ func testTLSWildcardHost(namespace string) {
 			},
 			Spec: networking_v1.IngressSpec{
 				TLS: []networking_v1.IngressTLS{
-					{
+					{ //nolint:gosec // G101: Potential hardcoded credentials
 						Hosts:      []string{"*.wildcardhost.ingress.projectcontour.io"},
 						SecretName: "echo-one-cert",
 					},
