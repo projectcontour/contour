@@ -306,15 +306,34 @@ spec:
                         properties:
                           algorithm:
                             description: |-
-                              Algorithm selects the response compression type applied in the compression HTTP filter of the default Listener filters.
+                              Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
                               Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
                               Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
+                              Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
                             enum:
                             - gzip
                             - brotli
                             - zstd
                             - disabled
                             type: string
+                          algorithms:
+                            description: |-
+                              Algorithms selects one or more response compression types.
+                              Envoy installs one compressor filter per entry and negotiates the encoding from the request Accept-Encoding header.
+                              List order is the preference when q-values are equal (the first entry is preferred).
+                              Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; set algorithm: disabled instead.
+                              Mutually exclusive with Algorithm.
+                            items:
+                              description: |-
+                                CompressionAlgorithm defines the type of compression algorithm applied in default HTTP listener filter chain.
+                                Allowable values are defined as names of well known compression algorithms (plus "disabled").
+                              enum:
+                              - gzip
+                              - brotli
+                              - zstd
+                              type: string
+                            maxItems: 3
+                            type: array
                         type: object
                       connectionBalancer:
                         description: |-
@@ -4457,15 +4476,34 @@ spec:
                             properties:
                               algorithm:
                                 description: |-
-                                  Algorithm selects the response compression type applied in the compression HTTP filter of the default Listener filters.
+                                  Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
                                   Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
                                   Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
+                                  Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
                                 enum:
                                 - gzip
                                 - brotli
                                 - zstd
                                 - disabled
                                 type: string
+                              algorithms:
+                                description: |-
+                                  Algorithms selects one or more response compression types.
+                                  Envoy installs one compressor filter per entry and negotiates the encoding from the request Accept-Encoding header.
+                                  List order is the preference when q-values are equal (the first entry is preferred).
+                                  Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; set algorithm: disabled instead.
+                                  Mutually exclusive with Algorithm.
+                                items:
+                                  description: |-
+                                    CompressionAlgorithm defines the type of compression algorithm applied in default HTTP listener filter chain.
+                                    Allowable values are defined as names of well known compression algorithms (plus "disabled").
+                                  enum:
+                                  - gzip
+                                  - brotli
+                                  - zstd
+                                  type: string
+                                maxItems: 3
+                                type: array
                             type: object
                           connectionBalancer:
                             description: |-

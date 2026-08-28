@@ -1035,16 +1035,38 @@ const (
 )
 
 // CompressionParameters is a type defining configurable compression related values.
-// At present this is just the compression algorithm but this could be extended later with algorithm specific config.
 type CompressionParameters struct {
-	// Algorithm configures which compression algorithm, if any, to use in the default HTTP listener filter chain.
+	// Algorithm configures a single compression algorithm to use in the default HTTP listener filter chain.
 	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
+	// Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
 	// +optional
 	Algorithm CompressionAlgorithm `yaml:"algorithm,omitempty"`
+
+	// Algorithms configures one or more compression algorithms. Envoy negotiates the encoding
+	// from the request Accept-Encoding header. List order is the preference when q-values are equal.
+	// Valid options are 'gzip', 'brotli' and 'zstd'. Cannot include 'disabled'.
+	// Mutually exclusive with Algorithm.
+	// +optional
+	Algorithms []CompressionAlgorithm `yaml:"algorithms,omitempty"`
 }
 
 func (c CompressionParameters) Validate() error {
-	return c.Algorithm.Validate()
+	return c.ToEnvoyCompression().Validate()
+}
+
+// ToEnvoyCompression converts file-based compression config to the CRD type.
+func (c CompressionParameters) ToEnvoyCompression() *contour_v1alpha1.EnvoyCompression {
+	out := &contour_v1alpha1.EnvoyCompression{
+		Algorithm: contour_v1alpha1.CompressionAlgorithm(c.Algorithm),
+	}
+	if len(c.Algorithms) == 0 {
+		return out
+	}
+	out.Algorithms = make([]contour_v1alpha1.CompressionAlgorithm, len(c.Algorithms))
+	for i, algorithm := range c.Algorithms {
+		out.Algorithms[i] = contour_v1alpha1.CompressionAlgorithm(algorithm)
+	}
+	return out
 }
 
 type CompressionAlgorithm string

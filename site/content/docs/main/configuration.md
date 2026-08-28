@@ -309,11 +309,12 @@ Metrics and health endpoints cannot have the same port number when metrics are s
 
 ### Compression Parameters
 
-Sets the compression configuration applied in the compression HTTP filter of the default Listener filters.
+Sets the compression configuration applied in the compression HTTP filters of the default Listener filters. Use `algorithms` to enable more than one encoding so Envoy can negotiate from `Accept-Encoding`.
 
 | Field Name | Type   | Default | Description             |
 |------------|--------|--------|-------------------------|
-| algorithm  | string | "gzip" | Compression algorithm. Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response. Values:`gzip` (default), `brotli`, `zstd`, `disabled`. |
+| algorithm   | string        | "gzip" | Single compression algorithm. Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response. Values: `gzip` (default), `brotli`, `zstd`, `disabled`. Mutually exclusive with `algorithms`. |
+| algorithms  | string array  |        | One or more compression algorithms. Envoy installs one compressor filter per entry and negotiates the encoding from the request `Accept-Encoding` header. List order is the preference when q-values are equal. Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`. Mutually exclusive with `algorithm`. |
 
 ### Overload Manager Enforced Health Listener Config
 

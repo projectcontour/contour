@@ -21,12 +21,23 @@ type CompressionAlgorithm string
 
 // EnvoyCompression defines configuration related to compression in the default HTTP Listener filter chain.
 type EnvoyCompression struct {
-	// Algorithm selects the response compression type applied in the compression HTTP filter of the default Listener filters.
+	// Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
 	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
 	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
+	// Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
 	// +kubebuilder:validation:Enum="gzip";"brotli";"zstd";"disabled"
 	// +optional
 	Algorithm CompressionAlgorithm `json:"algorithm,omitempty"`
+
+	// Algorithms selects one or more response compression types.
+	// Envoy installs one compressor filter per entry and negotiates the encoding from the request Accept-Encoding header.
+	// List order is the preference when q-values are equal (the first entry is preferred).
+	// Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; set algorithm: disabled instead.
+	// Mutually exclusive with Algorithm.
+	// +kubebuilder:validation:MaxItems=3
+	// +kubebuilder:validation:items:Enum=gzip;brotli;zstd
+	// +optional
+	Algorithms []CompressionAlgorithm `json:"algorithms,omitempty"`
 }
 
 func (a CompressionAlgorithm) Validate() error {
@@ -35,6 +46,59 @@ func (a CompressionAlgorithm) Validate() error {
 		return nil
 	default:
 		return fmt.Errorf("invalid compression type: %q", a)
+	}
+}
+
+// Validate reports whether the compression configuration is internally consistent.
+func (c *EnvoyCompression) Validate() error {
+	if c == nil {
+		return nil
+	}
+	if err := c.Algorithm.Validate(); err != nil {
+		return err
+	}
+	if c.Algorithm != "" && len(c.Algorithms) > 0 {
+		return fmt.Errorf("compression algorithm and algorithms are mutually exclusive")
+	}
+
+	seen := make(map[CompressionAlgorithm]struct{}, len(c.Algorithms))
+	for _, algorithm := range c.Algorithms {
+		if algorithm == DisabledCompression {
+			return fmt.Errorf("compression algorithms cannot include %q; set algorithm: %q instead", DisabledCompression, DisabledCompression)
+		}
+		if err := algorithm.Validate(); err != nil {
+			return err
+		}
+		if algorithm == "" {
+			return fmt.Errorf("compression algorithms cannot include an empty value")
+		}
+		if _, ok := seen[algorithm]; ok {
+			return fmt.Errorf("duplicate compression algorithm %q", algorithm)
+		}
+		seen[algorithm] = struct{}{}
+	}
+	return nil
+}
+
+// EffectiveAlgorithms returns the ordered list of compressor libraries to program
+// on the default HTTP listener. A nil result means compression is disabled.
+// When neither field is set, gzip is used.
+func (c *EnvoyCompression) EffectiveAlgorithms() []CompressionAlgorithm {
+	if c == nil {
+		return []CompressionAlgorithm{GzipCompression}
+	}
+	if c.Algorithm == DisabledCompression {
+		return nil
+	}
+	if len(c.Algorithms) > 0 {
+		return append([]CompressionAlgorithm(nil), c.Algorithms...)
+	}
+	switch c.Algorithm {
+	case BrotliCompression, ZstdCompression, GzipCompression:
+		return []CompressionAlgorithm{c.Algorithm}
+	default:
+		// Unset or unknown values fall back to gzip, matching historical behavior.
+		return []CompressionAlgorithm{GzipCompression}
 	}
 }
 

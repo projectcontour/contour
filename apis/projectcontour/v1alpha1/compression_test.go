@@ -30,3 +30,54 @@ func TestValidateEnvoyCompressionAlgorithmType(t *testing.T) {
 	require.NoError(t, contour_v1alpha1.GzipCompression.Validate())
 	require.NoError(t, contour_v1alpha1.ZstdCompression.Validate())
 }
+
+func TestValidateEnvoyCompression(t *testing.T) {
+	require.NoError(t, (*contour_v1alpha1.EnvoyCompression)(nil).Validate())
+	require.NoError(t, (&contour_v1alpha1.EnvoyCompression{}).Validate())
+	require.NoError(t, (&contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.GzipCompression}).Validate())
+	require.NoError(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+			contour_v1alpha1.BrotliCompression,
+			contour_v1alpha1.GzipCompression,
+		},
+	}).Validate())
+
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{Algorithm: "bogus"}).Validate(), "invalid compression type")
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithm:  contour_v1alpha1.GzipCompression,
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
+	}).Validate(), "mutually exclusive")
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.DisabledCompression},
+	}).Validate(), "cannot include")
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.GzipCompression, contour_v1alpha1.GzipCompression},
+	}).Validate(), "duplicate")
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{""},
+	}).Validate(), "empty value")
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{"bogus"},
+	}).Validate(), "invalid compression type")
+}
+
+func TestEffectiveAlgorithms(t *testing.T) {
+	require.Equal(t, []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.GzipCompression},
+		(*contour_v1alpha1.EnvoyCompression)(nil).EffectiveAlgorithms())
+	require.Equal(t, []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.GzipCompression},
+		(&contour_v1alpha1.EnvoyCompression{}).EffectiveAlgorithms())
+	require.Nil(t, (&contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.DisabledCompression}).EffectiveAlgorithms())
+	require.Equal(t, []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
+		(&contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.BrotliCompression}).EffectiveAlgorithms())
+	require.Equal(t, []contour_v1alpha1.CompressionAlgorithm{
+		contour_v1alpha1.BrotliCompression,
+		contour_v1alpha1.GzipCompression,
+	}, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+			contour_v1alpha1.BrotliCompression,
+			contour_v1alpha1.GzipCompression,
+		},
+	}).EffectiveAlgorithms())
+	require.Equal(t, []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.GzipCompression},
+		(&contour_v1alpha1.EnvoyCompression{Algorithm: "bogus"}).EffectiveAlgorithms())
+}
