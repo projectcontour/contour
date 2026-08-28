@@ -28,7 +28,7 @@ import (
 
 func testGRPCRoutePartiallyConflictMatch(namespace string, gateway types.NamespacedName) {
 	Specify("Creates two GRPCRoutes, second one has partial conflict match against the first one, has partially match condition", func() {
-		cleanup := f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+		e2e.StartLocalGRPCEchoService(GinkgoT(), f.Client, namespace, "grpc-echo")
 
 		By("create grpcroute-1 first")
 		route1 := &gatewayapi_v1.GRPCRoute{
@@ -89,7 +89,5 @@ func testGRPCRoutePartiallyConflictMatch(namespace string, gateway types.Namespa
 		f.CreateGRPCRouteAndWaitFor(route2, func(*gatewayapi_v1.GRPCRoute) bool {
 			return e2e.GRPCRoutePartiallyInvalid(route2) && e2e.GRPCRouteAccepted(route2)
 		})
-
-		cleanup()
 	})
 }

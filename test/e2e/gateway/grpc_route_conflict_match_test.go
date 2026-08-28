@@ -28,7 +28,7 @@ import (
 
 func testGRPCRouteConflictMatch(namespace string, gateway types.NamespacedName) {
 	Specify("Creates two GRPCRoutes, second one has conflict match against the first one, report Accepted: false", func() {
-		cleanup := f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+		e2e.StartLocalGRPCEchoService(GinkgoT(), f.Client, namespace, "grpc-echo")
 
 		By("create grpcroute-1 first")
 		route1 := &gatewayapi_v1.GRPCRoute{
@@ -89,7 +89,5 @@ func testGRPCRouteConflictMatch(namespace string, gateway types.NamespacedName) 
 		}
 		ok = f.CreateGRPCRouteAndWaitFor(route2, e2e.GRPCRouteNotAcceptedDueToConflict)
 		require.True(f.T(), ok)
-
-		cleanup()
 	})
 }

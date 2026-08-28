@@ -25,7 +25,6 @@ import (
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/projectcontour/yages/yages"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -33,6 +32,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -41,11 +42,10 @@ import (
 )
 
 func testGRPCServicePlaintext(namespace string) {
-	// Flake tracking issue: https://github.com/projectcontour/contour/issues/6092
-	Specify("requests to a gRPC service configured with plaintext work as expected", FlakeAttempts(3), func() {
+	Specify("requests to a gRPC service configured with plaintext work as expected", func() {
 		t := f.T()
 
-		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+		e2e.StartLocalGRPCEchoService(GinkgoT(), f.Client, namespace, "grpc-echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo", "grpc-echo-plaintext.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
@@ -73,7 +73,7 @@ func testGRPCServicePlaintext(namespace string) {
 						},
 						Conditions: []contour_v1.MatchCondition{
 							{
-								Prefix: "/yages.Echo/Ping",
+								Prefix: "/contourecho.Echo/Ping",
 							},
 						},
 					},
@@ -114,11 +114,12 @@ func testGRPCServicePlaintext(namespace string) {
 			// Give significant leeway for retries to complete with exponential backoff.
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 			defer cancel()
-			client := yages.NewEchoClient(conn)
-			resp, err := client.Ping(ctx, &yages.Empty{})
+
+			var resp wrapperspb.StringValue
+			err = conn.Invoke(ctx, "/contourecho.Echo/Ping", &emptypb.Empty{}, &resp)
 
 			require.NoErrorf(t, err, "gRPC error code %d", status.Code(err))
-			require.Equal(t, "pong", resp.Text)
+			require.Equal(t, "pong", resp.Value)
 		}
 	})
 }
@@ -127,7 +128,7 @@ func testGRPCWeb(namespace string) {
 	Specify("grpc-Web HTTP requests to a gRPC service work as expected", func() {
 		t := f.T()
 
-		f.Fixtures.GRPC.Deploy(namespace, "grpc-echo")
+		e2e.StartLocalGRPCEchoService(GinkgoT(), f.Client, namespace, "grpc-echo")
 		f.Certs.CreateSelfSignedCert(namespace, "echo", "grpc-web.projectcontour.io")
 
 		p := &contour_v1.HTTPProxy{
@@ -158,14 +159,13 @@ func testGRPCWeb(namespace string) {
 		require.True(f.T(), f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
 		// One byte marker that this is a data frame, and 4 bytes
-		// for the length (we can use 0 since the yages.Empty message
-		// is actually empty and has no fields).
+		// for the length (0 since emptypb.Empty has no fields).
 		// See: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md
 		bodyData := []byte{0x0, 0x0, 0x0, 0x0, 0x0}
 
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host: p.Spec.VirtualHost.Fqdn,
-			Path: "/yages.Echo/Ping",
+			Path: "/contourecho.Echo/Ping",
 			Body: bytes.NewReader(bodyData),
 			RequestOpts: []func(*http.Request){
 				func(req *http.Request) {
@@ -180,7 +180,7 @@ func testGRPCWeb(namespace string) {
 			Condition: func(res *e2e.HTTPResponse) bool {
 				if e2e.HasStatusCode(http.StatusOK)(res) {
 					resp := parseGRPCWebResponse(res.Body)
-					return resp.content != nil && resp.content.Text == "pong" &&
+					return resp.content != nil && resp.content.Value == "pong" &&
 						resp.trailers["grpc-status"] == "0"
 				}
 				return false
@@ -192,7 +192,7 @@ func testGRPCWeb(namespace string) {
 }
 
 type grpcWebResponse struct {
-	content  *yages.Content
+	content  *wrapperspb.StringValue
 	trailers map[string]string
 }
 
@@ -221,7 +221,7 @@ func parseGRPCWebResponse(body []byte) grpcWebResponse {
 	if dataLen > 0 {
 		require.Greater(t, len(body), currentPos+dataLen)
 
-		content := new(yages.Content)
+		content := new(wrapperspb.StringValue)
 		require.NoError(t, proto.Unmarshal(body[currentPos:currentPos+dataLen], content))
 		response.content = content
 		currentPos += dataLen

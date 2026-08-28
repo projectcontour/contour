@@ -246,10 +246,6 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 				client: crClient,
 				t:      t,
 			},
-			GRPC: &GRPC{
-				client: crClient,
-				t:      t,
-			},
 		},
 		HTTP: &HTTP{
 			HTTPURLBase:        httpURLBase,
