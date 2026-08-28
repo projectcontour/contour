@@ -120,6 +120,16 @@ type ListenerConfig struct {
 	// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option for all listeners.
 	MergeSlashes bool
 
+	// DisableNormalizePath disables Envoy's normalize_path option for all listeners.
+	//
+	// Note this is stored in its negated form so that the zero value preserves
+	// Contour's default of normalizing paths.
+	DisableNormalizePath bool
+
+	// PathWithEscapedSlashesAction determines how Envoy handles escaped slash
+	// sequences in request paths, for all listeners.
+	PathWithEscapedSlashesAction contour_v1alpha1.PathWithEscapedSlashesActionType
+
 	// ServerHeaderTransformation defines the action to be applied to the Server header on the response path.
 	ServerHeaderTransformation contour_v1alpha1.ServerHeaderTransformationType
 
@@ -407,6 +417,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(cfg.AllowChunkedLength).
 				MergeSlashes(cfg.MergeSlashes).
+				DisableNormalizePath(cfg.DisableNormalizePath).
+				PathWithEscapedSlashesAction(cfg.PathWithEscapedSlashesAction).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				StripTrailingHostDot(cfg.StripTrailingHostDot).
@@ -484,6 +496,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					DisableNormalizePath(cfg.DisableNormalizePath).
+					PathWithEscapedSlashesAction(cfg.PathWithEscapedSlashesAction).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					StripTrailingHostDot(cfg.StripTrailingHostDot).
@@ -569,6 +583,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					DisableNormalizePath(cfg.DisableNormalizePath).
+					PathWithEscapedSlashesAction(cfg.PathWithEscapedSlashesAction).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					StripTrailingHostDot(cfg.StripTrailingHostDot).

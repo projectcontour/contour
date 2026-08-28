@@ -151,9 +151,15 @@ func (e *EnvoyConfig) Validate() error {
 		}
 	}
 
-	// Envoy TLS configuration
-	if e.Listener != nil && e.Listener.TLS != nil {
-		return e.Listener.TLS.Validate()
+	if e.Listener != nil {
+		if err := e.Listener.PathWithEscapedSlashesAction.Validate(); err != nil {
+			return err
+		}
+
+		// Envoy TLS configuration
+		if e.Listener.TLS != nil {
+			return e.Listener.TLS.Validate()
+		}
 	}
 
 	return nil

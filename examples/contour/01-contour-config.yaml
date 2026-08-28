@@ -25,6 +25,17 @@ data:
     # that strips duplicate slashes from request URLs.
     # disableMergeSlashes: false
     #
+    # Disable Envoy's normalize_path option that normalizes request URL paths
+    # according to RFC 3986. Only disable this if your backends treat request
+    # paths as opaque identifiers. Note that route match conditions and external
+    # authorization policies then see the un-normalized path.
+    # disableNormalizePath: false
+    #
+    # How Envoy handles request paths containing escaped slash sequences
+    # (%2F, %2f, %5C and %5c). One of keep_unchanged (default), reject_request,
+    # unescape_and_redirect or unescape_and_forward.
+    # pathWithEscapedSlashesAction: keep_unchanged
+    #
     # Disable HTTPProxy permitInsecure field
     disablePermitInsecure: false
     tls:

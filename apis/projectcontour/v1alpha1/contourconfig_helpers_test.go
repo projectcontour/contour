@@ -256,6 +256,35 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Tracing.CustomTags = customTags
 		require.Error(t, c.Validate())
 	})
+
+	t.Run("path with escaped slashes action validation", func(t *testing.T) {
+		configWithAction := func(action contour_v1alpha1.PathWithEscapedSlashesActionType) contour_v1alpha1.ContourConfigurationSpec {
+			return contour_v1alpha1.ContourConfigurationSpec{
+				Envoy: &contour_v1alpha1.EnvoyConfig{
+					Listener: &contour_v1alpha1.EnvoyListenerConfig{
+						PathWithEscapedSlashesAction: action,
+					},
+				},
+			}
+		}
+
+		// An unset value is valid; contourconfig.Defaults() supplies keep_unchanged.
+		c := configWithAction("")
+		require.NoError(t, c.Validate())
+
+		for _, action := range []contour_v1alpha1.PathWithEscapedSlashesActionType{
+			contour_v1alpha1.KeepUnchangedPathWithEscapedSlashes,
+			contour_v1alpha1.RejectRequestPathWithEscapedSlashes,
+			contour_v1alpha1.UnescapeAndRedirectPathWithEscapedSlashes,
+			contour_v1alpha1.UnescapeAndForwardPathWithEscapedSlashes,
+		} {
+			c = configWithAction(action)
+			require.NoError(t, c.Validate(), "action %q should be valid", action)
+		}
+
+		c = configWithAction("reject")
+		require.ErrorContains(t, c.Validate(), `invalid path with escaped slashes action "reject"`)
+	})
 }
 
 func TestSanitizeCipherSuites(t *testing.T) {
