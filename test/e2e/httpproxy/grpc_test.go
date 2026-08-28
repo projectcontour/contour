@@ -23,11 +23,10 @@ import (
 	"strings"
 	"time"
 
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
@@ -92,34 +91,25 @@ func testGRPCServicePlaintext(namespace string) {
 				InsecureSkipVerify: true,
 			}),
 		} {
-			retryOpts := []grpc_retry.CallOption{
-				// Retry if Envoy returns unavailable, the upstream
-				// may not be healthy yet.
-				// Also retry if we get the unimplemented status, see:
-				// https://github.com/projectcontour/contour/issues/4707
-				// Also retry unauthenticated to accommodate eventual consistency
-				// after a global ExtAuth test.
-				grpc_retry.WithCodes(codes.Unavailable, codes.Unimplemented, codes.Unauthenticated),
-				grpc_retry.WithBackoff(grpc_retry.BackoffExponential(time.Millisecond * 10)),
-				grpc_retry.WithMax(20),
-			}
 			conn, err := grpc.NewClient(addr,
 				grpc.WithAuthority(p.Spec.VirtualHost.Fqdn),
 				grpc.WithTransportCredentials(transportCreds),
-				grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)),
 			)
 			require.NoError(t, err)
 			defer conn.Close()
 
-			// Give significant leeway for retries to complete with exponential backoff.
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
-			defer cancel()
-
+			// Poll until success: Envoy may still serve config from a previous spec.
 			var resp wrapperspb.StringValue
-			err = conn.Invoke(ctx, "/contourecho.Echo/Ping", &emptypb.Empty{}, &resp)
-
-			require.NoErrorf(t, err, "gRPC error code %d", status.Code(err))
-			require.Equal(t, "pong", resp.Value)
+			var lastErr error
+			ok := assert.Eventually(t, func() bool {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				resp.Reset()
+				lastErr = conn.Invoke(ctx, "/contourecho.Echo/Ping", &emptypb.Empty{}, &resp)
+				return lastErr == nil && resp.Value == "pong"
+			}, 60*time.Second, 100*time.Millisecond)
+			require.NoErrorf(t, lastErr, "gRPC ping never succeeded, last error code %s", status.Code(lastErr))
+			require.True(t, ok)
 		}
 	})
 }
