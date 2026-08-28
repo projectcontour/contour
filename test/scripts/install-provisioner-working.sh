@@ -28,9 +28,8 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Set (pseudo) random image tag to trigger restarts at every deployment.
-# TODO: Come up with a scheme that doesn't fill up the dev environment with randomly-tagged images.
-VERSION="v$$"
+# Reuse a single development tag so repeated builds do not leave uniquely-tagged images behind.
+readonly VERSION="dev"
 
 # Build the Contour Provisioner image.
 make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
@@ -48,6 +47,21 @@ ${KUBECTL} apply -f <(cat examples/gateway-provisioner/03-gateway-provisioner.ya
     yq eval '.spec.template.spec.containers[0].image = env(CONTOUR_IMG)' - | \
     yq eval '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' - | \
     yq eval '.spec.template.spec.containers[0].args += "--contour-image="+env(CONTOUR_IMG)' -)
+
+# The image tag does not change, so explicitly restart the provisioner and its managed workloads.
+${KUBECTL} rollout restart -n projectcontour deployment/contour-gateway-provisioner
+
+managed_workloads=$(
+    ${KUBECTL} get deployments,daemonsets \
+        --all-namespaces \
+        --selector=app.kubernetes.io/managed-by=contour-gateway-provisioner \
+        --output=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}'
+)
+while read -r namespace workload ; do
+    if [[ -n "${workload}" ]]; then
+        ${KUBECTL} rollout restart -n "${namespace}" "${workload}"
+    fi
+done <<< "${managed_workloads}"
 
 # Wait for the provisioner to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l control-plane=contour-gateway-provisioner deployments --for=condition=Available
