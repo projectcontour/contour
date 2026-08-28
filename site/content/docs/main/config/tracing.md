@@ -120,5 +120,7 @@ kubectl logs deploy/simplest-collector -n projectcontour
 
 Now you should be able to see traces in the logs of the otel collector.
 
+Trace and span identifiers can also be included in [access logs](access-logging.md#logging-trace-and-span-ids) to correlate log entries with traces.
+
 [1]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing
 [2]: https://opentelemetry.io/
