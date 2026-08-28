@@ -8247,6 +8247,21 @@ spec:
                     minLength: 1
                     pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
+                  includeAttemptCountInResponse:
+                    description: |-
+                      IncludeAttemptCountInResponse, when true, causes Envoy to include the
+                      x-envoy-attempt-count header in responses returned to the downstream
+                      client, reflecting the number of times the request was attempted on the
+                      upstream.
+                    type: boolean
+                  includeRequestAttemptCount:
+                    description: |-
+                      IncludeRequestAttemptCount, when true, causes Envoy to include the
+                      x-envoy-attempt-count header in requests forwarded to the upstream.
+                      The value starts at 1 for the initial attempt and is incremented for
+                      each retry, allowing upstream services to observe how many times a
+                      request has been attempted.
+                    type: boolean
                   ipAllowPolicy:
                     description: |-
                       IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
