@@ -1398,7 +1398,7 @@ spec:
                     `errors` holds information about sub-conditions which are fatal to that condition and render its state False.
                     `warnings` holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.
                     Remember that Conditions have a type, a status, and a reason.
-                    The type is the type of the condition, the most important one in this CRD set is `Valid`.
+                    The type is the type of the condition, the most important ones in this CRD set are `Valid` and `Stalled`.
                     `Valid` is a positive-polarity condition: when it is `status: true` there are no problems.
                     In more detail, `status: true` means that the object is has been ingested into Contour with no errors.
                     `warnings` may still be present, and will be indicated in the Reason field. There must be zero entries in the `errors`
@@ -1406,6 +1406,8 @@ spec:
                     `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
                     The details of the errors will be present under the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`.
+                    `Stalled` is true when Contour cannot reconcile the resource. Clients that use the kstatus library read this condition
+                    together with `observedGeneration` to determine whether Contour has finished reconciling a resource after an apply operation.
                     For DetailedConditions of types other than `Valid`, the Condition must be in the negative polarity.
                     When they have `status` `true`, there is an error. There must be at least one entry in the `errors` Subcondition slice.
                     When they have `status` `false`, there are no serious errors, and there must be zero entries in the `errors` slice.
@@ -5891,7 +5893,9 @@ spec:
               conditions:
                 description: |-
                   Conditions contains the current status of the ExtensionService resource.
-                  Contour will update a single condition, `Valid`, that is in normal-true polarity.
+                  Contour will update the `Valid` and `Stalled` conditions.
+                  `Valid` is in normal-true polarity, that is, when `currentStatus` is `valid`, the `Valid` condition will be `status: true`, and vice versa.
+                  `Stalled` is true when Contour cannot reconcile the resource.
                   Contour will not modify any other Conditions set in this block,
                   in case some other controller wants to add a Condition.
                 items:
@@ -5902,7 +5906,7 @@ spec:
                     `errors` holds information about sub-conditions which are fatal to that condition and render its state False.
                     `warnings` holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.
                     Remember that Conditions have a type, a status, and a reason.
-                    The type is the type of the condition, the most important one in this CRD set is `Valid`.
+                    The type is the type of the condition, the most important ones in this CRD set are `Valid` and `Stalled`.
                     `Valid` is a positive-polarity condition: when it is `status: true` there are no problems.
                     In more detail, `status: true` means that the object is has been ingested into Contour with no errors.
                     `warnings` may still be present, and will be indicated in the Reason field. There must be zero entries in the `errors`
@@ -5910,6 +5914,8 @@ spec:
                     `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
                     The details of the errors will be present under the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`.
+                    `Stalled` is true when Contour cannot reconcile the resource. Clients that use the kstatus library read this condition
+                    together with `observedGeneration` to determine whether Contour has finished reconciling a resource after an apply operation.
                     For DetailedConditions of types other than `Valid`, the Condition must be in the negative polarity.
                     When they have `status` `true`, there is an error. There must be at least one entry in the `errors` Subcondition slice.
                     When they have `status` `false`, there are no serious errors, and there must be zero entries in the `errors` slice.
@@ -6080,6 +6086,13 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the generation that Contour reconciled last.
+                  A value that differs from `metadata.generation` means that Contour did not act on the latest spec yet.
+                format: int64
+                minimum: 0
+                type: integer
             type: object
         type: object
     served: true
@@ -8834,9 +8847,9 @@ spec:
                 description: |-
                   Conditions contains information about the current status of the HTTPProxy,
                   in an upstream-friendly container.
-                  Contour will update a single condition, `Valid`, that is in normal-true polarity.
-                  That is, when `currentStatus` is `valid`, the `Valid` condition will be `status: true`,
-                  and vice versa.
+                  Contour will update the `Valid` and `Stalled` conditions.
+                  `Valid` is in normal-true polarity, that is, when `currentStatus` is `valid`, the `Valid` condition will be `status: true`, and vice versa.
+                  `Stalled` is true when Contour cannot reconcile the resource.
                   Contour will leave untouched any other Conditions set in this block,
                   in case some other controller wants to add a Condition.
                   If you are another controller owner and wish to add a condition, you *should*
@@ -8849,7 +8862,7 @@ spec:
                     `errors` holds information about sub-conditions which are fatal to that condition and render its state False.
                     `warnings` holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.
                     Remember that Conditions have a type, a status, and a reason.
-                    The type is the type of the condition, the most important one in this CRD set is `Valid`.
+                    The type is the type of the condition, the most important ones in this CRD set are `Valid` and `Stalled`.
                     `Valid` is a positive-polarity condition: when it is `status: true` there are no problems.
                     In more detail, `status: true` means that the object is has been ingested into Contour with no errors.
                     `warnings` may still be present, and will be indicated in the Reason field. There must be zero entries in the `errors`
@@ -8857,6 +8870,8 @@ spec:
                     `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
                     The details of the errors will be present under the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`.
+                    `Stalled` is true when Contour cannot reconcile the resource. Clients that use the kstatus library read this condition
+                    together with `observedGeneration` to determine whether Contour has finished reconciling a resource after an apply operation.
                     For DetailedConditions of types other than `Valid`, the Condition must be in the negative polarity.
                     When they have `status` `true`, there is an error. There must be at least one entry in the `errors` Subcondition slice.
                     When they have `status` `false`, there are no serious errors, and there must be zero entries in the `errors` slice.
@@ -9102,6 +9117,13 @@ spec:
                     type: array
                     x-kubernetes-list-type: atomic
                 type: object
+              observedGeneration:
+                description: |-
+                  ObservedGeneration is the generation that Contour reconciled last.
+                  A value that differs from `metadata.generation` means that Contour did not act on the latest spec yet.
+                format: int64
+                minimum: 0
+                type: integer
             type: object
         required:
         - metadata
@@ -9207,7 +9229,7 @@ spec:
                     `errors` holds information about sub-conditions which are fatal to that condition and render its state False.
                     `warnings` holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.
                     Remember that Conditions have a type, a status, and a reason.
-                    The type is the type of the condition, the most important one in this CRD set is `Valid`.
+                    The type is the type of the condition, the most important ones in this CRD set are `Valid` and `Stalled`.
                     `Valid` is a positive-polarity condition: when it is `status: true` there are no problems.
                     In more detail, `status: true` means that the object is has been ingested into Contour with no errors.
                     `warnings` may still be present, and will be indicated in the Reason field. There must be zero entries in the `errors`
@@ -9215,6 +9237,8 @@ spec:
                     `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
                     The details of the errors will be present under the `errors` field. There must be at least one error in the `errors`
                     slice if `status` is `false`.
+                    `Stalled` is true when Contour cannot reconcile the resource. Clients that use the kstatus library read this condition
+                    together with `observedGeneration` to determine whether Contour has finished reconciling a resource after an apply operation.
                     For DetailedConditions of types other than `Valid`, the Condition must be in the negative polarity.
                     When they have `status` `true`, there is an error. There must be at least one entry in the `errors` Subcondition slice.
                     When they have `status` `false`, there are no serious errors, and there must be zero entries in the `errors` slice.

@@ -74,23 +74,8 @@ func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 
 		ext := o.DeepCopy()
 
-		for condType, cond := range e.Conditions {
-			cond.ObservedGeneration = e.Generation
-			cond.LastTransitionTime = e.TransitionTime
-
-			currCond := ext.Status.GetConditionFor(string(condType))
-			if currCond == nil {
-				ext.Status.Conditions = append(ext.Status.Conditions, *cond)
-				continue
-			}
-
-			// Don't update the condition if our observation is stale.
-			if currCond.ObservedGeneration > cond.ObservedGeneration {
-				continue
-			}
-
-			cond.DeepCopyInto(currCond)
-		}
+		ext.Status.Conditions = computeConditions(ext.Status.Conditions, e.Generation, e.TransitionTime, e.Conditions)
+		ext.Status.ObservedGeneration = e.Generation
 
 		return ext
 	})
