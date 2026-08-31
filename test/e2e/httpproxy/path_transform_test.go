@@ -66,18 +66,15 @@ func twoPrefixRouteProxy(namespace, fqdn, prefix string) *contour_v1.HTTPProxy {
 }
 
 func testDisableNormalizePath(disableNormalizePath bool) e2e.NamespacedTestBody {
-	var testName, fqdn, wantService string
+	var testName, fqdn, wantPath string
 	if disableNormalizePath {
 		testName = "when disable normalize path is true, dot segments in requests are not collapsed"
 		fqdn = "disable.normalizepath.projectcontour.io"
-		// The un-normalized path "/foo/../bar" does not match the "/bar"
-		// prefix, so the request falls through to the catch-all route.
-		wantService = "echo-2"
+		wantPath = "/foo/../bar"
 	} else {
 		testName = "when disable normalize path is false, dot segments in requests are collapsed"
 		fqdn = "enable.normalizepath.projectcontour.io"
-		// "/foo/../bar" is normalized to "/bar" before route matching.
-		wantService = "echo-1"
+		wantPath = "/bar"
 	}
 
 	return func(namespace string) {
@@ -85,18 +82,95 @@ func testDisableNormalizePath(disableNormalizePath bool) e2e.NamespacedTestBody 
 			t := f.T()
 
 			f.Fixtures.Echo.Deploy(namespace, "echo-1")
-			f.Fixtures.Echo.Deploy(namespace, "echo-2")
 
-			p := twoPrefixRouteProxy(namespace, fqdn, "/bar")
+			// A single catch-all route, so the request always reaches the
+			// backend regardless of the setting. What varies is the ":path"
+			// the backend observes, which is precisely what normalize_path
+			// controls: "This affects the upstream :path header as well."
+			p := &contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "echo",
+				},
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						Fqdn: fqdn,
+					},
+					Routes: []contour_v1.Route{{
+						Services: []contour_v1.Service{{
+							Name: "echo-1",
+							Port: 80,
+						}},
+						Conditions: []contour_v1.MatchCondition{{
+							Prefix: "/",
+						}},
+					}},
+				},
+			}
 			require.True(t, f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
-			// Sanity check: "/bar" always reaches echo-1 regardless of the setting.
-			// This also confirms the proxy is programmed before the real assertion.
-			requireServiceForPath(t, p.Spec.VirtualHost.Fqdn, "/bar", "echo-1")
+			// Sanity check: a path with no dot segments passes through
+			// untouched. Also confirms the proxy is programmed.
+			requirePathSeenByUpstream(t, fqdn, "/bar", "/bar")
 
-			requireServiceForPath(t, p.Spec.VirtualHost.Fqdn, "/foo/../bar", wantService)
+			// Report what Envoy actually has configured, so a failure here is
+			// self-diagnosing: it distinguishes "the setting never reached
+			// Envoy" from "Envoy did not honor the setting".
+			logEnvoyNormalizePathConfig(t)
+
+			requirePathSeenByUpstream(t, fqdn, "/foo/../bar", wantPath)
 		})
 	}
+}
+
+// requirePathSeenByUpstream asserts that the echo backend received the given
+// ":path". The echo fixture reflects the request path back in its response body.
+func requirePathSeenByUpstream(t require.TestingT, fqdn, requestPath, wantPath string) {
+	var gotPath string
+	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		Host: fqdn,
+		Path: requestPath,
+		Condition: func(res *e2e.HTTPResponse) bool {
+			if !e2e.HasStatusCode(http.StatusOK)(res) {
+				return false
+			}
+			gotPath = f.GetEchoResponseBody(res.Body).Path
+			return gotPath == wantPath
+		},
+	})
+	require.NotNil(t, res, "request for %q never succeeded", requestPath)
+	require.Truef(t, ok,
+		"requested %q: upstream saw path %q, want %q (status %d)",
+		requestPath, gotPath, wantPath, res.StatusCode)
+}
+
+// logEnvoyNormalizePathConfig dumps how many of Envoy's HTTP connection
+// managers have normalize_path true vs false, straight from Envoy's own
+// /config_dump. Best effort: the admin listener is not part of what this spec
+// is asserting, so an unreachable admin endpoint is logged, not fatal.
+//
+// Contour's stats/admin listener always hardcodes normalize_path: true, so at
+// least one "true" is expected even when the user setting is applied.
+func logEnvoyNormalizePathConfig(t require.TestingT) {
+	logf, ok := t.(interface{ Logf(string, ...any) })
+	if !ok {
+		return
+	}
+
+	res, reqOK := f.HTTP.AdminRequestUntil(&e2e.HTTPRequestOpts{
+		Path:      "/config_dump",
+		Condition: e2e.HasStatusCode(http.StatusOK),
+	})
+	if !reqOK || res == nil {
+		logf.Logf("DIAGNOSTIC: could not read Envoy /config_dump (admin listener unreachable from this suite)")
+		return
+	}
+
+	// Strip whitespace so the match is independent of JSON indentation.
+	dump := strings.Join(strings.Fields(string(res.Body)), "")
+	logf.Logf("DIAGNOSTIC: Envoy /config_dump has %d occurrences of normalizePath:true, %d of normalizePath:false",
+		strings.Count(dump, `"normalizePath":true`),
+		strings.Count(dump, `"normalizePath":false`))
 }
 
 func testPathWithEscapedSlashesAction(action contour_v1alpha1.PathWithEscapedSlashesActionType) e2e.NamespacedTestBody {
@@ -136,14 +210,17 @@ func testPathWithEscapedSlashesAction(action contour_v1alpha1.PathWithEscapedSla
 				require.Truef(t, ok, "expected 400 response code, got %d", res.StatusCode)
 
 			case contour_v1alpha1.UnescapeAndRedirectPathWithEscapedSlashes:
+				// Envoy answers with 307 and a path-only Location header. See
+				// NormalizePathAction::Redirect handling in Envoy's
+				// conn_manager_impl.cc, which uses Code::TemporaryRedirect.
 				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 					Host:       fqdn,
 					Path:       escapedPath,
 					ClientOpts: []func(*http.Client){e2e.OptDontFollowRedirects},
-					Condition:  e2e.HasStatusCode(http.StatusMovedPermanently),
+					Condition:  e2e.HasStatusCode(http.StatusTemporaryRedirect),
 				})
 				require.NotNil(t, res, "request never succeeded")
-				require.Truef(t, ok, "expected 301 response code, got %d", res.StatusCode)
+				require.Truef(t, ok, "expected 307 response code, got %d", res.StatusCode)
 				require.Equal(t, "/foo/bar", res.Headers.Get("Location"))
 			}
 		})
