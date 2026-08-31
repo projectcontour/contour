@@ -31,11 +31,11 @@ require (
 	github.com/tsaarni/certyaml v0.10.0
 	github.com/vektra/mockery/v2 v2.53.6
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
 	gonum.org/v1/plot v0.16.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
-	google.golang.org/grpc v1.83.1
+	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.34.11
