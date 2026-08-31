@@ -65,16 +65,31 @@ func twoPrefixRouteProxy(namespace, fqdn, prefix string) *contour_v1.HTTPProxy {
 	}
 }
 
+// testDisableNormalizePath asserts whether Envoy resolves "." and ".." segments
+// before forwarding a request.
+//
+// The assertion leans on a property of the echo fixture: it is a Go ServeMux
+// server, and ServeMux cleans the request path itself, answering 301 to the
+// cleaned target when the path it received was not already clean. So the
+// backend's own response tells us what Envoy forwarded:
+//
+//   - normalization on  -> Envoy forwards "/bar", the backend serves it (200)
+//   - normalization off -> Envoy forwards "/foo/../bar" verbatim, and the
+//     backend answers 301 with Location "/bar"
+//
+// Redirects must not be followed, or the 301 is invisible: the client would
+// silently re-request "/bar" and both cases would look identical.
 func testDisableNormalizePath(disableNormalizePath bool) e2e.NamespacedTestBody {
-	var testName, fqdn, wantPath string
+	var testName, fqdn string
+	var wantStatus int
 	if disableNormalizePath {
 		testName = "when disable normalize path is true, dot segments in requests are not collapsed"
 		fqdn = "disable.normalizepath.projectcontour.io"
-		wantPath = "/foo/../bar"
+		wantStatus = http.StatusMovedPermanently
 	} else {
 		testName = "when disable normalize path is false, dot segments in requests are collapsed"
 		fqdn = "enable.normalizepath.projectcontour.io"
-		wantPath = "/bar"
+		wantStatus = http.StatusOK
 	}
 
 	return func(namespace string) {
@@ -83,10 +98,8 @@ func testDisableNormalizePath(disableNormalizePath bool) e2e.NamespacedTestBody 
 
 			f.Fixtures.Echo.Deploy(namespace, "echo-1")
 
-			// A single catch-all route, so the request always reaches the
-			// backend regardless of the setting. What varies is the ":path"
-			// the backend observes, which is precisely what normalize_path
-			// controls: "This affects the upstream :path header as well."
+			// A single catch-all route: the request always reaches the backend,
+			// so route matching plays no part in the assertion.
 			p := &contour_v1.HTTPProxy{
 				ObjectMeta: meta_v1.ObjectMeta{
 					Namespace: namespace,
@@ -109,68 +122,39 @@ func testDisableNormalizePath(disableNormalizePath bool) e2e.NamespacedTestBody 
 			}
 			require.True(t, f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
 
-			// Sanity check: a path with no dot segments passes through
-			// untouched. Also confirms the proxy is programmed.
-			requirePathSeenByUpstream(t, fqdn, "/bar", "/bar")
+			noFollow := []func(*http.Client){e2e.OptDontFollowRedirects}
 
-			// Report what Envoy actually has configured, so a failure here is
-			// self-diagnosing: it distinguishes "the setting never reached
-			// Envoy" from "Envoy did not honor the setting".
-			logEnvoyNormalizePathConfig(t)
+			// Sanity check: an already-clean path is served directly, with no
+			// redirect from the backend. Also confirms the proxy is programmed.
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host:       fqdn,
+				Path:       "/bar",
+				ClientOpts: noFollow,
+				Condition:  e2e.HasStatusCode(http.StatusOK),
+			})
+			require.NotNil(t, res, "request for %q never succeeded", "/bar")
+			require.Truef(t, ok, "requested %q: got status %d, want 200", "/bar", res.StatusCode)
+			require.Equal(t, "/bar", f.GetEchoResponseBody(res.Body).Path)
 
-			requirePathSeenByUpstream(t, fqdn, "/foo/../bar", wantPath)
+			res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host:       fqdn,
+				Path:       "/foo/../bar",
+				ClientOpts: noFollow,
+				Condition:  e2e.HasStatusCode(wantStatus),
+			})
+			require.NotNil(t, res, "request for %q never succeeded", "/foo/../bar")
+			require.Truef(t, ok, "requested %q: got status %d, want %d",
+				"/foo/../bar", res.StatusCode, wantStatus)
+
+			if disableNormalizePath {
+				// The backend cleaned the path itself, which it could only do
+				// having received the dot segments from Envoy.
+				require.Equal(t, "/bar", res.Headers.Get("Location"))
+			} else {
+				require.Equal(t, "/bar", f.GetEchoResponseBody(res.Body).Path)
+			}
 		})
 	}
-}
-
-// requirePathSeenByUpstream asserts that the echo backend received the given
-// ":path". The echo fixture reflects the request path back in its response body.
-func requirePathSeenByUpstream(t require.TestingT, fqdn, requestPath, wantPath string) {
-	var gotPath string
-	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host: fqdn,
-		Path: requestPath,
-		Condition: func(res *e2e.HTTPResponse) bool {
-			if !e2e.HasStatusCode(http.StatusOK)(res) {
-				return false
-			}
-			gotPath = f.GetEchoResponseBody(res.Body).Path
-			return gotPath == wantPath
-		},
-	})
-	require.NotNil(t, res, "request for %q never succeeded", requestPath)
-	require.Truef(t, ok,
-		"requested %q: upstream saw path %q, want %q (status %d)",
-		requestPath, gotPath, wantPath, res.StatusCode)
-}
-
-// logEnvoyNormalizePathConfig dumps how many of Envoy's HTTP connection
-// managers have normalize_path true vs false, straight from Envoy's own
-// /config_dump. Best effort: the admin listener is not part of what this spec
-// is asserting, so an unreachable admin endpoint is logged, not fatal.
-//
-// Contour's stats/admin listener always hardcodes normalize_path: true, so at
-// least one "true" is expected even when the user setting is applied.
-func logEnvoyNormalizePathConfig(t require.TestingT) {
-	logf, ok := t.(interface{ Logf(string, ...any) })
-	if !ok {
-		return
-	}
-
-	res, reqOK := f.HTTP.AdminRequestUntil(&e2e.HTTPRequestOpts{
-		Path:      "/config_dump",
-		Condition: e2e.HasStatusCode(http.StatusOK),
-	})
-	if !reqOK || res == nil {
-		logf.Logf("DIAGNOSTIC: could not read Envoy /config_dump (admin listener unreachable from this suite)")
-		return
-	}
-
-	// Strip whitespace so the match is independent of JSON indentation.
-	dump := strings.Join(strings.Fields(string(res.Body)), "")
-	logf.Logf("DIAGNOSTIC: Envoy /config_dump has %d occurrences of normalizePath:true, %d of normalizePath:false",
-		strings.Count(dump, `"normalizePath":true`),
-		strings.Count(dump, `"normalizePath":false`))
 }
 
 func testPathWithEscapedSlashesAction(action contour_v1alpha1.PathWithEscapedSlashesActionType) e2e.NamespacedTestBody {
