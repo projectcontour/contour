@@ -16,28 +16,35 @@ package v1alpha1
 import "fmt"
 
 // CompressionAlgorithm defines the type of compression algorithm applied in default HTTP listener filter chain.
-// Allowable values are defined as names of well known compression algorithms (plus "disabled").
+// Allowable values are defined as names of well known compression algorithms.
 type CompressionAlgorithm string
 
 // EnvoyCompression defines configuration related to compression in the default HTTP Listener filter chain.
+// +kubebuilder:validation:XValidation:rule="!(has(self.algorithm) && has(self.algorithms))",message="compression algorithm and algorithms are mutually exclusive"
 type EnvoyCompression struct {
 	// Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
 	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
 	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
-	// Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
+	// Mutually exclusive with Algorithms.
+	//
+	// Deprecated: use Algorithms instead. An empty Algorithms list disables compression.
 	// +kubebuilder:validation:Enum="gzip";"brotli";"zstd";"disabled"
 	// +optional
 	Algorithm CompressionAlgorithm `json:"algorithm,omitempty"`
 
-	// Algorithms selects one or more response compression types.
-	// Envoy installs one compressor filter per entry and negotiates the encoding from the request Accept-Encoding header.
+	// Algorithms selects the response compression types applied in the default HTTP Listener filter chain.
+	// This field is a tri-state:
+	// - omitted: use the Envoy default (gzip)
+	// - empty list: disable compression
+	// - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
+	//
 	// List order is the preference when q-values are equal (the first entry is preferred).
-	// Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; set algorithm: disabled instead.
+	// Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; use an empty list to disable.
 	// Mutually exclusive with Algorithm.
 	// +kubebuilder:validation:MaxItems=3
 	// +kubebuilder:validation:items:Enum=gzip;brotli;zstd
 	// +optional
-	Algorithms []CompressionAlgorithm `json:"algorithms,omitempty"`
+	Algorithms *[]CompressionAlgorithm `json:"algorithms,omitempty"`
 }
 
 func (a CompressionAlgorithm) Validate() error {
@@ -57,14 +64,17 @@ func (c *EnvoyCompression) Validate() error {
 	if err := c.Algorithm.Validate(); err != nil {
 		return err
 	}
-	if c.Algorithm != "" && len(c.Algorithms) > 0 {
+	if c.Algorithm != "" && c.Algorithms != nil {
 		return fmt.Errorf("compression algorithm and algorithms are mutually exclusive")
 	}
+	if c.Algorithms == nil {
+		return nil
+	}
 
-	seen := make(map[CompressionAlgorithm]struct{}, len(c.Algorithms))
-	for _, algorithm := range c.Algorithms {
+	seen := make(map[CompressionAlgorithm]struct{}, len(*c.Algorithms))
+	for _, algorithm := range *c.Algorithms {
 		if algorithm == DisabledCompression {
-			return fmt.Errorf("compression algorithms cannot include %q; set algorithm: %q instead", DisabledCompression, DisabledCompression)
+			return fmt.Errorf("compression algorithms cannot include %q; set algorithms: [] to disable", DisabledCompression)
 		}
 		if err := algorithm.Validate(); err != nil {
 			return err
@@ -82,16 +92,19 @@ func (c *EnvoyCompression) Validate() error {
 
 // EffectiveAlgorithms returns the ordered list of compressor libraries to program
 // on the default HTTP listener. A nil result means compression is disabled.
-// When neither field is set, gzip is used.
+// When neither field is set, gzip is used. An empty Algorithms list disables compression.
 func (c *EnvoyCompression) EffectiveAlgorithms() []CompressionAlgorithm {
 	if c == nil {
 		return []CompressionAlgorithm{GzipCompression}
 	}
+	if c.Algorithms != nil {
+		if len(*c.Algorithms) == 0 {
+			return nil
+		}
+		return append([]CompressionAlgorithm(nil), *c.Algorithms...)
+	}
 	if c.Algorithm == DisabledCompression {
 		return nil
-	}
-	if len(c.Algorithms) > 0 {
-		return append([]CompressionAlgorithm(nil), c.Algorithms...)
 	}
 	switch c.Algorithm {
 	case BrotliCompression, ZstdCompression, GzipCompression:

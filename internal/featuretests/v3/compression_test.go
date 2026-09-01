@@ -121,7 +121,7 @@ func TestCompressionAlgorithms(t *testing.T) {
 	}
 
 	compression := &contour_v1alpha1.EnvoyCompression{
-		Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 			contour_v1alpha1.BrotliCompression,
 			contour_v1alpha1.GzipCompression,
 		},

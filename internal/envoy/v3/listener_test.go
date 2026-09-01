@@ -22,6 +22,7 @@ import (
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compression_brotli_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/brotli/compressor/v3"
 	envoy_compression_gzip_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/gzip/compressor/v3"
+	envoy_compression_zstd_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/compression/zstd/compressor/v3"
 	envoy_filter_http_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_filter_http_cors_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
 	envoy_filter_http_grpc_stats_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_stats/v3"
@@ -36,6 +37,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -2001,60 +2003,75 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 		XDSClusterName: DefaultXDSClusterName,
 	})
 
-	gotFilter := envoyGen.HTTPConnectionManagerBuilder().
-		Compression(&contour_v1alpha1.EnvoyCompression{
-			Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+	type compressorExpectation struct {
+		name                  string
+		compressorLibraryName string
+		compressorLibrary     proto.Message
+		chooseFirst           bool
+		removeAcceptEncoding  bool
+	}
+
+	tests := map[string]struct {
+		algorithms *[]contour_v1alpha1.CompressionAlgorithm
+		want       []compressorExpectation
+	}{
+		"one algorithm": {
+			algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.ZstdCompression},
+			want: []compressorExpectation{
+				{name: CompressorFilterName, compressorLibraryName: "zstd", compressorLibrary: &envoy_compression_zstd_compressor_v3.Zstd{}},
+			},
+		},
+		"two algorithms": {
+			algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 				contour_v1alpha1.BrotliCompression,
 				contour_v1alpha1.GzipCompression,
 			},
-		}).
-		RouteConfigName("test").
-		MetricsPrefix("test").
-		AccessLoggers(FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
-		DefaultFilters().
-		Get()
-
-	var got envoy_filter_network_http_connection_manager_v3.HttpConnectionManager
-	require.NoError(t, gotFilter.GetTypedConfig().UnmarshalTo(&got))
-	require.GreaterOrEqual(t, len(got.HttpFilters), 2)
-
-	want := []*envoy_filter_network_http_connection_manager_v3.HttpFilter{
-		{
-			Name: CompressorFilterName + ".brotli",
-			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_compressor_v3.Compressor{
-					CompressorLibrary: &envoy_config_core_v3.TypedExtensionConfig{
-						Name:        "brotli",
-						TypedConfig: protobuf.MustMarshalAny(&envoy_compression_brotli_compressor_v3.Brotli{}),
-					},
-					ChooseFirst: true,
-					ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
-						CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-							ContentType: compressorContentTypes,
-						},
-					},
-				}),
+			want: []compressorExpectation{
+				{name: CompressorFilterName + ".brotli", compressorLibraryName: "brotli", compressorLibrary: &envoy_compression_brotli_compressor_v3.Brotli{}, chooseFirst: true},
+				{name: CompressorFilterName + ".gzip", compressorLibraryName: "gzip", compressorLibrary: &envoy_compression_gzip_compressor_v3.Gzip{}, removeAcceptEncoding: true},
 			},
 		},
-		{
-			Name: CompressorFilterName + ".gzip",
-			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_compressor_v3.Compressor{
-					CompressorLibrary: &envoy_config_core_v3.TypedExtensionConfig{
-						Name:        "gzip",
-						TypedConfig: protobuf.MustMarshalAny(&envoy_compression_gzip_compressor_v3.Gzip{}),
-					},
-					ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
-						CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-							ContentType: compressorContentTypes,
-						},
-						RemoveAcceptEncodingHeader: true,
-					},
-				}),
+		"three algorithms": {
+			algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+				contour_v1alpha1.GzipCompression,
+				contour_v1alpha1.BrotliCompression,
+				contour_v1alpha1.ZstdCompression,
 			},
+			want: []compressorExpectation{
+				{name: CompressorFilterName + ".gzip", compressorLibraryName: "gzip", compressorLibrary: &envoy_compression_gzip_compressor_v3.Gzip{}, chooseFirst: true},
+				{name: CompressorFilterName + ".brotli", compressorLibraryName: "brotli", compressorLibrary: &envoy_compression_brotli_compressor_v3.Brotli{}},
+				{name: CompressorFilterName + ".zstd", compressorLibraryName: "zstd", compressorLibrary: &envoy_compression_zstd_compressor_v3.Zstd{}, removeAcceptEncoding: true},
+			},
+		},
+		"empty algorithms disables compression": {
+			algorithms: &[]contour_v1alpha1.CompressionAlgorithm{},
 		},
 	}
 
-	protobuf.ExpectEqual(t, want[0], got.HttpFilters[0])
-	protobuf.ExpectEqual(t, want[1], got.HttpFilters[1])
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			gotFilter := envoyGen.HTTPConnectionManagerBuilder().
+				Compression(&contour_v1alpha1.EnvoyCompression{Algorithms: tc.algorithms}).
+				DefaultFilters().
+				Get()
+
+			var got envoy_filter_network_http_connection_manager_v3.HttpConnectionManager
+			require.NoError(t, gotFilter.GetTypedConfig().UnmarshalTo(&got))
+			require.GreaterOrEqual(t, len(got.HttpFilters), len(tc.want)+1)
+			assert.Equal(t, GRPCWebFilterName, got.HttpFilters[len(tc.want)].Name)
+
+			for i, want := range tc.want {
+				var compressor envoy_filter_http_compressor_v3.Compressor
+				require.NoError(t, got.HttpFilters[i].GetTypedConfig().UnmarshalTo(&compressor))
+
+				assert.Equal(t, want.name, got.HttpFilters[i].Name)
+				require.NotNil(t, compressor.CompressorLibrary)
+				require.NotNil(t, compressor.CompressorLibrary.TypedConfig)
+				assert.Equal(t, want.compressorLibraryName, compressor.CompressorLibrary.Name)
+				assert.True(t, compressor.CompressorLibrary.TypedConfig.MessageIs(want.compressorLibrary))
+				assert.Equal(t, want.chooseFirst, compressor.ChooseFirst)
+				assert.Equal(t, want.removeAcceptEncoding, compressor.ResponseDirectionConfig.RemoveAcceptEncodingHeader)
+			}
+		})
+	}
 }

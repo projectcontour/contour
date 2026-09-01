@@ -1038,16 +1038,23 @@ const (
 type CompressionParameters struct {
 	// Algorithm configures a single compression algorithm to use in the default HTTP listener filter chain.
 	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
-	// Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
+	// Mutually exclusive with Algorithms.
+	//
+	// Deprecated: use Algorithms instead. An empty Algorithms list disables compression.
 	// +optional
 	Algorithm CompressionAlgorithm `yaml:"algorithm,omitempty"`
 
-	// Algorithms configures one or more compression algorithms. Envoy negotiates the encoding
-	// from the request Accept-Encoding header. List order is the preference when q-values are equal.
+	// Algorithms configures the compression algorithms used in the default HTTP listener filter chain.
+	// This field is a tri-state:
+	// - omitted: use the Envoy default (gzip)
+	// - empty list: disable compression
+	// - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
+	//
+	// List order is the preference when q-values are equal.
 	// Valid options are 'gzip', 'brotli' and 'zstd'. Cannot include 'disabled'.
 	// Mutually exclusive with Algorithm.
 	// +optional
-	Algorithms []CompressionAlgorithm `yaml:"algorithms,omitempty"`
+	Algorithms *[]CompressionAlgorithm `yaml:"algorithms,omitempty"`
 }
 
 func (c CompressionParameters) Validate() error {
@@ -1059,13 +1066,14 @@ func (c CompressionParameters) ToEnvoyCompression() *contour_v1alpha1.EnvoyCompr
 	out := &contour_v1alpha1.EnvoyCompression{
 		Algorithm: contour_v1alpha1.CompressionAlgorithm(c.Algorithm),
 	}
-	if len(c.Algorithms) == 0 {
+	if c.Algorithms == nil {
 		return out
 	}
-	out.Algorithms = make([]contour_v1alpha1.CompressionAlgorithm, len(c.Algorithms))
-	for i, algorithm := range c.Algorithms {
-		out.Algorithms[i] = contour_v1alpha1.CompressionAlgorithm(algorithm)
+	algs := make([]contour_v1alpha1.CompressionAlgorithm, len(*c.Algorithms))
+	for i, algorithm := range *c.Algorithms {
+		algs[i] = contour_v1alpha1.CompressionAlgorithm(algorithm)
 	}
+	out.Algorithms = &algs
 	return out
 }
 

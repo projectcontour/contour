@@ -317,10 +317,10 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with brotli and gzip compression", func() {
 			BeforeEach(func() {
 				contourConfig.Compression = config.CompressionParameters{
-					Algorithms: []config.CompressionAlgorithm{config.CompressionBrotli, config.CompressionGzip},
+					Algorithms: &[]config.CompressionAlgorithm{config.CompressionBrotli, config.CompressionGzip},
 				}
 				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
-					Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+					Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 						contour_v1alpha1.BrotliCompression,
 						contour_v1alpha1.GzipCompression,
 					},

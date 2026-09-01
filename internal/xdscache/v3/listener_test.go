@@ -3300,7 +3300,7 @@ func TestListenerVisit(t *testing.T) {
 		"httpproxy with multiple compression algorithms set in listener config": {
 			ListenerConfig: ListenerConfig{
 				Compression: &contour_v1alpha1.EnvoyCompression{
-					Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+					Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 						contour_v1alpha1.BrotliCompression,
 						contour_v1alpha1.GzipCompression,
 					},
@@ -3335,7 +3335,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoyGen.HTTPConnectionManagerBuilder().
 						Compression(&contour_v1alpha1.EnvoyCompression{
-							Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+							Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 								contour_v1alpha1.BrotliCompression,
 								contour_v1alpha1.GzipCompression,
 							},

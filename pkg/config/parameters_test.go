@@ -340,18 +340,61 @@ func TestCompressionValidation(t *testing.T) {
 	require.Contains(t, CompressionParameters{Algorithm: "bogus"}.Validate().Error(), "invalid compression type")
 
 	require.NoError(t, CompressionParameters{
-		Algorithms: []CompressionAlgorithm{CompressionBrotli, CompressionGzip},
+		Algorithms: &[]CompressionAlgorithm{},
+	}.Validate())
+	require.NoError(t, CompressionParameters{
+		Algorithms: &[]CompressionAlgorithm{CompressionBrotli, CompressionGzip},
 	}.Validate())
 	require.ErrorContains(t, CompressionParameters{
 		Algorithm:  CompressionGzip,
-		Algorithms: []CompressionAlgorithm{CompressionBrotli},
+		Algorithms: &[]CompressionAlgorithm{CompressionBrotli},
 	}.Validate(), "mutually exclusive")
 	require.ErrorContains(t, CompressionParameters{
-		Algorithms: []CompressionAlgorithm{CompressionGzip, CompressionGzip},
+		Algorithm:  CompressionGzip,
+		Algorithms: &[]CompressionAlgorithm{},
+	}.Validate(), "mutually exclusive")
+	require.ErrorContains(t, CompressionParameters{
+		Algorithms: &[]CompressionAlgorithm{CompressionGzip, CompressionGzip},
 	}.Validate(), "duplicate")
 	require.ErrorContains(t, CompressionParameters{
-		Algorithms: []CompressionAlgorithm{CompressionDisabled},
+		Algorithms: &[]CompressionAlgorithm{CompressionDisabled},
 	}.Validate(), "cannot include")
+}
+
+func TestParseCompressionAlgorithms(t *testing.T) {
+	conf, err := Parse(strings.NewReader(`
+compression:
+  algorithms: []
+`))
+	require.NoError(t, err)
+	require.NotNil(t, conf.Compression.Algorithms)
+	require.Empty(t, *conf.Compression.Algorithms)
+	require.Nil(t, conf.Compression.ToEnvoyCompression().EffectiveAlgorithms())
+
+	conf, err = Parse(strings.NewReader(`
+compression:
+  algorithms:
+    - brotli
+    - gzip
+`))
+	require.NoError(t, err)
+	require.Equal(t, &[]CompressionAlgorithm{CompressionBrotli, CompressionGzip}, conf.Compression.Algorithms)
+
+	conf, err = Parse(strings.NewReader(`
+compression:
+  algorithm: disabled
+`))
+	require.NoError(t, err)
+	require.Nil(t, conf.Compression.Algorithms)
+	require.Equal(t, CompressionDisabled, conf.Compression.Algorithm)
+	require.Nil(t, conf.Compression.ToEnvoyCompression().EffectiveAlgorithms())
+
+	conf, err = Parse(strings.NewReader(`
+compression: {}
+`))
+	require.NoError(t, err)
+	require.Nil(t, conf.Compression.Algorithms)
+	require.Equal(t, CompressionAlgorithm(""), conf.Compression.Algorithm)
 }
 
 func TestConfigFileValidation(t *testing.T) {

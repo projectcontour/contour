@@ -309,7 +309,8 @@ spec:
                               Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
                               Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
                               Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
-                              Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
+                              Mutually exclusive with Algorithms.
+                              Deprecated: use Algorithms instead. An empty Algorithms list disables compression.
                             enum:
                             - gzip
                             - brotli
@@ -318,15 +319,18 @@ spec:
                             type: string
                           algorithms:
                             description: |-
-                              Algorithms selects one or more response compression types.
-                              Envoy installs one compressor filter per entry and negotiates the encoding from the request Accept-Encoding header.
+                              Algorithms selects the response compression types applied in the default HTTP Listener filter chain.
+                              This field is a tri-state:
+                              - omitted: use the Envoy default (gzip)
+                              - empty list: disable compression
+                              - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
                               List order is the preference when q-values are equal (the first entry is preferred).
-                              Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; set algorithm: disabled instead.
+                              Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; use an empty list to disable.
                               Mutually exclusive with Algorithm.
                             items:
                               description: |-
                                 CompressionAlgorithm defines the type of compression algorithm applied in default HTTP listener filter chain.
-                                Allowable values are defined as names of well known compression algorithms (plus "disabled").
+                                Allowable values are defined as names of well known compression algorithms.
                               enum:
                               - gzip
                               - brotli
@@ -335,6 +339,10 @@ spec:
                             maxItems: 3
                             type: array
                         type: object
+                        x-kubernetes-validations:
+                        - message: compression algorithm and algorithms are mutually
+                            exclusive
+                          rule: '!(has(self.algorithm) && has(self.algorithms))'
                       connectionBalancer:
                         description: |-
                           ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
@@ -4479,7 +4487,8 @@ spec:
                                   Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
                                   Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
                                   Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
-                                  Mutually exclusive with Algorithms. Prefer Algorithms to enable more than one encoding.
+                                  Mutually exclusive with Algorithms.
+                                  Deprecated: use Algorithms instead. An empty Algorithms list disables compression.
                                 enum:
                                 - gzip
                                 - brotli
@@ -4488,15 +4497,18 @@ spec:
                                 type: string
                               algorithms:
                                 description: |-
-                                  Algorithms selects one or more response compression types.
-                                  Envoy installs one compressor filter per entry and negotiates the encoding from the request Accept-Encoding header.
+                                  Algorithms selects the response compression types applied in the default HTTP Listener filter chain.
+                                  This field is a tri-state:
+                                  - omitted: use the Envoy default (gzip)
+                                  - empty list: disable compression
+                                  - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
                                   List order is the preference when q-values are equal (the first entry is preferred).
-                                  Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; set algorithm: disabled instead.
+                                  Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; use an empty list to disable.
                                   Mutually exclusive with Algorithm.
                                 items:
                                   description: |-
                                     CompressionAlgorithm defines the type of compression algorithm applied in default HTTP listener filter chain.
-                                    Allowable values are defined as names of well known compression algorithms (plus "disabled").
+                                    Allowable values are defined as names of well known compression algorithms.
                                   enum:
                                   - gzip
                                   - brotli
@@ -4505,6 +4517,10 @@ spec:
                                 maxItems: 3
                                 type: array
                             type: object
+                            x-kubernetes-validations:
+                            - message: compression algorithm and algorithms are mutually
+                                exclusive
+                              rule: '!(has(self.algorithm) && has(self.algorithms))'
                           connectionBalancer:
                             description: |-
                               ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer

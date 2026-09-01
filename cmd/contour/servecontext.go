@@ -341,7 +341,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 	}
 
 	var compression *contour_v1alpha1.EnvoyCompression
-	if ctx.Config.Compression.Algorithm != "" || len(ctx.Config.Compression.Algorithms) > 0 {
+	if ctx.Config.Compression.Algorithm != "" || ctx.Config.Compression.Algorithms != nil {
 		compression = ctx.Config.Compression.ToEnvoyCompression()
 	}
 

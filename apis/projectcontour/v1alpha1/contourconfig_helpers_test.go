@@ -95,7 +95,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					Compression: &contour_v1alpha1.EnvoyCompression{
 						Algorithm:  contour_v1alpha1.GzipCompression,
-						Algorithms: []contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
+						Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
 					},
 				},
 			},
@@ -103,7 +103,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		require.Error(t, c.Validate())
 
 		c.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
-			Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+			Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 				contour_v1alpha1.BrotliCompression,
 				contour_v1alpha1.GzipCompression,
 			},

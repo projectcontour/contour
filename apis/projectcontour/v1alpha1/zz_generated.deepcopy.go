@@ -499,8 +499,12 @@ func (in *EnvoyCompression) DeepCopyInto(out *EnvoyCompression) {
 	*out = *in
 	if in.Algorithms != nil {
 		in, out := &in.Algorithms, &out.Algorithms
-		*out = make([]CompressionAlgorithm, len(*in))
-		copy(*out, *in)
+		*out = new([]CompressionAlgorithm)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]CompressionAlgorithm, len(*in))
+			copy(*out, *in)
+		}
 	}
 }
 

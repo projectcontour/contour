@@ -983,13 +983,21 @@ func TestServeContextCompressionOptions(t *testing.T) {
 		},
 		"Algorithms": {
 			serveCompression: config.CompressionParameters{
-				Algorithms: []config.CompressionAlgorithm{config.CompressionBrotli, config.CompressionGzip},
+				Algorithms: &[]config.CompressionAlgorithm{config.CompressionBrotli, config.CompressionGzip},
 			},
 			configCompression: &contour_v1alpha1.EnvoyCompression{
-				Algorithms: []contour_v1alpha1.CompressionAlgorithm{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
 					contour_v1alpha1.BrotliCompression,
 					contour_v1alpha1.GzipCompression,
 				},
+			},
+		},
+		"EmptyAlgorithms": {
+			serveCompression: config.CompressionParameters{
+				Algorithms: &[]config.CompressionAlgorithm{},
+			},
+			configCompression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{},
 			},
 		},
 	}
