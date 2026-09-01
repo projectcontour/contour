@@ -141,6 +141,8 @@ If you are providing your own Envoy it must be compiled with the following exten
 
 - Compression:
   - envoy.compression.gzip.compressor
+  - envoy.compression.brotli.compressor
+  - envoy.compression.zstd.compressor
 
 - HTTP Filters:
   - envoy.filters.http.compressor
