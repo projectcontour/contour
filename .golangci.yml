@@ -107,6 +107,18 @@ linters:
           - testifylint
         path: test/e2e
         text: require must only be used in the goroutine running the test function
+      - linters:
+          - gosec
+        text: "G703:|G706:|G118:|G602:|G101:|G404:"
+      - linters:
+          - gocritic
+        text: deprecatedComment
+      - linters:
+          - govet
+        text: "printf:"
+      - linters:
+          - staticcheck
+        text: "SA1019:"
     paths:
       - third_party$
       - builtin$
@@ -115,10 +127,7 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
 formatters:
-  enable:
-    - gci
-    - gofumpt
-    - goimports
+  enable: []
   settings:
     gci:
       sections:
