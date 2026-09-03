@@ -111,7 +111,7 @@ policy:
   applyToIngress: true
 `
 
-	conf, err := Parse(strings.NewReader((yaml)))
+	conf, err := Parse(strings.NewReader(yaml))
 	require.NoError(t, err)
 
 	wanted := Defaults()

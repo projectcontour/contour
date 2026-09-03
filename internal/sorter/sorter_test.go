@@ -34,7 +34,7 @@ import (
 func shuffleSlice[T any](original []T) []T {
 	shuffled := make([]T, len(original))
 	copy(shuffled, original)
-	rand.Shuffle(len(original), func(i, j int) {
+	rand.Shuffle(len(original), func(i, j int) { //nolint:gosec // G404: Use of weak random number generator
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 	return shuffled

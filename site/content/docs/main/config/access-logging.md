@@ -151,6 +151,18 @@ json-fields:
 
 **Note:** The fingerprint values will be empty (`-`) for non-TLS connections or if the corresponding fingerprinting feature is not enabled.
 
+### Logging Trace and Span IDs
+
+When [tracing](tracing.md) is enabled, trace and span identifiers can be included in access logs.
+
+For text-based access logging, the following command operators can be used:
+- `%TRACE_ID%` - Trace identifier of the request
+- `%SPAN_ID%` - Span identifier of Envoy's span
+
+For JSON access logging, the following built-in fields can be added:
+- `trace_id`
+- `span_id`
+
 ## Using Access Log Formatter Extensions
 
 Envoy allows implementing custom access log command operators as extensions.

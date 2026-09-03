@@ -51,7 +51,7 @@ func computeGatewayClassAcceptedCondition(gatewayClass *gatewayapi_v1.GatewayCla
 // time if details of a condition have changed. Returns the updated condition array.
 func mergeConditions(conditions []meta_v1.Condition, updates ...meta_v1.Condition) []meta_v1.Condition {
 	var additions []meta_v1.Condition
-	for i, update := range updates {
+	for _, update := range updates {
 		add := true
 		for j, cond := range conditions {
 			if cond.Type == update.Type {
@@ -70,7 +70,7 @@ func mergeConditions(conditions []meta_v1.Condition, updates ...meta_v1.Conditio
 			}
 		}
 		if add {
-			additions = append(additions, updates[i])
+			additions = append(additions, update)
 		}
 	}
 	conditions = append(conditions, additions...)

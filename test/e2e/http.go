@@ -16,6 +16,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"io"
@@ -117,17 +118,26 @@ func httpClient(opts ...func(*http.Client)) *http.Client {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, opts.Body)
-	require.NoError(h.t, err, "error creating HTTP request")
-
-	req.Host = opts.Host
-	for _, opt := range opts.RequestOpts {
-		opt(req)
+	// Read the body once so each attempt can be given its own reader,
+	// otherwise retries would send an empty body.
+	var bodyBytes []byte
+	if opts.Body != nil {
+		var err error
+		bodyBytes, err = io.ReadAll(opts.Body)
+		require.NoError(h.t, err, "error reading request body")
 	}
 
 	client := httpClient(opts.ClientOpts...)
 
 	makeRequest := func() (*http.Response, error) {
+		req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPURLBase)+opts.Path, bytes.NewReader(bodyBytes))
+		require.NoError(h.t, err, "error creating HTTP request")
+
+		req.Host = opts.Host
+		for _, opt := range opts.RequestOpts {
+			opt(req)
+		}
+
 		return client.Do(req)
 	}
 
@@ -245,12 +255,13 @@ func OptSetSNI(name string) func(*tls.Config) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, opts.Body)
-	require.NoError(h.t, err, "error creating HTTP request")
-
-	req.Host = opts.Host
-	for _, opt := range opts.RequestOpts {
-		opt(req)
+	// Read the body once so each attempt can be given its own reader,
+	// otherwise retries would send an empty body.
+	var bodyBytes []byte
+	if opts.Body != nil {
+		var err error
+		bodyBytes, err = io.ReadAll(opts.Body)
+		require.NoError(h.t, err, "error reading request body")
 	}
 
 	client := httpClient()
@@ -267,6 +278,14 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 	}
 
 	makeRequest := func() (*http.Response, error) {
+		req, err := http.NewRequest(http.MethodGet, opts.requestURLBase(h.HTTPSURLBase)+opts.Path, bytes.NewReader(bodyBytes))
+		require.NoError(h.t, err, "error creating HTTP request")
+
+		req.Host = opts.Host
+		for _, opt := range opts.RequestOpts {
+			opt(req)
+		}
+
 		return client.Do(req)
 	}
 

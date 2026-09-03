@@ -39,9 +39,6 @@ import (
 const (
 	// EchoServerImage is the image to use as a backend fixture.
 	EchoServerImage = "gcr.io/k8s-staging-ingressconformance/echoserver:v20221109-7ee2f3e"
-
-	// GRPCServerImage is the image to use for tests that require a gRPC server.
-	GRPCServerImage = "ghcr.io/projectcontour/yages:v0.1.0"
 )
 
 // Fixtures holds references to all of the E2E fixtures helpers.
@@ -53,10 +50,6 @@ type Fixtures struct {
 	// EchoSecure provides helpers for working with the TLS-secured
 	// ingress-conformance-echo-tls test fixture.
 	EchoSecure *EchoSecure
-
-	// GRPC provides helpers for working with a gRPC echo server test
-	// fixture.
-	GRPC *GRPC
 }
 
 // Echo manages the ingress-conformance-echo fixture.
@@ -424,117 +417,6 @@ func (e *EchoSecure) Deploy(ns, name string, preApplyHook func(deployment *apps_
 	return func() {
 		require.NoError(e.t, e.client.Delete(context.TODO(), service))
 		require.NoError(e.t, e.client.Delete(context.TODO(), deployment))
-	}
-}
-
-type GRPC struct {
-	client client.Client
-	t      ginkgo.GinkgoTInterface
-}
-
-func (g *GRPC) Deploy(ns, name string) func() {
-	ns = valOrDefault(ns, "default")
-	name = valOrDefault(name, "grpc-echo")
-
-	deployment := &apps_v1.Deployment{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: apps_v1.DeploymentSpec{
-			Replicas: ptr.To(int32(1)),
-			Selector: &meta_v1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
-			},
-			Template: core_v1.PodTemplateSpec{
-				ObjectMeta: meta_v1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": name},
-				},
-				Spec: core_v1.PodSpec{
-					TopologySpreadConstraints: []core_v1.TopologySpreadConstraint{
-						{
-							// Attempt to spread pods across different nodes if possible.
-							TopologyKey:       "kubernetes.io/hostname",
-							MaxSkew:           1,
-							WhenUnsatisfiable: core_v1.ScheduleAnyway,
-							LabelSelector: &meta_v1.LabelSelector{
-								MatchLabels: map[string]string{"app.kubernetes.io/name": name},
-							},
-						},
-					},
-					Containers: []core_v1.Container{
-						{
-							Name:            "grpc-echo",
-							Image:           GRPCServerImage,
-							ImagePullPolicy: core_v1.PullIfNotPresent,
-							Env: []core_v1.EnvVar{
-								{
-									Name:  "INGRESS_NAME",
-									Value: name,
-								},
-								{
-									Name:  "SERVICE_NAME",
-									Value: name,
-								},
-								{
-									Name: "POD_NAME",
-									ValueFrom: &core_v1.EnvVarSource{
-										FieldRef: &core_v1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "NAMESPACE",
-									ValueFrom: &core_v1.EnvVarSource{
-										FieldRef: &core_v1.ObjectFieldSelector{
-											FieldPath: "metadata.namespace",
-										},
-									},
-								},
-							},
-							Ports: []core_v1.ContainerPort{
-								{
-									Name:          "grpc",
-									ContainerPort: 9000,
-								},
-							},
-							ReadinessProbe: &core_v1.Probe{
-								ProbeHandler: core_v1.ProbeHandler{
-									Exec: &core_v1.ExecAction{
-										Command: []string{"/grpc-health-probe", "-addr=localhost:9000"},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	require.NoError(g.t, g.client.Create(context.TODO(), deployment))
-
-	service := &core_v1.Service{
-		ObjectMeta: meta_v1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: core_v1.ServiceSpec{
-			Ports: []core_v1.ServicePort{
-				{
-					Name:       "grpc",
-					Port:       9000,
-					TargetPort: intstr.FromString("grpc"),
-				},
-			},
-			Selector: map[string]string{"app.kubernetes.io/name": name},
-		},
-	}
-	require.NoError(g.t, g.client.Create(context.TODO(), service))
-
-	return func() {
-		require.NoError(g.t, g.client.Delete(context.TODO(), service))
-		require.NoError(g.t, g.client.Delete(context.TODO(), deployment))
 	}
 }
 

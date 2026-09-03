@@ -2707,7 +2707,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
 				},
@@ -2788,7 +2788,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName:       "ssl-cert",
 					ClientValidation: &contour_v1.DownstreamValidation{},
 				},
@@ -2824,7 +2824,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
 					ClientValidation: &contour_v1.DownstreamValidation{
@@ -3172,7 +3172,7 @@ func TestDAGStatus(t *testing.T) {
 		WithSpec(contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "invalid.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
 				},
@@ -3200,7 +3200,7 @@ func TestDAGStatus(t *testing.T) {
 		WithSpec(contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "invalid.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
 				},
@@ -5108,7 +5108,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName: "ssl-cert",
 					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate: "delegated/delegated",
@@ -5177,7 +5177,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName: "ssl-cert",
 					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             "ca-cert",
@@ -5260,7 +5260,7 @@ func TestDAGStatus(t *testing.T) {
 		Spec: contour_v1.HTTPProxySpec{
 			VirtualHost: &contour_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &contour_v1.TLS{
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName: "ssl-cert",
 					ClientValidation: &contour_v1.DownstreamValidation{
 						CACertificate:             "delegated/delegated",
@@ -6699,7 +6699,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							gatewayapi_v1.RouteConditionReason(gatewayapi_v1.ListenerReasonRefNotPermitted),
-							"Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant"),
+							"Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant",
+						),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -7413,7 +7414,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+						),
 						{
 							Type:    string(gatewayapi_v1.RouteConditionAccepted),
 							Status:  contour_v1.ConditionFalse,
@@ -7456,7 +7458,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+						),
 						{
 							Type:    string(gatewayapi_v1.RouteConditionAccepted),
 							Status:  contour_v1.ConditionFalse,
@@ -8350,7 +8353,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							gatewayapi_v1.RouteReasonBackendNotFound,
-							"service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found"),
+							"service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
+						),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -8403,7 +8407,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							gatewayapi_v1.RouteConditionReason(gatewayapi_v1.ListenerReasonRefNotPermitted),
-							"Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant"),
+							"Spec.Rules.Filters.RequestMirror.BackendRef.Namespace must match the route's namespace or be covered by a ReferenceGrant",
+						),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -8597,7 +8602,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers"),
+							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers",
+						),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -8698,7 +8704,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers"),
+							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
+						),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
@@ -10178,7 +10185,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							gatewayapi_v1.RouteReasonBackendNotFound,
-							"service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found"),
+							"service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
+						),
 						{
 							Type:    string(gatewayapi_v1.RouteConditionAccepted),
 							Status:  contour_v1.ConditionTrue,
@@ -10313,7 +10321,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+							"invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+						),
 						{
 							Type:    string(gatewayapi_v1.RouteConditionAccepted),
 							Status:  contour_v1.ConditionFalse,
@@ -10357,7 +10366,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+							"invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+						),
 						{
 							Type:    string(gatewayapi_v1.RouteConditionAccepted),
 							Status:  contour_v1.ConditionFalse,
@@ -11124,7 +11134,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid add header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers"),
+							"invalid add header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
+						),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
@@ -11483,7 +11494,8 @@ func TestGatewayAPIGRPCRouteDAGStatus(t *testing.T) {
 					Conditions: []meta_v1.Condition{
 						resolvedRefsFalse(
 							status.ReasonDegraded,
-							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers"),
+							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on response headers",
+						),
 						routeAcceptedGRPCRouteCondition(),
 					},
 				},
