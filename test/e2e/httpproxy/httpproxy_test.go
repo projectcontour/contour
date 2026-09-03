@@ -153,6 +153,44 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	Context("disableNormalizePath option", func() {
+		Context("default value of false", func() {
+			f.NamespacedTest("httpproxy-enable-normalize-path", testDisableNormalizePath(false))
+		})
+
+		Context("set to true", func() {
+			BeforeEach(func() {
+				contourConfig.DisableNormalizePath = true
+				contourConfiguration.Spec.Envoy.Listener.DisableNormalizePath = ptr.To(true)
+			})
+
+			f.NamespacedTest("httpproxy-disable-normalize-path", testDisableNormalizePath(true))
+		})
+	})
+
+	Context("pathWithEscapedSlashesAction option", func() {
+		Context("default value of keep_unchanged", func() {
+			f.NamespacedTest("httpproxy-escaped-slashes-keep-unchanged",
+				testPathWithEscapedSlashesAction(contour_v1alpha1.KeepUnchangedPathWithEscapedSlashes))
+		})
+
+		for _, action := range []contour_v1alpha1.PathWithEscapedSlashesActionType{
+			contour_v1alpha1.RejectRequestPathWithEscapedSlashes,
+			contour_v1alpha1.UnescapeAndRedirectPathWithEscapedSlashes,
+			contour_v1alpha1.UnescapeAndForwardPathWithEscapedSlashes,
+		} {
+			Context("set to "+string(action), func() {
+				BeforeEach(func() {
+					contourConfig.PathWithEscapedSlashesAction = config.PathWithEscapedSlashesActionType(action)
+					contourConfiguration.Spec.Envoy.Listener.PathWithEscapedSlashesAction = action
+				})
+
+				f.NamespacedTest("httpproxy-escaped-slashes-"+strings.ReplaceAll(string(action), "_", "-"),
+					testPathWithEscapedSlashesAction(action))
+			})
+		}
+	})
+
 	f.NamespacedTest("httpproxy-client-cert-auth", testClientCertAuth)
 
 	f.NamespacedTest("httpproxy-tcproute-https-termination", testTCPRouteHTTPSTermination)

@@ -456,6 +456,18 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		serverHeaderTransformation = contour_v1alpha1.PassThroughServerHeader
 	}
 
+	var pathWithEscapedSlashesAction contour_v1alpha1.PathWithEscapedSlashesActionType
+	switch ctx.Config.PathWithEscapedSlashesAction {
+	case config.KeepUnchangedPathWithEscapedSlashes:
+		pathWithEscapedSlashesAction = contour_v1alpha1.KeepUnchangedPathWithEscapedSlashes
+	case config.RejectRequestPathWithEscapedSlashes:
+		pathWithEscapedSlashesAction = contour_v1alpha1.RejectRequestPathWithEscapedSlashes
+	case config.UnescapeAndRedirectPathWithEscapedSlashes:
+		pathWithEscapedSlashesAction = contour_v1alpha1.UnescapeAndRedirectPathWithEscapedSlashes
+	case config.UnescapeAndForwardPathWithEscapedSlashes:
+		pathWithEscapedSlashesAction = contour_v1alpha1.UnescapeAndForwardPathWithEscapedSlashes
+	}
+
 	var globalExtAuth *contour_v1.AuthorizationServer
 	if ctx.Config.GlobalExternalAuthorization.ExtensionService != "" {
 		nsedName := k8s.NamespacedNameFrom(ctx.Config.GlobalExternalAuthorization.ExtensionService)
@@ -570,6 +582,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Compression:                          compression,
 				DisableAllowChunkedLength:            &ctx.Config.DisableAllowChunkedLength,
 				DisableMergeSlashes:                  &ctx.Config.DisableMergeSlashes,
+				DisableNormalizePath:                 &ctx.Config.DisableNormalizePath,
+				PathWithEscapedSlashesAction:         pathWithEscapedSlashesAction,
 				ServerHeaderTransformation:           serverHeaderTransformation,
 				ConnectionBalancer:                   ctx.Config.Listener.ConnectionBalancer,
 				PerConnectionBufferLimitBytes:        ctx.Config.Listener.PerConnectionBufferLimitBytes,

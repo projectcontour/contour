@@ -2085,6 +2085,92 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			}),
 		},
+		"httpproxy with disable_normalize_path set in listener config": {
+			ListenerConfig: ListenerConfig{
+				DisableNormalizePath: true,
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						DisableNormalizePath(true).
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
+		"httpproxy with path_with_escaped_slashes_action set in listener config": {
+			ListenerConfig: ListenerConfig{
+				PathWithEscapedSlashesAction: contour_v1alpha1.RejectRequestPathWithEscapedSlashes,
+			},
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service,
+			},
+
+			want: listenermap(&envoy_config_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoyGen.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						MetricsPrefix(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+						DefaultFilters().
+						PathWithEscapedSlashesAction(contour_v1alpha1.RejectRequestPathWithEscapedSlashes).
+						Get(),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			}),
+		},
 		"httpproxy with server_header_transformation set to pass through in listener config": {
 			ListenerConfig: ListenerConfig{
 				ServerHeaderTransformation: contour_v1alpha1.PassThroughServerHeader,
