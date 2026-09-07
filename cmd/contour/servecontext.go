@@ -14,7 +14,6 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -222,7 +221,6 @@ func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_v1alpha1.TLS) *tls
 	return &tls.Config{
 		MinVersion: tls.VersionTLS13,
 		ClientAuth: tls.RequireAndVerifyClientCert,
-		Rand:       rand.Reader,
 		GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) {
 			return loadConfig()
 		},
