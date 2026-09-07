@@ -1,6 +1,6 @@
 module github.com/projectcontour/contour
 
-go 1.26.0
+go 1.27
 
 require (
 	dario.cat/mergo v1.0.2
@@ -24,7 +24,7 @@ require (
 	github.com/prometheus/common v0.70.1
 	github.com/sirupsen/logrus v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/tsaarni/certyaml v0.12.0
+	github.com/tsaarni/certyaml v0.13.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
