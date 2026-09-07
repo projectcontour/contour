@@ -256,7 +256,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 			Routes: []contour_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/disabled")),
 				Services:   []contour_v1.Service{{Name: "app-server", Port: 80}},
-				AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: true},
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: true},
 			}, {
 				Conditions: matchconditions(prefixMatchCondition("/default")),
 				Services:   []contour_v1.Service{{Name: "app-server", Port: 80}},
@@ -275,7 +275,7 @@ func authzOverrideDisabled(t *testing.T, rh ResourceEventHandlerWrapper, c *Cont
 			Routes: []contour_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/enabled")),
 				Services:   []contour_v1.Service{{Name: "app-server", Port: 80}},
-				AuthPolicy: &contour_v1.AuthorizationPolicy{},
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{},
 			}, {
 				Conditions: matchconditions(prefixMatchCondition("/default")),
 				Services:   []contour_v1.Service{{Name: "app-server", Port: 80}},
@@ -428,7 +428,7 @@ func authzMergeRouteContext(t *testing.T, rh ResourceEventHandlerWrapper, c *Con
 					Name: "app-server",
 					Port: 80,
 				}},
-				AuthPolicy: &contour_v1.AuthorizationPolicy{
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 					Context: map[string]string{
 						"common-element": "leaf",
 						"leaf-element":   "leaf",
@@ -815,6 +815,268 @@ func authzTypeHTTPWithPathPrefix(t *testing.T, rh ResourceEventHandlerWrapper, c
 	}).Status(p).IsValid()
 }
 
+func authzTypeHTTPWithPathOverride(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	const fqdn = "typehttp.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(contour_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			ServiceType: contour_v1.AuthorizationHTTPService,
+			HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+				PathOverride: "/auth",
+			},
+		}).
+		WithSpec(contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: "app-server",
+					Port: 80,
+				}},
+			}},
+		})
+
+	rh.OnDelete(p)
+	rh.OnAdd(p)
+
+	cluster := httpCluster("extension/auth/extension")
+	cluster.HttpService.PathOverride = "/auth"
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls(fqdn,
+						featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							fqdn,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               cluster,
+								ClearRouteCache:        true,
+								FailureModeAllow:       false,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+}
+
+func authzTypeHTTPWithPathPrefixAndPathOverride(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	const fqdn = "typehttp.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(contour_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			ServiceType: contour_v1.AuthorizationHTTPService,
+			HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+				PathPrefix:   "/auth",
+				PathOverride: "/check",
+			},
+		}).
+		WithSpec(contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: "app-server",
+					Port: 80,
+				}},
+			}},
+		})
+
+	rh.OnDelete(p)
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, statsListener()),
+	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthBadPathConfig", "Spec.Virtualhost.Authorization.HTTPServerSettings is invalid: only one of pathPrefix and pathOverride may be set")
+}
+
+func authzRouteOverrideWithPathOverride(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	const fqdn = "typehttp.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(contour_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			ServiceType: contour_v1.AuthorizationHTTPService,
+		}).
+		WithSpec(contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: "app-server",
+					Port: 80,
+				}},
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
+					Require: "provider-a",
+				},
+			}},
+		})
+	p.Spec.VirtualHost.AuthzProviders = []contour_v1.AuthorizationProvider{{
+		Name:        "provider-a",
+		ServiceType: contour_v1.AuthorizationHTTPService,
+		ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+			Namespace: "auth",
+			Name:      "extension",
+		},
+		HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+			PathOverride: "/check",
+		},
+	}}
+
+	rh.OnDelete(p)
+	rh.OnAdd(p)
+
+	// The vhost-level authorization is unmodified, so the listener keeps
+	// the plain HTTP authz filter; the override is applied per-route.
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls(fqdn,
+						featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							fqdn,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               httpCluster("extension/auth/extension"),
+								ClearRouteCache:        true,
+								FailureModeAllow:       false,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				path.Join("https", fqdn),
+				envoy_v3.VirtualHost(fqdn,
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/app-server/80/da39a3ee5e"),
+						TypedPerFilterConfig: withFilterConfig(envoy_v3.ExtAuthzFilterName,
+							&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+								Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+									CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+										ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_HttpService{
+											HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+												ServerUri: &envoy_config_core_v3.HttpUri{
+													Uri: "http://dummy/",
+													HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+														Cluster: "extension/auth/extension",
+													},
+													Timeout: durationpb.New(defaultResponseTimeout),
+												},
+												PathOverride: "/check",
+											},
+										},
+									},
+								},
+							},
+						),
+					},
+				),
+			),
+			envoy_v3.RouteConfiguration(
+				"ingress_http",
+				envoy_v3.VirtualHost(fqdn,
+					&envoy_config_route_v3.Route{
+						Match:                routePrefix("/"),
+						Action:               withRedirect(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
+					},
+				),
+			),
+		),
+	}).Status(p).IsValid()
+}
+
+func authzRouteOverrideWithPathPrefixAndPathOverride(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	const fqdn = "typehttp.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(contour_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			ServiceType: contour_v1.AuthorizationHTTPService,
+		}).
+		WithSpec(contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: "app-server",
+					Port: 80,
+				}},
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
+					Require: "provider-a",
+				},
+			}},
+		})
+	p.Spec.VirtualHost.AuthzProviders = []contour_v1.AuthorizationProvider{{
+		Name:        "provider-a",
+		ServiceType: contour_v1.AuthorizationHTTPService,
+		HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+			PathPrefix:   "/auth",
+			PathOverride: "/check",
+		},
+	}}
+
+	rh.OnDelete(p)
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, statsListener()),
+	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthBadPathConfig", "Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings is invalid: only one of pathPrefix and pathOverride may be set")
+}
+
 func authzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	const fqdn = "typehttp.projectcontour.io"
 
@@ -898,6 +1160,116 @@ func authzTypeHTTPWithAllowedAuthorizationHeaders(t *testing.T, rh ResourceEvent
 										{MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: "test2"}, IgnoreCase: true},
 									},
 								},
+								ClearRouteCache:        true,
+								FailureModeAllow:       false,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type_v3.HttpStatus{
+									Code: envoy_type_v3.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+}
+
+func authzRouteOverrideWithAllowedHeaders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	const fqdn = "typehttp.projectcontour.io"
+
+	newProxyWithRouteAuthzOverride := func(settings *contour_v1.PerRouteHTTPAuthorizationServerSettings) *contour_v1.HTTPProxy {
+		p := fixture.NewProxy("proxy").
+			WithFQDN(fqdn).
+			WithCertificate("certificate").
+			WithAuthServer(contour_v1.AuthorizationServer{
+				ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+					Namespace: "auth",
+					Name:      "extension",
+				},
+				ServiceType: contour_v1.AuthorizationHTTPService,
+			}).
+			WithSpec(contour_v1.HTTPProxySpec{
+				Routes: []contour_v1.Route{{
+					Services: []contour_v1.Service{{
+						Name: "app-server",
+						Port: 80,
+					}},
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
+						Require: "provider-a",
+					},
+				}},
+			})
+		p.Spec.VirtualHost.AuthzProviders = []contour_v1.AuthorizationProvider{{
+			Name:               "provider-a",
+			ServiceType:        contour_v1.AuthorizationHTTPService,
+			HTTPServerSettings: settings,
+		}}
+		return p
+	}
+
+	// No match type set: invalid.
+	p := newProxyWithRouteAuthzOverride(&contour_v1.PerRouteHTTPAuthorizationServerSettings{
+		AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+			{IgnoreCase: false},
+		},
+	})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, statsListener()),
+	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader", `Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: one of prefix, suffix, exact or contains is required for each allowedHeader`)
+
+	// More than one match type set: invalid.
+	rh.OnDelete(p)
+	p = newProxyWithRouteAuthzOverride(&contour_v1.PerRouteHTTPAuthorizationServerSettings{
+		AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+			{Exact: "test", Prefix: "test", IgnoreCase: false},
+		},
+	})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, statsListener()),
+	}).Status(p).HasError(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader", `Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings.AllowedUpstreamHeaders is invalid: only one of prefix, suffix, exact, and contains should be set in the allowedHeader`)
+
+	// Exactly one match type set: valid. The allowed headers are applied
+	// via per-route filter config, so the listener matches the plain
+	// HTTP authz case; just assert the proxy is valid and the listener
+	// contains the authz filter without allowed_headers.
+	rh.OnDelete(p)
+	p = newProxyWithRouteAuthzOverride(&contour_v1.PerRouteHTTPAuthorizationServerSettings{
+		AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+			{Prefix: "test1", IgnoreCase: false},
+			{Exact: "test2", IgnoreCase: true},
+		},
+	})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls(fqdn,
+						featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzFilterFor(
+							fqdn,
+							&envoy_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               httpCluster("extension/auth/extension"),
 								ClearRouteCache:        true,
 								FailureModeAllow:       false,
 								IncludePeerCertificate: true,
@@ -1131,8 +1503,13 @@ func TestAuthorization(t *testing.T) {
 		"AuthzTypeGRPC":                                AuthzTypeGRPC,
 		"AuthzTypeHTTP":                                authzTypeHTTP,
 		"AuthzTypeHTTPWithPathPrefix":                  authzTypeHTTPWithPathPrefix,
+		"AuthzTypeHTTPWithPathOverride":                authzTypeHTTPWithPathOverride,
+		"AuthzTypeHTTPWithPathPrefixAndPathOverride":   authzTypeHTTPWithPathPrefixAndPathOverride,
+		"AuthzRouteOverrideWithPathOverride":           authzRouteOverrideWithPathOverride,
+		"AuthzRouteOverrideWithPathPrefixAndOverride":  authzRouteOverrideWithPathPrefixAndPathOverride,
 		"AuthzTypeHTTPWithAllowedAuthorizationHeaders": authzTypeHTTPWithAllowedAuthorizationHeaders,
 		"AuthzTypeHTTPWithAllowedUpstreamHeaders":      authzTypeHTTPWithAllowedUpstreamHeaders,
+		"AuthzRouteOverrideWithAllowedHeaders":         authzRouteOverrideWithAllowedHeaders,
 		"AuthzTypeHTTPWithContext":                     authzTypeHTTPWithContext,
 		"AuthzTypeUnset":                               authzTypeUnset,
 	}

@@ -60,7 +60,7 @@ func testGlobalExternalAuthVirtualHostNonTLS(namespace string) {
 								Prefix: "/second",
 							},
 						},
-						AuthPolicy: &contour_v1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 							Disabled: true,
 						},
 						Services: []contour_v1.Service{
@@ -71,7 +71,7 @@ func testGlobalExternalAuthVirtualHostNonTLS(namespace string) {
 						},
 					},
 					{
-						AuthPolicy: &contour_v1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 							Context: map[string]string{
 								"target": "default",
 							},
@@ -158,7 +158,7 @@ func testGlobalExternalAuthTLS(namespace string) {
 								Prefix: "/second",
 							},
 						},
-						AuthPolicy: &contour_v1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 							Disabled: true,
 						},
 						Services: []contour_v1.Service{
@@ -169,7 +169,7 @@ func testGlobalExternalAuthTLS(namespace string) {
 						},
 					},
 					{
-						AuthPolicy: &contour_v1.AuthorizationPolicy{
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 							Context: map[string]string{
 								"target": "default",
 							},

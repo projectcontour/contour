@@ -87,8 +87,9 @@ func TestEditIngress(t *testing.T) {
 		Resources: routeResources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*", &envoy_config_route_v3.Route{
-					Match:  routePrefix("/"),
-					Action: routecluster("default/kuard/80/da39a3ee5e"),
+					Match:                routePrefix("/"),
+					Action:               routecluster("default/kuard/80/da39a3ee5e"),
+					TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 				}),
 			),
 		),
@@ -119,8 +120,9 @@ func TestEditIngress(t *testing.T) {
 		Resources: routeResources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*", &envoy_config_route_v3.Route{
-					Match:  routePrefix("/testing"),
-					Action: routecluster("default/kuard/80/da39a3ee5e"),
+					Match:                routePrefix("/testing"),
+					Action:               routecluster("default/kuard/80/da39a3ee5e"),
+					TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 				}),
 			),
 		),
@@ -178,8 +180,9 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/hello"),
-						Action: routecluster("default/hello/80/da39a3ee5e"),
+						Match:                routePrefix("/hello"),
+						Action:               routecluster("default/hello/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -230,8 +233,9 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/wowie/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/wowie/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -267,12 +271,14 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/whoop"),
-						Action: routecluster("default/kerpow/9000/da39a3ee5e"),
+						Match:                routePrefix("/whoop"),
+						Action:               routecluster("default/kerpow/9000/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/wowie/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/wowie/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -380,12 +386,14 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("https/hello.example.com",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/whoop"),
-						Action: routecluster("default/kerpow/9000/da39a3ee5e"),
+						Match:                routePrefix("/whoop"),
+						Action:               routecluster("default/kerpow/9000/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/wowie/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/wowie/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -462,8 +470,9 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	assertRDS(t, c, "5", virtualhosts(
 		envoy_v3.VirtualHost("example.com",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+				Match:                routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+				Action:               routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 			&envoy_config_route_v3.Route{
 				Match:                routePrefix("/"), // match all
@@ -474,12 +483,14 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	), virtualhosts(
 		envoy_v3.VirtualHost("example.com",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+				Match:                routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+				Action:               routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"), // match all
-				Action: routecluster("default/app-service/8080/da39a3ee5e"),
+				Match:                routePrefix("/"), // match all
+				Action:               routecluster("default/app-service/8080/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	))
@@ -523,8 +534,9 @@ func TestInvalidCertInIngress(t *testing.T) {
 	assertRDS(t, c, "1", virtualhosts(
 		envoy_v3.VirtualHost("kuard.io",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/80/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -535,15 +547,17 @@ func TestInvalidCertInIngress(t *testing.T) {
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("kuard.io",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/80/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), virtualhosts(
 		envoy_v3.VirtualHost("kuard.io",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/80/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	))
@@ -585,8 +599,9 @@ func TestIssue257(t *testing.T) {
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("*",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/80/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -633,8 +648,9 @@ func TestIssue257(t *testing.T) {
 	assertRDS(t, c, "3", virtualhosts(
 		envoy_v3.VirtualHost("kuard.db.gd-ms.com",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/80/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -708,8 +724,9 @@ func TestRDSFilter(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+						Match:                routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						Action:               routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
 						Match:                routePrefix("/"), // match all
@@ -721,12 +738,14 @@ func TestRDSFilter(t *testing.T) {
 			envoy_v3.RouteConfiguration("https/example.com",
 				envoy_v3.VirtualHost("example.com",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+						Match:                routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						Action:               routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/app-service/8080/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/app-service/8080/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -804,18 +823,21 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/kuard"),
-						Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						Match:                routePrefix("/kuard"),
+						Action:               routecluster("default/kuard/8080/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/kuard/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/kuard/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 				envoy_v3.VirtualHost("test-gui",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/test-gui/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/test-gui/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -877,8 +899,9 @@ func TestDefaultBackendIsOverriddenByNoHostIngressRule(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/kuard/8080/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -913,8 +936,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	assertRDS(t, c, "1", virtualhosts(
 		envoy_v3.VirtualHost("*",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/8080/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/8080/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -953,8 +977,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	assertRDS(t, c, "3", virtualhosts(
 		envoy_v3.VirtualHost("*",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/8080/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/8080/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -971,8 +996,9 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	assertRDS(t, c, "4", virtualhosts(
 		envoy_v3.VirtualHost("*",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/kuard/8080/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/kuard/8080/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -1083,8 +1109,9 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("test2.test.com",
 			&envoy_config_route_v3.Route{
-				Match:  routePrefix("/"),
-				Action: routecluster("default/network-test/9001/da39a3ee5e"),
+				Match:                routePrefix("/"),
+				Action:               routecluster("default/network-test/9001/da39a3ee5e"),
+				TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 			},
 		),
 	), nil)
@@ -1363,12 +1390,14 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routeRegex("/[^/]+/invoices(/.*|/?)"),
-						Action: routecluster("default/kuard/80/da39a3ee5e"),
+						Match:                routeRegex("/[^/]+/invoices(/.*|/?)"),
+						Action:               routecluster("default/kuard/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/kuard/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/kuard/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -1402,8 +1431,9 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routecluster("default/kuard/80/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routecluster("default/kuard/80/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),

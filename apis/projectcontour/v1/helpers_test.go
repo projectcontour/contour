@@ -434,6 +434,306 @@ func TestAddWarningConditions(t *testing.T) {
 	}
 }
 
+func TestVirtualHostAuthorizationConfigured(t *testing.T) {
+	tests := map[string]struct {
+		vhost *VirtualHost
+		want  bool
+	}{
+		"no authorization configured": {
+			vhost: &VirtualHost{},
+			want:  false,
+		},
+		"authorization field set": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{},
+			},
+			want: true,
+		},
+		"authorization providers set without a default": {
+			vhost: &VirtualHost{
+				AuthzProviders: []AuthorizationProvider{
+					{Name: "provider-a"},
+				},
+			},
+			want: false,
+		},
+		"authorization providers set with a default": {
+			vhost: &VirtualHost{
+				AuthzProviders: []AuthorizationProvider{
+					{Name: "provider-a"},
+					{Name: "provider-b", Default: true},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.vhost.AuthorizationConfigured()
+			assert.Equalf(t, tc.want, got, "AuthorizationConfigured failed in test %s", name)
+		})
+	}
+}
+
+func TestVirtualHostDefaultAuthorizationProvider(t *testing.T) {
+	tests := map[string]struct {
+		vhost *VirtualHost
+		want  *AuthorizationProvider
+	}{
+		"no providers": {
+			vhost: &VirtualHost{},
+			want:  nil,
+		},
+		"providers without a default": {
+			vhost: &VirtualHost{
+				AuthzProviders: []AuthorizationProvider{
+					{Name: "provider-a"},
+					{Name: "provider-b"},
+				},
+			},
+			want: nil,
+		},
+		"provider marked as default": {
+			vhost: &VirtualHost{
+				AuthzProviders: []AuthorizationProvider{
+					{Name: "provider-a"},
+					{Name: "provider-b", Default: true},
+				},
+			},
+			want: &AuthorizationProvider{Name: "provider-b", Default: true},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.vhost.DefaultAuthorizationProvider()
+			assert.Equalf(t, tc.want, got, "DefaultAuthorizationProvider failed in test %s", name)
+		})
+	}
+}
+
+func TestVirtualHostAuthorizationContext(t *testing.T) {
+	tests := map[string]struct {
+		vhost *VirtualHost
+		want  map[string]string
+	}{
+		"no authorization configured": {
+			vhost: &VirtualHost{},
+			want:  nil,
+		},
+		"authorization configured but AuthPolicy nil": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{},
+			},
+			want: nil,
+		},
+		"authorization configured with context": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Context: map[string]string{
+							"key": "value",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"key": "value",
+			},
+		},
+		"providers only, without authorization field": {
+			vhost: &VirtualHost{
+				AuthzProviders: []AuthorizationProvider{
+					{
+						Name:    "provider-a",
+						Default: true,
+						Context: map[string]string{
+							"key": "value",
+						},
+					},
+				},
+			},
+			want: nil,
+		},
+		"authorization and default provider contexts are merged": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Context: map[string]string{
+							"shared-key": "authorization-value",
+							"authz-key":  "authorization-value",
+						},
+					},
+				},
+				AuthzProviders: []AuthorizationProvider{
+					{
+						Name:    "provider-a",
+						Default: true,
+						Context: map[string]string{
+							"shared-key":   "provider-value",
+							"provider-key": "provider-value",
+						},
+					},
+				},
+			},
+			want: map[string]string{
+				"shared-key":   "provider-value",
+				"authz-key":    "authorization-value",
+				"provider-key": "provider-value",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.vhost.AuthorizationContext()
+			assert.Equalf(t, tc.want, got, "AuthorizationContext failed in test %s", name)
+		})
+	}
+}
+
+func TestRouteAuthorizationContext(t *testing.T) {
+	tests := map[string]struct {
+		route  *Route
+		parent map[string]string
+		want   map[string]string
+	}{
+		"no parent, no route policy": {
+			route:  &Route{},
+			parent: nil,
+			want:   nil,
+		},
+		"parent only": {
+			route: &Route{},
+			parent: map[string]string{
+				"parent-key": "parent-value",
+			},
+			want: map[string]string{
+				"parent-key": "parent-value",
+			},
+		},
+		"route context only": {
+			route: &Route{
+				AuthPolicy: &RouteAuthorizationPolicy{
+					Context: map[string]string{
+						"route-key": "route-value",
+					},
+				},
+			},
+			parent: nil,
+			want: map[string]string{
+				"route-key": "route-value",
+			},
+		},
+		"route context overrides parent keys": {
+			route: &Route{
+				AuthPolicy: &RouteAuthorizationPolicy{
+					Context: map[string]string{
+						"shared-key": "route-value",
+						"route-key":  "route-value",
+					},
+				},
+			},
+			parent: map[string]string{
+				"shared-key": "parent-value",
+				"parent-key": "parent-value",
+			},
+			want: map[string]string{
+				"shared-key": "route-value",
+				"route-key":  "route-value",
+				"parent-key": "parent-value",
+			},
+		},
+		"route requiring a provider without context keeps parent context": {
+			route: &Route{
+				AuthPolicy: &RouteAuthorizationPolicy{
+					Require: "provider-a",
+				},
+			},
+			parent: map[string]string{
+				"parent-key": "parent-value",
+			},
+			want: map[string]string{
+				"parent-key": "parent-value",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.route.AuthorizationContext(nil, tc.parent)
+			assert.Equalf(t, tc.want, got, "AuthorizationContext failed in test %s", name)
+		})
+	}
+}
+
+func TestVirtualHostDisableAuthorization(t *testing.T) {
+	tests := map[string]struct {
+		vhost *VirtualHost
+		want  bool
+	}{
+		"no authorization configured": {
+			vhost: &VirtualHost{},
+			want:  false,
+		},
+		"authorization configured but AuthPolicy nil": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{},
+			},
+			want: false,
+		},
+		"authorization configured with AuthPolicy disabled false": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: false,
+					},
+				},
+			},
+			want: false,
+		},
+		"authorization configured with AuthPolicy disabled true": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: true,
+					},
+				},
+			},
+			want: true,
+		},
+		"authorization configured with AuthPolicy disabled false and context set": {
+			vhost: &VirtualHost{
+				Authorization: &AuthorizationServer{
+					AuthPolicy: &AuthorizationPolicy{
+						Disabled: false,
+						Context: map[string]string{
+							"key": "value",
+						},
+					},
+				},
+			},
+			want: false,
+		},
+		"authorization providers configured": {
+			vhost: &VirtualHost{
+				AuthzProviders: []AuthorizationProvider{
+					{Name: "provider-a", Default: true},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.vhost.DisableAuthorization()
+			assert.Equalf(t, tc.want, got, "DisableAuthorization failed in test %s", name)
+		})
+	}
+}
+
 func TestGetConditionFor(t *testing.T) {
 	tests := map[string]struct {
 		status   HTTPProxyStatus
