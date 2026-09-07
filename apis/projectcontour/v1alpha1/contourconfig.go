@@ -370,6 +370,32 @@ type EnvoyListenerConfig struct {
 	// +optional
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
+	// DisableNormalizePath disables Envoy's normalize_path option, which normalizes
+	// request URL paths according to RFC 3986 before HTTP filters run and before
+	// route matching. Disable this only if your backends treat request paths as
+	// opaque identifiers, for example object storage gateways, artifact registries,
+	// or APIs whose request signatures cover the raw path.
+	//
+	// Warning: when path normalization is disabled, route match conditions and
+	// external authorization policies are evaluated against the un-normalized path,
+	// so requests containing "." or ".." segments may bypass prefix based matching.
+	//
+	// Contour's default is false.
+	// +optional
+	DisableNormalizePath *bool `json:"disableNormalizePath,omitempty"`
+
+	// PathWithEscapedSlashesAction determines how Envoy handles request paths that
+	// contain escaped slash sequences (%2F, %2f, %5C and %5c). This action is applied
+	// before path normalization and merge slashes.
+	//
+	// Values: `keep_unchanged` (default), `reject_request`, `unescape_and_redirect`, `unescape_and_forward`
+	//
+	// Other values will produce an error.
+	// Contour's default is keep_unchanged.
+	// +kubebuilder:validation:Enum="keep_unchanged";"reject_request";"unescape_and_redirect";"unescape_and_forward"
+	// +optional
+	PathWithEscapedSlashesAction PathWithEscapedSlashesActionType `json:"pathWithEscapedSlashesAction,omitempty"`
+
 	// Defines the action to be applied to the Server header on the response path.
 	// When configured as overwrite, overwrites any Server header with "envoy".
 	// When configured as append_if_absent, if a Server header is present, pass it through, otherwise set it to "envoy".
