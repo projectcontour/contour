@@ -2802,6 +2802,42 @@ func TestRouteRedirect(t *testing.T) {
 	}
 }
 
+func TestVirtualHostAndRoutesAttemptCount(t *testing.T) {
+	tests := map[string]struct {
+		vhost                             *dag.VirtualHost
+		wantIncludeRequestAttemptCount    bool
+		wantIncludeAttemptCountInResponse bool
+	}{
+		"attempt count not set": {
+			vhost: &dag.VirtualHost{Name: "www.example.com"},
+		},
+		"include request attempt count": {
+			vhost: &dag.VirtualHost{
+				Name:                       "www.example.com",
+				IncludeRequestAttemptCount: true,
+			},
+			wantIncludeRequestAttemptCount: true,
+		},
+		"include attempt count in request and response": {
+			vhost: &dag.VirtualHost{
+				Name:                          "www.example.com",
+				IncludeRequestAttemptCount:    true,
+				IncludeAttemptCountInResponse: true,
+			},
+			wantIncludeRequestAttemptCount:    true,
+			wantIncludeAttemptCountInResponse: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := VirtualHostAndRoutes(tc.vhost, nil, false)
+			assert.Equal(t, tc.wantIncludeRequestAttemptCount, got.IncludeRequestAttemptCount)
+			assert.Equal(t, tc.wantIncludeAttemptCountInResponse, got.IncludeAttemptCountInResponse)
+		})
+	}
+}
+
 func virtualhosts(v ...*envoy_config_route_v3.VirtualHost) []*envoy_config_route_v3.VirtualHost {
 	return v
 }
