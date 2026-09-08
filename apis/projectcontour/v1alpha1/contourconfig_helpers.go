@@ -151,9 +151,13 @@ func (e *EnvoyConfig) Validate() error {
 		}
 	}
 
-	// Envoy TLS configuration
-	if e.Listener != nil && e.Listener.TLS != nil {
-		return e.Listener.TLS.Validate()
+	if e.Listener != nil {
+		if err := e.Listener.Compression.Validate(); err != nil {
+			return err
+		}
+		if e.Listener.TLS != nil {
+			return e.Listener.TLS.Validate()
+		}
 	}
 
 	return nil

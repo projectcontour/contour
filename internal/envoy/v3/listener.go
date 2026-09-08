@@ -184,6 +184,17 @@ const (
 	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
 )
 
+var compressorContentTypes = []string{
+	// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
+	"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
+	"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
+	"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
+	"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
+	// Additional content-types for grpc-web https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
+	"application/grpc-web", "application/grpc-web+proto", "application/grpc-web+json", "application/grpc-web+thrift",
+	"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
+}
+
 type httpConnectionManagerBuilder struct {
 	routeConfigName               string
 	routeConfigSource             *envoy_config_core_v3.ConfigSource
@@ -341,58 +352,56 @@ func (b *httpConnectionManagerBuilder) HTTP2MaxConcurrentStreams(http2MaxConcurr
 	return b
 }
 
+func compressorLibrary(algorithm contour_v1alpha1.CompressionAlgorithm) (string, proto.Message) {
+	switch algorithm {
+	case contour_v1alpha1.BrotliCompression:
+		return "brotli", &envoy_compression_brotli_compressor_v3.Brotli{}
+	case contour_v1alpha1.ZstdCompression:
+		return "zstd", &envoy_compression_zstd_compressor_v3.Zstd{}
+	default:
+		return "gzip", &envoy_compression_gzip_compressor_v3.Gzip{}
+	}
+}
+
+func compressorFilter(algorithm contour_v1alpha1.CompressionAlgorithm, chooseFirst, removeAcceptEncoding, uniqueName bool) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+	libraryName, library := compressorLibrary(algorithm)
+	name := CompressorFilterName
+	if uniqueName {
+		name = CompressorFilterName + "." + libraryName
+	}
+	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
+		Name: name,
+		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_compressor_v3.Compressor{
+				CompressorLibrary: &envoy_config_core_v3.TypedExtensionConfig{
+					Name:        libraryName,
+					TypedConfig: protobuf.MustMarshalAny(library),
+				},
+				ChooseFirst: chooseFirst,
+				ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
+					CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
+						ContentType: compressorContentTypes,
+					},
+					RemoveAcceptEncodingHeader: removeAcceptEncoding,
+				},
+			}),
+		},
+	}
+}
+
 func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
 	// Add a default set of ordered http filters.
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
-	var compressor proto.Message = &envoy_compression_gzip_compressor_v3.Gzip{}
-	compressorName := string(contour_v1alpha1.GzipCompression)
-	if b.compression != nil {
-		switch b.compression.Algorithm {
-		case contour_v1alpha1.BrotliCompression:
-			compressorName = "brotli"
-			compressor = &envoy_compression_brotli_compressor_v3.Brotli{}
-		case contour_v1alpha1.DisabledCompression:
-			compressor = nil
-		case contour_v1alpha1.ZstdCompression:
-			compressorName = "zstd"
-			compressor = &envoy_compression_zstd_compressor_v3.Zstd{}
-		default:
-			compressorName = "gzip"
-			compressor = &envoy_compression_gzip_compressor_v3.Gzip{}
-		}
-	}
-
-	if compressor != nil {
-		// If compression is enabled add compressor filter
-		b.filters = append(b.filters,
-			&envoy_filter_network_http_connection_manager_v3.HttpFilter{
-				Name: CompressorFilterName,
-				ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_compressor_v3.Compressor{
-						CompressorLibrary: &envoy_config_core_v3.TypedExtensionConfig{
-							Name: compressorName,
-							TypedConfig: protobuf.MustMarshalAny(
-								compressor,
-							),
-						},
-						ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
-							CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-								ContentType: []string{
-									// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
-									"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
-									"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
-									"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
-									"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
-									// Additional content-types for grpc-web https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
-									"application/grpc-web", "application/grpc-web+proto", "application/grpc-web+json", "application/grpc-web+thrift",
-									"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
-								},
-							},
-						},
-					}),
-				},
-			})
+	algorithms := b.compression.EffectiveAlgorithms()
+	multi := len(algorithms) > 1
+	for i, algorithm := range algorithms {
+		b.filters = append(b.filters, compressorFilter(
+			algorithm,
+			multi && i == 0,
+			multi && i == len(algorithms)-1,
+			multi,
+		))
 	}
 	b.filters = append(b.filters,
 		&envoy_filter_network_http_connection_manager_v3.HttpFilter{

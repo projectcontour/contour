@@ -962,24 +962,53 @@ func TestConvertServeContext(t *testing.T) {
 
 func TestServeContextCompressionOptions(t *testing.T) {
 	cases := map[string]struct {
-		serveCompression  config.CompressionAlgorithm
-		configCompression contour_v1alpha1.CompressionAlgorithm
+		serveCompression  config.CompressionParameters
+		configCompression *contour_v1alpha1.EnvoyCompression
 	}{
-		"Brotli":   {config.CompressionBrotli, contour_v1alpha1.BrotliCompression},
-		"Disabled": {config.CompressionDisabled, contour_v1alpha1.DisabledCompression},
-		"Gzip":     {config.CompressionGzip, contour_v1alpha1.GzipCompression},
-		"Zstd":     {config.CompressionZstd, contour_v1alpha1.ZstdCompression},
+		"Brotli": {
+			serveCompression:  config.CompressionParameters{Algorithm: config.CompressionBrotli},
+			configCompression: &contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.BrotliCompression},
+		},
+		"Disabled": {
+			serveCompression:  config.CompressionParameters{Algorithm: config.CompressionDisabled},
+			configCompression: &contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.DisabledCompression},
+		},
+		"Gzip": {
+			serveCompression:  config.CompressionParameters{Algorithm: config.CompressionGzip},
+			configCompression: &contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.GzipCompression},
+		},
+		"Zstd": {
+			serveCompression:  config.CompressionParameters{Algorithm: config.CompressionZstd},
+			configCompression: &contour_v1alpha1.EnvoyCompression{Algorithm: contour_v1alpha1.ZstdCompression},
+		},
+		"Algorithms": {
+			serveCompression: config.CompressionParameters{
+				Algorithms: &[]config.CompressionAlgorithm{config.CompressionBrotli, config.CompressionGzip},
+			},
+			configCompression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+					contour_v1alpha1.BrotliCompression,
+					contour_v1alpha1.GzipCompression,
+				},
+			},
+		},
+		"EmptyAlgorithms": {
+			serveCompression: config.CompressionParameters{
+				Algorithms: &[]config.CompressionAlgorithm{},
+			},
+			configCompression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{},
+			},
+		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			testServeContext := defaultContext()
-			testServeContext.Config.Compression.Algorithm = tc.serveCompression
+			testServeContext.Config.Compression = tc.serveCompression
 
 			want := defaultContourConfiguration()
-			want.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
-				Algorithm: tc.configCompression,
-			}
+			want.Envoy.Listener.Compression = tc.configCompression
 
 			assert.Equal(t, want, testServeContext.convertToContourConfigurationSpec())
 		})
