@@ -962,6 +962,44 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.Equal(t, int32(30001), svc.Spec.Ports[1].Port)
 			},
 		},
+		"If ContourDeployment.Spec.Envoy.NetworkPublishing sets LoadBalancer source ranges and class, they are applied to the Envoy service": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contour_v1alpha1.ContourDeployment{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contour_v1alpha1.ContourDeploymentSpec{
+					Envoy: &contour_v1alpha1.EnvoySettings{
+						NetworkPublishing: &contour_v1alpha1.NetworkPublishing{
+							Type:                     contour_v1alpha1.LoadBalancerServicePublishingType,
+							LoadBalancerSourceRanges: []string{"10.0.0.0/8", "192.168.1.0/24"},
+							LoadBalancerClass:        ptr.To("service.k8s.aws/nlb"),
+						},
+					},
+				},
+			},
+			gateway: makeGateway(),
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayapi_v1.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayapi_v1.GatewayConditionAccepted), gw.Status.Conditions[0].Type)
+				assert.Equal(t, meta_v1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				svc := &core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
+				assert.Equal(t, core_v1.ServiceTypeLoadBalancer, svc.Spec.Type)
+				assert.Equal(t, []string{"10.0.0.0/8", "192.168.1.0/24"}, svc.Spec.LoadBalancerSourceRanges)
+				assert.Equal(t, ptr.To("service.k8s.aws/nlb"), svc.Spec.LoadBalancerClass)
+			},
+		},
 		"If ContourDeployment.Spec.Envoy.WorkloadType is set to Deployment, an Envoy deployment is provisioned with the specified number of replicas": {
 			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
 			gatewayClassParams: &contour_v1alpha1.ContourDeployment{

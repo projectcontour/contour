@@ -436,6 +436,20 @@ type EnvoyNetworkPublishing struct {
 	//
 	// If unset, defaults to "Local".
 	ExternalTrafficPolicy core_v1.ServiceExternalTrafficPolicy
+
+	// LoadBalancerSourceRanges is an optional list of IP ranges in CIDR form
+	// which are allowed to access the LoadBalancer type Envoy Service.
+	// This maps to Service.spec.loadBalancerSourceRanges.
+	// This field may be ignored if the cloud-provider does not support it.
+	// Only applies when Type is LoadBalancerService.
+	LoadBalancerSourceRanges []string
+
+	// LoadBalancerClass is the class of the load balancer implementation
+	// to use for the Envoy Service when Type is LoadBalancerService.
+	// This maps to Service.spec.loadBalancerClass.
+	// Once set, it cannot be changed without recreating the Service.
+	// Only applies when Type is LoadBalancerService.
+	LoadBalancerClass *string
 }
 
 type NetworkPublishingType = contour_v1alpha1.NetworkPublishingType
