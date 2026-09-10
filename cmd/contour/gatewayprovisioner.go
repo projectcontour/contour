@@ -19,7 +19,6 @@ import (
 
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/distribution/reference"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
