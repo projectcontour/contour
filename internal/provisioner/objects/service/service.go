@@ -271,6 +271,12 @@ func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
 			internalAnnotations := InternalLBAnnotations[provider]
 			maps.Copy(svc.Annotations, internalAnnotations)
 		}
+		if len(contour.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges) > 0 {
+			svc.Spec.LoadBalancerSourceRanges = contour.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges
+		}
+		if contour.Spec.NetworkPublishing.Envoy.LoadBalancerClass != nil {
+			svc.Spec.LoadBalancerClass = contour.Spec.NetworkPublishing.Envoy.LoadBalancerClass
+		}
 	case model.NodePortServicePublishingType:
 		svc.Spec.Type = core_v1.ServiceTypeNodePort
 
@@ -295,16 +301,6 @@ func DesiredEnvoyService(contour *model.Contour) *core_v1.Service {
 		}
 
 		maps.Copy(svc.Annotations, contour.Spec.NetworkPublishing.Envoy.ServiceAnnotations)
-	}
-
-	// Optional LoadBalancer Service fields from ContourDeployment networkPublishing.
-	if epType == model.LoadBalancerServicePublishingType {
-		if len(contour.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges) > 0 {
-			svc.Spec.LoadBalancerSourceRanges = contour.Spec.NetworkPublishing.Envoy.LoadBalancerSourceRanges
-		}
-		if contour.Spec.NetworkPublishing.Envoy.LoadBalancerClass != nil {
-			svc.Spec.LoadBalancerClass = contour.Spec.NetworkPublishing.Envoy.LoadBalancerClass
-		}
 	}
 
 	return svc

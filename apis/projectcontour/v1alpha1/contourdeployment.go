@@ -336,6 +336,7 @@ type NetworkPublishing struct {
 	// LoadBalancerSourceRanges is an optional list of IP ranges in CIDR form
 	// which are allowed to access the LoadBalancer type Envoy Service.
 	// This maps to Service.spec.loadBalancerSourceRanges.
+	// This field may be ignored if the cloud-provider does not support it.
 	// Only applies when Type is LoadBalancerService.
 	//
 	// +optional
@@ -344,6 +345,8 @@ type NetworkPublishing struct {
 	// LoadBalancerClass is the class of the load balancer implementation
 	// to use for the Envoy Service when Type is LoadBalancerService.
 	// This maps to Service.spec.loadBalancerClass.
+	// Once set, it cannot be changed without recreating the Service.
+	// Only applies when Type is LoadBalancerService.
 	//
 	// +optional
 	LoadBalancerClass *string `json:"loadBalancerClass,omitempty"`

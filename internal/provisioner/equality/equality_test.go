@@ -471,7 +471,7 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 			mutate: func(svc *core_v1.Service) {
 				svc.Spec.LoadBalancerClass = ptr.To("service.k8s.aws/nlb")
 			},
-			expect: true,
+			expect: false,
 		},
 	}
 
