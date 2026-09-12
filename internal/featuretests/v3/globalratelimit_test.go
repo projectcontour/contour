@@ -797,8 +797,8 @@ func TestGlobalRateLimiting(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			rh, c, done := setup(t,
 				func(cfg *xdscache_v3.ListenerConfig) {
-					cfg.RateLimitConfig = &xdscache_v3.RateLimitConfig{
-						ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
+					cfg.RateLimitConfig = &dag.RateLimitConfig{
+						ExtensionServiceConfig: dag.ExtensionServiceConfig{
 							ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
 						},
 						Domain: "contour",
