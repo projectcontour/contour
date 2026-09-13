@@ -198,6 +198,14 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		}
 	}
 
+	if len(proxy.Spec.VirtualHost.AuthzProviders) > 0 {
+		if proxy.Spec.VirtualHost.TLS == nil || len(proxy.Spec.VirtualHost.TLS.SecretName) == 0 {
+			validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthNotPermitted",
+				"Spec.VirtualHost.AuthorizationProviders can only be defined for root HTTPProxies that terminate TLS")
+			return
+		}
+	}
+
 	if proxy.Spec.VirtualHost.TLS == nil && proxy.Spec.VirtualHost.Authorization != nil && len(proxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.Name) > 0 {
 		validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthNotPermitted",
 			"Spec.VirtualHost.Authorization.ExtensionServiceRef can only be defined for root HTTPProxies that terminate TLS")
@@ -411,12 +419,6 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 			}
 			// Validate CRD-Level providers and save them to the svhost if valid.
 			if len(proxy.Spec.VirtualHost.AuthzProviders) > 0 {
-				if proxy.Spec.VirtualHost.TLS == nil || len(proxy.Spec.VirtualHost.TLS.SecretName) == 0 {
-					validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthNotPermitted",
-						"Spec.VirtualHost.AuthorizationProviders can only be defined for root HTTPProxies that terminate TLS")
-					return
-				}
-
 				authProviderNames := sets.NewString()
 				for _, provider := range proxy.Spec.VirtualHost.AuthzProviders {
 					if authProviderNames.Has(provider.Name) {
@@ -1330,10 +1332,19 @@ func GetRouteAuthorizationProvider(authzProvider *contour_v1.AuthorizationProvid
 	}
 
 	authzOverride := PerRouteAuthzOverride{
-		ServiceType:  authzProvider.ServiceType,
-		PathPrefix:   authzProvider.HTTPServerSettings.PathPrefix,
-		PathOverride: authzProvider.HTTPServerSettings.PathOverride,
-		HeadersToAdd: authzProvider.HTTPServerSettings.HeadersToAdd,
+		ServiceType: authzProvider.ServiceType,
+	}
+	if authzProvider.HTTPServerSettings != nil {
+		authzOverride.PathPrefix = authzProvider.HTTPServerSettings.PathPrefix
+		authzOverride.PathOverride = authzProvider.HTTPServerSettings.PathOverride
+		authzOverride.HeadersToAdd = authzProvider.HTTPServerSettings.HeadersToAdd
+
+		if authzProvider.HTTPServerSettings.AllowedAuthorizationHeaders != nil {
+			authzOverride.AllowedAuthorizationHeaders = convertHTTPAuthzAllowedHeaders(authzProvider.HTTPServerSettings.AllowedAuthorizationHeaders)
+		}
+		if authzProvider.HTTPServerSettings.AllowedUpstreamHeaders != nil {
+			authzOverride.AllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(authzProvider.HTTPServerSettings.AllowedUpstreamHeaders)
+		}
 	}
 	if extensionSvc != nil {
 		authzOverride.ExtensionCluster = extensionSvc
@@ -1341,17 +1352,6 @@ func GetRouteAuthorizationProvider(authzProvider *contour_v1.AuthorizationProvid
 	}
 	if mergedAuthContext != nil {
 		authzOverride.Context = mergedAuthContext
-	}
-
-	if authzProvider.HTTPServerSettings.AllowedAuthorizationHeaders != nil {
-		authzOverride.AllowedAuthorizationHeaders = convertHTTPAuthzAllowedHeaders(authzProvider.HTTPServerSettings.AllowedAuthorizationHeaders)
-	}
-	if authzProvider.HTTPServerSettings.AllowedUpstreamHeaders != nil {
-		authzOverride.AllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(authzProvider.HTTPServerSettings.AllowedUpstreamHeaders)
-	}
-
-	if authzProvider.HTTPServerSettings.PathPrefix != "" {
-		authzOverride.PathPrefix = authzProvider.HTTPServerSettings.PathPrefix
 	}
 
 	if authzProvider.WithRequestBody != nil {

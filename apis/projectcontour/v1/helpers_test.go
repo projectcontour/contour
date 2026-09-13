@@ -595,9 +595,10 @@ func TestVirtualHostAuthorizationContext(t *testing.T) {
 
 func TestRouteAuthorizationContext(t *testing.T) {
 	tests := map[string]struct {
-		route  *Route
-		parent map[string]string
-		want   map[string]string
+		route    *Route
+		provider *AuthorizationProvider
+		parent   map[string]string
+		want     map[string]string
 	}{
 		"no parent, no route policy": {
 			route:  &Route{},
@@ -658,11 +659,77 @@ func TestRouteAuthorizationContext(t *testing.T) {
 				"parent-key": "parent-value",
 			},
 		},
+		"provider context only": {
+			route: &Route{},
+			provider: &AuthorizationProvider{
+				Name: "provider-a",
+				Context: map[string]string{
+					"provider-key": "provider-value",
+				},
+			},
+			parent: nil,
+			want: map[string]string{
+				"provider-key": "provider-value",
+			},
+		},
+		"provider context overrides parent keys": {
+			route: &Route{},
+			provider: &AuthorizationProvider{
+				Name: "provider-a",
+				Context: map[string]string{
+					"shared-key":   "provider-value",
+					"provider-key": "provider-value",
+				},
+			},
+			parent: map[string]string{
+				"shared-key": "parent-value",
+				"parent-key": "parent-value",
+			},
+			want: map[string]string{
+				"shared-key":   "provider-value",
+				"provider-key": "provider-value",
+				"parent-key":   "parent-value",
+			},
+		},
+		"provider context takes precedence over route auth policy context": {
+			route: &Route{
+				AuthPolicy: &RouteAuthorizationPolicy{
+					Context: map[string]string{
+						"shared-key": "route-value",
+						"route-key":  "route-value",
+					},
+				},
+			},
+			provider: &AuthorizationProvider{
+				Name: "provider-a",
+				Context: map[string]string{
+					"shared-key":   "provider-value",
+					"provider-key": "provider-value",
+				},
+			},
+			parent: nil,
+			want: map[string]string{
+				"shared-key":   "provider-value",
+				"provider-key": "provider-value",
+			},
+		},
+		"provider without context ignores deprecated route auth policy context": {
+			route: &Route{
+				AuthPolicy: &RouteAuthorizationPolicy{
+					Context: map[string]string{
+						"route-key": "route-value",
+					},
+				},
+			},
+			provider: &AuthorizationProvider{Name: "provider-a"},
+			parent:   nil,
+			want:     nil,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := tc.route.AuthorizationContext(nil, tc.parent)
+			got := tc.route.AuthorizationContext(tc.provider, tc.parent)
 			assert.Equalf(t, tc.want, got, "AuthorizationContext failed in test %s", name)
 		})
 	}

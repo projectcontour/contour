@@ -2738,6 +2738,280 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	// A route whose authPolicy.require references a provider that is not
+	// defined in spec.virtualHost.authorizationProviders must be rejected
+	// with AuthzProviderNotDefined.
+	proxyUndefinedAuthzProvider := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "undefined-authz-provider",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "undefined-authz-provider.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name:    "provider-a",
+					Default: true,
+				}},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
+					Require: "provider-b",
+				},
+			}},
+		},
+	}
+
+	run(t, "Route referencing an undefined authz provider is invalid", testcase{
+		objs: []any{proxyUndefinedAuthzProvider, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyUndefinedAuthzProvider.Name, Namespace: proxyUndefinedAuthzProvider.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "AuthzProviderNotDefined", `Route references an undefined authz provider "provider-b"`),
+		},
+	})
+
+	// authorizationProviders require TLS termination (per-route overrides
+	// only work on the HTTPS filter chain), so defining them on a vhost
+	// without a TLS secret must be rejected with AuthNotPermitted.
+	proxyAuthzProvidersNoTLS := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authz-providers-no-tls",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "authz-providers-no-tls.example.com",
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name: "provider-a",
+				}},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "Authorization providers without TLS termination are invalid", testcase{
+		objs: []any{proxyAuthzProvidersNoTLS, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyAuthzProvidersNoTLS.Name, Namespace: proxyAuthzProvidersNoTLS.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "AuthNotPermitted", "Spec.VirtualHost.AuthorizationProviders can only be defined for root HTTPProxies that terminate TLS"),
+		},
+	})
+
+	// Two providers with the same name must be rejected with
+	// DuplicateProviderName.
+	proxyDuplicateAuthzProviders := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "duplicate-authz-providers",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "duplicate-authz-providers.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{
+					{Name: "provider-a"},
+					{Name: "provider-a"},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "Duplicate authz provider names are invalid", testcase{
+		objs: []any{proxyDuplicateAuthzProviders, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyDuplicateAuthzProviders.Name, Namespace: proxyDuplicateAuthzProviders.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "DuplicateProviderName", "Spec.VirtualHost.AuthorizationProviders is invalid: duplicate name provider-a"),
+		},
+	})
+
+	// At most one provider may be flagged as default; more than one
+	// default provider must be rejected with MultipleDefaultProvidersSpecified.
+	proxyMultipleDefaultAuthzProviders := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "multiple-default-authz-providers",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "multiple-default-authz-providers.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{
+					{Name: "provider-a", Default: true},
+					{Name: "provider-b", Default: true},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "Multiple default authz providers are invalid", testcase{
+		objs: []any{proxyMultipleDefaultAuthzProviders, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyMultipleDefaultAuthzProviders.Name, Namespace: proxyMultipleDefaultAuthzProviders.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "MultipleDefaultProvidersSpecified", "Spec.VirtualHost.AuthorizationProviders is invalid: at most one provider can be set as the default"),
+		},
+	})
+
+	// A provider with a malformed responseTimeout must be rejected with
+	// AuthResponseTimeoutInvalid.
+	proxyInvalidAuthzResponseTimeout := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "invalid-authz-response-timeout",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "invalid-authz-response-timeout.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name:            "provider-a",
+					Default:         true,
+					ResponseTimeout: "invalid-timeout",
+				}},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "Invalid authz provider response timeout is invalid", testcase{
+		objs: []any{proxyInvalidAuthzResponseTimeout, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyInvalidAuthzResponseTimeout.Name, Namespace: proxyInvalidAuthzResponseTimeout.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`),
+		},
+	})
+
+	// enableFallbackCertificate + authorizationProviders must be
+	// rejected with TLSIncompatibleFeatures.
+	proxyAuthzProvidersFallback := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authz-providers-fallback",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "authz-providers-fallback.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName:                fixture.SecretRootsCert.Name,
+					EnableFallbackCertificate: true,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name:    "provider-a",
+					Default: true,
+				}},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "fallback and authorization providers are incompatible", testcase{
+		objs:                []any{proxyAuthzProvidersFallback, fixture.SecretRootsCert, fixture.SecretRootsFallback, fixture.ServiceRootsKuard},
+		fallbackCertificate: &types.NamespacedName{Namespace: "roots", Name: "fallbacksecret"},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyAuthzProvidersFallback.Name, Namespace: proxyAuthzProvidersFallback.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & authorization providers are incompatible"),
+		},
+	})
+
+	// A provider whose extensionServiceRef points at an ExtensionService
+	// that doesn't exist in the cache must be rejected with
+	// ExtensionServiceNotFound.
+	proxyAuthzProviderMissingExtensionService := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authz-provider-missing-extension-service",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "authz-provider-missing-extension-service.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name: "provider-a",
+					ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+						Namespace: "auth",
+						Name:      "extension",
+					},
+				}},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "Authz provider referencing a missing extension service is invalid", testcase{
+		objs: []any{proxyAuthzProviderMissingExtensionService, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyAuthzProviderMissingExtensionService.Name, Namespace: proxyAuthzProviderMissingExtensionService.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "ExtensionServiceNotFound", `Spec.Virtualhost.Authorization.ServiceRef extension service "auth/extension" not found`),
+		},
+	})
+
 	fallbackCertificate := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "roots",
