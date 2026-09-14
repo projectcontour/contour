@@ -93,6 +93,26 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					Compression: &contour_v1alpha1.EnvoyCompression{
+						Algorithm:  contour_v1alpha1.GzipCompression,
+						Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
+					},
+				},
+			},
+		}
+		require.Error(t, c.Validate())
+
+		c.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+			Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+				contour_v1alpha1.BrotliCompression,
+				contour_v1alpha1.GzipCompression,
+			},
+		}
+		require.NoError(t, c.Validate())
+
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					TLS: &contour_v1alpha1.EnvoyListenerTLS{},
 				},
 			},
