@@ -53,8 +53,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 80*time.Second),
+						Match:                routePrefix("/"),
+						Action:               withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 80*time.Second),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -76,8 +77,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
+						Match:                routePrefix("/"),
+						Action:               withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -99,8 +101,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						Match:                routePrefix("/"),
+						Action:               routeCluster("default/kuard/8080/da39a3ee5e"),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),
@@ -123,8 +126,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_config_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 99*time.Second),
+						Match:                routePrefix("/"),
+						Action:               withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 99*time.Second),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
 					},
 				),
 			),

@@ -110,6 +110,10 @@ linters:
       - linters:
           - staticcheck
         text: "SA1019.*SubjectName.*migrate to using the plural field subjectNames"
+      - linters:
+          - staticcheck
+        path: _test\.go
+        text: "SA1019.*Context is deprecated"
     paths:
       - third_party$
       - builtin$
