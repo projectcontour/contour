@@ -17,8 +17,13 @@ package debug // nolint:revive // Ignore var-naming warning about package name c
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/pprof"
+	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/httpsvc"
@@ -40,7 +45,24 @@ func (svc *Service) NeedLeaderElection() bool {
 func (svc *Service) Start(ctx context.Context) error {
 	registerProfile(&svc.ServeMux)
 	registerDotWriter(&svc.ServeMux, svc.Builder)
+	registerLogLevel(&svc.ServeMux, svc.logger())
 	return svc.Service.Start(ctx)
+}
+
+// logger returns the logger whose level is controlled by the
+// /debug/loglevel endpoint. The service is normally configured with an
+// Entry derived from the process-wide logger, so the level is changed on
+// the Logger backing it; without a configured logger the standard logger
+// is used.
+func (svc *Service) logger() *logrus.Logger {
+	switch log := svc.FieldLogger.(type) {
+	case *logrus.Logger:
+		return log
+	case *logrus.Entry:
+		return log.Logger
+	default:
+		return logrus.StandardLogger()
+	}
 }
 
 func registerProfile(mux *http.ServeMux) {
@@ -61,5 +83,43 @@ func registerDotWriter(mux *http.ServeMux, builder *dag.Builder) {
 			Builder: builder,
 		}
 		dw.writeDot(w)
+	})
+}
+
+// registerLogLevel registers the /debug/loglevel endpoint, which allows the
+// log level to be inspected and changed at runtime without restarting
+// Contour. GET returns the current level; PUT or POST sets the level given
+// as the "level" query parameter or, failing that, as the request body.
+func registerLogLevel(mux *http.ServeMux, log *logrus.Logger) {
+	mux.HandleFunc("/debug/loglevel", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+		case http.MethodPut, http.MethodPost:
+			level := r.URL.Query().Get("level")
+			if level == "" {
+				body, err := io.ReadAll(io.LimitReader(r.Body, 64))
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				level = strings.TrimSpace(string(body))
+			}
+
+			parsed, err := logrus.ParseLevel(level)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			log.Infof("changing log level from %s to %s", log.GetLevel(), parsed)
+			log.SetLevel(parsed)
+		default:
+			w.Header().Set("Allow", "GET, PUT, POST")
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		fmt.Fprintln(w, log.GetLevel())
 	})
 }
