@@ -27,7 +27,7 @@ require (
 	github.com/tsaarni/certyaml v0.13.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.59.0
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 	gonum.org/v1/plot v0.17.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
 	google.golang.org/grpc v1.83.2
