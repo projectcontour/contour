@@ -600,6 +600,9 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		return
 	}
 
+	insecure.IncludeRequestAttemptCount = proxy.Spec.VirtualHost.IncludeRequestAttemptCount
+	insecure.IncludeAttemptCountInResponse = proxy.Spec.VirtualHost.IncludeAttemptCountInResponse
+
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
@@ -625,6 +628,9 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				"Spec.VirtualHost.IPAllowFilterPolicy or Spec.VirtualHost.IPDenyFilterPolicy is invalid: %s", err)
 			return
 		}
+
+		secure.IncludeRequestAttemptCount = proxy.Spec.VirtualHost.IncludeRequestAttemptCount
+		secure.IncludeAttemptCountInResponse = proxy.Spec.VirtualHost.IncludeAttemptCountInResponse
 
 		addRoutes(secure, routes)
 

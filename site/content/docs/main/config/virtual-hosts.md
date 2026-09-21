@@ -117,6 +117,39 @@ spec:
       port: 80
 ```
 
+## Request attempt count
+
+Envoy can advertise how many times a request has been attempted (the initial attempt plus any retries) via the `x-envoy-attempt-count` header.
+This is useful for upstream services or downstream clients that want to observe or react to retry behavior.
+
+Two optional boolean fields on a `virtualhost` control this:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: attempt-count
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: attempt-count.bar.com
+    includeRequestAttemptCount: true
+    includeAttemptCountInResponse: true
+  routes:
+  - retryPolicy:
+      count: 3
+    services:
+    - name: s1
+      port: 80
+```
+
+- `includeRequestAttemptCount`: when `true`, Envoy includes the `x-envoy-attempt-count` header in requests forwarded to the upstream.
+The value starts at 1 for the initial attempt and is incremented for each retry.
+- `includeAttemptCountInResponse`: when `true`, Envoy includes the `x-envoy-attempt-count` header in responses returned to the downstream client, reflecting the number of times the request was attempted on the upstream.
+
+Both fields default to `false`.
+See [Envoy's documentation][3] for more information.
+
 ## Restricted root namespaces
 
 HTTPProxy inclusion allows Administrators to limit which users/namespaces may configure routes for a given domain, but it does not restrict where root HTTPProxies may be created.
@@ -136,3 +169,4 @@ _**Note:** The restricted root namespace feature is only supported for HTTPProxy
 
 [1]: {{< param github_url>}}/tree/{{< param branch >}}/examples/root-rbac
 [2]: api/#projectcontour.io/v1.VirtualHost
+[3]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#x-envoy-attempt-count
