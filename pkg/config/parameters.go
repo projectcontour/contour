@@ -1035,16 +1035,46 @@ const (
 )
 
 // CompressionParameters is a type defining configurable compression related values.
-// At present this is just the compression algorithm but this could be extended later with algorithm specific config.
 type CompressionParameters struct {
-	// Algorithm configures which compression algorithm, if any, to use in the default HTTP listener filter chain.
+	// Algorithm configures a single compression algorithm to use in the default HTTP listener filter chain.
 	// Valid options are 'gzip' (default), 'brotli', 'zstd' and 'disabled'.
+	// Mutually exclusive with Algorithms.
+	//
+	// Deprecated: use Algorithms instead. An empty Algorithms list disables compression.
 	// +optional
 	Algorithm CompressionAlgorithm `yaml:"algorithm,omitempty"`
+
+	// Algorithms configures the compression algorithms used in the default HTTP listener filter chain.
+	// This field is a tri-state:
+	// - omitted: use the Envoy default (gzip)
+	// - empty list: disable compression
+	// - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
+	//
+	// List order is the preference when q-values are equal.
+	// Valid options are 'gzip', 'brotli' and 'zstd'. Cannot include 'disabled'.
+	// Mutually exclusive with Algorithm.
+	// +optional
+	Algorithms *[]CompressionAlgorithm `yaml:"algorithms,omitempty"`
 }
 
 func (c CompressionParameters) Validate() error {
-	return c.Algorithm.Validate()
+	return c.ToEnvoyCompression().Validate()
+}
+
+// ToEnvoyCompression converts file-based compression config to the CRD type.
+func (c CompressionParameters) ToEnvoyCompression() *contour_v1alpha1.EnvoyCompression {
+	out := &contour_v1alpha1.EnvoyCompression{
+		Algorithm: contour_v1alpha1.CompressionAlgorithm(c.Algorithm),
+	}
+	if c.Algorithms == nil {
+		return out
+	}
+	algs := make([]contour_v1alpha1.CompressionAlgorithm, len(*c.Algorithms))
+	for i, algorithm := range *c.Algorithms {
+		algs[i] = contour_v1alpha1.CompressionAlgorithm(algorithm)
+	}
+	out.Algorithms = &algs
+	return out
 }
 
 type CompressionAlgorithm string
