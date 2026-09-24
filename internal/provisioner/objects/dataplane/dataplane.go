@@ -141,6 +141,21 @@ func EnsureDataPlaneDeleted(ctx context.Context, cli client.Client, contour *mod
 	return objects.EnsureObjectDeleted(ctx, cli, deployObj, contour)
 }
 
+func envoyArgs(contour *model.Contour) []string {
+	args := []string{
+		"-c",
+		filepath.Join("/", envoyCfgVolMntDir, envoyCfgFileName),
+		fmt.Sprintf("--service-cluster $(%s)", envoyNsEnvVar),
+		fmt.Sprintf("--service-node $(%s)", envoyPodEnvVar),
+		fmt.Sprintf("--log-level %s", contour.Spec.EnvoyLogLevel),
+		fmt.Sprintf("--base-id %d", contour.Spec.EnvoyBaseID),
+	}
+	if contour.Spec.EnvoyConcurrency > 0 {
+		args = append(args, fmt.Sprintf("--concurrency %d", contour.Spec.EnvoyConcurrency))
+	}
+	return args
+}
+
 func desiredContainers(contour *model.Contour, contourImage, envoyImage string) ([]core_v1.Container, []core_v1.Container) {
 	var (
 		metricsPort = objects.EnvoyMetricsPort
@@ -204,14 +219,7 @@ func desiredContainers(contour *model.Contour, contourImage, envoyImage string) 
 			Command: []string{
 				"envoy",
 			},
-			Args: []string{
-				"-c",
-				filepath.Join("/", envoyCfgVolMntDir, envoyCfgFileName),
-				fmt.Sprintf("--service-cluster $(%s)", envoyNsEnvVar),
-				fmt.Sprintf("--service-node $(%s)", envoyPodEnvVar),
-				fmt.Sprintf("--log-level %s", contour.Spec.EnvoyLogLevel),
-				fmt.Sprintf("--base-id %d", contour.Spec.EnvoyBaseID),
-			},
+			Args: envoyArgs(contour),
 			Env: []core_v1.EnvVar{
 				{
 					Name: envoyNsEnvVar,
