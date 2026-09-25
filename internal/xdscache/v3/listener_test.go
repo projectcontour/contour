@@ -1287,7 +1287,8 @@ func TestListenerVisit(t *testing.T) {
 			},
 			ListenerConfig: ListenerConfig{
 				Timeouts: contourconfig.Timeouts{
-					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+					MaxConnectionDuration:          timeout.DurationSetting(90 * time.Second),
+					HTTP1SafeMaxConnectionDuration: true,
 				},
 			},
 			objs: []any{
@@ -1329,6 +1330,7 @@ func TestListenerVisit(t *testing.T) {
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
+						HTTP1SafeMaxConnectionDuration(true).
 						Get(),
 				),
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
@@ -1347,6 +1349,7 @@ func TestListenerVisit(t *testing.T) {
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
+						HTTP1SafeMaxConnectionDuration(true).
 						Get(),
 					),
 				}, {
@@ -1360,6 +1363,7 @@ func TestListenerVisit(t *testing.T) {
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
+						HTTP1SafeMaxConnectionDuration(true).
 						Get(),
 					),
 					Name: "fallback-certificate",

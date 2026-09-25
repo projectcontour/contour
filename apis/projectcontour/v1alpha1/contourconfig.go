@@ -678,6 +678,20 @@ type TimeoutParameters struct {
 	// +optional
 	MaxConnectionDuration *string `json:"maxConnectionDuration,omitempty"`
 
+	// HTTP1SafeMaxConnectionDuration defines whether the proxy uses an RFC 9112 compliant
+	// teardown when MaxConnectionDuration is reached on a downstream HTTP/1 connection.
+	// When enabled, the proxy does not start a drain timer; instead it waits for the next
+	// request on the connection, adds a "Connection: close" header to the response, and
+	// closes the connection once that stream has completed. Has no effect if
+	// MaxConnectionDuration is not set.
+	//
+	// Contour's default is false.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-http1-safe-max-connection-duration
+	// for more information.
+	// +optional
+	HTTP1SafeMaxConnectionDuration *bool `json:"http1SafeMaxConnectionDuration,omitempty"`
+
 	// DelayedCloseTimeout defines how long envoy will wait, once connection
 	// close processing has been initiated, for the downstream peer to close
 	// the connection before Envoy closes the socket associated with the connection.
