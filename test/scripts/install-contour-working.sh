@@ -44,9 +44,8 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Set (pseudo) random image tag to trigger restarts at every deployment.
-# TODO: Come up with a scheme that doesn't fill up the dev environment with randomly-tagged images.
-VERSION="v$$"
+# Reuse a single development tag so repeated builds do not leave uniquely-tagged images behind.
+readonly VERSION="dev"
 
 # Build the image.
 make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
@@ -75,6 +74,10 @@ for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contou
     "$file" | \
   ${KUBECTL} apply -f -
 done
+
+# The image tag does not change, so explicitly restart workloads that use the Contour image.
+${KUBECTL} rollout restart -n projectcontour deployment/contour
+${KUBECTL} rollout restart -n projectcontour daemonset/envoy
 
 # Wait for Contour and Envoy to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
