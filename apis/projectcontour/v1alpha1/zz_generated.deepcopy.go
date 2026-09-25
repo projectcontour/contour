@@ -1357,6 +1357,11 @@ func (in *TimeoutParameters) DeepCopyInto(out *TimeoutParameters) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.HTTP1SafeMaxConnectionDuration != nil {
+		in, out := &in.HTTP1SafeMaxConnectionDuration, &out.HTTP1SafeMaxConnectionDuration
+		*out = new(bool)
+		**out = **in
+	}
 	if in.DelayedCloseTimeout != nil {
 		in, out := &in.DelayedCloseTimeout, &out.DelayedCloseTimeout
 		*out = new(string)

@@ -185,29 +185,30 @@ const (
 )
 
 type httpConnectionManagerBuilder struct {
-	routeConfigName               string
-	routeConfigSource             *envoy_config_core_v3.ConfigSource
-	metricsPrefix                 string
-	accessLoggers                 []*envoy_config_accesslog_v3.AccessLog
-	requestTimeout                timeout.Setting
-	connectionIdleTimeout         timeout.Setting
-	streamIdleTimeout             timeout.Setting
-	delayedCloseTimeout           timeout.Setting
-	maxConnectionDuration         timeout.Setting
-	connectionShutdownGracePeriod timeout.Setting
-	filters                       []*envoy_filter_network_http_connection_manager_v3.HttpFilter
-	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
-	allowChunkedLength            bool
-	mergeSlashes                  bool
-	serverHeaderTransformation    envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_ServerHeaderTransformation
-	forwardClientCertificate      *dag.ClientCertificateDetails
-	numTrustedHops                uint32
-	stripTrailingHostDot          bool
-	tracingConfig                 *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing
-	maxRequestsPerConnection      *uint32
-	http2MaxConcurrentStreams     *uint32
-	enableWebsockets              bool
-	compression                   *contour_v1alpha1.EnvoyCompression
+	routeConfigName                string
+	routeConfigSource              *envoy_config_core_v3.ConfigSource
+	metricsPrefix                  string
+	accessLoggers                  []*envoy_config_accesslog_v3.AccessLog
+	requestTimeout                 timeout.Setting
+	connectionIdleTimeout          timeout.Setting
+	streamIdleTimeout              timeout.Setting
+	delayedCloseTimeout            timeout.Setting
+	maxConnectionDuration          timeout.Setting
+	connectionShutdownGracePeriod  timeout.Setting
+	http1SafeMaxConnectionDuration bool
+	filters                        []*envoy_filter_network_http_connection_manager_v3.HttpFilter
+	codec                          HTTPVersionType // Note the zero value is AUTO, which is the default we want.
+	allowChunkedLength             bool
+	mergeSlashes                   bool
+	serverHeaderTransformation     envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_ServerHeaderTransformation
+	forwardClientCertificate       *dag.ClientCertificateDetails
+	numTrustedHops                 uint32
+	stripTrailingHostDot           bool
+	tracingConfig                  *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Tracing
+	maxRequestsPerConnection       *uint32
+	http2MaxConcurrentStreams      *uint32
+	enableWebsockets               bool
+	compression                    *contour_v1alpha1.EnvoyCompression
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -271,6 +272,14 @@ func (b *httpConnectionManagerBuilder) DelayedCloseTimeout(timeout timeout.Setti
 // MaxConnectionDuration sets the max connection duration on the connection manager.
 func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.maxConnectionDuration = timeout
+	return b
+}
+
+// HTTP1SafeMaxConnectionDuration toggles Envoy's RFC 9112 compliant teardown of downstream
+// HTTP/1 connections that have reached the max connection duration. It has no effect unless
+// the max connection duration is also set.
+func (b *httpConnectionManagerBuilder) HTTP1SafeMaxConnectionDuration(enabled bool) *httpConnectionManagerBuilder {
+	b.http1SafeMaxConnectionDuration = enabled
 	return b
 }
 
@@ -576,6 +585,8 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		PreserveExternalRequestId:  true,
 		MergeSlashes:               b.mergeSlashes,
 		ServerHeaderTransformation: b.serverHeaderTransformation,
+
+		Http1SafeMaxConnectionDuration: b.http1SafeMaxConnectionDuration,
 
 		RequestTimeout:      envoy.Timeout(b.requestTimeout),
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
