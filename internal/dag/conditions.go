@@ -30,18 +30,52 @@ import (
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
 func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition {
-	mergedPath := ""
 	isRegex := false
+	for _, cond := range conds {
+		if cond.Regex != "" {
+			isRegex = true
+			break
+		}
+	}
 
+	mergedPath := ""
 	for _, cond := range conds {
 		switch {
 		case cond.Prefix != "":
-			mergedPath += cond.Prefix
+			if isRegex {
+				// If in regex mode, trim the trailing slash first, then escape regex metacharacters.
+				// Since the child regex must start with '/', this ensures there is exactly one '/' after concatenation,
+				// preventing the double-slash from being isolated by the '(?:' non-capturing group.
+				trimmed := strings.TrimRight(cond.Prefix, "/")
+				mergedPath += regexp.QuoteMeta(trimmed)
+			} else {
+				mergedPath += cond.Prefix
+			}
 		case cond.Exact != "":
-			mergedPath += cond.Exact
+			if isRegex {
+				// Note: This branch is currently unreachable as cond.Exact and isRegex cannot coexist in the same delegation chain.
+				// Specifically, includeMatchConditionsValid forbids Exact/Regex in parent includes, and pathMatchConditionsValid
+				// forbids multiple match types in a single route block. This is retained as defensive/future-proofing code
+				// in case these validation invariants are ever relaxed in the future.
+				trimmed := strings.TrimRight(cond.Exact, "/")
+				mergedPath += regexp.QuoteMeta(trimmed)
+			} else {
+				mergedPath += cond.Exact
+			}
 		case cond.Regex != "":
-			mergedPath += cond.Regex
-			isRegex = true
+			regexStr := cond.Regex
+			if hasUnclosedQuoteMeta(regexStr) {
+				// Close the unclosed \Q so that the appended ')' is not swallowed as literal text.
+				regexStr += `\E`
+			}
+			if mergedPath != "" {
+				// Wrap the child regex in a non-capturing group only if a non-empty parent prefix/exact match has been prepended,
+				// preventing '|' (alternation) from escaping the delegated prefix constraint.
+				mergedPath += "(?:" + regexStr + ")"
+			} else {
+				// If there is no parent prefix, append directly to avoid redundant wrapping.
+				mergedPath += regexStr
+			}
 		}
 	}
 
@@ -80,6 +114,23 @@ func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition 
 			Prefix: mergedPath,
 		}
 	}
+}
+
+// hasUnclosedQuoteMeta reports whether a regex string ends with an unclosed \Q literal escape.
+func hasUnclosedQuoteMeta(s string) bool {
+	inQuote := false
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\\' && i+1 < len(s) {
+			if !inQuote && s[i+1] == 'Q' {
+				inQuote = true
+				i++
+			} else if inQuote && s[i+1] == 'E' {
+				inQuote = false
+				i++
+			}
+		}
+	}
+	return inQuote
 }
 
 // pathMatchConditionsValid validates a slice of MatchConditions can be correctly merged.
