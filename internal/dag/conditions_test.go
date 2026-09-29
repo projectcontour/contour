@@ -178,7 +178,31 @@ func TestPathMatchCondition(t *testing.T) {
 			}, {
 				Regex: "/v[0-9]+",
 			}},
-			want: &RegexMatchCondition{Regex: "/api/v[0-9]+"},
+			want: &RegexMatchCondition{Regex: "/api(?:/v[0-9]+)"},
+		},
+		"exploit scenario - prefix escape via regex alternation": {
+			matchconditions: []contour_v1.MatchCondition{{
+				Prefix: "/team-a",
+			}, {
+				Regex: "/x|/admin/.*",
+			}},
+			want: &RegexMatchCondition{Regex: "/team-a(?:/x|/admin/.*)"},
+		},
+		"exploit scenario - prefix metacharacter escape": {
+			matchconditions: []contour_v1.MatchCondition{{
+				Prefix: "/v1.0",
+			}, {
+				Regex: "/.*",
+			}},
+			want: &RegexMatchCondition{Regex: `/v1\.0(?:/.*)`},
+		},
+		"child regex with unclosed \\Q": {
+			matchconditions: []contour_v1.MatchCondition{{
+				Prefix: "/team-a",
+			}, {
+				Regex: `/\Qfoo`,
+			}},
+			want: &RegexMatchCondition{Regex: `/team-a(?:/\Qfoo\E)`},
 		},
 		"header condition": {
 			matchconditions: []contour_v1.MatchCondition{{

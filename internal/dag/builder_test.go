@@ -14005,7 +14005,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.valid.regexpath.com",
-							routeClusterRegex("/foo/regex/.*",
+							routeClusterRegex("/foo(?:/regex/.*)",
 								&Cluster{
 									Upstream: service(s1),
 								},
