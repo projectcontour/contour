@@ -7,6 +7,35 @@
 		</div>
 		<div class="wrapper subpage blog">
 			<div class="blog-post content">
+				{{ if .Params.toc }}
+					{{ $headings := .Fragments.Headings }}
+					{{/* Pages without an h1 get a placeholder root heading with no ID. */}}
+					{{ range seq 6 }}
+						{{ if and (eq (len $headings) 1) (not (index $headings 0).ID) }}
+							{{ $headings = (index $headings 0).Headings }}
+						{{ end }}
+					{{ end }}
+					{{ with $headings }}
+					<nav class="page-toc" aria-label="On this page">
+						<h4>On this page</h4>
+						<ul>
+							{{ range . }}
+							<li>
+								<a href="#{{ .ID }}">{{ .Title | safeHTML }}</a>
+								{{ with .Headings }}
+								<details>
+									<summary>Show {{ len . }} subsections</summary>
+									<ul>
+										{{ range . }}<li><a href="#{{ .ID }}">{{ .Title | safeHTML }}</a></li>{{ end }}
+									</ul>
+								</details>
+								{{ end }}
+							</li>
+							{{ end }}
+						</ul>
+					</nav>
+					{{ end }}
+				{{ end }}
 				{{ .Content }}
 			</div>
 		</div>
