@@ -636,6 +636,28 @@ type EnvoyLogging struct {
 	// Other values will produce an error.
 	// +optional
 	AccessLogLevel AccessLogLevel `json:"accessLogLevel,omitempty"`
+
+	// AccessLogRateLimit defines rate limiting for access log entries across the Envoy process.
+	// +optional
+	AccessLogRateLimit *AccessLogRateLimit `json:"accessLogRateLimit,omitempty"`
+}
+
+// AccessLogRateLimit defines rate limiting parameters for access log entries.
+type AccessLogRateLimit struct {
+	// MaxTokens is the maximum number of tokens in the bucket, also the initial number of tokens
+	// and the number of log entries that can burst beyond the steady fill rate.
+	// +kubebuilder:validation:Minimum=1
+	MaxTokens uint32 `json:"maxTokens"`
+
+	// TokensPerFill is the number of tokens added to the bucket during each fill interval.
+	// Defaults to maxTokens if not specified.
+	// +optional
+	TokensPerFill *uint32 `json:"tokensPerFill,omitempty"`
+
+	// FillInterval is how often the bucket is refilled.
+	// Must be a valid Go duration string. Defaults to "1s" if not specified.
+	// +optional
+	FillInterval *string `json:"fillInterval,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.

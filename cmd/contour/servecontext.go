@@ -615,6 +615,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				AccessLogFormatString: ctx.Config.AccessLogFormatString,
 				AccessLogJSONFields:   accessLogFields,
 				AccessLogLevel:        accessLogLevel,
+				AccessLogRateLimit:    accessLogRateLimit(ctx.Config.AccessLogRateLimit),
 			},
 			DefaultHTTPVersions: defaultHTTPVersions,
 			Timeouts:            timeoutParams,
@@ -682,5 +683,16 @@ func setMetricsFromConfig(src config.MetricsServerParameters, dst *contour_v1alp
 			KeyFile:  src.ServerKey,
 			CAFile:   src.CABundle,
 		}
+	}
+}
+
+func accessLogRateLimit(params *config.AccessLogRateLimitParameters) *contour_v1alpha1.AccessLogRateLimit {
+	if params == nil {
+		return nil
+	}
+	return &contour_v1alpha1.AccessLogRateLimit{
+		MaxTokens:     params.MaxTokens,
+		TokensPerFill: params.TokensPerFill,
+		FillInterval:  params.FillInterval,
 	}
 }
