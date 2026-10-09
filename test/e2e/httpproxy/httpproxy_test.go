@@ -153,6 +153,25 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	Context("forwardProtoConfig with PROXY protocol", func() {
+		BeforeEach(func() {
+			// Envoy accepts plaintext connections that carry a PROXY protocol
+			// header and derives X-Forwarded-Proto from its destination port.
+			additionalContourArgs = append(additionalContourArgs, "--use-proxy-protocol")
+			contourConfig.Listener.ForwardProtoConfig = &config.ForwardProtoConfig{
+				HTTPSDestinationPorts: []uint32{443},
+				HTTPDestinationPorts:  []uint32{80},
+			}
+			contourConfiguration.Spec.Envoy.Listener.UseProxyProto = ptr.To(true)
+			contourConfiguration.Spec.Envoy.Listener.ForwardProtoConfig = &contour_v1alpha1.ForwardProtoConfig{
+				HTTPSDestinationPorts: []uint32{443},
+				HTTPDestinationPorts:  []uint32{80},
+			}
+		})
+
+		f.NamespacedTest("httpproxy-forward-proto-config", testForwardProtoConfig)
+	})
+
 	f.NamespacedTest("httpproxy-client-cert-auth", testClientCertAuth)
 
 	f.NamespacedTest("httpproxy-tcproute-https-termination", testTCPRouteHTTPSTermination)

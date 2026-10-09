@@ -49,5 +49,34 @@ spec:
 ...
 ```
 
+## Set X-Forwarded-Proto when the load balancer terminates TLS
+
+If the load balancer terminates TLS itself, for example an AWS NLB with a TLS listener and an ACM certificate, and forwards plaintext to Envoy with the PROXY protocol, every connection Envoy accepts is plaintext.
+Envoy then sets `X-Forwarded-Proto: http` on every request, and an HTTPProxy with TLS configured redirects its own HTTPS traffic to HTTPS in a loop.
+
+Envoy 1.38 and later can derive `X-Forwarded-Proto` from the destination port carried in the PROXY protocol header instead.
+Enable it in the Contour configuration file, together with `--use-proxy-protocol`:
+
+```yaml
+listener:
+  forward-proto-config:
+    https-destination-ports: [443]
+    http-destination-ports: [80]
+```
+
+or in the `ContourConfiguration` resource:
+
+```yaml
+spec:
+  envoy:
+    listener:
+      useProxyProtocol: true
+      forwardProtoConfig:
+        httpsDestinationPorts: [443]
+        httpDestinationPorts: [80]
+```
+
+Requests that reached the load balancer on a port listed in `https-destination-ports` get `X-Forwarded-Proto: https`, those on a port in `http-destination-ports` get `http`, and any other port keeps Envoy's default behavior.
+
 [0]: http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 [1]: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer

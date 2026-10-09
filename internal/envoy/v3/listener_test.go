@@ -2005,3 +2005,30 @@ func authzFilter(extras ...any) *envoy_filter_network_http_connection_manager_v3
 		AuthorizationServerWithRequestBody: body,
 	})
 }
+
+func TestHTTPConnectionManagerForwardProtoConfig(t *testing.T) {
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{XDSClusterName: DefaultXDSClusterName})
+
+	connectionManager := func(config *contour_v1alpha1.ForwardProtoConfig) *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager {
+		f := envoyGen.HTTPConnectionManagerBuilder().
+			RouteConfigName("ingress_http").
+			DefaultFilters().
+			ForwardProtoConfig(config).
+			Get()
+		hcm := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{}
+		require.NoError(t, f.GetTypedConfig().UnmarshalTo(hcm))
+		return hcm
+	}
+
+	// Unset: Envoy keeps deriving X-Forwarded-Proto from the connection.
+	assert.Nil(t, connectionManager(nil).ForwardProtoConfig)
+
+	got := connectionManager(&contour_v1alpha1.ForwardProtoConfig{
+		HTTPSDestinationPorts: []uint32{443, 8443},
+		HTTPDestinationPorts:  []uint32{80},
+	})
+	protobuf.ExpectEqual(t, &envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig{
+		HttpsDestinationPorts: []uint32{443, 8443},
+		HttpDestinationPorts:  []uint32{80},
+	}, got.ForwardProtoConfig)
+}

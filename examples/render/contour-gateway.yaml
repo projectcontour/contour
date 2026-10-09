@@ -376,6 +376,42 @@ spec:
                           which strips duplicate slashes from request URL paths.
                           Contour's default is false.
                         type: boolean
+                      forwardProtoConfig:
+                        description: |-
+                          ForwardProtoConfig makes Envoy derive the X-Forwarded-Proto header from the
+                          destination port in the PROXY protocol header instead of from the TLS state
+                          of the connection it accepted. Use this when a layer 4 load balancer in front
+                          of Envoy terminates TLS and forwards with PROXY protocol: every connection
+                          Envoy accepts is then plaintext, so X-Forwarded-Proto would always be "http"
+                          and HTTPProxy virtual hosts with TLS would redirect their own HTTPS traffic
+                          in a loop. Only connections whose destination address was restored by the
+                          PROXY protocol listener filter are affected (see useProxyProtocol); any other
+                          connection, and any destination port in neither list, keeps Envoy's default
+                          behavior. Requires Envoy 1.38 or later.
+                        properties:
+                          httpDestinationPorts:
+                            description: |-
+                              HTTPDestinationPorts lists the PROXY protocol destination ports for which
+                              X-Forwarded-Proto is set to "http", for example 80.
+                            items:
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            type: array
+                          httpsDestinationPorts:
+                            description: |-
+                              HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+                              X-Forwarded-Proto is set to "https", for example 443.
+                              At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+                              and a port must not appear in both.
+                            items:
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            type: array
+                        type: object
                       httpMaxConcurrentStreams:
                         description: |-
                           Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
@@ -4640,6 +4676,42 @@ spec:
                               which strips duplicate slashes from request URL paths.
                               Contour's default is false.
                             type: boolean
+                          forwardProtoConfig:
+                            description: |-
+                              ForwardProtoConfig makes Envoy derive the X-Forwarded-Proto header from the
+                              destination port in the PROXY protocol header instead of from the TLS state
+                              of the connection it accepted. Use this when a layer 4 load balancer in front
+                              of Envoy terminates TLS and forwards with PROXY protocol: every connection
+                              Envoy accepts is then plaintext, so X-Forwarded-Proto would always be "http"
+                              and HTTPProxy virtual hosts with TLS would redirect their own HTTPS traffic
+                              in a loop. Only connections whose destination address was restored by the
+                              PROXY protocol listener filter are affected (see useProxyProtocol); any other
+                              connection, and any destination port in neither list, keeps Envoy's default
+                              behavior. Requires Envoy 1.38 or later.
+                            properties:
+                              httpDestinationPorts:
+                                description: |-
+                                  HTTPDestinationPorts lists the PROXY protocol destination ports for which
+                                  X-Forwarded-Proto is set to "http", for example 80.
+                                items:
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                                type: array
+                              httpsDestinationPorts:
+                                description: |-
+                                  HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+                                  X-Forwarded-Proto is set to "https", for example 443.
+                                  At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+                                  and a port must not appear in both.
+                                items:
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                                type: array
+                            type: object
                           httpMaxConcurrentStreams:
                             description: |-
                               Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
