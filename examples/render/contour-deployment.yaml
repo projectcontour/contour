@@ -6452,6 +6452,10 @@ spec:
       jsonPath: .spec.virtualhost.tls.secretName
       name: TLS Secret
       type: string
+    - description: Ingress class name of the HTTPProxy
+      jsonPath: .spec.ingressClassName
+      name: Ingress Class
+      type: string
     - description: The current status of the HTTPProxy
       jsonPath: .status.currentStatus
       name: Status
