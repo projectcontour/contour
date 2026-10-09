@@ -26,6 +26,8 @@ import (
 	envoy_filter_network_http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_transport_socket_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -3556,4 +3558,77 @@ func listenermap(listeners ...*envoy_config_listener_v3.Listener) map[string]*en
 		m[l.Name] = l
 	}
 	return m
+}
+
+// TestListenerForwardProtoConfig checks that the forward proto config lands
+// on every HTTP connection manager: the HTTP listener, each TLS virtual host
+// and the fallback certificate chain, and on none of them when unset.
+func TestListenerForwardProtoConfig(t *testing.T) {
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{XDSClusterName: envoy_v3.DefaultXDSClusterName})
+
+	secret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{Name: "secret", Namespace: "default"},
+		Type:       core_v1.SecretTypeTLS,
+		Data:       secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+	fallbackSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{Name: "fallbacksecret", Namespace: "default"},
+		Type:       core_v1.SecretTypeTLS,
+		Data:       secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+	}
+	service := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{Name: "backend", Namespace: "default"},
+		Spec:       core_v1.ServiceSpec{Ports: []core_v1.ServicePort{{Name: "http", Protocol: "TCP", Port: 80}}},
+	}
+	proxy := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{Name: "simple", Namespace: "default"},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "www.example.com",
+				TLS: &contour_v1.TLS{
+					SecretName:                "secret",
+					EnableFallbackCertificate: true,
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions:     []contour_v1.MatchCondition{{Prefix: "/"}},
+				Services:       []contour_v1.Service{{Name: "backend", Port: 80}},
+				PermitInsecure: true,
+			}},
+		},
+	}
+
+	connectionManagers := func(config ListenerConfig) []*envoy_filter_network_http_connection_manager_v3.HttpConnectionManager {
+		lc := ListenerCache{Config: config, envoyGen: envoyGen}
+		lc.OnChange(buildDAGFallback(t, &types.NamespacedName{Name: "fallbacksecret", Namespace: "default"}, secret, fallbackSecret, service, proxy))
+
+		var hcms []*envoy_filter_network_http_connection_manager_v3.HttpConnectionManager
+		for _, name := range []string{ENVOY_HTTP_LISTENER, ENVOY_HTTPS_LISTENER} {
+			l := lc.values[name]
+			require.NotNil(t, l, name)
+			for _, fc := range l.FilterChains {
+				for _, f := range fc.Filters {
+					hcm := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{}
+					if f.GetTypedConfig().UnmarshalTo(hcm) == nil {
+						hcms = append(hcms, hcm)
+					}
+				}
+			}
+		}
+		// HTTP listener, TLS virtual host, fallback certificate chain.
+		require.Len(t, hcms, 3)
+		return hcms
+	}
+
+	config := &contour_v1alpha1.ForwardProtoConfig{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80}}
+	for _, hcm := range connectionManagers(ListenerConfig{UseProxyProto: true, ForwardProtoConfig: config}) {
+		protobuf.ExpectEqual(t, &envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig{
+			HttpsDestinationPorts: []uint32{443},
+			HttpDestinationPorts:  []uint32{80},
+		}, hcm.ForwardProtoConfig)
+	}
+
+	for _, hcm := range connectionManagers(ListenerConfig{UseProxyProto: true}) {
+		assert.Nil(t, hcm.ForwardProtoConfig)
+	}
 }

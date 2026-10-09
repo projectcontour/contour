@@ -211,6 +211,7 @@ The listener configuration block can be used to configure various parameters for
 | max-requests-per-io-cycle         | int    | none    | Defines the limit on number of HTTP requests that Envoy will process from a single connection in a single I/O cycle. Requests over this limit are processed in subsequent I/O cycles. Can be used as a mitigation for CVE-2023-44487 when abusive traffic is detected. Configures the `http.max_requests_per_io_cycle` Envoy runtime setting. The default value when this is not set is no limit. |
 | http2-max-concurrent-streams      | int    | none    | Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed for a peer on a single HTTP/2 connection. It is recommended to not set this lower than 100 but this field can be used to bound resource usage by HTTP/2 connections and mitigate attacks like CVE-2023-44487. The default value when this is not set is unlimited. |
 | max-connections-to-accept-per-socket-event | int | none | Defines the maximum number of connections Envoy will accept from the kernel per event loop iteration. If no value is provided, Envoy will accept all pending connections at once. It is recommended to set this to a low value. |
+| forward-proto-config              | ForwardProtoConfig | | The [forward proto configuration](#forward-proto-configuration): derive `X-Forwarded-Proto` from the PROXY protocol destination port when a load balancer in front of Envoy terminates TLS. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -297,6 +298,17 @@ Metrics and health endpoints cannot have the same port number when metrics are s
 | tos             | int    | 0       | Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv6-only addresses, setting this option will cause an error. |
 | traffic-class   | int    | 0       | Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv4-only addresses, setting this option will cause an error. |
 
+### Forward Proto Configuration
+
+Makes Envoy derive the `X-Forwarded-Proto` header from the destination port in the PROXY protocol header instead of from the TLS state of the connection it accepted.
+Use this when a layer 4 load balancer in front of Envoy terminates TLS and forwards with PROXY protocol, for example an AWS NLB with a TLS listener: every connection Envoy accepts is then plaintext, so `X-Forwarded-Proto` would always be `http` and HTTPProxy virtual hosts with TLS would redirect their own HTTPS traffic in a loop.
+Only connections whose destination address was restored by the PROXY protocol listener filter are affected, so this is used together with `--use-proxy-protocol`; a destination port in neither list keeps Envoy's default behavior.
+Requires Envoy 1.38 or later. See [the Envoy documentation][16] for more information.
+
+| Field Name              | Type  | Default | Description                                                                   |
+| ----------------------- | ----- | ------- | ----------------------------------------------------------------------------- |
+| https-destination-ports | []int | none    | PROXY protocol destination ports for which `X-Forwarded-Proto` is set to `https`, for example `[443]`. |
+| http-destination-ports  | []int | none    | PROXY protocol destination ports for which `X-Forwarded-Proto` is set to `http`, for example `[80]`. At least one of the two lists must be set, and a port must not appear in both. |
 
 ### Circuit Breakers
 
@@ -521,6 +533,9 @@ data:
     #  socket-options:
     #    tos: 64
     #    traffic-class: 64
+    #  forward-proto-config:
+    #    https-destination-ports: [443]
+    #    http-destination-ports: [80]
     #
     # omEnforcedHealthListener:
     #   address: 0.0.0.0
@@ -588,3 +603,4 @@ connects to Contour:
 [13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
 [14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#config-listener-v3-listener-connectionbalanceconfig
 [15]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
+[16]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig

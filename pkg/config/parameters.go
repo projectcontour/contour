@@ -545,6 +545,60 @@ type ListenerParameters struct {
 	// Envoy will accept from the kernel per socket event.
 	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto
 	MaxConnectionsToAcceptPerSocketEvent *uint32 `yaml:"max-connections-to-accept-per-socket-event,omitempty"`
+
+	// ForwardProtoConfig makes Envoy derive the X-Forwarded-Proto header from the
+	// destination port in the PROXY protocol header instead of from the TLS state
+	// of the connection it accepted, for a layer 4 load balancer that terminates
+	// TLS in front of Envoy and forwards with PROXY protocol. Use together with
+	// --use-proxy-protocol. Requires Envoy 1.38 or later.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
+	// for more information.
+	//
+	// +optional
+	ForwardProtoConfig *ForwardProtoConfig `yaml:"forward-proto-config,omitempty"`
+}
+
+// ForwardProtoConfig defines how Envoy derives X-Forwarded-Proto from the
+// destination port in the PROXY protocol header.
+type ForwardProtoConfig struct {
+	// HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "https", for example 443.
+	HTTPSDestinationPorts []uint32 `yaml:"https-destination-ports,omitempty"`
+
+	// HTTPDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "http", for example 80.
+	HTTPDestinationPorts []uint32 `yaml:"http-destination-ports,omitempty"`
+}
+
+// Validate ensures the port lists are usable: every port is in range, at
+// least one port is given, and no port is listed as both HTTPS and HTTP.
+func (f *ForwardProtoConfig) Validate() error {
+	if f == nil {
+		return nil
+	}
+
+	if len(f.HTTPSDestinationPorts) == 0 && len(f.HTTPDestinationPorts) == 0 {
+		return fmt.Errorf("invalid forward-proto-config: at least one of https-destination-ports or http-destination-ports must be set")
+	}
+
+	https := make(map[uint32]struct{}, len(f.HTTPSDestinationPorts))
+	for _, port := range f.HTTPSDestinationPorts {
+		if port < 1 || port > 65535 {
+			return fmt.Errorf("invalid forward-proto-config https-destination-ports value %d, must be between 1 and 65535", port)
+		}
+		https[port] = struct{}{}
+	}
+
+	for _, port := range f.HTTPDestinationPorts {
+		if port < 1 || port > 65535 {
+			return fmt.Errorf("invalid forward-proto-config http-destination-ports value %d, must be between 1 and 65535", port)
+		}
+		if _, ok := https[port]; ok {
+			return fmt.Errorf("invalid forward-proto-config: port %d is in both https-destination-ports and http-destination-ports", port)
+		}
+	}
+
+	return nil
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -578,6 +632,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.MaxConnectionsToAcceptPerSocketEvent != nil && *p.MaxConnectionsToAcceptPerSocketEvent == 0 {
 		return fmt.Errorf("max-connections-to-accept-per-socket-event must be greater than 0")
+	}
+
+	if err := p.ForwardProtoConfig.Validate(); err != nil {
+		return err
 	}
 
 	return p.SocketOptions.Validate()

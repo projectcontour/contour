@@ -520,6 +520,22 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"forward proto config": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Listener.ForwardProtoConfig = &config.ForwardProtoConfig{
+					HTTPSDestinationPorts: []uint32{443, 8443},
+					HTTPDestinationPorts:  []uint32{80},
+				}
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.ForwardProtoConfig = &contour_v1alpha1.ForwardProtoConfig{
+					HTTPSDestinationPorts: []uint32{443, 8443},
+					HTTPDestinationPorts:  []uint32{80},
+				}
+				return cfg
+			},
+		},
 		"headers policy": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.Policy = config.PolicyParameters{

@@ -14,6 +14,7 @@
 package v1alpha1
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -153,7 +154,37 @@ func (e *EnvoyConfig) Validate() error {
 
 	// Envoy TLS configuration
 	if e.Listener != nil && e.Listener.TLS != nil {
-		return e.Listener.TLS.Validate()
+		if err := e.Listener.TLS.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// Envoy forward proto configuration
+	if e.Listener != nil && e.Listener.ForwardProtoConfig != nil {
+		if err := e.Listener.ForwardProtoConfig.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate ensures the port lists are usable: at least one port is given and
+// no port is listed as both HTTPS and HTTP. Port ranges are validated by the
+// CRD schema.
+func (f *ForwardProtoConfig) Validate() error {
+	if len(f.HTTPSDestinationPorts) == 0 && len(f.HTTPDestinationPorts) == 0 {
+		return errors.New("invalid forward proto config: at least one of httpsDestinationPorts or httpDestinationPorts must be set")
+	}
+
+	https := make(map[uint32]struct{}, len(f.HTTPSDestinationPorts))
+	for _, port := range f.HTTPSDestinationPorts {
+		https[port] = struct{}{}
+	}
+	for _, port := range f.HTTPDestinationPorts {
+		if _, ok := https[port]; ok {
+			return fmt.Errorf("invalid forward proto config: port %d is in both httpsDestinationPorts and httpDestinationPorts", port)
+		}
 	}
 
 	return nil

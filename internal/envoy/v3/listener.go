@@ -208,6 +208,7 @@ type httpConnectionManagerBuilder struct {
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
 	compression                   *contour_v1alpha1.EnvoyCompression
+	forwardProtoConfig            *contour_v1alpha1.ForwardProtoConfig
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -328,6 +329,26 @@ func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectio
 func (b *httpConnectionManagerBuilder) StripTrailingHostDot(strip bool) *httpConnectionManagerBuilder {
 	b.stripTrailingHostDot = strip
 	return b
+}
+
+// ForwardProtoConfig sets how the connection manager derives X-Forwarded-Proto.
+// nil keeps Envoy's default, which is the TLS state of the accepted connection.
+func (b *httpConnectionManagerBuilder) ForwardProtoConfig(config *contour_v1alpha1.ForwardProtoConfig) *httpConnectionManagerBuilder {
+	b.forwardProtoConfig = config
+	return b
+}
+
+// forwardProtoConfig converts the Contour forward proto configuration into
+// the HTTP connection manager's.
+func forwardProtoConfig(config *contour_v1alpha1.ForwardProtoConfig) *envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig {
+	if config == nil {
+		return nil
+	}
+
+	return &envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig{
+		HttpsDestinationPorts: config.HTTPSDestinationPorts,
+		HttpDestinationPorts:  config.HTTPDestinationPorts,
+	}
 }
 
 // MaxRequestsPerConnection sets max requests per connection for the downstream.
@@ -569,6 +590,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		UseRemoteAddress:     wrapperspb.Bool(true),
 		XffNumTrustedHops:    b.numTrustedHops,
 		StripTrailingHostDot: b.stripTrailingHostDot,
+		ForwardProtoConfig:   forwardProtoConfig(b.forwardProtoConfig),
 
 		NormalizePath: wrapperspb.Bool(true),
 

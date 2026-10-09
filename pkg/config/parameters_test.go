@@ -794,3 +794,67 @@ func TestTracingConfigValidation(t *testing.T) {
 	}
 	require.Error(t, trace.Validate())
 }
+
+func TestParseForwardProtoConfig(t *testing.T) {
+	conf, err := Parse(strings.NewReader(`
+listener:
+  forward-proto-config:
+    https-destination-ports: [443, 8443]
+    http-destination-ports: [80]
+`))
+	require.NoError(t, err)
+	require.NoError(t, conf.Validate())
+
+	wanted := Defaults()
+	wanted.Listener.ForwardProtoConfig = &ForwardProtoConfig{
+		HTTPSDestinationPorts: []uint32{443, 8443},
+		HTTPDestinationPorts:  []uint32{80},
+	}
+	assert.Equal(t, &wanted, conf)
+}
+
+func TestValidateForwardProtoConfig(t *testing.T) {
+	tests := map[string]struct {
+		config  *ForwardProtoConfig
+		wantErr string
+	}{
+		"absent": {
+			config: nil,
+		},
+		"https only": {
+			config: &ForwardProtoConfig{HTTPSDestinationPorts: []uint32{443}},
+		},
+		"http only": {
+			config: &ForwardProtoConfig{HTTPDestinationPorts: []uint32{80}},
+		},
+		"no ports": {
+			config:  &ForwardProtoConfig{},
+			wantErr: "at least one of",
+		},
+		"port zero": {
+			config:  &ForwardProtoConfig{HTTPSDestinationPorts: []uint32{0}},
+			wantErr: "https-destination-ports value 0",
+		},
+		"port too large": {
+			config:  &ForwardProtoConfig{HTTPDestinationPorts: []uint32{65536}},
+			wantErr: "http-destination-ports value 65536",
+		},
+		"port in both lists": {
+			config:  &ForwardProtoConfig{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80, 443}},
+			wantErr: "port 443 is in both",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			p := Defaults()
+			p.Listener.ForwardProtoConfig = tc.config
+			err := p.Validate()
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
+}
