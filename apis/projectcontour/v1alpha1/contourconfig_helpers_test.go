@@ -71,6 +71,39 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+						HTTPSDestinationPorts: []uint32{443, 8443},
+						HTTPDestinationPorts:  []uint32{80},
+					},
+				},
+			},
+		}
+		require.NoError(t, c.Validate())
+
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{},
+				},
+			},
+		}
+		require.Error(t, c.Validate())
+
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+						HTTPSDestinationPorts: []uint32{443},
+						HTTPDestinationPorts:  []uint32{80, 443},
+					},
+				},
+			},
+		}
+		require.Error(t, c.Validate())
+
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Cluster: &contour_v1alpha1.ClusterParameters{},
 			},
 		}

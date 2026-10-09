@@ -476,6 +476,7 @@ func (s *Server) doServe() error {
 		SocketOptions:                        contourConfiguration.Envoy.Listener.SocketOptions,
 		MaxConnectionsToAcceptPerSocketEvent: contourConfiguration.Envoy.Listener.MaxConnectionsToAcceptPerSocketEvent,
 		MaxRequestBodyBytes:                  contourConfiguration.Envoy.Listener.MaxRequestBodyBytes,
+		ForwardProtoConfig:                   contourConfiguration.Envoy.Listener.ForwardProtoConfig,
 	}
 
 	if listenerConfig.TracingConfig, err = s.setupTracingService(contourConfiguration.Tracing); err != nil {
