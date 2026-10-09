@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -311,6 +312,9 @@ func (e *EnvoyLogging) Validate() error {
 	if err := e.AccessLogJSONFields.Validate(); err != nil {
 		return err
 	}
+	if err := e.AccessLogRateLimit.Validate(); err != nil {
+		return err
+	}
 	return AccessLogFormatString(e.AccessLogFormatString).Validate()
 }
 
@@ -379,4 +383,22 @@ func healthEndpointsInConflict(metrics *MetricsConfig, health, omEnforcedHealth 
 	default:
 		return nil
 	}
+}
+
+func (r *AccessLogRateLimit) Validate() error {
+	if r == nil {
+		return nil
+	}
+	if r.MaxTokens == 0 {
+		return fmt.Errorf("accessLogRateLimit maxTokens must be greater than 0")
+	}
+	if r.TokensPerFill != nil && *r.TokensPerFill == 0 {
+		return fmt.Errorf("accessLogRateLimit tokensPerFill must be greater than 0")
+	}
+	if r.FillInterval != nil {
+		if _, err := time.ParseDuration(*r.FillInterval); err != nil {
+			return fmt.Errorf("accessLogRateLimit fillInterval is invalid: %w", err)
+		}
+	}
+	return nil
 }
