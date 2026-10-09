@@ -76,5 +76,5 @@ Rules specified on a route override any rules defined on the virtual host, they 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/rbac_filter.html
 [2]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/rbac/v3/rbac.proto#envoy-v3-api-field-config-rbac-v3-principal-direct-remote-ip
 [3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/rbac/v3/rbac.proto#envoy-v3-api-field-config-rbac-v3-principal-remote-ip
-[4]: api/#projectcontour.io/v1.NetworkParameters
+[4]: api/#projectcontour.io/v1alpha1.NetworkParameters
 

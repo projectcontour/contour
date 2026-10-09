@@ -379,5 +379,5 @@ $ kubectl delete ns projectcontour
 [15]: /resources/upgrading/
 [16]: https://projectcontour.io/getting-started/#option-3-contour-gateway-provisioner-alpha
 [17]: {{< param github_url>}}/tree/{{< param branch >}}/examples/contour
-[18]: guides/gateway-api/#next-steps
+[18]: guides/gateway-api/#option-2-dynamically-provisioned
 [19]: configuration.md
