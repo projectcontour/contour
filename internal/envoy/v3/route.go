@@ -525,14 +525,44 @@ func mirrorPolicy(r *dag.Route) []*envoy_config_route_v3.RouteAction_RequestMirr
 		mirrorPolicies = append(mirrorPolicies, &envoy_config_route_v3.RouteAction_RequestMirrorPolicy{
 			Cluster: envoy.Clustername(mp.Cluster),
 			RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
-				DefaultValue: &envoy_type_v3.FractionalPercent{
-					Numerator:   uint32(mp.Weight), //nolint:gosec // disable G115
-					Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
-				},
+				DefaultValue: mirrorFraction(mp.Weight, mp.Denominator),
 			},
 		})
 	}
 	return mirrorPolicies
+}
+
+// mirrorFraction converts the fraction numerator/denominator to an Envoy
+// FractionalPercent. A denominator of zero is treated as 100.
+//
+// Envoy only supports denominators of 100, 10,000 and 1,000,000, so the
+// smallest of these that represents the fraction exactly is used. Fractions
+// that cannot be represented exactly are rounded down to millionths.
+func mirrorFraction(numerator, denominator int64) *envoy_type_v3.FractionalPercent {
+	if denominator <= 0 {
+		denominator = 100
+	}
+
+	// Mirror at least none and at most all of the requests.
+	numerator = max(0, min(numerator, denominator))
+
+	switch {
+	case 100%denominator == 0:
+		return &envoy_type_v3.FractionalPercent{
+			Numerator:   uint32(numerator * 100 / denominator), //nolint:gosec // disable G115
+			Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+		}
+	case 10_000%denominator == 0:
+		return &envoy_type_v3.FractionalPercent{
+			Numerator:   uint32(numerator * 10_000 / denominator), //nolint:gosec // disable G115
+			Denominator: envoy_type_v3.FractionalPercent_TEN_THOUSAND,
+		}
+	default:
+		return &envoy_type_v3.FractionalPercent{
+			Numerator:   uint32(numerator * 1_000_000 / denominator), //nolint:gosec // disable G115
+			Denominator: envoy_type_v3.FractionalPercent_MILLION,
+		}
+	}
 }
 
 func retryPolicy(r *dag.Route) *envoy_config_route_v3.RetryPolicy {

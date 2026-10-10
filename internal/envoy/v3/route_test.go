@@ -794,6 +794,43 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"mirror with fraction": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{c1},
+				MirrorPolicies: []*dag.MirrorPolicy{
+					{
+						Cluster: &dag.Cluster{
+							Upstream: &dag.Service{
+								Weighted: dag.WeightedService{
+									Weight:           1,
+									ServiceName:      s2.Name,
+									ServiceNamespace: s2.Namespace,
+									ServicePort:      s2.Spec.Ports[0],
+								},
+							},
+						},
+						Weight:      1,
+						Denominator: 1000,
+					},
+				},
+			},
+			want: &envoy_config_route_v3.Route_Route{
+				Route: &envoy_config_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_config_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/da39a3ee5e",
+					},
+					RequestMirrorPolicies: []*envoy_config_route_v3.RouteAction_RequestMirrorPolicy{{
+						Cluster: "default/kuard2/8080/da39a3ee5e",
+						RuntimeFraction: &envoy_config_core_v3.RuntimeFractionalPercent{
+							DefaultValue: &envoy_type_v3.FractionalPercent{
+								Numerator:   10,
+								Denominator: envoy_type_v3.FractionalPercent_TEN_THOUSAND,
+							},
+						},
+					}},
+				},
+			},
+		},
 		"prefix rewrite": {
 			route: &dag.Route{
 				Clusters:          []*dag.Cluster{c1},
@@ -932,6 +969,101 @@ func TestRouteRoute(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := routeRoute(tc.route)
 			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
+func TestMirrorFraction(t *testing.T) {
+	tests := map[string]struct {
+		numerator   int64
+		denominator int64
+		want        *envoy_type_v3.FractionalPercent
+	}{
+		"unset denominator is a percentage": {
+			numerator:   15,
+			denominator: 0,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   15,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
+		"percentage": {
+			numerator:   20,
+			denominator: 100,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   20,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
+		"zero percent": {
+			numerator:   0,
+			denominator: 100,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   0,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
+		"fraction with denominator that divides 100": {
+			numerator:   25,
+			denominator: 50,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   50,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
+		"fraction with denominator that divides 10,000": {
+			numerator:   1,
+			denominator: 8,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   1250,
+				Denominator: envoy_type_v3.FractionalPercent_TEN_THOUSAND,
+			},
+		},
+		"fraction with denominator that divides 1,000,000": {
+			numerator:   3,
+			denominator: 250000,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   12,
+				Denominator: envoy_type_v3.FractionalPercent_MILLION,
+			},
+		},
+		"fraction that cannot be represented exactly is rounded down": {
+			numerator:   2,
+			denominator: 3,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   666666,
+				Denominator: envoy_type_v3.FractionalPercent_MILLION,
+			},
+		},
+		"fraction with large denominator": {
+			numerator:   1,
+			denominator: 2147483647,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   0,
+				Denominator: envoy_type_v3.FractionalPercent_MILLION,
+			},
+		},
+		"numerator greater than denominator mirrors all requests": {
+			numerator:   150,
+			denominator: 100,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   100,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
+		"negative numerator mirrors no requests": {
+			numerator:   -1,
+			denominator: 100,
+			want: &envoy_type_v3.FractionalPercent{
+				Numerator:   0,
+				Denominator: envoy_type_v3.FractionalPercent_HUNDRED,
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			protobuf.ExpectEqual(t, tc.want, mirrorFraction(tc.numerator, tc.denominator))
 		})
 	}
 }
