@@ -662,23 +662,24 @@ func TestHTTPConnectionManager(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		routename                     string
-		accesslogger                  []*envoy_config_accesslog_v3.AccessLog
-		requestTimeout                timeout.Setting
-		connectionIdleTimeout         timeout.Setting
-		streamIdleTimeout             timeout.Setting
-		maxConnectionDuration         timeout.Setting
-		delayedCloseTimeout           timeout.Setting
-		connectionShutdownGracePeriod timeout.Setting
-		allowChunkedLength            bool
-		mergeSlashes                  bool
-		serverHeaderTranformation     contour_v1alpha1.ServerHeaderTransformationType
-		forwardClientCertificate      *dag.ClientCertificateDetails
-		xffNumTrustedHops             uint32
-		stripTrailingHostDot          bool
-		maxRequestsPerConnection      *uint32
-		http2MaxConcurrentStreams     *uint32
-		want                          *envoy_config_listener_v3.Filter
+		routename                      string
+		accesslogger                   []*envoy_config_accesslog_v3.AccessLog
+		requestTimeout                 timeout.Setting
+		connectionIdleTimeout          timeout.Setting
+		streamIdleTimeout              timeout.Setting
+		maxConnectionDuration          timeout.Setting
+		http1SafeMaxConnectionDuration bool
+		delayedCloseTimeout            timeout.Setting
+		connectionShutdownGracePeriod  timeout.Setting
+		allowChunkedLength             bool
+		mergeSlashes                   bool
+		serverHeaderTranformation      contour_v1alpha1.ServerHeaderTransformationType
+		forwardClientCertificate       *dag.ClientCertificateDetails
+		xffNumTrustedHops              uint32
+		stripTrailingHostDot           bool
+		maxRequestsPerConnection       *uint32
+		http2MaxConcurrentStreams      *uint32
+		want                           *envoy_config_listener_v3.Filter
 	}{
 		"default": {
 			routename:    "default/kuard",
@@ -916,6 +917,57 @@ func TestHTTPConnectionManager(t *testing.T) {
 						NormalizePath:             wrapperspb.Bool(true),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              false,
+					}),
+				},
+			},
+		},
+		"max connection duration of 90s with http1-safe teardown": {
+			routename:                      "default/kuard",
+			accesslogger:                   FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
+			maxConnectionDuration:          timeout.DurationSetting(90 * time.Second),
+			http1SafeMaxConnectionDuration: true,
+			want: &envoy_config_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_config_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_Rds{
+							Rds: &envoy_filter_network_http_connection_manager_v3.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_config_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_config_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_config_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_config_core_v3.ApiConfigSource{
+											ApiType:             envoy_config_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_config_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_config_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_config_core_v3.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+														Authority:   "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: defaultHTTPFilters,
+						HttpProtocolOptions: &envoy_config_core_v3.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_config_core_v3.HttpProtocolOptions{
+							MaxConnectionDuration: durationpb.New(90 * time.Second),
+						},
+						Http1SafeMaxConnectionDuration: true,
+						AccessLog:                      FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo),
+						UseRemoteAddress:               wrapperspb.Bool(true),
+						NormalizePath:                  wrapperspb.Bool(true),
+						PreserveExternalRequestId:      true,
+						MergeSlashes:                   false,
 					}),
 				},
 			},
@@ -1531,6 +1583,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				ConnectionIdleTimeout(tc.connectionIdleTimeout).
 				StreamIdleTimeout(tc.streamIdleTimeout).
 				MaxConnectionDuration(tc.maxConnectionDuration).
+				HTTP1SafeMaxConnectionDuration(tc.http1SafeMaxConnectionDuration).
 				DelayedCloseTimeout(tc.delayedCloseTimeout).
 				ConnectionShutdownGracePeriod(tc.connectionShutdownGracePeriod).
 				AllowChunkedLength(tc.allowChunkedLength).

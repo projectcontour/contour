@@ -84,10 +84,11 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	withTimeouts := func(conf *xdscache_v3.ListenerConfig) {
 		conf.Timeouts = contourconfig.Timeouts{
-			ConnectionIdle:                timeout.DurationSetting(7 * time.Second),
-			StreamIdle:                    timeout.DurationSetting(70 * time.Second),
-			MaxConnectionDuration:         timeout.DurationSetting(700 * time.Second),
-			ConnectionShutdownGracePeriod: timeout.DurationSetting(7000 * time.Second),
+			ConnectionIdle:                 timeout.DurationSetting(7 * time.Second),
+			StreamIdle:                     timeout.DurationSetting(70 * time.Second),
+			MaxConnectionDuration:          timeout.DurationSetting(700 * time.Second),
+			HTTP1SafeMaxConnectionDuration: true,
+			ConnectionShutdownGracePeriod:  timeout.DurationSetting(7000 * time.Second),
 		}
 	}
 
@@ -130,6 +131,7 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 		ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
 		StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).
 		MaxConnectionDuration(timeout.DurationSetting(700 * time.Second)).
+		HTTP1SafeMaxConnectionDuration(true).
 		ConnectionShutdownGracePeriod(timeout.DurationSetting(7000 * time.Second)).
 		Get(),
 	)
