@@ -1359,12 +1359,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 					routeAccessor.AddCondition(gatewayapi_v1.RouteConditionType(cond.Type), cond.Status, gatewayapi_v1.RouteConditionReason(cond.Reason), cond.Message)
 					continue
 				}
-				mirrorPolicies = append(mirrorPolicies, &MirrorPolicy{
-					Cluster: &Cluster{
-						Upstream: mirrorService,
-					},
-					Weight: 100,
-				})
+				mirrorPolicies = append(mirrorPolicies, gatewayMirrorPolicy(filter.RequestMirror, mirrorService))
 			case gatewayapi_v1.HTTPRouteFilterURLRewrite:
 				if filter.URLRewrite == nil || pathRewritePolicy != nil {
 					continue
@@ -1607,12 +1602,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 				}
 				// If protocol is not set on the service, need to set a default one based on listener's protocol type.
 				setDefaultServiceProtocol(mirrorService, listener.listener.Protocol)
-				mirrorPolicies = append(mirrorPolicies, &MirrorPolicy{
-					Cluster: &Cluster{
-						Upstream: mirrorService,
-					},
-					Weight: 100,
-				})
+				mirrorPolicies = append(mirrorPolicies, gatewayMirrorPolicy(filter.RequestMirror, mirrorService))
 			default:
 				routeAccessor.AddCondition(
 					gatewayapi_v1.RouteConditionAccepted,
@@ -2432,6 +2422,29 @@ func setDefaultServiceProtocol(service *Service, protocolType gatewayapi_v1.Prot
 			service.Protocol = "h2"
 		}
 	}
+}
+
+// gatewayMirrorPolicy returns a MirrorPolicy that mirrors requests to the
+// given service. The fraction of requests that are mirrored is set by the
+// filter's Percent or Fraction field, and defaults to all requests if
+// neither is specified.
+func gatewayMirrorPolicy(filter *gatewayapi_v1.HTTPRequestMirrorFilter, mirrorService *Service) *MirrorPolicy {
+	mirrorPolicy := &MirrorPolicy{
+		Cluster: &Cluster{
+			Upstream: mirrorService,
+		},
+		Weight: 100,
+	}
+
+	switch {
+	case filter.Percent != nil:
+		mirrorPolicy.Weight = int64(*filter.Percent)
+	case filter.Fraction != nil:
+		mirrorPolicy.Weight = int64(filter.Fraction.Numerator)
+		mirrorPolicy.Denominator = int64(ptr.Deref(filter.Fraction.Denominator, 100))
+	}
+
+	return mirrorPolicy
 }
 
 // redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicies and redirect.

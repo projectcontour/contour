@@ -479,7 +479,16 @@ type PathRewritePolicy struct {
 // MirrorPolicy defines the mirroring policy for a route.
 type MirrorPolicy struct {
 	Cluster *Cluster
-	Weight  int64
+
+	// Weight is the numerator of the fraction of requests
+	// that are mirrored to Cluster.
+	Weight int64
+
+	// Denominator is the denominator of the fraction of
+	// requests that are mirrored to Cluster. If unset, a
+	// denominator of 100 is used, i.e. Weight is the
+	// percentage of requests that are mirrored.
+	Denominator int64
 }
 
 // HeadersPolicy defines how headers are managed during forwarding

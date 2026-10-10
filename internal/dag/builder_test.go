@@ -3194,6 +3194,157 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"HTTPRoute rule with request mirror filter with percent": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+							Percent:    ptr.To(int32(20)),
+						},
+					}},
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 20))),
+				},
+			),
+		},
+		"HTTPRoute rule with request mirror filter with zero percent": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+							Percent:    ptr.To(int32(0)),
+						},
+					}},
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 0))),
+				},
+			),
+		},
+		"HTTPRoute rule with request mirror filter with fraction": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+							Fraction: &gatewayapi_v1.Fraction{
+								Numerator:   25,
+								Denominator: ptr.To(int32(50)),
+							},
+						},
+					}},
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirrorFraction(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 25, 50))),
+				},
+			),
+		},
+		"HTTPRoute rule with request mirror filter with fraction without denominator": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+						RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+							BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+							Fraction: &gatewayapi_v1.Fraction{
+								Numerator: 5,
+							},
+						},
+					}},
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirrorFraction(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 5, 100))),
+				},
+			),
+		},
+		"HTTPRoute rule with two request mirror filters with different percents": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{
+						{
+							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+								Percent:    ptr.To(int32(10)),
+							},
+						},
+						{
+							Type: gatewayapi_v1.HTTPRouteFilterRequestMirror,
+							RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+								BackendRef: gatewayapi.ServiceBackendObjectRef("kuard3", 8080),
+								Fraction: &gatewayapi_v1.Fraction{
+									Numerator:   1,
+									Denominator: ptr.To(int32(3)),
+								},
+							},
+						},
+					},
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirrorFraction(
+							withMirror(prefixrouteHTTPRoute("/", service(kuardService)), []*Service{service(kuardService2)}, 10),
+							[]*Service{service(kuardService3)}, 1, 3,
+						))),
+				},
+			),
+		},
 		"HTTPRoute rule with URLRewrite filter with ReplacePrefixMatch to another value": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -5564,6 +5715,93 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Name: "http-80",
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c"), grpcService(kuardService3, "h2c")}, 100))),
+				},
+			),
+		},
+		"GRPCRoute: rule with request mirror filter with percent": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				&gatewayapi_v1.GRPCRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1.GRPCRouteRule{{
+							Matches: []gatewayapi_v1.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1.GRPCRouteFilter{{
+								Type: gatewayapi_v1.GRPCRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+									Percent:    ptr.To(int32(30)),
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirror(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c")}, 30))),
+				},
+			),
+		},
+		"GRPCRoute: rule with request mirror filter with fraction": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				kuardService2,
+				&gatewayapi_v1.GRPCRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1.GRPCRouteRule{{
+							Matches: []gatewayapi_v1.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("kuard", 8080, 1),
+							Filters: []gatewayapi_v1.GRPCRouteFilter{{
+								Type: gatewayapi_v1.GRPCRouteFilterRequestMirror,
+								RequestMirror: &gatewayapi_v1.HTTPRequestMirrorFilter{
+									BackendRef: gatewayapi.ServiceBackendObjectRef("kuard2", 8080),
+									Fraction: &gatewayapi_v1.Fraction{
+										Numerator:   1,
+										Denominator: ptr.To(int32(1000)),
+									},
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						withMirrorFraction(exactrouteGRPCRoute("/io.projectcontour/Login", grpcService(kuardService, "h2c")), []*Service{grpcService(kuardService2, "h2c")}, 1, 1000))),
 				},
 			),
 		},
@@ -16106,6 +16344,19 @@ func withMirror(r *Route, mirrors []*Service, weight int64) *Route {
 				Upstream: mirror,
 			},
 			Weight: weight,
+		})
+	}
+	return r
+}
+
+func withMirrorFraction(r *Route, mirrors []*Service, numerator, denominator int64) *Route {
+	for _, mirror := range mirrors {
+		r.MirrorPolicies = append(r.MirrorPolicies, &MirrorPolicy{
+			Cluster: &Cluster{
+				Upstream: mirror,
+			},
+			Weight:      numerator,
+			Denominator: denominator,
 		})
 	}
 	return r
