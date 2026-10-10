@@ -403,10 +403,12 @@ func defaultContourConfiguration() contour_v1alpha1.ContourConfigurationSpec {
 				Namespace: "projectcontour",
 			},
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              ptr.To(false),
-				DisableAllowChunkedLength:  ptr.To(false),
-				DisableMergeSlashes:        ptr.To(false),
-				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
+				UseProxyProto:                ptr.To(false),
+				DisableAllowChunkedLength:    ptr.To(false),
+				DisableMergeSlashes:          ptr.To(false),
+				DisableNormalizePath:         ptr.To(false),
+				PathWithEscapedSlashesAction: contour_v1alpha1.KeepUnchangedPathWithEscapedSlashes,
+				ServerHeaderTransformation:   contour_v1alpha1.OverwriteServerHeader,
 				TLS: &contour_v1alpha1.EnvoyListenerTLS{
 					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "",
@@ -753,6 +755,26 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.DisableMergeSlashes = ptr.To(true)
+				return cfg
+			},
+		},
+		"disable normalize path": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.DisableNormalizePath = true
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.DisableNormalizePath = ptr.To(true)
+				return cfg
+			},
+		},
+		"path with escaped slashes action": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.PathWithEscapedSlashesAction = config.UnescapeAndRedirectPathWithEscapedSlashes
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.PathWithEscapedSlashesAction = contour_v1alpha1.UnescapeAndRedirectPathWithEscapedSlashes
 				return cfg
 			},
 		},

@@ -57,12 +57,14 @@ func TestOverlayOnDefaults(t *testing.T) {
 				Compression: &contour_v1alpha1.EnvoyCompression{
 					Algorithm: contour_v1alpha1.BrotliCompression,
 				},
-				MaxRequestsPerConnection:   ptr.To(uint32(1)),
-				HTTP2MaxConcurrentStreams:  ptr.To(uint32(10)),
-				DisableAllowChunkedLength:  ptr.To(true),
-				DisableMergeSlashes:        ptr.To(true),
-				ServerHeaderTransformation: contour_v1alpha1.PassThroughServerHeader,
-				ConnectionBalancer:         "yesplease",
+				MaxRequestsPerConnection:     ptr.To(uint32(1)),
+				HTTP2MaxConcurrentStreams:    ptr.To(uint32(10)),
+				DisableAllowChunkedLength:    ptr.To(true),
+				DisableMergeSlashes:          ptr.To(true),
+				DisableNormalizePath:         ptr.To(true),
+				PathWithEscapedSlashesAction: contour_v1alpha1.RejectRequestPathWithEscapedSlashes,
+				ServerHeaderTransformation:   contour_v1alpha1.PassThroughServerHeader,
+				ConnectionBalancer:           "yesplease",
 				TLS: &contour_v1alpha1.EnvoyListenerTLS{
 					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "1.7",

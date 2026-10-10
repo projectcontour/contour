@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"path"
 	"testing"
 
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -23,6 +24,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -1424,6 +1426,131 @@ func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 			statsListener(),
 		),
 		TypeUrl: listenerType,
+	})
+}
+
+// TestHTTPProxyPathTransformation checks that disableNormalizePath and
+// pathWithEscapedSlashesAction reach all three HTTP connection managers Contour
+// builds: the HTTP listener, the per-vhost HTTPS filter chain, and the fallback
+// certificate filter chain.
+func TestHTTPProxyPathTransformation(t *testing.T) {
+	rh, c, done := setup(t,
+		func(conf *xdscache_v3.ListenerConfig) {
+			conf.DisableNormalizePath = true
+			conf.PathWithEscapedSlashesAction = contour_v1alpha1.RejectRequestPathWithEscapedSlashes
+		},
+		func(b *dag.Builder) {
+			for _, processor := range b.Processors {
+				if httpProxyProcessor, ok := processor.(*dag.HTTPProxyProcessor); ok {
+					httpProxyProcessor.FallbackCertificate = &types.NamespacedName{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					}
+				}
+			}
+			b.Source.ConfiguredSecretRefs = []*types.NamespacedName{
+				{Namespace: "default", Name: "fallbacksecret"},
+			}
+		})
+	defer done()
+
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
+	sec1 := featuretests.TLSSecret(t, "secret", &featuretests.ServerCertificate)
+	rh.OnAdd(sec1)
+
+	fallbackSecret := featuretests.TLSSecret(t, "fallbacksecret", &featuretests.ServerCertificate)
+	rh.OnAdd(fallbackSecret)
+
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
+
+	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &contour_v1.TLS{
+					SecretName:                "secret",
+					EnableFallbackCertificate: true,
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	))
+
+	// The plain HTTP listener.
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
+		RequestTimeout(timeout.DurationSetting(0)).
+		DisableNormalizePath(true).
+		PathWithEscapedSlashesAction(contour_v1alpha1.RejectRequestPathWithEscapedSlashes).
+		DefaultFilters().
+		Get())
+
+	c.Request(listenerType, "ingress_http").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t, httpListener),
+		TypeUrl:   listenerType,
+	})
+
+	// The per-vhost HTTPS filter chain.
+	httpsFilter := envoyGen.HTTPConnectionManagerBuilder().
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
+		DefaultFilters().
+		RouteConfigName(path.Join("https", "kuard.example.com")).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
+		DisableNormalizePath(true).
+		PathWithEscapedSlashesAction(contour_v1alpha1.RejectRequestPathWithEscapedSlashes).
+		Get()
+
+	// The fallback certificate filter chain.
+	fallbackFilter := envoyGen.HTTPConnectionManagerBuilder().
+		DefaultFilters().
+		RouteConfigName(xdscache_v3.ENVOY_FALLBACK_ROUTECONFIG).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
+		DisableNormalizePath(true).
+		PathWithEscapedSlashesAction(contour_v1alpha1.RejectRequestPathWithEscapedSlashes).
+		Get()
+
+	c.Request(listenerType, "ingress_https").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(
+			t,
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("kuard.example.com", sec1, httpsFilter, nil, "h2", "http/1.1"),
+					envoy_v3.FilterChainTLSFallback(
+						envoyGen.DownstreamTLSContext(
+							&dag.Secret{Object: fallbackSecret},
+							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2,
+							envoy_transport_socket_tls_v3.TlsParameters_TLSv1_3,
+							nil, nil, nil, "h2", "http/1.1",
+						),
+						envoy_v3.Filters(fallbackFilter),
+					),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+		),
 	})
 }
 
