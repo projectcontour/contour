@@ -71,6 +71,8 @@ toc:
         url: /redeploy-envoy
   - title: Guides
     subfolderitems:
+      - page: Using an AWS Application Load Balancer with Contour
+        url: /guides/deploy-aws-alb/
       - page: Deploying Contour on AWS with NLB
         url: /guides/deploy-aws-nlb/
       - page: AWS Network Load Balancer TLS Termination with Contour
