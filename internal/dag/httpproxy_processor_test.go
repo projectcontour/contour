@@ -1472,3 +1472,283 @@ func TestDetermineUpstreamTLS(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRouteAuthorizationProvider(t *testing.T) {
+	tests := map[string]struct {
+		provider          *contour_v1.AuthorizationProvider
+		extensionSvc      *ExtensionCluster
+		mergedAuthContext map[string]string
+		want              *PerRouteAuthzOverride
+	}{
+		"nil provider returns nil": {
+			provider: nil,
+			want:     nil,
+		},
+		"grpc service with empty http settings": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:               "provider-a",
+				ServiceType:        contour_v1.AuthorizationGRPCService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationGRPCService,
+			},
+		},
+		"http service type": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:               "provider-a",
+				ServiceType:        contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+			},
+		},
+		"http path prefix is propagated": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:        "provider-a",
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+					PathPrefix: "/check",
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				PathPrefix:  "/check",
+			},
+		},
+		"http path override is propagated": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:        "provider-a",
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+					PathOverride: "/check",
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType:  contour_v1.AuthorizationHTTPService,
+				PathOverride: "/check",
+			},
+		},
+		"extension service sets cluster and response timeout": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:               "provider-a",
+				ServiceType:        contour_v1.AuthorizationGRPCService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
+			},
+			extensionSvc: &ExtensionCluster{
+				Name: "extension/authz",
+				RouteTimeoutPolicy: RouteTimeoutPolicy{
+					ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationGRPCService,
+				ExtensionCluster: &ExtensionCluster{
+					Name: "extension/authz",
+					RouteTimeoutPolicy: RouteTimeoutPolicy{
+						ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+					},
+				},
+				AuthorizationResponseTimeout: timeout.DurationSetting(5 * time.Second),
+			},
+		},
+		"merged auth context is set": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:               "provider-a",
+				ServiceType:        contour_v1.AuthorizationGRPCService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
+			},
+			mergedAuthContext: map[string]string{
+				"key": "value",
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationGRPCService,
+				Context: map[string]string{
+					"key": "value",
+				},
+			},
+		},
+		"allowed authorization headers are converted": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:        "provider-a",
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+					AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+						{Exact: "x-exact"},
+						{Prefix: "x-prefix-", IgnoreCase: true},
+						{Suffix: "-suffix"},
+						{Contains: "middle"},
+					},
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				AllowedAuthorizationHeaders: []HeaderNameMatchCondition{
+					{MatchType: HeaderNameMatchTypeExact, Value: "x-exact"},
+					{MatchType: HeaderNameMatchTypePrefix, Value: "x-prefix-", IgnoreCase: true},
+					{MatchType: HeaderNameMatchTypeSuffix, Value: "-suffix"},
+					{MatchType: HeaderNameMatchTypeContains, Value: "middle"},
+				},
+			},
+		},
+		"allowed upstream headers are converted": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:        "provider-a",
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+					AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+						{Exact: "x-upstream"},
+					},
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				AllowedUpstreamHeaders: []HeaderNameMatchCondition{
+					{MatchType: HeaderNameMatchTypeExact, Value: "x-upstream"},
+				},
+			},
+		},
+		"with request body buffer settings": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:               "provider-a",
+				ServiceType:        contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{},
+				WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{
+					MaxRequestBytes:     2048,
+					AllowPartialMessage: true,
+					PackAsBytes:         true,
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				WithRequestBody: &AuthorizationServerBufferSettings{
+					MaxRequestBytes:     2048,
+					AllowPartialMessage: true,
+					PackAsBytes:         true,
+				},
+			},
+		},
+		"full configuration": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:        "provider-a",
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+					PathPrefix: "/authz",
+					AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+						{Exact: "x-exact"},
+					},
+					AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+						{Prefix: "x-prefix-"},
+					},
+				},
+				WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{
+					MaxRequestBytes: 512,
+					PackAsBytes:     true,
+				},
+			},
+			extensionSvc: &ExtensionCluster{
+				Name: "extension/authz",
+				RouteTimeoutPolicy: RouteTimeoutPolicy{
+					ResponseTimeout: timeout.DisabledSetting(),
+				},
+			},
+			mergedAuthContext: map[string]string{
+				"role": "admin",
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				ExtensionCluster: &ExtensionCluster{
+					Name: "extension/authz",
+					RouteTimeoutPolicy: RouteTimeoutPolicy{
+						ResponseTimeout: timeout.DisabledSetting(),
+					},
+				},
+				AuthorizationResponseTimeout: timeout.DisabledSetting(),
+				Context: map[string]string{
+					"role": "admin",
+				},
+				AllowedAuthorizationHeaders: []HeaderNameMatchCondition{
+					{MatchType: HeaderNameMatchTypeExact, Value: "x-exact"},
+				},
+				AllowedUpstreamHeaders: []HeaderNameMatchCondition{
+					{MatchType: HeaderNameMatchTypePrefix, Value: "x-prefix-"},
+				},
+				PathPrefix: "/authz",
+				WithRequestBody: &AuthorizationServerBufferSettings{
+					MaxRequestBytes: 512,
+					PackAsBytes:     true,
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := GetRouteAuthorizationProvider(tc.provider, tc.extensionSvc, tc.mergedAuthContext)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestNewExternalAuthorization(t *testing.T) {
+	tests := map[string]struct {
+		auth           *contour_v1.AuthorizationServer
+		want           *ExternalAuthorization
+		wantErrReason  string
+		wantErrMessage string
+	}{
+		"http path prefix is propagated": {
+			auth: &contour_v1.AuthorizationServer{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					PathPrefix: "/auth",
+				},
+			},
+			want: &ExternalAuthorization{
+				ServiceAPIType: AuthorizationServiceHTTP,
+				HTTPPathPrefix: "/auth",
+			},
+		},
+		"http path override is propagated": {
+			auth: &contour_v1.AuthorizationServer{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					PathOverride: "/check",
+				},
+			},
+			want: &ExternalAuthorization{
+				ServiceAPIType:   AuthorizationServiceHTTP,
+				HTTPPathOverride: "/check",
+			},
+		},
+		"http path prefix and path override are mutually exclusive": {
+			auth: &contour_v1.AuthorizationServer{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.HTTPAuthorizationServerSettings{
+					PathPrefix:   "/auth",
+					PathOverride: "/check",
+				},
+			},
+			want:           nil,
+			wantErrReason:  "AuthBadPathConfig",
+			wantErrMessage: "Spec.Virtualhost.Authorization.HTTPServerSettings is invalid: only one of pathPrefix and pathOverride may be set",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			validCond := &contour_v1.DetailedCondition{}
+			got := NewExternalAuthorization(tc.auth, validCond)
+			require.Equal(t, tc.want, got)
+
+			if tc.wantErrReason != "" {
+				require.Len(t, validCond.Errors, 1)
+				require.Equal(t, tc.wantErrReason, validCond.Errors[0].Reason)
+				require.Equal(t, tc.wantErrMessage, validCond.Errors[0].Message)
+			} else {
+				require.Empty(t, validCond.Errors)
+			}
+		})
+	}
+}

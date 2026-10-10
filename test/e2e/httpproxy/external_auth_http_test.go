@@ -94,12 +94,28 @@ func testExternalAuthzHTTP(namespace string) {
 					},
 					{
 						Conditions: []contour_v1.MatchCondition{{Prefix: "/open"}},
-						AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: true},
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: true},
+						Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
+					},
+					{
+						Conditions: []contour_v1.MatchCondition{{Prefix: "/override"}},
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Require: "provider-path-override"},
 						Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
 					},
 				},
 			},
 		}
+		p.Spec.VirtualHost.AuthzProviders = []contour_v1.AuthorizationProvider{{
+			Name:        "provider-path-override",
+			ServiceType: contour_v1.AuthorizationHTTPService,
+			ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+				Name:      extSvc.Name,
+				Namespace: extSvc.Namespace,
+			},
+			HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+				PathOverride: "/check",
+			},
+		}}
 		Expect(f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)).To(BeTrue())
 
 		By("auth server rejects → 401")
@@ -140,6 +156,21 @@ func testExternalAuthzHTTP(namespace string) {
 		Expect(res).NotTo(BeNil(), "request never succeeded")
 		Expect(ok).To(BeTrue(), "expected 200, got %d", res.StatusCode)
 		Expect(capturedPath).To(HavePrefix("/auth/"), "auth server should receive path with configured prefix")
+
+		By("PathOverride replaces the auth request path for routes using the provider")
+		var capturedOverridePath string
+		setHandler(func(w http.ResponseWriter, r *http.Request) {
+			capturedOverridePath = r.URL.Path
+			w.WriteHeader(http.StatusOK)
+		})
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/override/some/path",
+			Condition: e2e.HasStatusCode(200),
+		})
+		Expect(res).NotTo(BeNil(), "request never succeeded")
+		Expect(ok).To(BeTrue(), "expected 200, got %d", res.StatusCode)
+		Expect(capturedOverridePath).To(Equal("/check"), "auth server should receive the overridden path")
 
 		By("AllowedAuthorizationHeaders are forwarded to auth server; others are filtered")
 		setHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -279,7 +310,7 @@ var _ = Describe("httpproxy-ext-auth-http-global", func() {
 						},
 						{
 							Conditions: []contour_v1.MatchCondition{{Prefix: "/open"}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: true},
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: true},
 							Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
 						},
 					},
@@ -344,7 +375,7 @@ var _ = Describe("httpproxy-ext-auth-http-global", func() {
 					Routes: []contour_v1.Route{
 						{
 							Conditions: []contour_v1.MatchCondition{{Prefix: "/protected"}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: false},
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: false},
 							Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
 						},
 						{

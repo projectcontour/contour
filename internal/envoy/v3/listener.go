@@ -839,6 +839,10 @@ end
 
 // ExternalAuthzAllowedHeaders returns the slice of StringMatcher for a given slice of HeaderNameMatchCondition.
 func ExternalAuthzAllowedHeaders(allowedHeaders []dag.HeaderNameMatchCondition) []*envoy_matcher_v3.StringMatcher {
+	if allowedHeaders == nil {
+		return nil
+	}
+
 	var allowedHeaderPatterns []*envoy_matcher_v3.StringMatcher
 
 	for _, allowedHeader := range allowedHeaders {
@@ -919,6 +923,10 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envo
 
 		if pathPrefix := externalAuthorization.HTTPPathPrefix; pathPrefix != "" {
 			extAuthzService.HttpService.PathPrefix = pathPrefix
+		}
+
+		if pathOverride := externalAuthorization.HTTPPathOverride; pathOverride != "" {
+			extAuthzService.HttpService.PathOverride = pathOverride
 		}
 
 		if len(externalAuthorization.HTTPAllowedAuthorizationHeaders) > 0 {
