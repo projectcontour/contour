@@ -997,6 +997,15 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *envoy_filter_network_http_c
 						Timeout: durationpb.New(provider.RemoteJWKS.Timeout),
 					},
 					CacheDuration: cacheDuration,
+					// Fetch the JWKS in the background and refresh it before the
+					// cache expires, so requests do not wait for it to be fetched.
+					// FastListener keeps the initial fetch from delaying the
+					// activation of the listener, which is shared by all TLS
+					// virtual hosts. Until the JWKS is available, requests fetch
+					// it on demand.
+					AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+						FastListener: true,
+					},
 				},
 			}
 		default:
