@@ -81,6 +81,13 @@ spec:
 In the above example, the default route requires requests to carry JWTs that can be verified using provider-1.
 The second route _excludes_ requests to paths starting with `/css` from JWT verification, because it does not have a JWT verification policy.
 
+### Fetching the remote JWKS
+
+Envoy fetches a remote JWKS in the background as soon as the provider is configured, and caches it for `cacheDuration`.
+The cached JWKS is refreshed in the background shortly before it expires, so requests do not have to wait for the JWKS to be fetched.
+If a background fetch fails, it is retried after one second.
+Requests that arrive while no unexpired JWKS is cached, for example before the first fetch has completed, fetch the JWKS on demand and wait for it, up to the configured `timeout`.
+
 ### Configuring TLS validation for the JWKS server
 
 By default, the JWKS server's TLS certificate will not be validated, but validation can be requested by setting the `spec.virtualhost.jwtProviders[].remoteJWKS.validation` field.

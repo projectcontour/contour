@@ -1,0 +1,1 @@
+HTTPProxy JWT providers using `remoteJWKS` now fetch the JWKS asynchronously: Envoy fetches it in the background as soon as the provider is configured and refreshes it before `cacheDuration` expires, so requests no longer wait for the JWKS to be fetched after the cache expires.

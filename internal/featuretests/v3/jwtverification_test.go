@@ -147,6 +147,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -300,6 +303,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -408,6 +414,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -518,6 +527,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -533,6 +545,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -632,6 +647,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -780,6 +798,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -944,6 +965,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -1089,6 +1113,9 @@ func TestJWTVerification(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 									Forward: true,
@@ -1304,6 +1331,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -1467,6 +1497,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -1585,6 +1618,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -1705,6 +1741,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
@@ -1720,6 +1759,9 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 												Timeout: durationpb.New(7 * time.Second),
 											},
 											CacheDuration: durationpb.New(30 * time.Second),
+											AsyncFetch: &envoy_filter_http_jwt_authn_v3.JwksAsyncFetch{
+												FastListener: true,
+											},
 										},
 									},
 								},
