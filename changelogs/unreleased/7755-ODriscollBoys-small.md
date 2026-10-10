@@ -1,0 +1,1 @@
+Gateway API: support percentage based request mirroring. The `percent` and `fraction` fields of the HTTPRoute and GRPCRoute `RequestMirror` filter are now honored, so only the configured share of requests is mirrored instead of all of them.
