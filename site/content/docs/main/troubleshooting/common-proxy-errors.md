@@ -60,27 +60,9 @@ We'll include example error cases to debug with these steps.
    This method of debugging can be useful especially for deployments that service a large volume of traffic.
    In this case, access logs are possibly not suitable to use, as the volume of logs may be too large to pinpoint an exact erroring request.
 
-   Metrics from individual Envoy instances can be viewed manually or scraped using Envoy's prometheus endpoints and graphed using common visualization tools.
-   See the `/stats/prometheus` endpoint of the [Envoy admin interface][3].
-
-   Metrics that may be useful to inspect:
-   * [Listener metrics][4]
-     * `downstream_cx_total`
-     * `ssl.connection_error`
-   * [HTTP metrics][5]
-     * `downstream_cx_total`
-     * `downstream_cx_protocol_error`
-     * `downstream_rq_total`
-     * `downstream_rq_rx_reset`
-     * `downstream_rq_tx_reset`
-     * `downstream_rq_timeout`
-     * `downstream_rq_5xx` (and other status code groups)
-   * [Upstream metrics][6]
-     * `upstream_cx_total`
-     * `upstream_cx_connect_fail`
-     * `upstream_cx_connect_timeout`
-     * `upstream_rq_total`
-     * `upstream_rq_timeout`
+   Metrics from individual Envoy instances can be viewed manually or scraped using Envoy's Prometheus endpoints and graphed using common visualization tools.
+   See [Troubleshooting with Envoy Statistics][4] for a request-path workflow and Contour's listener and backend statistic prefixes.
+   See [Collecting Metrics with Prometheus][3] for scraping and dashboard setup.
 
 1. Send a direct request to the backend app to narrow down where the error may be originating.
 
@@ -91,6 +73,4 @@ We'll include example error cases to debug with these steps.
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#default-format-string
 [2]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#config-access-log-format-response-flags
 [3]: /docs/{{< param latest_version >}}/guides/prometheus/#envoy-metrics
-[4]: https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/stats
-[5]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/stats
-[6]: https://www.envoyproxy.io/docs/envoy/latest/configuration/upstream/cluster_manager/cluster_stats
+[4]: /docs/{{< param version >}}/troubleshooting/envoy-statistics/
