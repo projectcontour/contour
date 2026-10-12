@@ -961,7 +961,7 @@ func (s *Server) setupMetrics(metricsConfig contour_v1alpha1.MetricsConfig, heal
 	}
 
 	if healthConfig.Address == metricsConfig.Address && healthConfig.Port == metricsConfig.Port {
-		h := health.Handler(s.coreClient)
+		h := health.Handler(s.coreClient, s.metrics)
 		metricsvc.Handle("/health", h)
 		metricsvc.Handle("/healthz", h)
 	}
@@ -979,7 +979,7 @@ func (s *Server) setupHealth(healthConfig contour_v1alpha1.HealthConfig,
 			FieldLogger: s.log.WithField("context", "healthsvc"),
 		}
 
-		h := health.Handler(s.coreClient)
+		h := health.Handler(s.coreClient, s.metrics)
 		healthsvc.Handle("/health", h)
 		healthsvc.Handle("/healthz", h)
 
