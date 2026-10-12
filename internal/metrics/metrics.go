@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus"//CTEST
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/projectcontour/contour/internal/build"
@@ -379,6 +379,7 @@ func (m *Metrics) SetStatusUpdateSuccess(kind string) {
 }
 
 func (m *Metrics) SetStatusUpdateNoop(kind string) {
+	
 	m.statusUpdateNoop.With(prometheus.Labels{"kind": kind}).Inc()
 }
 
