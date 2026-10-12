@@ -550,11 +550,11 @@ type ListenerParameters struct {
 	// If not specified, there is no limit.
 	MaxRequestBodyBytes *uint64 `yaml:"max-request-body-bytes,omitempty"`
 
-	// ForwardProtoConfig makes Envoy derive the X-Forwarded-Proto header from the
-	// destination port in the PROXY protocol header instead of from the TLS state
-	// of the connection it accepted, for a layer 4 load balancer that terminates
-	// TLS in front of Envoy and forwards with PROXY protocol. Use together with
-	// --use-proxy-protocol. Requires Envoy 1.38 or later.
+	// ForwardProtoConfig makes Envoy derive X-Forwarded-Proto from the destination
+	// port in the PROXY protocol header rather than from the TLS state of the
+	// accepted connection, for load balancers that terminate TLS and forward
+	// plaintext with PROXY protocol. Requires --use-proxy-protocol and Envoy 1.38
+	// or later.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
 	// for more information.
 	//
@@ -574,35 +574,25 @@ type ForwardProtoConfig struct {
 	HTTPDestinationPorts []uint32 `yaml:"http-destination-ports,omitempty"`
 }
 
-// Validate ensures the port lists are usable: every port is in range, at
-// least one port is given, and no port is listed as both HTTPS and HTTP.
+// Validate checks the port ranges, which the CRD schema covers on the
+// ContourConfiguration path, and defers the rest to the v1alpha1 checks.
 func (f *ForwardProtoConfig) Validate() error {
 	if f == nil {
 		return nil
 	}
 
-	if len(f.HTTPSDestinationPorts) == 0 && len(f.HTTPDestinationPorts) == 0 {
-		return fmt.Errorf("invalid forward-proto-config: at least one of https-destination-ports or http-destination-ports must be set")
-	}
-
-	https := make(map[uint32]struct{}, len(f.HTTPSDestinationPorts))
-	for _, port := range f.HTTPSDestinationPorts {
-		if port < 1 || port > 65535 {
-			return fmt.Errorf("invalid forward-proto-config https-destination-ports value %d, must be between 1 and 65535", port)
-		}
-		https[port] = struct{}{}
-	}
-
-	for _, port := range f.HTTPDestinationPorts {
-		if port < 1 || port > 65535 {
-			return fmt.Errorf("invalid forward-proto-config http-destination-ports value %d, must be between 1 and 65535", port)
-		}
-		if _, ok := https[port]; ok {
-			return fmt.Errorf("invalid forward-proto-config: port %d is in both https-destination-ports and http-destination-ports", port)
+	for _, ports := range []struct {
+		scheme string
+		ports  []uint32
+	}{{"https", f.HTTPSDestinationPorts}, {"http", f.HTTPDestinationPorts}} {
+		for _, port := range ports.ports {
+			if port < 1 || port > 65535 {
+				return fmt.Errorf("invalid forward-proto-config %s-destination-ports value %d, must be between 1 and 65535", ports.scheme, port)
+			}
 		}
 	}
 
-	return nil
+	return (*contour_v1alpha1.ForwardProtoConfig)(f).Validate()
 }
 
 func (p *ListenerParameters) Validate() error {

@@ -163,8 +163,13 @@ func (e *EnvoyConfig) Validate() error {
 		}
 	}
 
-	// Envoy forward proto configuration
+	// Envoy forward proto configuration. Envoy only applies it to connections
+	// whose destination address the PROXY protocol listener filter restored, so
+	// without useProxyProtocol it is a silent no-op.
 	if e.Listener != nil && e.Listener.ForwardProtoConfig != nil {
+		if e.Listener.UseProxyProto == nil || !*e.Listener.UseProxyProto {
+			return errors.New("invalid forward proto config: forwardProtoConfig requires useProxyProtocol (--use-proxy-protocol)")
+		}
 		if err := e.Listener.ForwardProtoConfig.Validate(); err != nil {
 			return err
 		}
