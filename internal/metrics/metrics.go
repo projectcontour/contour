@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"//CTEST
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/projectcontour/contour/internal/build"
@@ -47,6 +47,9 @@ type Metrics struct {
 	statusUpdateConflict        *prometheus.CounterVec
 	statusUpdateNoop            *prometheus.CounterVec
 	statusUpdateDurationSeconds *prometheus.SummaryVec
+	healthzHitsTotal        prometheus.Counter
+	healthzSuccessfulTotal  prometheus.Counter
+	healthzUnsuccessfulTotal prometheus.Counter
 
 	// Keep a local cache of metrics for comparison on updates
 	proxyMetricCache *RouteMetric
@@ -88,6 +91,9 @@ const (
 	statusUpdateConflict        = "contour_status_update_conflict_total"
 	statusUpdateNoop            = "contour_status_update_noop_total"
 	statusUpdateDurationSeconds = "contour_status_update_duration_seconds"
+	healthzHitsTotal         = "contour_healthz_hits_total"
+	healthzSuccessfulTotal   = "contour_healthz_successful_total"
+	healthzUnsuccessfulTotal = "contour_healthz_unsuccessful_total"
 )
 
 // NewMetrics creates a new set of metrics and registers them with
@@ -240,6 +246,24 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{"kind", "error"},
 		),
+		healthzHitsTotal: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: healthzHitsTotal,
+				Help: "Total number of health check requests.",
+			},
+		),
+		healthzSuccessfulTotal: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: healthzSuccessfulTotal,
+				Help: "Total number of successful health check requests.",
+			},
+		),
+		healthzUnsuccessfulTotal: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: healthzUnsuccessfulTotal,
+				Help: "Total number of unsuccessful health check requests.",
+			},
+		),
 	}
 	m.buildInfoGauge.WithLabelValues(build.Branch, build.Sha, build.Version).Set(1)
 	m.register(registry)
@@ -267,6 +291,9 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.statusUpdateConflict,
 		m.statusUpdateNoop,
 		m.statusUpdateDurationSeconds,
+		m.healthzHitsTotal,
+		m.healthzSuccessfulTotal,
+		m.healthzUnsuccessfulTotal,
 	)
 }
 
@@ -379,12 +406,21 @@ func (m *Metrics) SetStatusUpdateSuccess(kind string) {
 }
 
 func (m *Metrics) SetStatusUpdateNoop(kind string) {
-	
 	m.statusUpdateNoop.With(prometheus.Labels{"kind": kind}).Inc()
 }
 
 func (m *Metrics) SetStatusUpdateFailed(kind string) {
 	m.statusUpdateFailed.With(prometheus.Labels{"kind": kind}).Inc()
+}	}}
+
+// IncHealthzRequest increments the health check request counters.
+func (m *Metrics) IncHealthzRequest(success bool) {
+	m.healthzHitsTotal.Inc()
+	if success {
+		m.healthzSuccessfulTotal.Inc()
+	} else {
+		m.healthzUnsuccessfulTotal.Inc()
+	}
 }
 
 func (m *Metrics) SetStatusUpdateConflict(kind string) {
