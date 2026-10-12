@@ -72,6 +72,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					UseProxyProto: ptr.To(true),
 					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
 						HTTPSDestinationPorts: []uint32{443, 8443},
 						HTTPDestinationPorts:  []uint32{80},
@@ -81,9 +82,34 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		}
 		require.NoError(t, c.Validate())
 
+		// Without PROXY protocol the setting would be a silent no-op.
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					UseProxyProto: ptr.To(false),
+					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+						HTTPSDestinationPorts: []uint32{443},
+					},
+				},
+			},
+		}
+		require.Error(t, c.Validate())
+
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+						HTTPSDestinationPorts: []uint32{443},
+					},
+				},
+			},
+		}
+		require.Error(t, c.Validate())
+
+		c = contour_v1alpha1.ContourConfigurationSpec{
+			Envoy: &contour_v1alpha1.EnvoyConfig{
+				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					UseProxyProto:      ptr.To(true),
 					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{},
 				},
 			},
@@ -93,6 +119,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
+					UseProxyProto: ptr.To(true),
 					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
 						HTTPSDestinationPorts: []uint32{443},
 						HTTPDestinationPorts:  []uint32{80, 443},

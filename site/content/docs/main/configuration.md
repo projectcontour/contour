@@ -301,9 +301,9 @@ Metrics and health endpoints cannot have the same port number when metrics are s
 ### Forward Proto Configuration
 
 Makes Envoy derive the `X-Forwarded-Proto` header from the destination port in the PROXY protocol header instead of from the TLS state of the connection it accepted.
-Use this when a layer 4 load balancer in front of Envoy terminates TLS and forwards with PROXY protocol, for example an AWS NLB with a TLS listener: every connection Envoy accepts is then plaintext, so `X-Forwarded-Proto` would always be `http` and HTTPProxy virtual hosts with TLS would redirect their own HTTPS traffic in a loop.
-Only connections whose destination address was restored by the PROXY protocol listener filter are affected, so this is used together with `--use-proxy-protocol`; a destination port in neither list keeps Envoy's default behavior.
-Requires Envoy 1.38 or later. See [the Envoy documentation][16] for more information.
+Use this when a layer 4 load balancer in front of Envoy terminates TLS and forwards plaintext with PROXY protocol, for example an AWS NLB with a TLS listener: every connection Envoy accepts is then plaintext, so `X-Forwarded-Proto` would always be `http`, and anything that redirects HTTP to HTTPS based on that header, in the application or in an HTTPProxy route, would redirect in a loop.
+Only connections whose destination address was restored by the PROXY protocol listener filter are affected, so `--use-proxy-protocol` is required and Contour rejects the setting without it; a destination port in neither list keeps Envoy's default behavior.
+Requires Envoy 1.38 or later. See [the Envoy documentation][16] and the [PROXY protocol guide][17] for more information.
 
 | Field Name              | Type  | Default | Description                                                                   |
 | ----------------------- | ----- | ------- | ----------------------------------------------------------------------------- |
@@ -604,3 +604,4 @@ connects to Contour:
 [14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#config-listener-v3-listener-connectionbalanceconfig
 [15]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
 [16]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
+[17]: guides/proxy-proto.md

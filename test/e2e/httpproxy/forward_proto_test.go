@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -38,7 +39,8 @@ func testForwardProtoConfig(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		p := &contour_v1.HTTPProxy{
+		// A plain virtual host: the backend sees the derived header.
+		echoProxy := &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "forward-proto",
@@ -59,67 +61,136 @@ func testForwardProtoConfig(namespace string) {
 				},
 			},
 		}
-		require.True(t, f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid))
+		require.True(t, f.CreateHTTPProxyAndWaitFor(echoProxy, e2e.HTTPProxyValid))
+
+		// A virtual host that redirects plaintext requests to HTTPS by matching
+		// the derived header. Without forward proto config every request would
+		// carry X-Forwarded-Proto: http and be redirected, including the ones
+		// that already arrived over HTTPS at the load balancer.
+		redirectProxy := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "forward-proto-redirect",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
+					Fqdn: "forwardproto-redirect.projectcontour.io",
+				},
+				Routes: []contour_v1.Route{
+					{
+						Conditions: []contour_v1.MatchCondition{
+							{
+								Header: &contour_v1.HeaderMatchCondition{
+									Name:  "X-Forwarded-Proto",
+									Exact: "http",
+								},
+							},
+						},
+						RequestRedirectPolicy: &contour_v1.HTTPRequestRedirectPolicy{
+							Scheme:     ptr.To("https"),
+							StatusCode: ptr.To(contour_v1.RedirectResponseCode(301)),
+						},
+					},
+					{
+						Services: []contour_v1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
+						},
+					},
+				},
+			},
+		}
+		require.True(t, f.CreateHTTPProxyAndWaitFor(redirectProxy, e2e.HTTPProxyValid))
 
 		envoyURL, err := url.Parse(f.HTTP.HTTPURLBase)
 		require.NoError(t, err)
 
 		// The connection to Envoy is plaintext in every case; only the
 		// destination port claimed in the PROXY protocol header differs.
-		cases := map[int]string{
-			443:  "https", // in https-destination-ports
-			80:   "http",  // in http-destination-ports
-			8080: "http",  // in neither: Envoy falls back to the plaintext connection
+		cases := []struct {
+			name            string
+			fqdn            string
+			destinationPort int
+			wantStatus      int
+			wantProto       string // X-Forwarded-Proto seen by the backend, when served
+			wantLocation    string // Location header, when redirected
+		}{
+			{"https destination port", echoProxy.Spec.VirtualHost.Fqdn, 443, http.StatusOK, "https", ""},
+			{"http destination port", echoProxy.Spec.VirtualHost.Fqdn, 80, http.StatusOK, "http", ""},
+			// In neither list: Envoy falls back to the plaintext connection.
+			{"unlisted destination port", echoProxy.Spec.VirtualHost.Fqdn, 8080, http.StatusOK, "http", ""},
+			{"https destination port is served, not redirected", redirectProxy.Spec.VirtualHost.Fqdn, 443, http.StatusOK, "https", ""},
+			{"http destination port is redirected to https", redirectProxy.Spec.VirtualHost.Fqdn, 80, http.StatusMovedPermanently, "", "https://" + redirectProxy.Spec.VirtualHost.Fqdn + "/"},
 		}
-		for destinationPort, want := range cases {
+		for _, tc := range cases {
 			require.Eventuallyf(t, func() bool {
-				status, headers, err := proxiedRequest(envoyURL.Host, destinationPort, p.Spec.VirtualHost.Fqdn)
-				if err != nil || status != http.StatusOK {
-					t.Logf("destination port %d: status %d, error %v", destinationPort, status, err)
+				res, err := proxiedRequest(envoyURL.Host, tc.destinationPort, tc.fqdn)
+				if err != nil || res.status != tc.wantStatus {
+					t.Logf("%s: status %d, error %v", tc.name, res.status, err)
 					return false
 				}
-				if got := headers.Get("X-Forwarded-Proto"); got != want {
-					t.Logf("destination port %d: got X-Forwarded-Proto %q, want %q", destinationPort, got, want)
-					return false
+				if tc.wantProto != "" {
+					if got := res.echoHeaders.Get("X-Forwarded-Proto"); got != tc.wantProto {
+						t.Logf("%s: got X-Forwarded-Proto %q, want %q", tc.name, got, tc.wantProto)
+						return false
+					}
+				}
+				if tc.wantLocation != "" {
+					if got := res.headers.Get("Location"); got != tc.wantLocation {
+						t.Logf("%s: got Location %q, want %q", tc.name, got, tc.wantLocation)
+						return false
+					}
 				}
 				return true
-			}, f.RetryTimeout, f.RetryInterval, "destination port %d did not yield X-Forwarded-Proto %q", destinationPort, want)
+			}, f.RetryTimeout, f.RetryInterval, "%s: did not get status %d with X-Forwarded-Proto %q / Location %q", tc.name, tc.wantStatus, tc.wantProto, tc.wantLocation)
 		}
 	})
 }
 
+// proxiedResponse is what a PROXY protocol request to Envoy came back with:
+// the response status and headers, and the request headers the echo server
+// received when the request was served.
+type proxiedResponse struct {
+	status      int
+	headers     http.Header
+	echoHeaders http.Header
+}
+
 // proxiedRequest opens a plaintext connection to Envoy, sends a PROXY protocol
 // v1 header that claims destinationPort as the original destination port,
-// then a GET for host, and returns the response status and the request
-// headers the echo server received.
-func proxiedRequest(envoyAddr string, destinationPort int, host string) (int, http.Header, error) {
+// then a GET for host.
+func proxiedRequest(envoyAddr string, destinationPort int, host string) (proxiedResponse, error) {
 	conn, err := net.DialTimeout("tcp", envoyAddr, 5*time.Second)
 	if err != nil {
-		return 0, nil, err
+		return proxiedResponse{}, err
 	}
 	defer conn.Close()
 
 	if err := conn.SetDeadline(time.Now().Add(10 * time.Second)); err != nil {
-		return 0, nil, err
+		return proxiedResponse{}, err
 	}
 
 	if _, err := fmt.Fprintf(conn, "PROXY TCP4 192.0.2.1 192.0.2.2 40000 %d\r\nGET / HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n", destinationPort, host); err != nil {
-		return 0, nil, err
+		return proxiedResponse{}, err
 	}
 
 	resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
 	if err != nil {
-		return 0, nil, err
+		return proxiedResponse{}, err
 	}
 	defer resp.Body.Close()
 
+	res := proxiedResponse{status: resp.StatusCode, headers: resp.Header}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.StatusCode, nil, err
+		return res, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		return resp.StatusCode, nil, nil
+	if resp.StatusCode == http.StatusOK {
+		res.echoHeaders = f.GetEchoResponseBody(body).RequestHeaders
 	}
 
-	return resp.StatusCode, f.GetEchoResponseBody(body).RequestHeaders, nil
+	return res, nil
 }
