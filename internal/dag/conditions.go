@@ -26,10 +26,10 @@ import (
 // prefix/exact/regex Condition.
 // In the case no regex is present then the leaf condition of the include tree
 // decides whether the merged condition will be prefix or exact.
-// In case there is a regex condition present the entire condition becomes a regex condition.
-// pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
-// / character, so we can simply concatenate.
-func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition {
+// In case there is a regex condition present the entire condition becomes a regex condition,
+// with prefixes escaped and the regex wrapped in a non-capturing group.
+// An error is returned if the merged regex is not valid.
+func mergePathMatchConditions(conds []contour_v1.MatchCondition) (MatchCondition, error) {
 	isRegex := false
 	for _, cond := range conds {
 		if cond.Regex != "" {
@@ -43,38 +43,23 @@ func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition 
 		switch {
 		case cond.Prefix != "":
 			if isRegex {
-				// If in regex mode, trim the trailing slash first, then escape regex metacharacters.
-				// Since the child regex must start with '/', this ensures there is exactly one '/' after concatenation,
-				// preventing the double-slash from being isolated by the '(?:' non-capturing group.
+				// Drop trailing "/" from prefix so the child regex's leading "/" is not doubled when wrapped in a non-capturing group.
+				// "/team-a/" + "/x" -> "/team-a(?:/x)".
 				trimmed := strings.TrimRight(cond.Prefix, "/")
 				mergedPath += regexp.QuoteMeta(trimmed)
 			} else {
 				mergedPath += cond.Prefix
 			}
 		case cond.Exact != "":
-			if isRegex {
-				// Note: This branch is currently unreachable as cond.Exact and isRegex cannot coexist in the same delegation chain.
-				// Specifically, includeMatchConditionsValid forbids Exact/Regex in parent includes, and pathMatchConditionsValid
-				// forbids multiple match types in a single route block. This is retained as defensive/future-proofing code
-				// in case these validation invariants are ever relaxed in the future.
-				trimmed := strings.TrimRight(cond.Exact, "/")
-				mergedPath += regexp.QuoteMeta(trimmed)
-			} else {
-				mergedPath += cond.Exact
-			}
+			// "Exact" cannot be used with "Regex" in the same chain so there is no need to escape it.
+			// Specifically, includeMatchConditionsValid() forbids Exact/Regex in parent includes.
+			mergedPath += cond.Exact
 		case cond.Regex != "":
-			regexStr := cond.Regex
-			if hasUnclosedQuoteMeta(regexStr) {
-				// Close the unclosed \Q so that the appended ')' is not swallowed as literal text.
-				regexStr += `\E`
-			}
 			if mergedPath != "" {
-				// Wrap the child regex in a non-capturing group only if a non-empty parent prefix/exact match has been prepended,
-				// preventing '|' (alternation) from escaping the delegated prefix constraint.
-				mergedPath += "(?:" + regexStr + ")"
+				// Wrap in a non-capturing group so that "|" cannot escape the parent prefix.
+				mergedPath += "(?:" + cond.Regex + ")"
 			} else {
-				// If there is no parent prefix, append directly to avoid redundant wrapping.
-				mergedPath += regexStr
+				mergedPath += cond.Regex
 			}
 		}
 	}
@@ -91,46 +76,33 @@ func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition 
 		mergedPath = `/`
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
-		}
+		}, nil
 	}
 
 	// If mergedPath is not empty then choose match type using the last rule of the delegation chain
 	lastCondition := conds[len(conds)-1]
 	switch {
 	case isRegex:
+		// Merged regex can be invalid even if each part was valid alone according to pathMatchConditionsValid().
+		if err := ValidateRegex(mergedPath); err != nil {
+			return nil, errors.New("regex invalid after merging with include prefix")
+		}
 		return &RegexMatchCondition{
 			Regex: mergedPath,
-		}
+		}, nil
 	case lastCondition.Prefix != "":
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
-		}
+		}, nil
 	case lastCondition.Exact != "":
 		return &ExactMatchCondition{
 			Path: mergedPath,
-		}
+		}, nil
 	default:
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
-		}
+		}, nil
 	}
-}
-
-// hasUnclosedQuoteMeta reports whether a regex string ends with an unclosed \Q literal escape.
-func hasUnclosedQuoteMeta(s string) bool {
-	inQuote := false
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+1 < len(s) {
-			if !inQuote && s[i+1] == 'Q' {
-				inQuote = true
-				i++
-			} else if inQuote && s[i+1] == 'E' {
-				inQuote = false
-				i++
-			}
-		}
-	}
-	return inQuote
 }
 
 // pathMatchConditionsValid validates a slice of MatchConditions can be correctly merged.
