@@ -14028,6 +14028,108 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"httpproxy include with prefix, child regex with alternation is wrapped in non-capturing group": {
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "root",
+						Namespace: s1.Namespace,
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{Fqdn: "example.com"},
+						Includes: []contour_v1.Include{{
+							Name:      "child",
+							Namespace: s1.Namespace,
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/team-a",
+							}},
+						}},
+					},
+				},
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "child",
+						Namespace: s1.Namespace,
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Regex: "/x|/admin/.*",
+							}},
+							Services: []contour_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+						}},
+					},
+				},
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeClusterRegex("/team-a(?:/x|/admin/.*)",
+								&Cluster{Upstream: service(s1)},
+							),
+						),
+					),
+				},
+			),
+		},
+		"httpproxy include with prefix containing metacharacters, prefix is escaped in merged regex": {
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "root",
+						Namespace: s1.Namespace,
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{Fqdn: "example.com"},
+						Includes: []contour_v1.Include{{
+							Name:      "child",
+							Namespace: s1.Namespace,
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/v1.0",
+							}},
+						}},
+					},
+				},
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "child",
+						Namespace: s1.Namespace,
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Regex: "/.*",
+							}},
+							Services: []contour_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+						}},
+					},
+				},
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeClusterRegex(`/v1\.0(?:/.*)`,
+								&Cluster{Upstream: service(s1)},
+							),
+						),
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -15595,6 +15697,52 @@ func TestHTTPProxyConficts(t *testing.T) {
 				WithError(contour_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
 			{Name: "valid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
 			{Name: "root-proxy", Namespace: "default"}:        fixture.NewValidCondition().Valid(),
+		},
+	})
+
+	run(t, "child proxy with regex that produces invalid merged regex reports route error", testcase{
+		objs: []any{
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_v1.HTTPProxySpec{
+					VirtualHost: &contour_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Includes: []contour_v1.Include{{
+						Name:       "child-proxy",
+						Namespace:  "default",
+						Conditions: []contour_v1.MatchCondition{{Prefix: "/team-a"}},
+					}},
+				},
+			},
+			&contour_v1.HTTPProxy{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:      "child-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_v1.HTTPProxySpec{
+					Routes: []contour_v1.Route{{
+						Conditions: []contour_v1.MatchCondition{{
+							Regex: `/\Qfoo`,
+						}},
+						Services: []contour_v1.Service{{
+							Name: "existing-service-1",
+							Port: 8080,
+						}},
+					}},
+				},
+			},
+			existingService1,
+		},
+		wantListeners: listeners(),
+		wantStatus: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: "child-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid",
+					"route: regex invalid after merging with include prefix"),
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
 		},
 	})
 }

@@ -196,13 +196,13 @@ func TestPathMatchCondition(t *testing.T) {
 			}},
 			want: &RegexMatchCondition{Regex: `/v1\.0(?:/.*)`},
 		},
-		"child regex with unclosed \\Q": {
+		"child regex with escaped backslash before Q": {
 			matchconditions: []contour_v1.MatchCondition{{
 				Prefix: "/team-a",
 			}, {
-				Regex: `/\Qfoo`,
+				Regex: `/\\Qfoo`,
 			}},
-			want: &RegexMatchCondition{Regex: `/team-a(?:/\Qfoo\E)`},
+			want: &RegexMatchCondition{Regex: `/team-a(?:/\\Qfoo)`},
 		},
 		"header condition": {
 			matchconditions: []contour_v1.MatchCondition{{
@@ -221,7 +221,8 @@ func TestPathMatchCondition(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := mergePathMatchConditions(tc.matchconditions)
+			got, err := mergePathMatchConditions(tc.matchconditions)
+			require.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		})
 	}
