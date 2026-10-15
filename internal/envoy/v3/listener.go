@@ -381,15 +381,304 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 						},
 						ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 							CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-								ContentType: []string{
+								ContentTypeMatcher: []*envoy_matcher_v3.StringMatcher{
 									// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
-									"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
-									"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
-									"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
-									"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/html",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/plain",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/css",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/x-javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/x-javascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/ecmascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/js",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/jscript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/x-js",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/ecmascript",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/x-json",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/xml",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/json",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "image/svg+xml",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "text/xml",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/xhtml+xml",
+										},
+									},
 									// Additional content-types for grpc-web https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2
-									"application/grpc-web", "application/grpc-web+proto", "application/grpc-web+json", "application/grpc-web+thrift",
-									"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web+proto",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web+json",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web+thrift",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web-text",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web-text+proto",
+										},
+									},
+									{
+										MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
+											Exact: "application/grpc-web-text+thrift",
+										},
+									},
 								},
 							},
 						},
