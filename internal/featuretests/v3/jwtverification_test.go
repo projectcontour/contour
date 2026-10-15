@@ -141,7 +141,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -163,11 +163,11 @@ func TestJWTVerification(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
-	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+	}).Request(clusterType, "dnsname/https/jwt.example.com/443/0771aeda175c510932e2").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
+				Name: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -176,7 +176,7 @@ func TestJWTVerification(t *testing.T) {
 				},
 				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "dnsname/https/jwt.example.com",
+					ClusterName: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
 							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
@@ -294,7 +294,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -402,7 +402,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -512,7 +512,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -527,7 +527,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -626,7 +626,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com:8443/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/8443/f3c7698ae471934ed629",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -648,11 +648,11 @@ func TestJWTVerification(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
-	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+	}).Request(clusterType, "dnsname/https/jwt.example.com/8443/f3c7698ae471934ed629").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
+				Name: "dnsname/https/jwt.example.com/8443/f3c7698ae471934ed629",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -661,7 +661,7 @@ func TestJWTVerification(t *testing.T) {
 				},
 				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "dnsname/https/jwt.example.com",
+					ClusterName: "dnsname/https/jwt.example.com/8443/f3c7698ae471934ed629",
 					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
 							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
@@ -774,7 +774,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/62f2fd0c5a55f640f78f",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -796,11 +796,11 @@ func TestJWTVerification(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
-	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+	}).Request(clusterType, "dnsname/https/jwt.example.com/443/62f2fd0c5a55f640f78f").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
+				Name: "dnsname/https/jwt.example.com/443/62f2fd0c5a55f640f78f",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -809,7 +809,7 @@ func TestJWTVerification(t *testing.T) {
 				},
 				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "dnsname/https/jwt.example.com",
+					ClusterName: "dnsname/https/jwt.example.com/443/62f2fd0c5a55f640f78f",
 					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
 							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
@@ -938,7 +938,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com:8443/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/8443/51f45c0f9f76d6a8681c",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -960,11 +960,11 @@ func TestJWTVerification(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
-	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+	}).Request(clusterType, "dnsname/https/jwt.example.com/8443/51f45c0f9f76d6a8681c").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
+				Name: "dnsname/https/jwt.example.com/8443/51f45c0f9f76d6a8681c",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -973,7 +973,7 @@ func TestJWTVerification(t *testing.T) {
 				},
 				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "dnsname/https/jwt.example.com",
+					ClusterName: "dnsname/https/jwt.example.com/8443/51f45c0f9f76d6a8681c",
 					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
 							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
@@ -1083,7 +1083,7 @@ func TestJWTVerification(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -1106,11 +1106,11 @@ func TestJWTVerification(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
-	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+	}).Request(clusterType, "dnsname/https/jwt.example.com/443/0771aeda175c510932e2").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
+				Name: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -1119,7 +1119,7 @@ func TestJWTVerification(t *testing.T) {
 				},
 				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "dnsname/https/jwt.example.com",
+					ClusterName: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
 							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
@@ -1298,7 +1298,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -1320,11 +1320,11 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
-	}).Request(clusterType, "dnsname/https/jwt.example.com").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+	}).Request(clusterType, "dnsname/https/jwt.example.com/443/0771aeda175c510932e2").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
-				Name: "dnsname/https/jwt.example.com",
+				Name: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -1333,7 +1333,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 				},
 				ConnectTimeout: durationpb.New(2 * time.Second),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "dnsname/https/jwt.example.com",
+					ClusterName: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 					Endpoints: []*envoy_config_endpoint_v3.LocalityLbEndpoints{
 						{
 							LbEndpoints: []*envoy_config_endpoint_v3.LbEndpoint{
@@ -1461,7 +1461,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -1579,7 +1579,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -1699,7 +1699,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
@@ -1714,7 +1714,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 											HttpUri: &envoy_config_core_v3.HttpUri{
 												Uri: "https://jwt.example.com/jwks.json",
 												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
-													Cluster: "dnsname/https/jwt.example.com",
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
 												},
 												Timeout: durationpb.New(7 * time.Second),
 											},
