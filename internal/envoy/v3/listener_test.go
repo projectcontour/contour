@@ -604,6 +604,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 					},
 					ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 						CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
+							//nolint:staticcheck
 							ContentType: compressorContentTypes,
 						},
 					},
@@ -1893,6 +1894,7 @@ func TestAddFilter(t *testing.T) {
 				},
 				ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 					CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
+						//nolint:staticcheck
 						ContentType: compressorContentTypes,
 					},
 				},

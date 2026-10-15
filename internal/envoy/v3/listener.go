@@ -381,6 +381,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 						},
 						ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 							CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
+								//nolint:staticcheck
 								ContentType: []string{
 									// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
 									"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
