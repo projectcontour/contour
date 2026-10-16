@@ -3,13 +3,12 @@ title: Compatibility Matrix
 layout: page
 ---
 
-This page documents the compatibility matrix of versions of Contour, Envoy, Kubernetes, and Gateway API.
-These combinations of versions are specifically tested in CI and supported by the Contour maintainers.
+This page lists the versions of Envoy and Kubernetes that each Contour release was tested with in CI, and the Gateway API version it implements.
 
 ## Compatibility Matrix
 
-| Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
-| --------------- | :------------------- | ------------------- | --------------------|
+| Contour Version | Tested Envoy Version | Tested Kubernetes Versions | Gateway API Version |
+| --------------- | :------------------- | -------------------------- | --------------------|
 | main            | [1.40.0][85]         | 1.37, 1.36, 1.35    | [1.3.0][113]        |
 | 1.33.7          | [1.38.4][84]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.6          | [1.38.3][83]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
@@ -126,9 +125,8 @@ These combinations of versions are specifically tested in CI and supported by th
 **As of Contour version 1.16.0, Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1). The minimum compatible Kubernetes version for Contour 1.16.0 and above is Kubernetes 1.19.**
 
 Contour utilizes [client-go][98] to watch for resources in a Kubernetes cluster.
-We depend on the latest version of the library and by extension only support the latest versions of Kubernetes.
-While the `client-go` [compatibility matrix][99] may list older versions of Kubernetes as being compatible and supported by upstream, the Contour project only tests a given version of Contour against the versions listed in the table above.
-Combinations not listed are not tested, guaranteed to work, or supported by the Contour maintainers.
+Contour has no strict dependency on the listed versions.
+Combinations not listed in the table above are not tested by the Contour project, but they may still work.
 
 ## Envoy Extensions
 Contour requires the following Envoy extensions.
