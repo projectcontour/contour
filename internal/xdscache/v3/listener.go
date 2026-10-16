@@ -170,6 +170,10 @@ type ListenerConfig struct {
 
 	// MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
 	MaxConnectionsToAcceptPerSocketEvent *uint32
+
+	// ForwardProtoConfig, when set, makes every HTTP connection manager derive
+	// X-Forwarded-Proto from the destination port in the PROXY protocol header.
+	ForwardProtoConfig *contour_v1alpha1.ForwardProtoConfig
 }
 
 type ExtensionServiceConfig struct {
@@ -410,6 +414,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				StripTrailingHostDot(cfg.StripTrailingHostDot).
+				ForwardProtoConfig(cfg.ForwardProtoConfig).
 				MaxRequestsPerConnection(cfg.MaxRequestsPerConnection).
 				HTTP2MaxConcurrentStreams(cfg.HTTP2MaxConcurrentStreams).
 				AddFilter(httpGlobalExternalAuthConfig(cfg.GlobalExternalAuthConfig)).
@@ -487,6 +492,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					StripTrailingHostDot(cfg.StripTrailingHostDot).
+					ForwardProtoConfig(cfg.ForwardProtoConfig).
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).
@@ -572,6 +578,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					StripTrailingHostDot(cfg.StripTrailingHostDot).
+					ForwardProtoConfig(cfg.ForwardProtoConfig).
 					Tracing(envoy_v3.TracingConfig(envoyTracingConfig(cfg.TracingConfig))).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					ForwardClientCertificate(forwardClientCertificate).

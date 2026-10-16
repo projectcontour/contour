@@ -340,6 +340,37 @@ spec:
                           which strips duplicate slashes from request URL paths.
                           Contour's default is false.
                         type: boolean
+                      forwardProtoConfig:
+                        description: |-
+                          ForwardProtoConfig makes Envoy derive X-Forwarded-Proto from the destination
+                          port in the PROXY protocol header rather than from the TLS state of the
+                          accepted connection, for load balancers that terminate TLS and forward
+                          plaintext with PROXY protocol. Requires useProxyProtocol and Envoy 1.38 or
+                          later. See the PROXY protocol guide for details.
+                        properties:
+                          httpDestinationPorts:
+                            description: |-
+                              HTTPDestinationPorts lists the PROXY protocol destination ports for which
+                              X-Forwarded-Proto is set to "http", for example 80.
+                            items:
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            type: array
+                          httpsDestinationPorts:
+                            description: |-
+                              HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+                              X-Forwarded-Proto is set to "https", for example 443.
+                              At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+                              and a port must not appear in both.
+                            items:
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            type: array
+                        type: object
                       httpMaxConcurrentStreams:
                         description: |-
                           Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
@@ -4604,6 +4635,37 @@ spec:
                               which strips duplicate slashes from request URL paths.
                               Contour's default is false.
                             type: boolean
+                          forwardProtoConfig:
+                            description: |-
+                              ForwardProtoConfig makes Envoy derive X-Forwarded-Proto from the destination
+                              port in the PROXY protocol header rather than from the TLS state of the
+                              accepted connection, for load balancers that terminate TLS and forward
+                              plaintext with PROXY protocol. Requires useProxyProtocol and Envoy 1.38 or
+                              later. See the PROXY protocol guide for details.
+                            properties:
+                              httpDestinationPorts:
+                                description: |-
+                                  HTTPDestinationPorts lists the PROXY protocol destination ports for which
+                                  X-Forwarded-Proto is set to "http", for example 80.
+                                items:
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                                type: array
+                              httpsDestinationPorts:
+                                description: |-
+                                  HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+                                  X-Forwarded-Proto is set to "https", for example 443.
+                                  At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+                                  and a port must not appear in both.
+                                items:
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                                type: array
+                            type: object
                           httpMaxConcurrentStreams:
                             description: |-
                               Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
