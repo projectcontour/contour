@@ -58,7 +58,7 @@ var (
 		},
 	}
 
-	disabledGlobalExtAuthConfig contour_v1.AuthorizationServer = contour_v1.AuthorizationServer{
+	disabledGlobalExtAuthConfig = contour_v1.AuthorizationServer{
 		ExtensionServiceRef: contour_v1.ExtensionServiceReference{
 			Name:      "extension",
 			Namespace: "auth",
@@ -267,7 +267,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEv
 							Port: 80,
 						},
 					},
-					AuthPolicy: &contour_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 						Context: map[string]string{
 							"header_type": "proxy_config",
 							"header_2":    "message_2",
@@ -403,7 +403,7 @@ func GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute(t *testing.T,
 							Port: 80,
 						},
 					},
-					AuthPolicy: &contour_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 						Disabled: false,
 					},
 				},
@@ -473,7 +473,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 							Port: 80,
 						},
 					},
-					AuthPolicy: &contour_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 						Context: map[string]string{
 							"header_type": "proxy_config",
 							"header_2":    "message_2",
@@ -798,15 +798,12 @@ func TestGlobalAuthorization(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			rh, c, done := setup(t,
 				func(cfg *xdscache_v3.ListenerConfig) {
-					cfg.GlobalExternalAuthConfig = &xdscache_v3.GlobalExternalAuthConfig{
-						ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
+					cfg.GlobalExternalAuthConfig = &dag.ExternalAuthzConfig{
+						ExtensionServiceConfig: dag.ExtensionServiceConfig{
 							ExtensionService: k8s.NamespacedNameFrom("auth/extension"),
 							Timeout:          timeout.DurationSetting(defaultResponseTimeout),
 						},
-						ExternalAuthorization: dag.ExternalAuthorization{
-							ServiceAPIType:               dag.AuthorizationServiceGRPC,
-							AuthorizationResponseTimeout: timeout.DurationSetting(defaultResponseTimeout),
-						},
+						ServiceAPIType: dag.AuthorizationServiceGRPC,
 						Context: map[string]string{
 							"header_type": "root_config",
 							"header_1":    "message_1",
@@ -865,6 +862,20 @@ func TestGlobalAuthorization(t *testing.T) {
 
 // getGlobalExtAuthHCM returns a HTTP Connection Manager with Global External Authorization configured.
 func getGlobalExtAuthHCM() *envoy_config_listener_v3.Filter {
+	return getGlobalExtAuthHCMWithAuthzConfig(&envoy_filter_http_ext_authz_v3.ExtAuthz{
+		Services:               grpcCluster("extension/auth/extension"),
+		ClearRouteCache:        true,
+		IncludePeerCertificate: true,
+		StatusOnError: &envoy_type_v3.HttpStatus{
+			Code: envoy_type_v3.StatusCode_Forbidden,
+		},
+		TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+	})
+}
+
+// getGlobalExtAuthHCMWithAuthzConfig returns a HTTP Connection Manager whose
+// global extAuthz filter uses the given ExtAuthz configuration.
+func getGlobalExtAuthHCMWithAuthzConfig(authz *envoy_filter_http_ext_authz_v3.ExtAuthz) *envoy_config_listener_v3.Filter {
 	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: "contour",
 	})
@@ -876,16 +887,94 @@ func getGlobalExtAuthHCM() *envoy_config_listener_v3.Filter {
 		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 			Name: wellknown.HTTPExternalAuthorization,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type_v3.HttpStatus{
-						Code: envoy_type_v3.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-				}),
+				TypedConfig: protobuf.MustMarshalAny(authz),
 			},
 		}).
 		Get()
+}
+
+// TestGlobalAuthorizationHTTPPathOverride verifies that a global HTTP
+// authorization server configured with a path override generates an
+// ExtAuthz filter whose HTTP service uses the override path.
+func TestGlobalAuthorizationHTTPPathOverride(t *testing.T) {
+	rh, c, done := setup(t,
+		func(cfg *xdscache_v3.ListenerConfig) {
+			cfg.GlobalExternalAuthConfig = &dag.ExternalAuthzConfig{
+				ExtensionServiceConfig: dag.ExtensionServiceConfig{
+					ExtensionService: k8s.NamespacedNameFrom("auth/extension"),
+					Timeout:          timeout.DurationSetting(defaultResponseTimeout),
+				},
+				ServiceAPIType:   dag.AuthorizationServiceHTTP,
+				HTTPPathOverride: "/auth",
+			}
+		})
+	defer done()
+
+	// Add common test fixtures.
+	rh.OnAdd(fixture.NewService("s1").WithPorts(core_v1.ServicePort{Port: 80}))
+	rh.OnAdd(fixture.NewService("auth/oidc-server").
+		WithPorts(core_v1.ServicePort{Port: 8081}))
+
+	rh.OnAdd(featuretests.EndpointSlice("auth", "oidc-es", "oidc-server",
+		featuretests.Endpoints(featuretests.Endpoint("192.168.183.21", true)),
+		featuretests.Ports(featuretests.Port("", 8081)),
+	))
+
+	rh.OnAdd(&contour_v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("auth/extension"),
+		Spec: contour_v1alpha1.ExtensionServiceSpec{
+			Services: []contour_v1alpha1.ExtensionServiceTarget{
+				{Name: "oidc-server", Port: 8081},
+			},
+			TimeoutPolicy: &contour_v1.TimeoutPolicy{
+				Response: defaultResponseTimeout.String(),
+			},
+		},
+	})
+
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "default",
+			Name:      "proxy1",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+			},
+			Routes: []contour_v1.Route{
+				{
+					Services: []contour_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+				},
+			},
+		},
+	}
+	rh.OnAdd(p)
+
+	httpListener := defaultHTTPListener()
+
+	// replace the default filter chains with an HCM that includes the global
+	// extAuthz filter.
+	cluster := httpCluster("extension/auth/extension")
+	cluster.HttpService.PathOverride = "/auth"
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCMWithAuthzConfig(&envoy_filter_http_ext_authz_v3.ExtAuthz{
+		Services:               cluster,
+		ClearRouteCache:        true,
+		IncludePeerCertificate: true,
+		StatusOnError: &envoy_type_v3.HttpStatus{
+			Code: envoy_type_v3.StatusCode_Forbidden,
+		},
+		TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+	}))
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			httpListener,
+			statsListener()),
+	}).Status(p).IsValid()
 }

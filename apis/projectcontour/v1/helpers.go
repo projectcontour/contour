@@ -24,6 +24,17 @@ func (v *VirtualHost) AuthorizationConfigured() bool {
 	return v.Authorization != nil
 }
 
+// DefaultAuthorizationProvider returns the provider marked as
+// default, or nil if there is none.
+func (v *VirtualHost) DefaultAuthorizationProvider() *AuthorizationProvider {
+	for i := range v.AuthzProviders {
+		if v.AuthzProviders[i].Default {
+			return &v.AuthzProviders[i]
+		}
+	}
+	return nil
+}
+
 // DisableAuthorization returns true if this virtual host disables
 // authorization. If an authorization server is present, the default
 // policy is to not disable.
@@ -31,7 +42,7 @@ func (v *VirtualHost) DisableAuthorization() bool {
 	// No authorization, so it is disabled.
 	if v.AuthorizationConfigured() {
 		// No policy specified, default is to not disable.
-		if v.Authorization.AuthPolicy == nil {
+		if v.Authorization == nil || v.Authorization.AuthPolicy == nil {
 			return false
 		}
 
@@ -47,14 +58,31 @@ func (r *ExtensionServiceReference) IsConfigured() bool {
 }
 
 // AuthorizationContext returns the authorization policy context (if present).
+// The virtual host-wide Authorization policy's context (if any) is merged
+// with the default authorization provider's context, with the provider's
+// entries taking precedence on matching keys.
 func (v *VirtualHost) AuthorizationContext() map[string]string {
-	if v.AuthorizationConfigured() {
-		if v.Authorization.AuthPolicy != nil {
-			return v.Authorization.AuthPolicy.Context
-		}
+	if !v.AuthorizationConfigured() {
+		return nil
 	}
 
-	return nil
+	var values map[string]string
+	if v.Authorization != nil && v.Authorization.AuthPolicy != nil {
+		values = maps.Clone(v.Authorization.AuthPolicy.Context)
+	}
+
+	if provider := v.DefaultAuthorizationProvider(); provider != nil {
+		if values == nil {
+			values = make(map[string]string, len(provider.Context))
+		}
+		maps.Copy(values, provider.Context)
+	}
+
+	if len(values) == 0 {
+		return nil
+	}
+
+	return values
 }
 
 // GetPrefixReplacements returns replacement prefixes from the path
@@ -69,13 +97,25 @@ func (r *Route) GetPrefixReplacements() []ReplacePrefix {
 // AuthorizationContext merges the parent context entries with the
 // context from this Route. Common keys from the parent map will be
 // overwritten by keys from the route. The parent map may be nil.
-func (r *Route) AuthorizationContext(parent map[string]string) map[string]string {
+// The route-level context comes from the deprecated
+// route.authPolicy.context field; routes that require a named
+// provider use the provider's context instead.
+func (r *Route) AuthorizationContext(authzProvider *AuthorizationProvider, parent map[string]string) map[string]string {
 	values := make(map[string]string, len(parent))
 
 	maps.Copy(values, parent)
 
-	if r.AuthPolicy != nil {
-		maps.Copy(values, r.AuthPolicy.Context)
+	// route.authPolicy.context is deprecated. First try to fetch context
+	// from authzProvider, but fallback to route-level authPolicy.context
+	// to be backward-compatible.
+	if authzProvider != nil {
+		for k, v := range authzProvider.Context {
+			values[k] = v
+		}
+	} else if r.AuthPolicy != nil {
+		for k, v := range r.AuthPolicy.Context {
+			values[k] = v
+		}
 	}
 
 	if len(values) == 0 {
