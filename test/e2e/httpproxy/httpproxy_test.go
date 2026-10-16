@@ -313,6 +313,24 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
+	f.NamespacedTest("httpproxy-multi-compression", func(namespace string) {
+		Context("with brotli and gzip compression", func() {
+			BeforeEach(func() {
+				contourConfig.Compression = config.CompressionParameters{
+					Algorithms: &[]config.CompressionAlgorithm{config.CompressionBrotli, config.CompressionGzip},
+				}
+				contourConfiguration.Spec.Envoy.Listener.Compression = &contour_v1alpha1.EnvoyCompression{
+					Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+						contour_v1alpha1.BrotliCompression,
+						contour_v1alpha1.GzipCompression,
+					},
+				}
+			})
+			testEnvoyDisableCompression(namespace, "br, gzip", "br", false)
+			testEnvoyDisableCompression(namespace, "gzip", "gzip", false)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
 
 	f.NamespacedTest("httpproxy-ext-auth-http", testExternalAuthzHTTP)
