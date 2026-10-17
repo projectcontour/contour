@@ -199,6 +199,8 @@ type httpConnectionManagerBuilder struct {
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
 	mergeSlashes                  bool
+	disableNormalizePath          bool
+	pathWithEscapedSlashesAction  envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_PathWithEscapedSlashesAction
 	serverHeaderTransformation    envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
@@ -288,6 +290,32 @@ func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpCon
 // MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option on the connection manager.
 func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectionManagerBuilder {
 	b.mergeSlashes = enabled
+	return b
+}
+
+// DisableNormalizePath disables Envoy's RFC 3986 path normalization on the connection
+// manager. Note the setting is negated so that the builder's zero value preserves
+// Contour's default of normalizing paths.
+func (b *httpConnectionManagerBuilder) DisableNormalizePath(disabled bool) *httpConnectionManagerBuilder {
+	b.disableNormalizePath = disabled
+	return b
+}
+
+// PathWithEscapedSlashesAction sets how the connection manager handles request paths
+// containing escaped slash sequences. Unrecognized and empty values map to
+// KEEP_UNCHANGED, which is Contour's default, rather than to Envoy's
+// implementation-specific default.
+func (b *httpConnectionManagerBuilder) PathWithEscapedSlashesAction(value contour_v1alpha1.PathWithEscapedSlashesActionType) *httpConnectionManagerBuilder {
+	switch value {
+	case contour_v1alpha1.RejectRequestPathWithEscapedSlashes:
+		b.pathWithEscapedSlashesAction = envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_REJECT_REQUEST
+	case contour_v1alpha1.UnescapeAndRedirectPathWithEscapedSlashes:
+		b.pathWithEscapedSlashesAction = envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UNESCAPE_AND_REDIRECT
+	case contour_v1alpha1.UnescapeAndForwardPathWithEscapedSlashes:
+		b.pathWithEscapedSlashesAction = envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UNESCAPE_AND_FORWARD
+	default:
+		b.pathWithEscapedSlashesAction = envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_KEEP_UNCHANGED
+	}
 	return b
 }
 
@@ -570,12 +598,13 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		XffNumTrustedHops:    b.numTrustedHops,
 		StripTrailingHostDot: b.stripTrailingHostDot,
 
-		NormalizePath: wrapperspb.Bool(true),
+		NormalizePath: wrapperspb.Bool(!b.disableNormalizePath),
 
 		// issue #1487 pass through X-Request-Id if provided.
-		PreserveExternalRequestId:  true,
-		MergeSlashes:               b.mergeSlashes,
-		ServerHeaderTransformation: b.serverHeaderTransformation,
+		PreserveExternalRequestId:    true,
+		MergeSlashes:                 b.mergeSlashes,
+		PathWithEscapedSlashesAction: b.pathWithEscapedSlashesAction,
+		ServerHeaderTransformation:   b.serverHeaderTransformation,
 
 		RequestTimeout:      envoy.Timeout(b.requestTimeout),
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
@@ -657,6 +686,10 @@ func (e *EnvoyGen) HTTPConnectionManager(routename string, accesslogger []*envoy
 func (e *EnvoyGen) HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
 	return &httpConnectionManagerBuilder{
 		routeConfigSource: e.GetConfigSource(),
+		// Default to Contour's behavior rather than to the proto zero value
+		// IMPLEMENTATION_SPECIFIC_DEFAULT, so that callers that never set this
+		// still get an explicit, stable action.
+		pathWithEscapedSlashesAction: envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_KEEP_UNCHANGED,
 	}
 }
 

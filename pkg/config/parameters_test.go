@@ -73,6 +73,7 @@ json-fields:
     - grpc_status
     - grpc_status_number
 accesslog-level: info
+pathWithEscapedSlashesAction: keep_unchanged
 serverHeaderTransformation: overwrite
 timeouts:
     connection-idle-timeout: 60s
@@ -136,6 +137,25 @@ func TestValidateServerHeaderTranformationType(t *testing.T) {
 	require.NoError(t, OverwriteServerHeader.Validate())
 	require.NoError(t, AppendIfAbsentServerHeader.Validate())
 	require.NoError(t, PassThroughServerHeader.Validate())
+}
+
+func TestValidatePathWithEscapedSlashesActionType(t *testing.T) {
+	require.Error(t, PathWithEscapedSlashesActionType("foo").Validate())
+	require.Error(t, PathWithEscapedSlashesActionType("reject").Validate())
+
+	// An unset value is valid; Defaults() supplies keep_unchanged.
+	require.NoError(t, PathWithEscapedSlashesActionType("").Validate())
+
+	require.NoError(t, KeepUnchangedPathWithEscapedSlashes.Validate())
+	require.NoError(t, RejectRequestPathWithEscapedSlashes.Validate())
+	require.NoError(t, UnescapeAndRedirectPathWithEscapedSlashes.Validate())
+	require.NoError(t, UnescapeAndForwardPathWithEscapedSlashes.Validate())
+}
+
+func TestValidateRejectsInvalidPathWithEscapedSlashesAction(t *testing.T) {
+	conf := Defaults()
+	conf.PathWithEscapedSlashesAction = "reject"
+	require.ErrorContains(t, conf.Validate(), `invalid path with escaped slashes action "reject"`)
 }
 
 func TestValidateHeadersPolicy(t *testing.T) {
@@ -432,6 +452,8 @@ incluster: false
 disablePermitInsecure: false
 disableAllowChunkedLength: false
 disableMergeSlashes: false
+disableNormalizePath: false
+pathWithEscapedSlashesAction: keep_unchanged
 serverHeaderTransformation: overwrite
 `,
 	)

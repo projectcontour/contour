@@ -351,6 +351,18 @@ spec:
                           which strips duplicate slashes from request URL paths.
                           Contour's default is false.
                         type: boolean
+                      disableNormalizePath:
+                        description: |-
+                          DisableNormalizePath disables Envoy's normalize_path option, which normalizes
+                          request URL paths according to RFC 3986 before HTTP filters run and before
+                          route matching. Disable this only if your backends treat request paths as
+                          opaque identifiers, for example object storage gateways, artifact registries,
+                          or APIs whose request signatures cover the raw path.
+                          Warning: when path normalization is disabled, route match conditions and
+                          external authorization policies are evaluated against the un-normalized path,
+                          so requests containing "." or ".." segments may bypass prefix based matching.
+                          Contour's default is false.
+                        type: boolean
                       httpMaxConcurrentStreams:
                         description: |-
                           Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
@@ -396,6 +408,20 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
+                      pathWithEscapedSlashesAction:
+                        description: |-
+                          PathWithEscapedSlashesAction determines how Envoy handles request paths that
+                          contain escaped slash sequences (%2F, %2f, %5C and %5c). This action is applied
+                          before path normalization and merge slashes.
+                          Values: `keep_unchanged` (default), `reject_request`, `unescape_and_redirect`, `unescape_and_forward`
+                          Other values will produce an error.
+                          Contour's default is keep_unchanged.
+                        enum:
+                        - keep_unchanged
+                        - reject_request
+                        - unescape_and_redirect
+                        - unescape_and_forward
+                        type: string
                       per-connection-buffer-limit-bytes:
                         description: |-
                           Defines the soft limit on size of the listener’s new connection read and write buffers in bytes.
@@ -4615,6 +4641,18 @@ spec:
                               which strips duplicate slashes from request URL paths.
                               Contour's default is false.
                             type: boolean
+                          disableNormalizePath:
+                            description: |-
+                              DisableNormalizePath disables Envoy's normalize_path option, which normalizes
+                              request URL paths according to RFC 3986 before HTTP filters run and before
+                              route matching. Disable this only if your backends treat request paths as
+                              opaque identifiers, for example object storage gateways, artifact registries,
+                              or APIs whose request signatures cover the raw path.
+                              Warning: when path normalization is disabled, route match conditions and
+                              external authorization policies are evaluated against the un-normalized path,
+                              so requests containing "." or ".." segments may bypass prefix based matching.
+                              Contour's default is false.
+                            type: boolean
                           httpMaxConcurrentStreams:
                             description: |-
                               Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the
@@ -4660,6 +4698,20 @@ spec:
                             format: int32
                             minimum: 1
                             type: integer
+                          pathWithEscapedSlashesAction:
+                            description: |-
+                              PathWithEscapedSlashesAction determines how Envoy handles request paths that
+                              contain escaped slash sequences (%2F, %2f, %5C and %5c). This action is applied
+                              before path normalization and merge slashes.
+                              Values: `keep_unchanged` (default), `reject_request`, `unescape_and_redirect`, `unescape_and_forward`
+                              Other values will produce an error.
+                              Contour's default is keep_unchanged.
+                            enum:
+                            - keep_unchanged
+                            - reject_request
+                            - unescape_and_redirect
+                            - unescape_and_forward
+                            type: string
                           per-connection-buffer-limit-bytes:
                             description: |-
                               Defines the soft limit on size of the listener’s new connection read and write buffers in bytes.
