@@ -256,6 +256,20 @@ type GatewayParameters struct {
 	GatewayRef NamespacedName `yaml:"gatewayRef"`
 }
 
+// AccessLogRateLimitParameters holds token bucket rate limit parameters for access logs.
+type AccessLogRateLimitParameters struct {
+	// MaxTokens is the maximum number of tokens in the bucket and the number of log entries
+	// that can burst beyond the steady fill rate.
+	MaxTokens uint32 `yaml:"max-tokens"`
+
+	// TokensPerFill is the number of tokens added per fill interval. Defaults to max-tokens.
+	TokensPerFill *uint32 `yaml:"tokens-per-fill,omitempty"`
+
+	// FillInterval is how often the bucket is refilled. Must be a valid Go duration string.
+	// Defaults to "1s".
+	FillInterval *string `yaml:"fill-interval,omitempty"`
+}
+
 // TimeoutParameters holds various configurable proxy timeout values.
 type TimeoutParameters struct {
 	// RequestTimeout sets the client request timeout globally for Contour. Note that
@@ -652,6 +666,9 @@ type Parameters struct {
 
 	// AccessLogLevel sets the verbosity level of the access log.
 	AccessLogLevel AccessLogLevel `yaml:"accesslog-level,omitempty"`
+
+	// AccessLogRateLimit configures rate limiting of access log entries across the Envoy process.
+	AccessLogRateLimit *AccessLogRateLimitParameters `yaml:"accesslog-rate-limit,omitempty"`
 
 	// TLS contains TLS policy parameters.
 	TLS TLSParameters `yaml:"tls,omitempty"`
