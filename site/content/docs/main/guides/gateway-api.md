@@ -93,7 +93,7 @@ EOF
 kubectl -n projectcontour rollout restart deployment/contour
 ```
 
-See the next section ([Testing the Gateway API](#testing-the-gateway-api)) for how to deploy an application and route traffic to it using Gateway API!
+See [Configure an HTTPRoute](#configure-an-httproute) for how to deploy an application and route traffic to it using Gateway API!
 
 ### Option #2: Dynamically provisioned
 
