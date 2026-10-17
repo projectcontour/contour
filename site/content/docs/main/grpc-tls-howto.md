@@ -12,9 +12,10 @@ Note that both Secrets contain a copy of the CA certificate bundle under the `ca
 
 ## Ways you can get the certificates into your cluster
 
-- Deploy the Job from [certgen.yaml][1].
+- Deploy the [certificate generation Job manifest][1].
 This will run `contour certgen --kube --secrets-format=compact` for you.
-- Run `contour certgen --kube` locally.
+- Run `contour certgen --kube --secrets-format=compact` locally.
+See the [`certgen` command reference][6] for output modes, Secret formats, and all available flags.
 - Run the manual procedure below.
 
 ## Caveats and warnings
@@ -152,9 +153,14 @@ There are few preconditions that need to be met before Envoy can automatically r
 
 When using the built-in Contour certificate generation, the following steps can be used:
 
-1. Delete the contour-certgen job
- - `kubectl delete job contour-certgen -n projectcontour`
-2. Reapply the contour-certgen job from [certgen.yaml][1]
+1. If the certificate generation Job still exists, find its installed name and delete it:
+
+    ```bash
+    $ kubectl get jobs -n projectcontour
+    $ kubectl delete job <certgen-job-name> -n projectcontour
+    ```
+
+1. Reapply the [certificate generation Job manifest][1].
 
 ## Conclusion
 
@@ -166,4 +172,4 @@ Once this process is done, the certificates will be present as Secrets in the `p
 [3]: {{< param github_url >}}/tree/{{< param branch >}}/certs/cert-envoy.ext
 [4]: {{< param github_url >}}/tree/{{< param branch >}}/examples/contour/03-envoy.yaml
 [5]: {{< param github_url >}}/tree/{{< param branch >}}/examples/contour
-
+[6]: configuration/#certificate-generation
