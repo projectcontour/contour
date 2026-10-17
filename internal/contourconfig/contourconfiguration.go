@@ -112,13 +112,14 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				"HTTP/2",
 			},
 			Timeouts: &contour_v1alpha1.TimeoutParameters{
-				RequestTimeout:                nil,
-				ConnectionIdleTimeout:         nil,
-				StreamIdleTimeout:             nil,
-				MaxConnectionDuration:         nil,
-				DelayedCloseTimeout:           nil,
-				ConnectionShutdownGracePeriod: nil,
-				ConnectTimeout:                nil,
+				RequestTimeout:                 nil,
+				ConnectionIdleTimeout:          nil,
+				StreamIdleTimeout:              nil,
+				MaxConnectionDuration:          nil,
+				HTTP1SafeMaxConnectionDuration: nil,
+				DelayedCloseTimeout:            nil,
+				ConnectionShutdownGracePeriod:  nil,
+				ConnectTimeout:                 nil,
 			},
 			Cluster: &contour_v1alpha1.ClusterParameters{
 				DNSLookupFamily: contour_v1alpha1.AutoClusterDNSFamily,
@@ -156,13 +157,14 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 }
 
 type Timeouts struct {
-	Request                       timeout.Setting
-	ConnectionIdle                timeout.Setting
-	StreamIdle                    timeout.Setting
-	MaxConnectionDuration         timeout.Setting
-	DelayedClose                  timeout.Setting
-	ConnectionShutdownGracePeriod timeout.Setting
-	ConnectTimeout                time.Duration // Since "infinite" is not valid ConnectTimeout value, use time.Duration instead of timeout.Setting.
+	Request                        timeout.Setting
+	ConnectionIdle                 timeout.Setting
+	StreamIdle                     timeout.Setting
+	MaxConnectionDuration          timeout.Setting
+	HTTP1SafeMaxConnectionDuration bool
+	DelayedClose                   timeout.Setting
+	ConnectionShutdownGracePeriod  timeout.Setting
+	ConnectTimeout                 time.Duration // Since "infinite" is not valid ConnectTimeout value, use time.Duration instead of timeout.Setting.
 }
 
 func ParseTimeoutPolicy(timeoutParameters *contour_v1alpha1.TimeoutParameters) (Timeouts, error) {
@@ -198,6 +200,9 @@ func ParseTimeoutPolicy(timeoutParameters *contour_v1alpha1.TimeoutParameters) (
 		if err != nil {
 			return Timeouts{}, fmt.Errorf("failed to parse max connection duration: %s", err)
 		}
+	}
+	if timeoutParameters.HTTP1SafeMaxConnectionDuration != nil {
+		timeouts.HTTP1SafeMaxConnectionDuration = *timeoutParameters.HTTP1SafeMaxConnectionDuration
 	}
 	if timeoutParameters.DelayedCloseTimeout != nil {
 		timeouts.DelayedClose, err = timeout.Parse(*timeoutParameters.DelayedCloseTimeout)
