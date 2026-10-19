@@ -2985,15 +2985,14 @@ func TestRouteAuthzOverride(t *testing.T) {
 				},
 			}),
 		},
-		"http service override with path prefix allowed headers and request body": {
+		"http service override with path prefix headers to add allowed upstream headers and request body": {
 			override: &dag.PerRouteAuthzOverride{
 				ServiceType:                  contour_v1.AuthorizationHTTPService,
 				ExtensionCluster:             httpCluster,
 				AuthorizationResponseTimeout: timeout.DurationSetting(2 * time.Second),
 				PathPrefix:                   "/authz",
-				AllowedAuthorizationHeaders: []dag.HeaderNameMatchCondition{
-					{MatchType: dag.HeaderNameMatchTypeExact, Value: "x-exact"},
-					{MatchType: dag.HeaderNameMatchTypePrefix, Value: "x-prefix-", IgnoreCase: true},
+				HeadersToAdd: map[string]string{
+					"x-added": "val",
 				},
 				AllowedUpstreamHeaders: []dag.HeaderNameMatchCondition{
 					{MatchType: dag.HeaderNameMatchTypeSuffix, Value: "-suffix"},
@@ -3016,11 +3015,8 @@ func TestRouteAuthzOverride(t *testing.T) {
 								},
 								PathPrefix: "/authz",
 								AuthorizationRequest: &envoy_filter_http_ext_authz_v3.AuthorizationRequest{
-									AllowedHeaders: &envoy_matcher_v3.ListStringMatcher{ //nolint:staticcheck // SA1019: deprecated field is intentionally exercised in this test
-										Patterns: []*envoy_matcher_v3.StringMatcher{
-											{MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: "x-exact"}},
-											{MatchPattern: &envoy_matcher_v3.StringMatcher_Prefix{Prefix: "x-prefix-"}, IgnoreCase: true},
-										},
+									HeadersToAdd: []*envoy_config_core_v3.HeaderValue{
+										{Key: "x-added", Value: "val"},
 									},
 								},
 								AuthorizationResponse: &envoy_filter_http_ext_authz_v3.AuthorizationResponse{

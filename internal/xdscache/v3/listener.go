@@ -24,6 +24,7 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	"k8s.io/apimachinery/pkg/types"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
@@ -31,6 +32,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
 )
 
@@ -147,15 +149,15 @@ type ListenerConfig struct {
 
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
-	RateLimitConfig *dag.RateLimitConfig
+	RateLimitConfig *RateLimitConfig
 
 	// GlobalExternalAuthConfig optionally configures the global external authorization Service to be
 	// used.
-	GlobalExternalAuthConfig *dag.ExternalAuthzConfig
+	GlobalExternalAuthConfig *GlobalExternalAuthConfig
 
 	// TracingConfig optionally configures the tracing collector Service to be
 	// used.
-	TracingConfig *dag.TracingConfig
+	TracingConfig *TracingConfig
 
 	// SocketOptions configures socket options HTTP and HTTPS listeners.
 	SocketOptions *contour_v1alpha1.SocketOptions
@@ -168,6 +170,58 @@ type ListenerConfig struct {
 
 	// MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
 	MaxConnectionsToAcceptPerSocketEvent *uint32
+}
+
+type ExtensionServiceConfig struct {
+	ExtensionService types.NamespacedName
+	Timeout          timeout.Setting
+	SNI              string
+}
+
+type TracingConfig struct {
+	ExtensionServiceConfig
+
+	ServiceName string
+
+	OverallSampling float64
+
+	ClientSampling float64
+
+	RandomSampling float64
+
+	MaxPathTagLength uint32
+
+	CustomTags []*CustomTag
+}
+
+type CustomTag struct {
+	// TagName is the unique name of the custom tag.
+	TagName string
+
+	// Literal is a static custom tag value.
+	Literal string
+
+	// EnvironmentName indicates that the label value is obtained
+	// from the environment variable.
+	EnvironmentName string
+
+	// RequestHeaderName indicates which request header
+	// the label value is obtained from.
+	RequestHeaderName string
+}
+
+type RateLimitConfig struct {
+	ExtensionServiceConfig
+	Domain                      string
+	FailOpen                    bool
+	EnableXRateLimitHeaders     bool
+	EnableResourceExhaustedCode bool
+}
+
+type GlobalExternalAuthConfig struct {
+	ExtensionServiceConfig
+	dag.ExternalAuthorization
+	Context map[string]string
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -405,6 +459,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					authzFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
+				var httpAuthzFilter *envoy_filter_network_http_connection_manager_v3.HttpFilter
+				if vh.HTTPExternalAuthorization != nil {
+					httpAuthzFilter = envoy_v3.FilterExternalAuthzHTTP(vh.HTTPExternalAuthorization)
+				}
+
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for
@@ -419,6 +478,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					DefaultFilters().
 					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
 					AddFilter(authzFilter).
+					AddFilter(httpAuthzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
@@ -566,7 +626,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	c.Update(listeners)
 }
 
-func httpGlobalExternalAuthConfig(config *dag.ExternalAuthzConfig) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	if config == nil {
 		return nil
 	}
@@ -581,13 +641,14 @@ func httpGlobalExternalAuthConfig(config *dag.ExternalAuthzConfig) *envoy_filter
 		HTTPAllowedUpstreamHeaders:         config.HTTPAllowedUpstreamHeaders,
 		HTTPPathPrefix:                     config.HTTPPathPrefix,
 		HTTPPathOverride:                   config.HTTPPathOverride,
-		AuthorizationFailOpen:              config.FailOpen,
+		AuthorizationFailOpen:              config.AuthorizationFailOpen,
+		ClearRouteCache:                    true,
 		AuthorizationResponseTimeout:       config.Timeout,
-		AuthorizationServerWithRequestBody: config.WithRequestBody,
+		AuthorizationServerWithRequestBody: config.AuthorizationServerWithRequestBody,
 	})
 }
 
-func envoyGlobalRateLimitConfig(config *dag.RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
+func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
 	if config == nil {
 		return nil
 	}
@@ -603,7 +664,7 @@ func envoyGlobalRateLimitConfig(config *dag.RateLimitConfig) *envoy_v3.GlobalRat
 	}
 }
 
-func envoyTracingConfig(config *dag.TracingConfig) *envoy_v3.EnvoyTracingConfig {
+func envoyTracingConfig(config *TracingConfig) *envoy_v3.EnvoyTracingConfig {
 	if config == nil {
 		return nil
 	}
@@ -621,7 +682,7 @@ func envoyTracingConfig(config *dag.TracingConfig) *envoy_v3.EnvoyTracingConfig 
 	}
 }
 
-func envoyTracingConfigCustomTag(tags []*dag.CustomTag) []*envoy_v3.CustomTag {
+func envoyTracingConfigCustomTag(tags []*CustomTag) []*envoy_v3.CustomTag {
 	if tags == nil {
 		return nil
 	}

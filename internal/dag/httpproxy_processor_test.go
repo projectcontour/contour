@@ -1494,6 +1494,14 @@ func TestGetRouteAuthorizationProvider(t *testing.T) {
 				ServiceType: contour_v1.AuthorizationGRPCService,
 			},
 		},
+		"empty service type defaults to grpc": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name: "provider-a",
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationGRPCService,
+			},
+		},
 		"http service type": {
 			provider: &contour_v1.AuthorizationProvider{
 				Name:               "provider-a",
@@ -1553,6 +1561,29 @@ func TestGetRouteAuthorizationProvider(t *testing.T) {
 				AuthorizationResponseTimeout: timeout.DurationSetting(5 * time.Second),
 			},
 		},
+		"provider response timeout overrides extension service response timeout": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:            "provider-a",
+				ServiceType:     contour_v1.AuthorizationGRPCService,
+				ResponseTimeout: "10s",
+			},
+			extensionSvc: &ExtensionCluster{
+				Name: "extension/authz",
+				RouteTimeoutPolicy: RouteTimeoutPolicy{
+					ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationGRPCService,
+				ExtensionCluster: &ExtensionCluster{
+					Name: "extension/authz",
+					RouteTimeoutPolicy: RouteTimeoutPolicy{
+						ResponseTimeout: timeout.DurationSetting(5 * time.Second),
+					},
+				},
+				AuthorizationResponseTimeout: timeout.DurationSetting(10 * time.Second),
+			},
+		},
 		"merged auth context is set": {
 			provider: &contour_v1.AuthorizationProvider{
 				Name:               "provider-a",
@@ -1569,12 +1600,12 @@ func TestGetRouteAuthorizationProvider(t *testing.T) {
 				},
 			},
 		},
-		"allowed authorization headers are converted": {
+		"allowed upstream headers are converted": {
 			provider: &contour_v1.AuthorizationProvider{
 				Name:        "provider-a",
 				ServiceType: contour_v1.AuthorizationHTTPService,
 				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
-					AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
+					AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
 						{Exact: "x-exact"},
 						{Prefix: "x-prefix-", IgnoreCase: true},
 						{Suffix: "-suffix"},
@@ -1584,28 +1615,11 @@ func TestGetRouteAuthorizationProvider(t *testing.T) {
 			},
 			want: &PerRouteAuthzOverride{
 				ServiceType: contour_v1.AuthorizationHTTPService,
-				AllowedAuthorizationHeaders: []HeaderNameMatchCondition{
+				AllowedUpstreamHeaders: []HeaderNameMatchCondition{
 					{MatchType: HeaderNameMatchTypeExact, Value: "x-exact"},
 					{MatchType: HeaderNameMatchTypePrefix, Value: "x-prefix-", IgnoreCase: true},
 					{MatchType: HeaderNameMatchTypeSuffix, Value: "-suffix"},
 					{MatchType: HeaderNameMatchTypeContains, Value: "middle"},
-				},
-			},
-		},
-		"allowed upstream headers are converted": {
-			provider: &contour_v1.AuthorizationProvider{
-				Name:        "provider-a",
-				ServiceType: contour_v1.AuthorizationHTTPService,
-				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
-					AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
-						{Exact: "x-upstream"},
-					},
-				},
-			},
-			want: &PerRouteAuthzOverride{
-				ServiceType: contour_v1.AuthorizationHTTPService,
-				AllowedUpstreamHeaders: []HeaderNameMatchCondition{
-					{MatchType: HeaderNameMatchTypeExact, Value: "x-upstream"},
 				},
 			},
 		},
@@ -1629,14 +1643,52 @@ func TestGetRouteAuthorizationProvider(t *testing.T) {
 				},
 			},
 		},
+		"with request body defaults maxRequestBytes": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:            "provider-a",
+				ServiceType:     contour_v1.AuthorizationHTTPService,
+				WithRequestBody: &contour_v1.AuthorizationServerBufferSettings{},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				WithRequestBody: &AuthorizationServerBufferSettings{
+					MaxRequestBytes: defaultMaxRequestBytes,
+				},
+			},
+		},
+		"headers to add values are escaped": {
+			provider: &contour_v1.AuthorizationProvider{
+				Name:        "provider-a",
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
+					HeadersToAdd: map[string]string{
+						"x-literal":   "100%",
+						"x-unknown":   "%FOO%",
+						"cookie":      "%REQ(cookie)%",
+						"x-remote":    "%DOWNSTREAM_REMOTE_ADDRESS%",
+						"x-no-escape": "plain",
+					},
+				},
+			},
+			want: &PerRouteAuthzOverride{
+				ServiceType: contour_v1.AuthorizationHTTPService,
+				HeadersToAdd: map[string]string{
+					"x-literal":   "100%%",
+					"x-unknown":   "%%FOO%%",
+					"cookie":      "%REQ(cookie)%",
+					"x-remote":    "%DOWNSTREAM_REMOTE_ADDRESS%",
+					"x-no-escape": "plain",
+				},
+			},
+		},
 		"full configuration": {
 			provider: &contour_v1.AuthorizationProvider{
 				Name:        "provider-a",
 				ServiceType: contour_v1.AuthorizationHTTPService,
 				HTTPServerSettings: &contour_v1.PerRouteHTTPAuthorizationServerSettings{
 					PathPrefix: "/authz",
-					AllowedAuthorizationHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
-						{Exact: "x-exact"},
+					HeadersToAdd: map[string]string{
+						"x-added": "val",
 					},
 					AllowedUpstreamHeaders: []contour_v1.HTTPAuthorizationServerAllowedHeaders{
 						{Prefix: "x-prefix-"},
@@ -1668,8 +1720,8 @@ func TestGetRouteAuthorizationProvider(t *testing.T) {
 				Context: map[string]string{
 					"role": "admin",
 				},
-				AllowedAuthorizationHeaders: []HeaderNameMatchCondition{
-					{MatchType: HeaderNameMatchTypeExact, Value: "x-exact"},
+				HeadersToAdd: map[string]string{
+					"x-added": "val",
 				},
 				AllowedUpstreamHeaders: []HeaderNameMatchCondition{
 					{MatchType: HeaderNameMatchTypePrefix, Value: "x-prefix-"},
@@ -1706,8 +1758,9 @@ func TestNewExternalAuthorization(t *testing.T) {
 				},
 			},
 			want: &ExternalAuthorization{
-				ServiceAPIType: AuthorizationServiceHTTP,
-				HTTPPathPrefix: "/auth",
+				ServiceAPIType:  AuthorizationServiceHTTP,
+				HTTPPathPrefix:  "/auth",
+				ClearRouteCache: true,
 			},
 		},
 		"http path override is propagated": {
@@ -1720,6 +1773,7 @@ func TestNewExternalAuthorization(t *testing.T) {
 			want: &ExternalAuthorization{
 				ServiceAPIType:   AuthorizationServiceHTTP,
 				HTTPPathOverride: "/check",
+				ClearRouteCache:  true,
 			},
 		},
 		"http path prefix and path override are mutually exclusive": {

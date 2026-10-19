@@ -2710,9 +2710,6 @@ func TestDAGStatus(t *testing.T) {
 				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName: fixture.SecretRootsCert.Name,
 				},
-				AuthzProviders: []contour_v1.AuthorizationProvider{{
-					Name: "provider-a",
-				}},
 			},
 			Routes: []contour_v1.Route{{
 				Conditions: []contour_v1.MatchCondition{{
@@ -2752,10 +2749,6 @@ func TestDAGStatus(t *testing.T) {
 				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
 					SecretName: fixture.SecretRootsCert.Name,
 				},
-				AuthzProviders: []contour_v1.AuthorizationProvider{{
-					Name:    "provider-a",
-					Default: true,
-				}},
 			},
 			Routes: []contour_v1.Route{{
 				Conditions: []contour_v1.MatchCondition{{
@@ -2776,6 +2769,56 @@ func TestDAGStatus(t *testing.T) {
 		objs: []any{proxyUndefinedAuthzProvider, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: proxyUndefinedAuthzProvider.Name, Namespace: proxyUndefinedAuthzProvider.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "AuthzProviderNotDefined", `Route references an undefined authz provider "provider-b"`),
+		},
+	})
+
+	proxyIncludedUndefinedAuthzProvider := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "root-with-included-undefined-authz-provider",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "included-undefined-authz-provider.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+			},
+			Includes: []contour_v1.Include{{
+				Name:      "child-undefined-authz-provider",
+				Namespace: "roots",
+			}},
+		},
+	}
+
+	childUndefinedAuthzProvider := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "child-undefined-authz-provider",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+				AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
+					Require: "provider-b",
+				},
+			}},
+		},
+	}
+
+	run(t, "Included route referencing an undefined authz provider is invalid", testcase{
+		objs: []any{proxyIncludedUndefinedAuthzProvider, childUndefinedAuthzProvider, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyIncludedUndefinedAuthzProvider.Name, Namespace: proxyIncludedUndefinedAuthzProvider.Namespace}: fixture.NewValidCondition().
+				Valid(),
+			{Name: childUndefinedAuthzProvider.Name, Namespace: childUndefinedAuthzProvider.Namespace}: fixture.NewValidCondition().
 				WithError(contour_v1.ConditionTypeAuthError, "AuthzProviderNotDefined", `Route references an undefined authz provider "provider-b"`),
 		},
 	})
@@ -2967,6 +3010,43 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_v1.DetailedCondition{
 			{Name: proxyAuthzProvidersFallback.Name, Namespace: proxyAuthzProvidersFallback.Namespace}: fixture.NewValidCondition().
 				WithError(contour_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & authorization providers are incompatible"),
+		},
+	})
+
+	proxyAuthzProviderHTTPWithContext := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "authz-provider-http-with-context",
+			Namespace: "roots",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "authz-provider-http-with-context.example.com",
+				TLS: &contour_v1.TLS{ //nolint:gosec // G101: Potential hardcoded credentials
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name:        "provider-a",
+					ServiceType: contour_v1.AuthorizationHTTPService,
+					Context:     map[string]string{"key": "value"},
+				}},
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "Authz provider with context on HTTP service type is invalid", testcase{
+		objs: []any{proxyAuthzProviderHTTPWithContext, fixture.SecretRootsCert, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyAuthzProviderHTTPWithContext.Name, Namespace: proxyAuthzProviderHTTPWithContext.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeAuthError, "AuthContextForHTTP", "Spec.VirtualHost.AuthzProviders.Context are only applied to grpc service type"),
 		},
 	})
 

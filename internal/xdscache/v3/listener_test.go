@@ -2475,8 +2475,8 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"insecure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
-				RateLimitConfig: &dag.RateLimitConfig{
-					ExtensionServiceConfig: dag.ExtensionServiceConfig{
+				RateLimitConfig: &RateLimitConfig{
+					ExtensionServiceConfig: ExtensionServiceConfig{
 						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
 						Timeout:          timeout.DurationSetting(7 * time.Second),
 					},
@@ -2546,8 +2546,8 @@ func TestListenerVisit(t *testing.T) {
 
 		"secure httpproxy with rate limit config": {
 			ListenerConfig: ListenerConfig{
-				RateLimitConfig: &dag.RateLimitConfig{
-					ExtensionServiceConfig: dag.ExtensionServiceConfig{
+				RateLimitConfig: &RateLimitConfig{
+					ExtensionServiceConfig: ExtensionServiceConfig{
 						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
 						SNI:              "ratelimit-example.com",
 						Timeout:          timeout.DurationSetting(7 * time.Second),
@@ -2667,8 +2667,8 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				RateLimitConfig: &dag.RateLimitConfig{
-					ExtensionServiceConfig: dag.ExtensionServiceConfig{
+				RateLimitConfig: &RateLimitConfig{
+					ExtensionServiceConfig: ExtensionServiceConfig{
 						ExtensionService: types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
 						Timeout:          timeout.DurationSetting(7 * time.Second),
 					},
@@ -3489,6 +3489,7 @@ func TestListenerVisit(t *testing.T) {
 							AuthorizationService: &dag.ExtensionCluster{
 								Name: "extension/extension/auth",
 							},
+							ClearRouteCache: true,
 						})).
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).

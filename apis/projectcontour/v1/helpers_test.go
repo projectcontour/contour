@@ -476,43 +476,6 @@ func TestVirtualHostAuthorizationConfigured(t *testing.T) {
 	}
 }
 
-func TestVirtualHostDefaultAuthorizationProvider(t *testing.T) {
-	tests := map[string]struct {
-		vhost *VirtualHost
-		want  *AuthorizationProvider
-	}{
-		"no providers": {
-			vhost: &VirtualHost{},
-			want:  nil,
-		},
-		"providers without a default": {
-			vhost: &VirtualHost{
-				AuthzProviders: []AuthorizationProvider{
-					{Name: "provider-a"},
-					{Name: "provider-b"},
-				},
-			},
-			want: nil,
-		},
-		"provider marked as default": {
-			vhost: &VirtualHost{
-				AuthzProviders: []AuthorizationProvider{
-					{Name: "provider-a"},
-					{Name: "provider-b", Default: true},
-				},
-			},
-			want: &AuthorizationProvider{Name: "provider-b", Default: true},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := tc.vhost.DefaultAuthorizationProvider()
-			assert.Equalf(t, tc.want, got, "DefaultAuthorizationProvider failed in test %s", name)
-		})
-	}
-}
-
 func TestVirtualHostAuthorizationContext(t *testing.T) {
 	tests := map[string]struct {
 		vhost *VirtualHost
@@ -540,47 +503,6 @@ func TestVirtualHostAuthorizationContext(t *testing.T) {
 			},
 			want: map[string]string{
 				"key": "value",
-			},
-		},
-		"providers only, without authorization field": {
-			vhost: &VirtualHost{
-				AuthzProviders: []AuthorizationProvider{
-					{
-						Name:    "provider-a",
-						Default: true,
-						Context: map[string]string{
-							"key": "value",
-						},
-					},
-				},
-			},
-			want: nil,
-		},
-		"authorization and default provider contexts are merged": {
-			vhost: &VirtualHost{
-				Authorization: &AuthorizationServer{
-					AuthPolicy: &AuthorizationPolicy{
-						Context: map[string]string{
-							"shared-key": "authorization-value",
-							"authz-key":  "authorization-value",
-						},
-					},
-				},
-				AuthzProviders: []AuthorizationProvider{
-					{
-						Name:    "provider-a",
-						Default: true,
-						Context: map[string]string{
-							"shared-key":   "provider-value",
-							"provider-key": "provider-value",
-						},
-					},
-				},
-			},
-			want: map[string]string{
-				"shared-key":   "provider-value",
-				"authz-key":    "authorization-value",
-				"provider-key": "provider-value",
 			},
 		},
 	}
@@ -691,7 +613,7 @@ func TestRouteAuthorizationContext(t *testing.T) {
 				"parent-key":   "parent-value",
 			},
 		},
-		"provider context takes precedence over route auth policy context": {
+		"route context merges with provider context and overrides common keys": {
 			route: &Route{
 				AuthPolicy: &RouteAuthorizationPolicy{
 					Context: map[string]string{
@@ -709,11 +631,12 @@ func TestRouteAuthorizationContext(t *testing.T) {
 			},
 			parent: nil,
 			want: map[string]string{
-				"shared-key":   "provider-value",
+				"shared-key":   "route-value",
+				"route-key":    "route-value",
 				"provider-key": "provider-value",
 			},
 		},
-		"provider without context ignores deprecated route auth policy context": {
+		"route context is used with a provider without context": {
 			route: &Route{
 				AuthPolicy: &RouteAuthorizationPolicy{
 					Context: map[string]string{
@@ -723,7 +646,9 @@ func TestRouteAuthorizationContext(t *testing.T) {
 			},
 			provider: &AuthorizationProvider{Name: "provider-a"},
 			parent:   nil,
-			want:     nil,
+			want: map[string]string{
+				"route-key": "route-value",
+			},
 		},
 	}
 

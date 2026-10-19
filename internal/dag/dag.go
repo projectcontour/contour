@@ -329,9 +329,12 @@ type Route struct {
 	// over HTTP?
 	HTTPSUpgrade bool
 
-	// AuthzOverride is the provider used for this route. It might be the default provider
-	// or a provider required by the route. If nil, authorization will be disabled on this route.
+	// AuthzOverride configures per-route authorization settings.
 	AuthzOverride *PerRouteAuthzOverride
+
+	// HTTPAuthzOverride configures per-route authorization settings
+	// for HTTP authorization providers.
+	HTTPAuthzOverride *PerRouteAuthzOverride
 
 	// Is this a websocket route?
 	// TODO(dfc) this should go on the service
@@ -771,13 +774,10 @@ type VirtualHost struct {
 	// by IPFilterAllow.
 	IPFilterRules []IPFilterRule
 
-	// AuthzProviders specify per-route auth overwrite options.
-	AuthzProviders []AuthorizationProvider
-
 	Routes map[string]*Route
 }
 
-// AddRoute adds a route to VirtualHosts.Routes map.
+// Add route to VirtualHosts.Routes map.
 func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
 		v.Routes = make(map[string]*Route)
@@ -812,15 +812,6 @@ func (v *VirtualHost) Valid() bool {
 	return len(v.Routes) > 0
 }
 
-func (v *VirtualHost) DefaultAuthorizationProvider() *AuthorizationProvider {
-	for _, provider := range v.AuthzProviders {
-		if provider.Default {
-			return &provider
-		}
-	}
-	return nil
-}
-
 // A SecureVirtualHost represents a HTTP host protected by TLS.
 type SecureVirtualHost struct {
 	VirtualHost
@@ -847,6 +838,10 @@ type SecureVirtualHost struct {
 	// the ExtAuthz filter.
 	ExternalAuthorization *ExternalAuthorization
 
+	// HTTPExternalAuthorization contains the configuration for enabling
+	// the ExtAuthz filter for HTTP authorization providers.
+	HTTPExternalAuthorization *ExternalAuthorization
+
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
 }
@@ -860,35 +855,16 @@ type JWTProvider struct {
 	ForwardJWT bool
 }
 
-type AuthorizationProvider struct {
-	Name                         string
-	Default                      bool
-	ExtensionCluster             *ExtensionCluster
-	ServiceType                  contour_v1.AuthorizationServiceType
-	HTTPServerSettings           *contour_v1.PerRouteHTTPAuthorizationServerSettings
-	Context                      map[string]string
-	AuthorizationResponseTimeout timeout.Setting
-	WithRequestBody              *AuthorizationServerBufferSettings
-	PathPrefix                   string
-	PathOverride                 string
-	HeadersToAdd                 map[string]string
-	AllowedAuthorizationHeaders  []contour_v1.HTTPAuthorizationServerAllowedHeaders
-	AllowedUpstreamHeaders       []contour_v1.HTTPAuthorizationServerAllowedHeaders
-}
-
 type PerRouteAuthzOverride struct {
-	ProviderName                 string
 	Disabled                     bool
 	ExtensionCluster             *ExtensionCluster
 	ServiceType                  contour_v1.AuthorizationServiceType
-	HTTPServerSettings           *contour_v1.PerRouteHTTPAuthorizationServerSettings
 	Context                      map[string]string
 	AuthorizationResponseTimeout timeout.Setting
 	WithRequestBody              *AuthorizationServerBufferSettings
 	PathPrefix                   string
 	PathOverride                 string
 	HeadersToAdd                 map[string]string
-	AllowedAuthorizationHeaders  []HeaderNameMatchCondition
 	AllowedUpstreamHeaders       []HeaderNameMatchCondition
 }
 
@@ -973,6 +949,9 @@ type ExternalAuthorization struct {
 	// only reason to set this to `true` is when you are migrating
 	// from internal to external authorization.
 	AuthorizationFailOpen bool
+
+	// ClearRouteCache allows headers set by the authorization server to change the route.
+	ClearRouteCache bool
 
 	// AuthorizationServerWithRequestBody specifies configuration
 	// for buffering request data sent to AuthorizationServer
@@ -1405,62 +1384,4 @@ type CircuitBreakers struct {
 	// PerHostMaxConnections is the maximum number of connections
 	// that Envoy will allow to each individual host in a cluster.
 	PerHostMaxConnections uint32
-}
-
-type ExtensionServiceConfig struct {
-	ExtensionService types.NamespacedName
-	Timeout          timeout.Setting
-	SNI              string
-}
-
-type TracingConfig struct {
-	ExtensionServiceConfig
-
-	ServiceName string
-
-	OverallSampling float64
-
-	ClientSampling float64
-
-	RandomSampling float64
-
-	MaxPathTagLength uint32
-
-	CustomTags []*CustomTag
-}
-
-type CustomTag struct {
-	// TagName is the unique name of the custom tag.
-	TagName string
-
-	// Literal is a static custom tag value.
-	Literal string
-
-	// EnvironmentName indicates that the label value is obtained
-	// from the environment variable.
-	EnvironmentName string
-
-	// RequestHeaderName indicates which request header
-	// the label value is obtained from.
-	RequestHeaderName string
-}
-
-type RateLimitConfig struct {
-	ExtensionServiceConfig
-	Domain                      string
-	FailOpen                    bool
-	EnableXRateLimitHeaders     bool
-	EnableResourceExhaustedCode bool
-}
-
-type ExternalAuthzConfig struct {
-	ExtensionServiceConfig
-	FailOpen                        bool
-	Context                         map[string]string
-	ServiceAPIType                  AuthorizationServiceType
-	HTTPAllowedAuthorizationHeaders []HeaderNameMatchCondition
-	HTTPAllowedUpstreamHeaders      []HeaderNameMatchCondition
-	HTTPPathPrefix                  string
-	HTTPPathOverride                string
-	WithRequestBody                 *AuthorizationServerBufferSettings
 }

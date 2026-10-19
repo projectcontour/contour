@@ -290,9 +290,6 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host, path stri
 	}
 
 	r := &Route{
-		AuthzOverride: &PerRouteAuthzOverride{
-			Disabled: true,
-		},
 		HTTPSUpgrade:  annotation.TLSRequired(ingress),
 		Websocket:     annotation.WebsocketRoutes(ingress)[path],
 		TimeoutPolicy: ingressTimeoutPolicy(ingress, log),

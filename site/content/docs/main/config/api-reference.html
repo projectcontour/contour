@@ -330,6 +330,8 @@ outer scope.</p>
 <a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
 </p>
 <p>
+<p>AuthorizationProvider configures an external authorization server that
+routes can select with authPolicy.require.</p>
 </p>
 <table>
 <thead>
@@ -377,7 +379,6 @@ ExtensionServiceReference
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
 </td>
 </tr>
@@ -3212,22 +3213,6 @@ Only one of pathPrefix or pathOverride may be set.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>allowedAuthorizationHeaders</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.HTTPAuthorizationServerAllowedHeaders">
-[]HTTPAuthorizationServerAllowedHeaders
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
-Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>headersToAdd</code>
 <br>
 <em>
@@ -3236,9 +3221,8 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Sets a list of headers that will be included in the request to the authorization service.
-Client request headers with the same key will be overridden.
-The keys should be also passed in allowedAuthorizationHeaders.</p>
+<p>HeadersToAdd sets headers that will be included in the request to the authorization service.
+Client request headers with the same key will be overridden.</p>
 </td>
 </tr>
 <tr>
@@ -4415,7 +4399,7 @@ The rules defined here override any rules set on the root HTTPProxy.</p>
 <a href="#projectcontour.io/v1.Route">Route</a>)
 </p>
 <p>
-<p>RouteAuthorizationPolicy allows modifying authorization config per route.</p>
+<p>RouteAuthorizationPolicy modifies how client requests are authenticated per route.</p>
 </p>
 <table>
 <thead>
@@ -4470,8 +4454,9 @@ map[string]string
 authentication server in the check request. If a context
 is provided at an enclosing scope, the entries are merged
 such that the inner scope overrides matching keys from the
-outer scope.</p>
-<p>Deprecated: Set Require to use the AuthorizationProvider with the desired context.</p>
+outer scope.
+If the route uses an authorization provider, the entries are
+merged with the provider&rsquo;s context.</p>
 </td>
 </tr>
 </tbody>
@@ -5410,7 +5395,8 @@ authorization for this virtual host. Authorization can
 only be configured on virtual hosts that have TLS enabled.
 If the TLS configuration requires client certificate
 validation, the client certificate is always included in the
-authentication check request.</p>
+authentication check request.
+Only one of Authorization and AuthzProviders can be defined.</p>
 </td>
 </tr>
 <tr>
@@ -5470,7 +5456,10 @@ RateLimitPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Providers to use for customizing ext-authz per-route on the virtual host.</p>
+<p>Providers to use for customizing ext-authz per-route on the virtual host.
+A route selects a provider with authPolicy.require. A route that does not
+select one uses the default provider.
+Only one of Authorization and AuthzProviders can be defined.</p>
 </td>
 </tr>
 <tr>

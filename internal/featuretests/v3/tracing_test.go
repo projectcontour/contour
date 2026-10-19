@@ -23,7 +23,6 @@ import (
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -33,8 +32,8 @@ import (
 )
 
 func TestTracing(t *testing.T) {
-	tracingConfig := &dag.TracingConfig{
-		ExtensionServiceConfig: dag.ExtensionServiceConfig{
+	tracingConfig := &xdscache_v3.TracingConfig{
+		ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
 			ExtensionService: k8s.NamespacedNameFrom("projectcontour/otel-collector"),
 			Timeout:          timeout.DefaultSetting(),
 		},
@@ -43,7 +42,7 @@ func TestTracing(t *testing.T) {
 		ClientSampling:   100,
 		RandomSampling:   100,
 		MaxPathTagLength: 256,
-		CustomTags: []*dag.CustomTag{
+		CustomTags: []*xdscache_v3.CustomTag{
 			{
 				TagName: "literal",
 				Literal: "this is literal",

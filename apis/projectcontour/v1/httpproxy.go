@@ -250,6 +250,10 @@ const (
 	AuthorizationHTTPService AuthorizationServiceType = "http"
 )
 
+// AuthorizationProvider configures an external authorization server that
+// routes can select with authPolicy.require.
+// +kubebuilder:validation:XValidation:message="httpSettings can only be set when serviceType is 'http'",rule="!has(self.httpSettings) || self.serviceType == 'http'"
+// +kubebuilder:validation:XValidation:message="context can only be set when serviceType is 'grpc'",rule="!has(self.context) || size(self.context) == 0 || self.serviceType != 'http'"
 type AuthorizationProvider struct {
 	// Unique name for the provider.
 	// +kubebuilder:validation:Required
@@ -263,9 +267,8 @@ type AuthorizationProvider struct {
 	Default bool `json:"default,omitempty"`
 
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
-	//
-	// +optional
-	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef,omitempty"`
+	// +kubebuilder:validation:Required
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef"`
 
 	// ServiceType defines the protocol implemented by the external server, specifying
 	// whether it's a raw HTTP authorization server or a gRPC authorization server.
@@ -362,12 +365,14 @@ type HTTPAuthorizationServerSettings struct {
 	// Only one of pathPrefix or pathOverride may be set.
 	//
 	// +optional
+	// +kubebuilder:validation:XValidation:message="must start with /",rule="self.startsWith('/')"
 	PathPrefix string `json:"pathPrefix,omitempty"`
 
 	// PathOverride replaces the value of the authorization request header Path.
 	// Only one of pathPrefix or pathOverride may be set.
 	//
 	// +optional
+	// +kubebuilder:validation:XValidation:message="must start with /",rule="self.startsWith('/')"
 	PathOverride string `json:"pathOverride,omitempty"`
 
 	// AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
@@ -389,23 +394,18 @@ type PerRouteHTTPAuthorizationServerSettings struct {
 	// Only one of pathPrefix or pathOverride may be set.
 	//
 	// +optional
+	// +kubebuilder:validation:XValidation:message="must start with /",rule="self.startsWith('/')"
 	PathPrefix string `json:"pathPrefix,omitempty"`
 
 	// PathOverride replaces the value of the authorization request header Path.
 	// Only one of pathPrefix or pathOverride may be set.
 	//
 	// +optional
+	// +kubebuilder:validation:XValidation:message="must start with /",rule="self.startsWith('/')"
 	PathOverride string `json:"pathOverride,omitempty"`
 
-	// AllowedAuthorizationHeaders specifies client request headers that will be sent to the authorization server.
-	// Host, Method, Path, Content-Length, and Authorization headers are additionally included in the list.
-	//
-	// +optional
-	AllowedAuthorizationHeaders []HTTPAuthorizationServerAllowedHeaders `json:"allowedAuthorizationHeaders,omitempty"`
-
-	// Sets a list of headers that will be included in the request to the authorization service.
+	// HeadersToAdd sets headers that will be included in the request to the authorization service.
 	// Client request headers with the same key will be overridden.
-	// The keys should be also passed in allowedAuthorizationHeaders.
 	// +optional
 	HeadersToAdd map[string]string `json:"headersToAdd,omitempty"`
 
@@ -419,6 +419,7 @@ type PerRouteHTTPAuthorizationServerSettings struct {
 // HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
 // in the context of HTTP authorization. Regex support is intentionally excluded to simplify the user
 // experience and prevent potential issues. Only one of Prefix, Exact, Suffix or Contains must be provided.
+// +kubebuilder:validation:XValidation:message="only one of prefix, suffix, exact, and contains should be set in the allowedHeader",rule="(has(self.exact) ? 1 : 0) + (has(self.prefix) ? 1 : 0) + (has(self.suffix) ? 1 : 0) + (has(self.contains) ? 1 : 0) == 1"
 type HTTPAuthorizationServerAllowedHeaders struct {
 	// Exact specifies a string that the header name must be equal to.
 	//
@@ -488,8 +489,8 @@ type AuthorizationPolicy struct {
 	Context map[string]string `json:"context,omitempty"`
 }
 
-// RouteAuthorizationPolicy allows modifying authorization config per route.
-// +kubebuilder:validation:XValidation:rule="!(has(self.context) && has(self.require))",message="context is deprecated; set Require to use the AuthorizationProvider with the desired context."
+// RouteAuthorizationPolicy modifies how client requests are authenticated per route.
+// +kubebuilder:validation:XValidation:message="only one of require or disabled can be specified",rule="!(has(self.require) && size(self.require) > 0 && has(self.disabled) && self.disabled)"
 type RouteAuthorizationPolicy struct {
 	// Require names a specific Authorization provider (defined in the
 	// virtual host) to require for the route. If specified, this field
@@ -510,14 +511,16 @@ type RouteAuthorizationPolicy struct {
 	// is provided at an enclosing scope, the entries are merged
 	// such that the inner scope overrides matching keys from the
 	// outer scope.
+	// If the route uses an authorization provider, the entries are
+	// merged with the provider's context.
 	//
-	// Deprecated: Set Require to use the AuthorizationProvider with the desired context.
 	// +optional
 	Context map[string]string `json:"context,omitempty"`
 }
 
 // VirtualHost appears at most once. If it is present, the object is considered
 // to be a "root".
+// +kubebuilder:validation:XValidation:message="only one of authorization or authzProviders can be specified",rule="!has(self.authorization) || !has(self.authzProviders) || size(self.authzProviders) == 0"
 type VirtualHost struct {
 	// The fully qualified domain name of the root of the ingress tree
 	// all leaves of the DAG rooted at this object relate to the fqdn.
@@ -540,6 +543,7 @@ type VirtualHost struct {
 	// If the TLS configuration requires client certificate
 	// validation, the client certificate is always included in the
 	// authentication check request.
+	// Only one of Authorization and AuthzProviders can be defined.
 	//
 	// +optional
 	Authorization *AuthorizationServer `json:"authorization,omitempty"`
@@ -554,8 +558,14 @@ type VirtualHost struct {
 	JWTProviders []JWTProvider `json:"jwtProviders,omitempty"`
 
 	// Providers to use for customizing ext-authz per-route on the virtual host.
+	// A route selects a provider with authPolicy.require. A route that does not
+	// select one uses the default provider.
+	// Only one of Authorization and AuthzProviders can be defined.
 	// +optional
-	AuthzProviders []AuthorizationProvider `json:"authzProviders"`
+	// +listType=map
+	// +listMapKey=name
+	// +kubebuilder:validation:XValidation:message="at most one provider can be the default",rule="self.filter(p, has(p.default) && p.default).size() <= 1"
+	AuthzProviders []AuthorizationProvider `json:"authzProviders,omitempty"`
 
 	// IPAllowFilterPolicy is a list of ipv4/6 filter rules for which matching
 	// requests should be allowed. All other requests will be denied.

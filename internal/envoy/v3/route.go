@@ -192,6 +192,12 @@ func applyPerRouteAuthPolicy(dagRoute *dag.Route, route *envoy_config_route_v3.R
 			route.TypedPerFilterConfig[ExtAuthzFilterName] = override
 		}
 	}
+
+	if dagRoute.HTTPAuthzOverride != nil {
+		if override := routeAuthzOverride(dagRoute.HTTPAuthzOverride); override != nil {
+			route.TypedPerFilterConfig[ExtAuthzHTTPFilterName] = override
+		}
+	}
 }
 
 // routeAuthzDisabled returns a per-route config to disable authorization.
@@ -247,11 +253,8 @@ func routeAuthzOverride(authzOverride *dag.PerRouteAuthzOverride) *anypb.Any {
 				serviceOverride.HttpService.PathOverride = authzOverride.PathOverride
 			}
 
-			if authzOverride.HeadersToAdd != nil || len(authzOverride.AllowedAuthorizationHeaders) > 0 {
+			if len(authzOverride.HeadersToAdd) > 0 {
 				serviceOverride.HttpService.AuthorizationRequest = &envoy_filter_http_ext_authz_v3.AuthorizationRequest{
-					AllowedHeaders: &envoy_matcher_v3.ListStringMatcher{ //nolint:staticcheck // SA1019: deprecated in favor of filter-level allowed_headers, which cannot be set per-route
-						Patterns: ExternalAuthzAllowedHeaders(authzOverride.AllowedAuthorizationHeaders),
-					},
 					HeadersToAdd: headerList(authzOverride.HeadersToAdd),
 				}
 			}
