@@ -400,6 +400,8 @@ Example input values: "300ms", "5s", "1m".
 - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
   If left unspecified, `timeoutPolicy.request` will be used.
 
+To expose the number of attempts to the upstream or the client via the `x-envoy-attempt-count` header, see [request attempt count][9] on the virtual host.
+
 ## Load Balancing Strategy
 
 Each route can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
@@ -590,5 +592,6 @@ See [the API specification][9] and [Envoy's documentation][10] for more detail.
 [6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-idle-timeout
 [7]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overview
 [8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
+[9]: /docs/{{< param version >}}/config/virtual-hosts/#request-attempt-count
 [9] /docs/{{< param version >}}/config/api/#projectcontour.io/v1.HTTPInternalRedirectPolicy
 [10] https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/http/http_connection_management.html#internal-redirects
