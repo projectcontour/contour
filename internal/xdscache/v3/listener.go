@@ -404,6 +404,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				StreamIdleTimeout(cfg.Timeouts.StreamIdle).
 				DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
 				MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
+				HTTP1SafeMaxConnectionDuration(cfg.Timeouts.HTTP1SafeMaxConnectionDuration).
 				ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(cfg.AllowChunkedLength).
 				MergeSlashes(cfg.MergeSlashes).
@@ -481,6 +482,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					StreamIdleTimeout(cfg.Timeouts.StreamIdle).
 					DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
+					HTTP1SafeMaxConnectionDuration(cfg.Timeouts.HTTP1SafeMaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
@@ -566,6 +568,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					StreamIdleTimeout(cfg.Timeouts.StreamIdle).
 					DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
+					HTTP1SafeMaxConnectionDuration(cfg.Timeouts.HTTP1SafeMaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).

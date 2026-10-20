@@ -756,6 +756,16 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
+		"http1 safe max connection duration": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Timeouts.HTTP1SafeMaxConnectionDuration = true
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Timeouts.HTTP1SafeMaxConnectionDuration = ptr.To(true)
+				return cfg
+			},
+		},
 		"server header transformation": {
 			getServeContext: func(ctx *serveContext) *serveContext {
 				ctx.Config.ServerHeaderTransformation = config.AppendIfAbsentServerHeader
