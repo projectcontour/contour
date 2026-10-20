@@ -7485,6 +7485,20 @@ uint32
 <p>MaxConnectionsToAcceptPerSocketEvent defines the maximum number of connections Envoy will accept from the kernel per event loop iteration. If no value is provided, Envoy will accept all pending connections at once. It is recommended to set this to a low value.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequestBodyBytes</code>
+<br>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
+If not specified, there is no limit.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListenerTLS">EnvoyListenerTLS
