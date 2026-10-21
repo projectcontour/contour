@@ -545,6 +545,50 @@ type ListenerParameters struct {
 	// Envoy will accept from the kernel per socket event.
 	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto
 	MaxConnectionsToAcceptPerSocketEvent *uint32 `yaml:"max-connections-to-accept-per-socket-event,omitempty"`
+
+	// ForwardProtoConfig makes Envoy derive X-Forwarded-Proto from the destination
+	// port in the PROXY protocol header rather than from the TLS state of the
+	// accepted connection, for load balancers that terminate TLS and forward
+	// plaintext with PROXY protocol. Requires --use-proxy-protocol and Envoy 1.38
+	// or later.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
+	// for more information.
+	//
+	// +optional
+	ForwardProtoConfig *ForwardProtoConfig `yaml:"forward-proto-config,omitempty"`
+}
+
+// ForwardProtoConfig defines how Envoy derives X-Forwarded-Proto from the
+// destination port in the PROXY protocol header.
+type ForwardProtoConfig struct {
+	// HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "https", for example 443.
+	HTTPSDestinationPorts []uint32 `yaml:"https-destination-ports,omitempty"`
+
+	// HTTPDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "http", for example 80.
+	HTTPDestinationPorts []uint32 `yaml:"http-destination-ports,omitempty"`
+}
+
+// Validate checks the port ranges, which the CRD schema covers on the
+// ContourConfiguration path, and defers the rest to the v1alpha1 checks.
+func (f *ForwardProtoConfig) Validate() error {
+	if f == nil {
+		return nil
+	}
+
+	for _, ports := range []struct {
+		scheme string
+		ports  []uint32
+	}{{"https", f.HTTPSDestinationPorts}, {"http", f.HTTPDestinationPorts}} {
+		for _, port := range ports.ports {
+			if port < 1 || port > 65535 {
+				return fmt.Errorf("invalid forward-proto-config %s-destination-ports value %d, must be between 1 and 65535", ports.scheme, port)
+			}
+		}
+	}
+
+	return (*contour_v1alpha1.ForwardProtoConfig)(f).Validate()
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -578,6 +622,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.MaxConnectionsToAcceptPerSocketEvent != nil && *p.MaxConnectionsToAcceptPerSocketEvent == 0 {
 		return fmt.Errorf("max-connections-to-accept-per-socket-event must be greater than 0")
+	}
+
+	if err := p.ForwardProtoConfig.Validate(); err != nil {
+		return err
 	}
 
 	return p.SocketOptions.Validate()
