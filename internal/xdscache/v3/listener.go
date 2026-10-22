@@ -16,6 +16,7 @@ package v3
 import (
 	"sort"
 	"sync"
+	"time"
 
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -170,6 +171,9 @@ type ListenerConfig struct {
 
 	// MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
 	MaxConnectionsToAcceptPerSocketEvent *uint32
+
+	// AccessLogRateLimit sets the maximum number of access log entries per second across the Envoy process.
+	AccessLogRateLimit *contour_v1alpha1.AccessLogRateLimit
 }
 
 type ExtensionServiceConfig struct {
@@ -278,6 +282,33 @@ func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_config_accesslog_v3.Acc
 	}
 }
 
+func (c *ListenerCache) insecureAccessLog() []*envoy_config_accesslog_v3.AccessLog {
+	al := c.Config.newInsecureAccessLog()
+	return c.applyRateLimit(al)
+}
+
+func (c *ListenerCache) secureAccessLog() []*envoy_config_accesslog_v3.AccessLog {
+	al := c.Config.newSecureAccessLog()
+	return c.applyRateLimit(al)
+}
+
+func (c *ListenerCache) applyRateLimit(al []*envoy_config_accesslog_v3.AccessLog) []*envoy_config_accesslog_v3.AccessLog {
+	rl := c.Config.AccessLogRateLimit
+	if rl == nil {
+		return al
+	}
+	tokensPerFill := rl.MaxTokens
+	if rl.TokensPerFill != nil {
+		tokensPerFill = *rl.TokensPerFill
+	}
+	fillInterval := time.Second
+	if rl.FillInterval != nil {
+		// Already validated at config load time.
+		fillInterval, _ = time.ParseDuration(*rl.FillInterval)
+	}
+	return envoy_v3.WithProcessRateLimit(al, rl.MaxTokens, tokensPerFill, fillInterval)
+}
+
 // minTLSVersion returns the requested minimum TLS protocol
 // version or envoy_transport_socket_tls_v3.TlsParameters_TLSv1_2 if not configured.
 func (lvc *ListenerConfig) minTLSVersion() envoy_transport_socket_tls_v3.TlsParameters_TlsProtocol {
@@ -382,7 +413,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				cfg.PerConnectionBufferLimitBytes,
 				socketOptions,
 				nil,
-				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, cfg.newInsecureAccessLog()),
+				envoy_v3.TCPProxy(listener.Name, listener.TCPProxy, c.insecureAccessLog()),
 			)
 
 			continue
@@ -398,7 +429,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				DefaultFilters().
 				RouteConfigName(httpRouteConfigName(listener)).
 				MetricsPrefix(listener.Name).
-				AccessLoggers(cfg.newInsecureAccessLog()).
+				AccessLoggers(c.insecureAccessLog()).
 				RequestTimeout(cfg.Timeouts.Request).
 				ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
 				StreamIdleTimeout(cfg.Timeouts.StreamIdle).
@@ -475,7 +506,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(authzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
-					AccessLoggers(cfg.newSecureAccessLog()).
+					AccessLoggers(c.secureAccessLog()).
 					RequestTimeout(cfg.Timeouts.Request).
 					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
 					StreamIdleTimeout(cfg.Timeouts.StreamIdle).
@@ -499,7 +530,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 
 				alpnProtos = envoy_v3.ProtoNamesForVersions(cfg.DefaultHTTPVersions...)
 			} else {
-				filters = envoy_v3.Filters(envoy_v3.TCPProxy(listener.Name, vh.TCPProxy, cfg.newSecureAccessLog()))
+				filters = envoy_v3.Filters(envoy_v3.TCPProxy(listener.Name, vh.TCPProxy, c.secureAccessLog()))
 
 				// Do not offer ALPN for TCP proxying, since
 				// the protocols will be provided by the TCP
@@ -560,7 +591,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					AddFilter(authzFilter).
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
 					MetricsPrefix(listener.Name).
-					AccessLoggers(cfg.newSecureAccessLog()).
+					AccessLoggers(c.secureAccessLog()).
 					RequestTimeout(cfg.Timeouts.Request).
 					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
 					StreamIdleTimeout(cfg.Timeouts.StreamIdle).

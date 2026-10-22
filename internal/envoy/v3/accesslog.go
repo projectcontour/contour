@@ -14,13 +14,19 @@
 package v3
 
 import (
+	"time"
+
 	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_access_logger_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
+	envoy_process_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/filters/process_ratelimit/v3"
 	envoy_formatter_metadata_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/metadata/v3"
 	envoy_formatter_req_without_query_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/req_without_query/v3"
+	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -118,6 +124,46 @@ func sv(s string) *structpb.Value {
 			StringValue: s,
 		},
 	}
+}
+
+// WithProcessRateLimit wraps access log entries with a ProcessRateLimitFilter
+// that rate limits log emission using an inline token bucket.
+func WithProcessRateLimit(accessLogs []*envoy_config_accesslog_v3.AccessLog, maxTokens uint32, tokensPerFill uint32, fillInterval time.Duration) []*envoy_config_accesslog_v3.AccessLog {
+	rateLimitFilter := &envoy_config_accesslog_v3.AccessLogFilter{
+		FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_ExtensionFilter{
+			ExtensionFilter: &envoy_config_accesslog_v3.ExtensionFilter{
+				Name: "envoy.access_loggers.extension_filters.process_ratelimit",
+				ConfigType: &envoy_config_accesslog_v3.ExtensionFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_process_ratelimit_v3.ProcessRateLimitFilter{
+						TokenBucket: &envoy_type_v3.TokenBucket{
+							MaxTokens:     maxTokens,
+							TokensPerFill: wrapperspb.UInt32(tokensPerFill),
+							FillInterval:  durationpb.New(fillInterval),
+						},
+					}),
+				},
+			},
+		},
+	}
+
+	for i, al := range accessLogs {
+		if al.Filter == nil {
+			accessLogs[i].Filter = rateLimitFilter
+		} else {
+			accessLogs[i].Filter = &envoy_config_accesslog_v3.AccessLogFilter{
+				FilterSpecifier: &envoy_config_accesslog_v3.AccessLogFilter_AndFilter{
+					AndFilter: &envoy_config_accesslog_v3.AndFilter{
+						Filters: []*envoy_config_accesslog_v3.AccessLogFilter{
+							al.Filter,
+							rateLimitFilter,
+						},
+					},
+				},
+			}
+		}
+	}
+
+	return accessLogs
 }
 
 // extensionConfig returns a list of extension configs required by the access log format.
