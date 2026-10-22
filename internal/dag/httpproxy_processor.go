@@ -1785,9 +1785,9 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 	case len(httpproxy.Spec.VirtualHost.AuthzProviders) > 0:
 		// Envoy's allowed_headers selects which client request headers are sent to the authorization server.
 		// It can only be set on the filter, and it is not impacted by route's service_override.
-		// Default headers depends on the filter's service type: all headers for gRPC, and only some for HTTP. A
-		// As a workaround gRPC and HTTP providers use separate filters. This way gRPC providers always get
-		// all headers and HTTP providers get only a few, regardless if the default/base provider is gRPC or HTTP.
+		// Default headers depend on the filter's service type: all headers for gRPC, and only some for HTTP.
+		// As a workaround, gRPC and HTTP providers use separate filters. This way gRPC providers always get
+		// all headers and HTTP providers get only a few, regardless of whether the default/base provider is gRPC or HTTP.
 		grpcBase := authorizationServerFromProviders(httpproxy.Spec.VirtualHost.AuthzProviders, contour_v1.AuthorizationGRPCService)
 		httpBase := authorizationServerFromProviders(httpproxy.Spec.VirtualHost.AuthzProviders, contour_v1.AuthorizationHTTPService)
 
