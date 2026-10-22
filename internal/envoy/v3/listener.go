@@ -177,6 +177,7 @@ const (
 	GlobalRateLimitFilterName string = "envoy.filters.http.ratelimit"
 	RBACFilterName            string = "envoy.filters.http.rbac"
 	ExtAuthzFilterName        string = "envoy.filters.http.ext_authz"
+	ExtAuthzHTTPFilterName    string = "envoy.filters.http.ext_authz/http"
 	JWTAuthnFilterName        string = "envoy.filters.http.jwt_authn"
 	LuaFilterName             string = "envoy.filters.http.lua"
 	CompressorFilterName      string = "envoy.filters.http.compressor"
@@ -839,6 +840,10 @@ end
 
 // ExternalAuthzAllowedHeaders returns the slice of StringMatcher for a given slice of HeaderNameMatchCondition.
 func ExternalAuthzAllowedHeaders(allowedHeaders []dag.HeaderNameMatchCondition) []*envoy_matcher_v3.StringMatcher {
+	if allowedHeaders == nil {
+		return nil
+	}
+
 	var allowedHeaderPatterns []*envoy_matcher_v3.StringMatcher
 
 	for _, allowedHeader := range allowedHeaders {
@@ -881,10 +886,7 @@ func ExternalAuthzAllowedHeaders(allowedHeaders []dag.HeaderNameMatchCondition) 
 // requested parameters.
 func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	authConfig := envoy_filter_http_ext_authz_v3.ExtAuthz{
-		// Pretty sure we always want this. Why have an
-		// external auth service if it is not going to affect
-		// routing decisions?
-		ClearRouteCache:  true,
+		ClearRouteCache:  externalAuthorization.ClearRouteCache,
 		FailureModeAllow: externalAuthorization.AuthorizationFailOpen,
 		StatusOnError: &envoy_type_v3.HttpStatus{
 			Code: envoy_type_v3.StatusCode_Forbidden,
@@ -921,6 +923,10 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envo
 			extAuthzService.HttpService.PathPrefix = pathPrefix
 		}
 
+		if pathOverride := externalAuthorization.HTTPPathOverride; pathOverride != "" {
+			extAuthzService.HttpService.PathOverride = pathOverride
+		}
+
 		if len(externalAuthorization.HTTPAllowedAuthorizationHeaders) > 0 {
 			authConfig.AllowedHeaders = &envoy_matcher_v3.ListStringMatcher{
 				Patterns: ExternalAuthzAllowedHeaders(externalAuthorization.HTTPAllowedAuthorizationHeaders),
@@ -952,6 +958,14 @@ func FilterExternalAuthz(externalAuthorization *dag.ExternalAuthorization) *envo
 			TypedConfig: protobuf.MustMarshalAny(&authConfig),
 		},
 	}
+}
+
+// FilterExternalAuthzHTTP returns an `ext_authz` filter for HTTP
+// authorization providers.
+func FilterExternalAuthzHTTP(externalAuthorization *dag.ExternalAuthorization) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+	filter := FilterExternalAuthz(externalAuthorization)
+	filter.Name = ExtAuthzHTTPFilterName
+	return filter
 }
 
 // FilterJWTAuthN returns a `jwt_authn` filter configured with the

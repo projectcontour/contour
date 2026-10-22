@@ -459,6 +459,11 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					authzFilter = envoy_v3.FilterExternalAuthz(vh.ExternalAuthorization)
 				}
 
+				var httpAuthzFilter *envoy_filter_network_http_connection_manager_v3.HttpFilter
+				if vh.HTTPExternalAuthorization != nil {
+					httpAuthzFilter = envoy_v3.FilterExternalAuthzHTTP(vh.HTTPExternalAuthorization)
+				}
+
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for
@@ -473,6 +478,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					DefaultFilters().
 					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
 					AddFilter(authzFilter).
+					AddFilter(httpAuthzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
@@ -634,7 +640,9 @@ func httpGlobalExternalAuthConfig(config *GlobalExternalAuthConfig) *envoy_filte
 		HTTPAllowedAuthorizationHeaders:    config.HTTPAllowedAuthorizationHeaders,
 		HTTPAllowedUpstreamHeaders:         config.HTTPAllowedUpstreamHeaders,
 		HTTPPathPrefix:                     config.HTTPPathPrefix,
+		HTTPPathOverride:                   config.HTTPPathOverride,
 		AuthorizationFailOpen:              config.AuthorizationFailOpen,
+		ClearRouteCache:                    true,
 		AuthorizationResponseTimeout:       config.Timeout,
 		AuthorizationServerWithRequestBody: config.AuthorizationServerWithRequestBody,
 	})

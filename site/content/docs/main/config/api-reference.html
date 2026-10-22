@@ -277,8 +277,7 @@ TLSCertificateDelegationStatus
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
-<a href="#projectcontour.io/v1.Route">Route</a>)
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
 </p>
 <p>
 <p>AuthorizationPolicy modifies how client requests are authenticated.</p>
@@ -320,6 +319,146 @@ authentication server in the check request. If a context
 is provided at an enclosing scope, the entries are merged
 such that the inner scope overrides matching keys from the
 outer scope.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.AuthorizationProvider">AuthorizationProvider
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>AuthorizationProvider configures an external authorization server that
+routes can select with authPolicy.require.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Unique name for the provider.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>default</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether the provider should apply to all routes in the HTTPProxy/its includes by
+default. At most one provider can be marked as the default. If no provider is marked
+as the default, individual routes must explicitly identify the provider they require.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>extensionRef</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtensionServiceReference">
+ExtensionServiceReference
+</a>
+</em>
+</td>
+<td>
+<p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>serviceType</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServiceType">
+AuthorizationServiceType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceType defines the protocol implemented by the external server, specifying
+whether it&rsquo;s a raw HTTP authorization server or a gRPC authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpSettings</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.PerRouteHTTPAuthorizationServerSettings">
+PerRouteHTTPAuthorizationServerSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPServerSettings defines configurations for interacting with an external HTTP authorization server.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>context</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context is a set of key/value pairs that are sent to the
+authentication server in the check request. If a context
+is provided at an enclosing scope, the entries are merged
+such that the inner scope overrides matching keys from the
+outer scope.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseTimeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+Timeout durations are expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.
+The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>withRequestBody</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServerBufferSettings">
+AuthorizationServerBufferSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WithRequestBody specifies configuration for sending the client request&rsquo;s body to authorization server.</p>
 </td>
 </tr>
 </tbody>
@@ -460,6 +599,7 @@ AuthorizationServerBufferSettings
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationProvider">AuthorizationProvider</a>, 
 <a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
 </p>
 <p>
@@ -518,6 +658,7 @@ bool
 (<code>string</code> alias)</p></h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationProvider">AuthorizationProvider</a>, 
 <a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
 </p>
 <p>
@@ -1174,6 +1315,7 @@ SkipClientCertValidation is set. Defaults to false.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationProvider">AuthorizationProvider</a>, 
 <a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
 </p>
 <p>
@@ -1340,7 +1482,8 @@ descriptor contains 1+ key-value pair entries.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HTTPAuthorizationServerSettings">HTTPAuthorizationServerSettings</a>)
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerSettings">HTTPAuthorizationServerSettings</a>, 
+<a href="#projectcontour.io/v1.PerRouteHTTPAuthorizationServerSettings">PerRouteHTTPAuthorizationServerSettings</a>)
 </p>
 <p>
 <p>HTTPAuthorizationServerAllowedHeaders specifies how to conditionally match against allowed headers
@@ -1449,7 +1592,22 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>PathPrefix Sets a prefix to the value of authorization request header Path.</p>
+<p>PathPrefix sets a prefix to the value of the authorization request header Path.
+Only one of pathPrefix or pathOverride may be set.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>pathOverride</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PathOverride replaces the value of the authorization request header Path.
+Only one of pathPrefix or pathOverride may be set.</p>
 </td>
 </tr>
 <tr>
@@ -3009,6 +3167,82 @@ No HTTP headers or body content is rewritten.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.PerRouteHTTPAuthorizationServerSettings">PerRouteHTTPAuthorizationServerSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationProvider">AuthorizationProvider</a>)
+</p>
+<p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>pathPrefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PathPrefix sets a prefix to the value of the authorization request header Path.
+Only one of pathPrefix or pathOverride may be set.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>pathOverride</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PathOverride replaces the value of the authorization request header Path.
+Only one of pathPrefix or pathOverride may be set.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>headersToAdd</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HeadersToAdd sets headers that will be included in the request to the authorization service.
+Client request headers with the same key will be overridden.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowedUpstreamHeaders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HTTPAuthorizationServerAllowedHeaders">
+[]HTTPAuthorizationServerAllowedHeaders
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AllowedUpstreamHeaders specifies response headers from the authorization server
+that may be added to the original client request before sending it to the upstream.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.QueryParameterHashOptions">QueryParameterHashOptions
 </h3>
 <p>
@@ -3903,8 +4137,8 @@ not permitted when a <code>virtualhost.tls</code> block is present.</p>
 <code>authPolicy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.AuthorizationPolicy">
-AuthorizationPolicy
+<a href="#projectcontour.io/v1.RouteAuthorizationPolicy">
+RouteAuthorizationPolicy
 </a>
 </em>
 </td>
@@ -4154,6 +4388,75 @@ The rules defined here override any rules set on the root HTTPProxy.</p>
 requests should be denied. All other requests will be allowed.
 Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here override any rules set on the root HTTPProxy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RouteAuthorizationPolicy">RouteAuthorizationPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>RouteAuthorizationPolicy modifies how client requests are authenticated per route.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>require</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Require names a specific Authorization provider (defined in the
+virtual host) to require for the route. If specified, this field
+overrides the default provider if one exists. If this field is not
+specified, and the default provider exists, it will be used as required.
+Only one of this field or the &ldquo;disabled&rdquo; field can be specified.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>disabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>When true, this field disables client request authentication
+for the scope of the policy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>context</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context is a set of key/value pairs that are sent to the
+authentication server in the check request. If a context
+is provided at an enclosing scope, the entries are merged
+such that the inner scope overrides matching keys from the
+outer scope.
+If the route uses an authorization provider, the entries are
+merged with the provider&rsquo;s context.</p>
 </td>
 </tr>
 </tbody>
@@ -5092,7 +5395,8 @@ authorization for this virtual host. Authorization can
 only be configured on virtual hosts that have TLS enabled.
 If the TLS configuration requires client certificate
 validation, the client certificate is always included in the
-authentication check request.</p>
+authentication check request.
+Only one of Authorization and AuthzProviders can be defined.</p>
 </td>
 </tr>
 <tr>
@@ -5138,6 +5442,24 @@ RateLimitPolicy
 <td>
 <em>(Optional)</em>
 <p>Providers to use for verifying JSON Web Tokens (JWTs) on the virtual host.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>authzProviders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationProvider">
+[]AuthorizationProvider
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Providers to use for customizing ext-authz per-route on the virtual host.
+A route selects a provider with authPolicy.require. A route that does not
+select one uses the default provider.
+Only one of Authorization and AuthzProviders can be defined.</p>
 </td>
 </tr>
 <tr>

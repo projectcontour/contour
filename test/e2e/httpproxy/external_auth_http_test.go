@@ -94,7 +94,7 @@ func testExternalAuthzHTTP(namespace string) {
 					},
 					{
 						Conditions: []contour_v1.MatchCondition{{Prefix: "/open"}},
-						AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: true},
+						AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: true},
 						Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
 					},
 				},
@@ -279,7 +279,7 @@ var _ = Describe("httpproxy-ext-auth-http-global", func() {
 						},
 						{
 							Conditions: []contour_v1.MatchCondition{{Prefix: "/open"}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: true},
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: true},
 							Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
 						},
 					},
@@ -344,7 +344,7 @@ var _ = Describe("httpproxy-ext-auth-http-global", func() {
 					Routes: []contour_v1.Route{
 						{
 							Conditions: []contour_v1.MatchCondition{{Prefix: "/protected"}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{Disabled: false},
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Disabled: false},
 							Services:   []contour_v1.Service{{Name: "echo", Port: 80}},
 						},
 						{

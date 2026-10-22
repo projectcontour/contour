@@ -598,6 +598,42 @@ func authzFilterFor(
 		Get()
 }
 
+// authzProvidersFilterFor does the same as authzFilterFor but inserts
+// separate `ext_authz` filters for gRPC and HTTP providers. Either can be nil.
+func authzProvidersFilterFor(
+	vhost string,
+	grpcAuthz *envoy_filter_http_ext_authz_v3.ExtAuthz,
+	httpAuthz *envoy_filter_http_ext_authz_v3.ExtAuthz,
+) *envoy_config_listener_v3.Filter {
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+	b := envoyGen.HTTPConnectionManagerBuilder().
+		AddFilter(envoy_v3.FilterMisdirectedRequests()).
+		DefaultFilters()
+	if grpcAuthz != nil {
+		b.AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+			Name: envoy_v3.ExtAuthzFilterName,
+			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(grpcAuthz),
+			},
+		})
+	}
+	if httpAuthz != nil {
+		b.AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+			Name: envoy_v3.ExtAuthzHTTPFilterName,
+			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(httpAuthz),
+			},
+		})
+	}
+	return b.
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
+		Get()
+}
+
 func jwtAuthnFilterFor(
 	vhost string,
 	jwt *envoy_filter_http_jwt_authn_v3.JwtAuthentication,

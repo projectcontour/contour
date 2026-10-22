@@ -27,6 +27,7 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 )
@@ -328,13 +329,12 @@ type Route struct {
 	// over HTTP?
 	HTTPSUpgrade bool
 
-	// AuthDisabled is set if authorization should be disabled
-	// for this route. If authorization is disabled, the AuthContext
-	// field has no effect.
-	AuthDisabled bool
+	// AuthzOverride configures per-route authorization settings.
+	AuthzOverride *PerRouteAuthzOverride
 
-	// AuthContext sets the authorization context (if authorization is enabled).
-	AuthContext map[string]string
+	// HTTPAuthzOverride configures per-route authorization settings
+	// for HTTP authorization providers.
+	HTTPAuthzOverride *PerRouteAuthzOverride
 
 	// Is this a websocket route?
 	// TODO(dfc) this should go on the service
@@ -838,6 +838,10 @@ type SecureVirtualHost struct {
 	// the ExtAuthz filter.
 	ExternalAuthorization *ExternalAuthorization
 
+	// HTTPExternalAuthorization contains the configuration for enabling
+	// the ExtAuthz filter for HTTP authorization providers.
+	HTTPExternalAuthorization *ExternalAuthorization
+
 	// JWTProviders specify how to verify JWTs.
 	JWTProviders []JWTProvider
 }
@@ -849,6 +853,19 @@ type JWTProvider struct {
 	RemoteJWKS *RemoteJWKS
 	LocalJWKS  *LocalJWKS
 	ForwardJWT bool
+}
+
+type PerRouteAuthzOverride struct {
+	Disabled                     bool
+	ExtensionCluster             *ExtensionCluster
+	ServiceType                  contour_v1.AuthorizationServiceType
+	Context                      map[string]string
+	AuthorizationResponseTimeout timeout.Setting
+	WithRequestBody              *AuthorizationServerBufferSettings
+	PathPrefix                   string
+	PathOverride                 string
+	HeadersToAdd                 map[string]string
+	AllowedUpstreamHeaders       []HeaderNameMatchCondition
 }
 
 type RemoteJWKS struct {
@@ -907,6 +924,10 @@ type ExternalAuthorization struct {
 	// HTTPPathPrefix Sets a prefix to the value of authorization request header Path.
 	HTTPPathPrefix string
 
+	// HTTPPathOverride replaces the value of authorization request header Path.
+	// Only one of this or HTTPPathPrefix may be set.
+	HTTPPathOverride string
+
 	// Note: This field is not used by Envoy
 	// https://github.com/envoyproxy/envoy/issues/5357
 	//
@@ -928,6 +949,9 @@ type ExternalAuthorization struct {
 	// only reason to set this to `true` is when you are migrating
 	// from internal to external authorization.
 	AuthorizationFailOpen bool
+
+	// ClearRouteCache allows headers set by the authorization server to change the route.
+	ClearRouteCache bool
 
 	// AuthorizationServerWithRequestBody specifies configuration
 	// for buffering request data sent to AuthorizationServer
