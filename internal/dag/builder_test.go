@@ -5827,6 +5827,43 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// i2bV1 has a resource default backend and a resource backend
+	// alongside a service backend.
+	i2bV1 := &networking_v1.Ingress{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: &networking_v1.IngressBackend{
+				Resource: &core_v1.TypedLocalObjectReference{
+					APIGroup: ptr.To("k8s.example.com"),
+					Kind:     "StorageBucket",
+					Name:     "default-bucket",
+				},
+			},
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path: "/static",
+							Backend: networking_v1.IngressBackend{
+								Resource: &core_v1.TypedLocalObjectReference{
+									APIGroup: ptr.To("k8s.example.com"),
+									Kind:     "StorageBucket",
+									Name:     "static-bucket",
+								},
+							},
+						}, {
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	// i3V1 is similar to i2V1 but includes a hostname on the ingress rule
 	i3V1 := &networking_v1.Ingress{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -9510,6 +9547,21 @@ func TestDAGInsert(t *testing.T) {
 				i2aV1,
 			},
 			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ resource backends": {
+			objs: []any{
+				i2bV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
 		},
 		"ingressv1: insert ingress w/ host name and single backend w/o matching service": {
 			objs: []any{
