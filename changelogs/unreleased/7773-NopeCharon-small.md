@@ -1,0 +1,1 @@
+Fix a Contour panic (and resulting crash loop) when an Ingress has a backend that references a resource instead of a Service. Such backends are now skipped and logged, since only Service backends are supported.
