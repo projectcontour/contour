@@ -1,0 +1,1 @@
+HTTPProxy health check `expectedStatuses` ranges whose start is not less than their end are now rejected with a `HealthCheckPolicyInvalid` error, instead of being passed through to Envoy, which rejects the resulting cluster.

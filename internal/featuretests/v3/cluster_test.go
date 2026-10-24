@@ -1131,6 +1131,57 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	rh.OnUpdate(proxy3, proxy4)
 	c.Status(proxy4).HasError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: start must be in the range [100, 599]")
 	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
+
+	// proxy5 has an invalid expected status range (start is greater than end).
+	proxy5 := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{{
+			Conditions: []contour_v1.MatchCondition{{
+				Prefix: "/a",
+			}},
+			HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
+				Path: "/healthz",
+				ExpectedStatuses: []contour_v1.HTTPStatusRange{
+					{Start: 200, End: 300},
+					{Start: 500, End: 400},
+				},
+			},
+			Services: []contour_v1.Service{{
+				Name:   "kuard",
+				Port:   80,
+				Weight: 90,
+			}},
+		}},
+	})
+
+	rh.OnUpdate(proxy4, proxy5)
+	c.Status(proxy5).HasError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: start must be less than end")
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
+
+	// proxy6 has an invalid expected status range (start is equal to end).
+	proxy6 := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{{
+			Conditions: []contour_v1.MatchCondition{{
+				Prefix: "/a",
+			}},
+			HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
+				Path: "/healthz",
+				ExpectedStatuses: []contour_v1.HTTPStatusRange{
+					{Start: 200, End: 200},
+				},
+			},
+			Services: []contour_v1.Service{{
+				Name:   "kuard",
+				Port:   80,
+				Weight: 90,
+			}},
+		}},
+	})
+
+	rh.OnUpdate(proxy5, proxy6)
+	c.Status(proxy6).HasError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", "invalid expected status range: start must be less than end")
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{})
 }
 
 // Test processing a service that exists but is not referenced
