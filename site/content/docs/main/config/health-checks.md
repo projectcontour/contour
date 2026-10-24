@@ -44,7 +44,7 @@ Health check configuration parameters:
 - `timeoutSeconds`: The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
 - `unhealthyThresholdCount`: The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.
 - `healthyThresholdCount`: The number of healthy health checks required before a host is marked healthy. Note that during startup, only a single successful health check is required to mark a host healthy.
-- `expectedStatuses`: An optional list of HTTP status ranges that are considered healthy. Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. Statuses must be between 100 (inclusive) and 600 (exclusive).
+- `expectedStatuses`: An optional list of HTTP status ranges that are considered healthy. Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. Statuses must be between 100 (inclusive) and 600 (exclusive), and each range's start must be less than its end.
 
 ### Non-default expected statuses
 
