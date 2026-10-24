@@ -6085,6 +6085,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// i10bV1 has a minimum TLS version greater than its maximum TLS version.
+	i10bV1 := &networking_v1.Ingress{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "invalid-tls-versions",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/tls-minimum-protocol-version": "1.3",
+				"projectcontour.io/tls-maximum-protocol-version": "1.2",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"c.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "c.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+
 	// i11V1 has a websocket route
 	i11V1 := &networking_v1.Ingress{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -10122,6 +10144,40 @@ func TestDAGInsert(t *testing.T) {
 					Port: 8080,
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				}, &Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 8443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								Routes: routes(
+									prefixroute("/", service(s1)),
+								),
+							},
+							MinTLSVersion: "1.3",
+							MaxTLSVersion: "1.3",
+							Secret:        secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ tls min proto greater than max proto alongside a valid ingress": {
+			objs: []any{
+				i10bV1,
+				i10aV1,
+				sec1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+						virtualhost("c.example.com", prefixroute("/", service(s1))),
 					),
 				}, &Listener{
 					Name: HTTPS_LISTENER_NAME,
