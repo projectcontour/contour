@@ -4914,6 +4914,84 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"GRPCRoute with BackendTLSPolicy": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			upstreamTLS: &UpstreamTLS{
+				MinimumProtocolVersion: "1.2",
+				MaximumProtocolVersion: "1.2",
+			},
+			objs: []any{
+				tlsService,
+				configMapCert1,
+				&gatewayapi_v1.GRPCRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1.GRPCRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1.Hostname{"test.projectcontour.io"},
+						Rules: []gatewayapi_v1.GRPCRouteRule{{
+							Matches: []gatewayapi_v1.GRPCRouteMatch{{
+								Method: gatewayapi.GRPCMethodMatch(gatewayapi_v1.GRPCMethodMatchExact, "io.projectcontour", "Login"),
+							}},
+							BackendRefs: gatewayapi.GRPCRouteBackendRef("tlssvc", 443, 1),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha3.BackendTLSPolicy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha3.BackendTLSPolicySpec{
+						TargetRefs: []gatewayapi_v1alpha2.LocalPolicyTargetReferenceWithSectionName{
+							{
+								LocalPolicyTargetReference: gatewayapi_v1alpha2.LocalPolicyTargetReference{
+									Kind: "Service",
+									Name: "tlssvc",
+								},
+							},
+						},
+						Validation: gatewayapi_v1alpha3.BackendTLSPolicyValidation{
+							CACertificateRefs: []gatewayapi_v1.LocalObjectReference{{
+								Kind: "ConfigMap",
+								Name: gatewayapi_v1.ObjectName(configMapCert1.Name),
+							}},
+							Hostname: "example.com",
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", &Route{
+							PathMatchCondition: &ExactMatchCondition{Path: "/io.projectcontour/Login"},
+							Clusters: []*Cluster{{
+								Weight:   1,
+								Upstream: grpcService(tlsService, "h2"),
+								Protocol: "h2",
+								UpstreamValidation: &PeerValidationContext{
+									CACertificates: []*Secret{
+										caSecret(cert1),
+									},
+									SubjectNames: []string{"example.com"},
+								},
+								UpstreamTLS: &UpstreamTLS{
+									MinimumProtocolVersion: "1.2",
+									MaximumProtocolVersion: "1.2",
+								},
+							}},
+						}),
+					),
+				},
+			),
+		},
 		"GRPCRoute: insert basic single route, single hostname, gateway same namespace selector, route in different namespace": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPSameNamespace,
