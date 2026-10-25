@@ -326,7 +326,8 @@ var _ = Describe("HTTPProxy", func() {
 					},
 				}
 			})
-			testEnvoyDisableCompression(namespace, "br, gzip", "br", false)
+			// Client lists gzip first, so br proves the first configured algorithm wins the tie.
+			testEnvoyDisableCompression(namespace, "gzip, br", "br", false)
 			testEnvoyDisableCompression(namespace, "gzip", "gzip", false)
 		})
 	})

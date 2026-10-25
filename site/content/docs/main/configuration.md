@@ -313,8 +313,8 @@ Sets the compression configuration applied in the compression HTTP filters of th
 
 | Field Name | Type   | Default | Description             |
 |------------|--------|--------|-------------------------|
-| algorithm   | string        | "gzip" | **Deprecated.** Use `algorithms` instead. Single compression algorithm. Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response. Values: `gzip` (default), `brotli`, `zstd`, `disabled`. Mutually exclusive with `algorithms`. |
-| algorithms  | string array  |        | Compression algorithms. Omitted uses the Envoy default (`gzip`). An empty list disables compression. A populated list installs one compressor filter per entry and negotiates the encoding from the request `Accept-Encoding` header. List order is the preference when q-values are equal. Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`. Mutually exclusive with `algorithm`. |
+| algorithm   | string        | "gzip" | **Deprecated.** Use `algorithms` instead. Single compression algorithm. Setting this to `disabled` will make Envoy not compress responses. Responses already compressed by the upstream are passed through unchanged. Values: `gzip` (default), `brotli`, `zstd`, `disabled`. Mutually exclusive with `algorithms`. |
+| algorithms  | string array  | "gzip" | Compression algorithms. An empty list disables compression. A populated list installs one compressor filter per entry and negotiates the encoding from the request `Accept-Encoding` header. The first entry is preferred if the client accepts it and has no stronger preference. Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`. Mutually exclusive with `algorithm`. |
 
 ### Overload Manager Enforced Health Listener Config
 

@@ -348,11 +348,11 @@ func TestCompressionValidation(t *testing.T) {
 	require.ErrorContains(t, CompressionParameters{
 		Algorithm:  CompressionGzip,
 		Algorithms: &[]CompressionAlgorithm{CompressionBrotli},
-	}.Validate(), "mutually exclusive")
+	}.Validate(), "only one of compression algorithm and algorithms can be set")
 	require.ErrorContains(t, CompressionParameters{
 		Algorithm:  CompressionGzip,
 		Algorithms: &[]CompressionAlgorithm{},
-	}.Validate(), "mutually exclusive")
+	}.Validate(), "only one of compression algorithm and algorithms can be set")
 	require.ErrorContains(t, CompressionParameters{
 		Algorithms: &[]CompressionAlgorithm{CompressionGzip, CompressionGzip},
 	}.Validate(), "duplicate")

@@ -20,11 +20,11 @@ import "fmt"
 type CompressionAlgorithm string
 
 // EnvoyCompression defines configuration related to compression in the default HTTP Listener filter chain.
-// +kubebuilder:validation:XValidation:rule="!(has(self.algorithm) && has(self.algorithms))",message="compression algorithm and algorithms are mutually exclusive"
+// +kubebuilder:validation:XValidation:rule="!(has(self.algorithm) && has(self.algorithms))",message="only one of algorithm and algorithms can be set"
 type EnvoyCompression struct {
 	// Algorithm selects a single response compression type applied in the compression HTTP filter of the default Listener filters.
 	// Values: `gzip` (default), `brotli`, `zstd`, `disabled`.
-	// Setting this to `disabled` will make Envoy skip "Accept-Encoding: gzip,deflate" request header and always return uncompressed response.
+	// Setting this to `disabled` will make Envoy not compress responses. Responses already compressed by the upstream are passed through unchanged.
 	// Mutually exclusive with Algorithms.
 	//
 	// Deprecated: use Algorithms instead. An empty Algorithms list disables compression.
@@ -34,15 +34,16 @@ type EnvoyCompression struct {
 
 	// Algorithms selects the response compression types applied in the default HTTP Listener filter chain.
 	// This field is a tri-state:
-	// - omitted: use the Envoy default (gzip)
+	// - omitted: use gzip (default)
 	// - empty list: disable compression
 	// - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
 	//
-	// List order is the preference when q-values are equal (the first entry is preferred).
+	// The first entry is preferred if the client accepts it and has no stronger preference.
 	// Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`; use an empty list to disable.
 	// Mutually exclusive with Algorithm.
 	// +kubebuilder:validation:MaxItems=3
 	// +kubebuilder:validation:items:Enum=gzip;brotli;zstd
+	// +kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, y == x))",message="duplicate compression algorithm"
 	// +optional
 	Algorithms *[]CompressionAlgorithm `json:"algorithms,omitempty"`
 }
@@ -65,7 +66,7 @@ func (c *EnvoyCompression) Validate() error {
 		return err
 	}
 	if c.Algorithm != "" && c.Algorithms != nil {
-		return fmt.Errorf("compression algorithm and algorithms are mutually exclusive")
+		return fmt.Errorf("only one of compression algorithm and algorithms can be set")
 	}
 	if c.Algorithms == nil {
 		return nil

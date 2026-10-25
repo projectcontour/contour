@@ -1046,11 +1046,11 @@ type CompressionParameters struct {
 
 	// Algorithms configures the compression algorithms used in the default HTTP listener filter chain.
 	// This field is a tri-state:
-	// - omitted: use the Envoy default (gzip)
+	// - omitted: use gzip (default)
 	// - empty list: disable compression
 	// - populated list: install one compressor filter per entry and negotiate from Accept-Encoding
 	//
-	// List order is the preference when q-values are equal.
+	// The first entry is preferred if the client accepts it and has no stronger preference.
 	// Valid options are 'gzip', 'brotli' and 'zstd'. Cannot include 'disabled'.
 	// Mutually exclusive with Algorithm.
 	// +optional

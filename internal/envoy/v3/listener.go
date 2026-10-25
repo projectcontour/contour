@@ -363,7 +363,7 @@ func compressorLibrary(algorithm contour_v1alpha1.CompressionAlgorithm) (string,
 	}
 }
 
-func compressorFilter(algorithm contour_v1alpha1.CompressionAlgorithm, chooseFirst, removeAcceptEncoding, uniqueName bool) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
+func compressorFilter(algorithm contour_v1alpha1.CompressionAlgorithm, chooseFirst, uniqueName bool) *envoy_filter_network_http_connection_manager_v3.HttpFilter {
 	libraryName, library := compressorLibrary(algorithm)
 	name := CompressorFilterName
 	if uniqueName {
@@ -382,7 +382,8 @@ func compressorFilter(algorithm contour_v1alpha1.CompressionAlgorithm, chooseFir
 					CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
 						ContentType: compressorContentTypes,
 					},
-					RemoveAcceptEncodingHeader: removeAcceptEncoding,
+					// Accept-Encoding is deliberately passed to the upstream so it can still compress
+					// responses itself, e.g. content types not listed above or pre-compressed files.
 				},
 			}),
 		},
@@ -399,7 +400,6 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 		b.filters = append(b.filters, compressorFilter(
 			algorithm,
 			multi && i == 0,
-			multi && i == len(algorithms)-1,
 			multi,
 		))
 	}

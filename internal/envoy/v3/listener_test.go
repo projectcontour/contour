@@ -2008,7 +2008,6 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 		compressorLibraryName string
 		compressorLibrary     proto.Message
 		chooseFirst           bool
-		removeAcceptEncoding  bool
 	}
 
 	tests := map[string]struct {
@@ -2028,7 +2027,7 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 			},
 			want: []compressorExpectation{
 				{name: CompressorFilterName + ".brotli", compressorLibraryName: "brotli", compressorLibrary: &envoy_compression_brotli_compressor_v3.Brotli{}, chooseFirst: true},
-				{name: CompressorFilterName + ".gzip", compressorLibraryName: "gzip", compressorLibrary: &envoy_compression_gzip_compressor_v3.Gzip{}, removeAcceptEncoding: true},
+				{name: CompressorFilterName + ".gzip", compressorLibraryName: "gzip", compressorLibrary: &envoy_compression_gzip_compressor_v3.Gzip{}},
 			},
 		},
 		"three algorithms": {
@@ -2040,7 +2039,7 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 			want: []compressorExpectation{
 				{name: CompressorFilterName + ".gzip", compressorLibraryName: "gzip", compressorLibrary: &envoy_compression_gzip_compressor_v3.Gzip{}, chooseFirst: true},
 				{name: CompressorFilterName + ".brotli", compressorLibraryName: "brotli", compressorLibrary: &envoy_compression_brotli_compressor_v3.Brotli{}},
-				{name: CompressorFilterName + ".zstd", compressorLibraryName: "zstd", compressorLibrary: &envoy_compression_zstd_compressor_v3.Zstd{}, removeAcceptEncoding: true},
+				{name: CompressorFilterName + ".zstd", compressorLibraryName: "zstd", compressorLibrary: &envoy_compression_zstd_compressor_v3.Zstd{}},
 			},
 		},
 		"empty algorithms disables compression": {
@@ -2070,7 +2069,8 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 				assert.Equal(t, want.compressorLibraryName, compressor.CompressorLibrary.Name)
 				assert.True(t, compressor.CompressorLibrary.TypedConfig.MessageIs(want.compressorLibrary))
 				assert.Equal(t, want.chooseFirst, compressor.ChooseFirst)
-				assert.Equal(t, want.removeAcceptEncoding, compressor.ResponseDirectionConfig.RemoveAcceptEncodingHeader)
+				// Accept-Encoding must reach the upstream so it can compress responses itself.
+				assert.False(t, compressor.ResponseDirectionConfig.RemoveAcceptEncodingHeader)
 			}
 		})
 	}

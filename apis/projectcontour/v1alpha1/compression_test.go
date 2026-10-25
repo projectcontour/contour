@@ -49,11 +49,11 @@ func TestValidateEnvoyCompression(t *testing.T) {
 	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
 		Algorithm:  contour_v1alpha1.GzipCompression,
 		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
-	}).Validate(), "mutually exclusive")
+	}).Validate(), "only one of compression algorithm and algorithms can be set")
 	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
 		Algorithm:  contour_v1alpha1.GzipCompression,
 		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{},
-	}).Validate(), "mutually exclusive")
+	}).Validate(), "only one of compression algorithm and algorithms can be set")
 	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
 		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.DisabledCompression},
 	}).Validate(), "cannot include")
