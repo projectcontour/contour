@@ -64,11 +64,13 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 		},
 		Envoy: &contour_v1alpha1.EnvoyConfig{
 			Listener: &contour_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:              ptr.To(false),
-				DisableAllowChunkedLength:  ptr.To(false),
-				DisableMergeSlashes:        ptr.To(false),
-				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
-				ConnectionBalancer:         "",
+				UseProxyProto:                ptr.To(false),
+				DisableAllowChunkedLength:    ptr.To(false),
+				DisableMergeSlashes:          ptr.To(false),
+				DisableNormalizePath:         ptr.To(false),
+				PathWithEscapedSlashesAction: contour_v1alpha1.KeepUnchangedPathWithEscapedSlashes,
+				ServerHeaderTransformation:   contour_v1alpha1.OverwriteServerHeader,
+				ConnectionBalancer:           "",
 				TLS: &contour_v1alpha1.EnvoyListenerTLS{
 					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "1.2",
