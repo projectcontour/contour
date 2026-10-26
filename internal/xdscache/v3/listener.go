@@ -399,8 +399,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 			cm := c.envoyGen.HTTPConnectionManagerBuilder().
 				Compression(cfg.Compression).
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
-				AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 				DefaultFilters().
+				AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 				RouteConfigName(httpRouteConfigName(listener)).
 				MetricsPrefix(listener.Name).
 				AccessLoggers(cfg.newInsecureAccessLog()).
@@ -475,8 +475,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Compression(cfg.Compression).
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests()).
-					AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 					DefaultFilters().
+					AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
 					AddFilter(authzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
@@ -563,6 +563,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				cm := c.envoyGen.HTTPConnectionManagerBuilder().
 					Compression(cfg.Compression).
 					DefaultFilters().
+					AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 					AddFilter(authzFilter).
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
 					MetricsPrefix(listener.Name).
