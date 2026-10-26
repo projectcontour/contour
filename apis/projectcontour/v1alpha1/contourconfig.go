@@ -451,6 +451,14 @@ type EnvoyListenerConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxConnectionsToAcceptPerSocketEvent *uint32 `json:"maxConnectionsToAcceptPerSocketEvent,omitempty"`
+
+	// MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
+	// Requests with a larger body are rejected with 413. Minimum value is 1.
+	// If not specified, there is no limit.
+	//
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxRequestBodyBytes *uint64 `json:"maxRequestBodyBytes,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

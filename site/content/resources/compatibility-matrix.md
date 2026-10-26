@@ -150,6 +150,8 @@ If you are providing your own Envoy it must be compiled with the following exten
   - envoy.filters.http.health_check
   - envoy.filters.http.lua
   - envoy.filters.http.router
+  - envoy.filters.http.body_size_limit
+  - envoy.filters.http.filter_chain
 
 - Listener filters
   - envoy.filters.listener.http_inspector
