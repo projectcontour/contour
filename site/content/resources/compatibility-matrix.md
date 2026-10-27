@@ -3,14 +3,14 @@ title: Compatibility Matrix
 layout: page
 ---
 
-This page documents the compatibility matrix of versions of Contour, Envoy, Kubernetes, and Gateway API.
-These combinations of versions are specifically tested in CI and supported by the Contour maintainers.
+This page lists the versions of Envoy and Kubernetes that each Contour release was tested with in CI, and the Gateway API version it implements.
 
 ## Compatibility Matrix
 
-| Contour Version | Envoy Version        | Kubernetes Versions | Gateway API Version |
-| --------------- | :------------------- | ------------------- | --------------------|
-| main            | [1.39.1][82]         | 1.37, 1.36, 1.35    | [1.3.0][113]        |
+| Contour Version | Tested Envoy Version | Tested Kubernetes Versions | Gateway API Version |
+| --------------- | :------------------- | -------------------------- | --------------------|
+| main            | [1.40.2][85]         | 1.37, 1.36, 1.35    | [1.3.0][113]        |
+| 1.33.7          | [1.38.4][84]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.6          | [1.38.3][83]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.5          | [1.35.10][80]        | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.4          | [1.35.10][80]        | 1.34, 1.33, 1.32    | [1.3.0][113]        |
@@ -125,9 +125,8 @@ These combinations of versions are specifically tested in CI and supported by th
 **As of Contour version 1.16.0, Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1). The minimum compatible Kubernetes version for Contour 1.16.0 and above is Kubernetes 1.19.**
 
 Contour utilizes [client-go][98] to watch for resources in a Kubernetes cluster.
-We depend on the latest version of the library and by extension only support the latest versions of Kubernetes.
-While the `client-go` [compatibility matrix][99] may list older versions of Kubernetes as being compatible and supported by upstream, the Contour project only tests a given version of Contour against the versions listed in the table above.
-Combinations not listed are not tested, guaranteed to work, or supported by the Contour maintainers.
+Contour has no strict dependency on the listed versions.
+Combinations not listed in the table above are not tested by the Contour project, but they may still work.
 
 ## Envoy Extensions
 Contour requires the following Envoy extensions.
@@ -153,6 +152,8 @@ If you are providing your own Envoy it must be compiled with the following exten
   - envoy.filters.http.health_check
   - envoy.filters.http.lua
   - envoy.filters.http.router
+  - envoy.filters.http.body_size_limit
+  - envoy.filters.http.filter_chain
 
 - Listener filters
   - envoy.filters.listener.http_inspector
@@ -261,6 +262,8 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [81]: https://www.envoyproxy.io/docs/envoy/v1.34.14/version_history/v1.34/v1.34.14
 [82]: https://www.envoyproxy.io/docs/envoy/v1.39.1/version_history/v1.39/v1.39.1
 [83]: https://www.envoyproxy.io/docs/envoy/v1.38.3/version_history/v1.38/v1.38.3
+[84]: https://www.envoyproxy.io/docs/envoy/v1.38.4/version_history/v1.38/v1.38.4
+[85]: https://www.envoyproxy.io/docs/envoy/v1.40.2/version_history/v1.40/v1.40.2
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

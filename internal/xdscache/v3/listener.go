@@ -170,6 +170,10 @@ type ListenerConfig struct {
 
 	// MaxConnectionsToAcceptPerSocketEvent defines how many new connections to accept per socket event loop iteration.
 	MaxConnectionsToAcceptPerSocketEvent *uint32
+
+	// MaxRequestBodyBytes defines the maximum request body size in bytes.
+	// If not specified, there is no global limit.
+	MaxRequestBodyBytes *uint64
 }
 
 type ExtensionServiceConfig struct {
@@ -396,6 +400,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				Compression(cfg.Compression).
 				Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 				DefaultFilters().
+				AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 				RouteConfigName(httpRouteConfigName(listener)).
 				MetricsPrefix(listener.Name).
 				AccessLoggers(cfg.newInsecureAccessLog()).
@@ -471,6 +476,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
 					AddFilter(envoy_v3.FilterMisdirectedRequests()).
 					DefaultFilters().
+					AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 					AddFilter(envoy_v3.FilterJWTAuthN(vh.JWTProviders)).
 					AddFilter(authzFilter).
 					RouteConfigName(httpsRouteConfigName(listener, vh.VirtualHost.Name)).
@@ -557,6 +563,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				cm := c.envoyGen.HTTPConnectionManagerBuilder().
 					Compression(cfg.Compression).
 					DefaultFilters().
+					AddBodySizeLimitFilter(cfg.MaxRequestBodyBytes).
 					AddFilter(authzFilter).
 					RouteConfigName(fallbackCertRouteConfigName(listener)).
 					MetricsPrefix(listener.Name).

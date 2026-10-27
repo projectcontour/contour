@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	cache "sigs.k8s.io/controller-runtime/pkg/cache"
+	cacheapi "sigs.k8s.io/controller-runtime/pkg/cache/cacheapi"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 
 	context "context"
@@ -44,7 +44,7 @@ func (_m *Cache) Get(ctx context.Context, key client.ObjectKey, obj client.Objec
 }
 
 // GetInformer provides a mock function with given fields: ctx, obj, opts
-func (_m *Cache) GetInformer(ctx context.Context, obj client.Object, opts ...cache.InformerGetOption) (cache.Informer, error) {
+func (_m *Cache) GetInformer(ctx context.Context, obj cacheapi.Object, opts ...cacheapi.InformerGetOption) (cacheapi.Informer, error) {
 	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
@@ -58,20 +58,20 @@ func (_m *Cache) GetInformer(ctx context.Context, obj client.Object, opts ...cac
 		panic("no return value specified for GetInformer")
 	}
 
-	var r0 cache.Informer
+	var r0 cacheapi.Informer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object, ...cache.InformerGetOption) (cache.Informer, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, cacheapi.Object, ...cacheapi.InformerGetOption) (cacheapi.Informer, error)); ok {
 		return rf(ctx, obj, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object, ...cache.InformerGetOption) cache.Informer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, cacheapi.Object, ...cacheapi.InformerGetOption) cacheapi.Informer); ok {
 		r0 = rf(ctx, obj, opts...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(cache.Informer)
+			r0 = ret.Get(0).(cacheapi.Informer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, client.Object, ...cache.InformerGetOption) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, cacheapi.Object, ...cacheapi.InformerGetOption) error); ok {
 		r1 = rf(ctx, obj, opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -81,7 +81,7 @@ func (_m *Cache) GetInformer(ctx context.Context, obj client.Object, opts ...cac
 }
 
 // GetInformerForKind provides a mock function with given fields: ctx, gvk, opts
-func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, opts ...cache.InformerGetOption) (cache.Informer, error) {
+func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind, opts ...cacheapi.InformerGetOption) (cacheapi.Informer, error) {
 	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
@@ -95,20 +95,20 @@ func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersion
 		panic("no return value specified for GetInformerForKind")
 	}
 
-	var r0 cache.Informer
+	var r0 cacheapi.Informer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) (cache.Informer, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cacheapi.InformerGetOption) (cacheapi.Informer, error)); ok {
 		return rf(ctx, gvk, opts...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) cache.Informer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, schema.GroupVersionKind, ...cacheapi.InformerGetOption) cacheapi.Informer); ok {
 		r0 = rf(ctx, gvk, opts...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(cache.Informer)
+			r0 = ret.Get(0).(cacheapi.Informer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, schema.GroupVersionKind, ...cache.InformerGetOption) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, schema.GroupVersionKind, ...cacheapi.InformerGetOption) error); ok {
 		r1 = rf(ctx, gvk, opts...)
 	} else {
 		r1 = ret.Error(1)
@@ -118,7 +118,7 @@ func (_m *Cache) GetInformerForKind(ctx context.Context, gvk schema.GroupVersion
 }
 
 // IndexField provides a mock function with given fields: ctx, obj, field, extractValue
-func (_m *Cache) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
+func (_m *Cache) IndexField(ctx context.Context, obj cacheapi.Object, field string, extractValue cacheapi.IndexerFunc) error {
 	ret := _m.Called(ctx, obj, field, extractValue)
 
 	if len(ret) == 0 {
@@ -126,7 +126,7 @@ func (_m *Cache) IndexField(ctx context.Context, obj client.Object, field string
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object, string, client.IndexerFunc) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, cacheapi.Object, string, cacheapi.IndexerFunc) error); ok {
 		r0 = rf(ctx, obj, field, extractValue)
 	} else {
 		r0 = ret.Error(0)
@@ -161,7 +161,7 @@ func (_m *Cache) List(ctx context.Context, list client.ObjectList, opts ...clien
 }
 
 // RemoveInformer provides a mock function with given fields: ctx, obj
-func (_m *Cache) RemoveInformer(ctx context.Context, obj client.Object) error {
+func (_m *Cache) RemoveInformer(ctx context.Context, obj cacheapi.Object) error {
 	ret := _m.Called(ctx, obj)
 
 	if len(ret) == 0 {
@@ -169,7 +169,7 @@ func (_m *Cache) RemoveInformer(ctx context.Context, obj client.Object) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, client.Object) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, cacheapi.Object) error); ok {
 		r0 = rf(ctx, obj)
 	} else {
 		r0 = ret.Error(0)

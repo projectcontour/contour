@@ -1,13 +1,12 @@
 ---
 title: Upgrading Contour
 layout: page
+toc: true
 ---
 
 <!-- NOTE: this document should be formatted with one sentence per line to made reviewing easier. -->
 
 This document describes the changes needed to upgrade your Contour installation.
-
-<div id="toc" class="navigation"></div>
 
 # Before you start
 

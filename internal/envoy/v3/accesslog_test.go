@@ -143,6 +143,8 @@ func TestJSONFileAccessLog(t *testing.T) {
 			headers: contour_v1alpha1.AccessLogJSONFields([]string{
 				"@timestamp",
 				"method",
+				"trace_id",
+				"span_id",
 				"custom1=%REQ(X-CUSTOM-HEADER)%",
 				"custom2=%DURATION%.0",
 				"custom3=ST=%START_TIME(%s.%6f)%",
@@ -161,6 +163,8 @@ func TestJSONFileAccessLog(t *testing.T) {
 											Fields: map[string]*structpb.Value{
 												"@timestamp": sv("%START_TIME%"),
 												"method":     sv("%REQ(:METHOD)%"),
+												"trace_id":   sv("%TRACE_ID%"),
+												"span_id":    sv("%SPAN_ID%"),
 												"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
 												"custom2":    sv("%DURATION%.0"),
 												"custom3":    sv("ST=%START_TIME(%s.%6f)%"),
