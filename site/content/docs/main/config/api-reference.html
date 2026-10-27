@@ -7526,21 +7526,18 @@ If not specified, there is no limit.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>forwardProtoConfig</code>
+<code>proxyProtocolSettings</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ForwardProtoConfig">
-ForwardProtoConfig
+<a href="#projectcontour.io/v1alpha1.ProxyProtocolSettings">
+ProxyProtocolSettings
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ForwardProtoConfig makes Envoy derive X-Forwarded-Proto from the destination
-port in the PROXY protocol header rather than from the TLS state of the
-accepted connection, for load balancers that terminate TLS and forward
-plaintext with PROXY protocol. Requires useProxyProtocol and Envoy 1.38 or
-later. See the PROXY protocol guide for details.</p>
+<p>ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
+Requires useProxyProtocol.</p>
 </td>
 </tr>
 </tbody>
@@ -8312,58 +8309,6 @@ uint32
 <p>FeatureFlags defines the set of feature flags
 to toggle new contour features.</p>
 </p>
-<h3 id="projectcontour.io/v1alpha1.ForwardProtoConfig">ForwardProtoConfig
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
-</p>
-<p>
-<p>ForwardProtoConfig defines how Envoy derives X-Forwarded-Proto from the
-destination port in the PROXY protocol header.
-See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig</a>
-for more information.</p>
-</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="white-space:nowrap">
-<code>httpsDestinationPorts</code>
-<br>
-<em>
-[]uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>HTTPSDestinationPorts lists the PROXY protocol destination ports for which
-X-Forwarded-Proto is set to &ldquo;https&rdquo;, for example 443.
-At least one of httpsDestinationPorts and httpDestinationPorts must be set,
-and a port must not appear in both.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>httpDestinationPorts</code>
-<br>
-<em>
-[]uint32
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>HTTPDestinationPorts lists the PROXY protocol destination ports for which
-X-Forwarded-Proto is set to &ldquo;http&rdquo;, for example 80.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig
 </h3>
 <p>
@@ -9157,6 +9102,58 @@ bool
 <em>(Optional)</em>
 <p>ApplyToIngress determines if the Policies will apply to ingress objects</p>
 <p>Contour&rsquo;s default is false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ProxyProtocolSettings">ProxyProtocolSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+<p>ProxyProtocolSettings defines settings that apply when PROXY protocol is
+enabled with useProxyProtocol.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>httpsDestinationPorts</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+X-Forwarded-Proto is set to &ldquo;https&rdquo;, for example 443, instead of deriving
+it from the TLS state of the accepted connection. Use it when a load
+balancer terminates TLS and forwards plaintext with PROXY protocol.
+At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+and a port must not appear in both.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpDestinationPorts</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPDestinationPorts lists the PROXY protocol destination ports for which
+X-Forwarded-Proto is set to &ldquo;http&rdquo;, for example 80.</p>
 </td>
 </tr>
 </tbody>

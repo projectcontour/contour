@@ -212,7 +212,7 @@ The listener configuration block can be used to configure various parameters for
 | http2-max-concurrent-streams      | int    | none    | Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed for a peer on a single HTTP/2 connection. It is recommended to not set this lower than 100 but this field can be used to bound resource usage by HTTP/2 connections and mitigate attacks like CVE-2023-44487. The default value when this is not set is unlimited. |
 | max-connections-to-accept-per-socket-event | int | none | Defines the maximum number of connections Envoy will accept from the kernel per event loop iteration. If no value is provided, Envoy will accept all pending connections at once. It is recommended to set this to a low value. |
 | max-request-body-bytes            | int    | none    | Defines the maximum request body size in bytes for all routes. Requests with a larger body are rejected with 413. Minimum value is 1. If not specified, there is no limit. |
-| forward-proto-config              | ForwardProtoConfig | | The [forward proto configuration](#forward-proto-configuration): derive `X-Forwarded-Proto` from the PROXY protocol destination port when a load balancer in front of Envoy terminates TLS. |
+| proxy-protocol-settings           | ProxyProtocolSettings | | The [PROXY protocol settings](#proxy-protocol-settings), for example to derive `X-Forwarded-Proto` from the PROXY protocol destination port when a load balancer in front of Envoy terminates TLS. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -299,17 +299,20 @@ Metrics and health endpoints cannot have the same port number when metrics are s
 | tos             | int    | 0       | Defines the value for IPv4 TOS field (including 6 bit DSCP field) for IP packets originating from Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv6-only addresses, setting this option will cause an error. |
 | traffic-class   | int    | 0       | Defines the value for IPv6 Traffic Class field (including 6 bit DSCP field) for IP packets originating from the Envoy listeners. Single value is applied to all listeners. The value must be in the range 0-255, 0 means socket option is not set. If listeners are bound to IPv4-only addresses, setting this option will cause an error. |
 
-### Forward Proto Configuration
+### PROXY Protocol Settings
 
-Makes Envoy derive the `X-Forwarded-Proto` header from the destination port in the PROXY protocol header instead of from the TLS state of the connection it accepted.
+Settings that apply when PROXY protocol is enabled with `--use-proxy-protocol`; Contour rejects them without it.
+
+The destination port lists make Envoy derive the `X-Forwarded-Proto` header from the destination port in the PROXY protocol header instead of from the TLS state of the connection it accepted.
 Use this when a layer 4 load balancer in front of Envoy terminates TLS and forwards plaintext with PROXY protocol, for example an AWS NLB with a TLS listener: every connection Envoy accepts is then plaintext, so `X-Forwarded-Proto` would always be `http`, and anything that redirects HTTP to HTTPS based on that header, in the application or in an HTTPProxy route, would redirect in a loop.
-Only connections whose destination address was restored by the PROXY protocol listener filter are affected, so `--use-proxy-protocol` is required and Contour rejects the setting without it; a destination port in neither list keeps Envoy's default behavior.
-Requires Envoy 1.38 or later. See [the Envoy documentation][16] and the [PROXY protocol guide][17] for more information.
+A destination port in neither list keeps Envoy's default behavior.
+A listed port takes precedence over the TLS state of the connection to Envoy.
+See [the Envoy documentation][16] and the [PROXY protocol guide][17] for more information.
 
 | Field Name              | Type  | Default | Description                                                                   |
 | ----------------------- | ----- | ------- | ----------------------------------------------------------------------------- |
-| https-destination-ports | []int | none    | PROXY protocol destination ports for which `X-Forwarded-Proto` is set to `https`, for example `[443]`. |
-| http-destination-ports  | []int | none    | PROXY protocol destination ports for which `X-Forwarded-Proto` is set to `http`, for example `[80]`. At least one of the two lists must be set, and a port must not appear in both. |
+| https-destination-ports | []int | none    | PROXY protocol destination ports for which `X-Forwarded-Proto` is set to `https`, for example `[443]`. At most 16 ports. |
+| http-destination-ports  | []int | none    | PROXY protocol destination ports for which `X-Forwarded-Proto` is set to `http`, for example `[80]`. At most 16 ports. At least one of the two lists must be set, and a port must not appear in both. |
 
 ### Circuit Breakers
 
@@ -535,7 +538,7 @@ data:
     #  socket-options:
     #    tos: 64
     #    traffic-class: 64
-    #  forward-proto-config:
+    #  proxy-protocol-settings:
     #    https-destination-ports: [443]
     #    http-destination-ports: [80]
     #

@@ -520,16 +520,16 @@ func TestConvertServeContext(t *testing.T) {
 				return cfg
 			},
 		},
-		"forward proto config": {
+		"proxy protocol settings": {
 			getServeContext: func(ctx *serveContext) *serveContext {
-				ctx.Config.Listener.ForwardProtoConfig = &config.ForwardProtoConfig{
+				ctx.Config.Listener.ProxyProtocolSettings = &config.ProxyProtocolSettings{
 					HTTPSDestinationPorts: []uint32{443, 8443},
 					HTTPDestinationPorts:  []uint32{80},
 				}
 				return ctx
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
-				cfg.Envoy.Listener.ForwardProtoConfig = &contour_v1alpha1.ForwardProtoConfig{
+				cfg.Envoy.Listener.ProxyProtocolSettings = &contour_v1alpha1.ProxyProtocolSettings{
 					HTTPSDestinationPorts: []uint32{443, 8443},
 					HTTPDestinationPorts:  []uint32{80},
 				}

@@ -341,6 +341,7 @@ type DebugConfig struct {
 }
 
 // EnvoyListenerConfig hold various configurable Envoy listener values.
+// +kubebuilder:validation:XValidation:message="proxyProtocolSettings requires useProxyProtocol",rule="!has(self.proxyProtocolSettings) || (has(self.useProxyProtocol) && self.useProxyProtocol)"
 type EnvoyListenerConfig struct {
 	// Use PROXY protocol for all listeners.
 	//
@@ -460,28 +461,28 @@ type EnvoyListenerConfig struct {
 	// +optional
 	MaxRequestBodyBytes *uint64 `json:"maxRequestBodyBytes,omitempty"`
 
-	// ForwardProtoConfig makes Envoy derive X-Forwarded-Proto from the destination
-	// port in the PROXY protocol header rather than from the TLS state of the
-	// accepted connection, for load balancers that terminate TLS and forward
-	// plaintext with PROXY protocol. Requires useProxyProtocol and Envoy 1.38 or
-	// later. See the PROXY protocol guide for details.
+	// ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
+	// Requires useProxyProtocol.
 	//
 	// +optional
-	ForwardProtoConfig *ForwardProtoConfig `json:"forwardProtoConfig,omitempty"`
+	ProxyProtocolSettings *ProxyProtocolSettings `json:"proxyProtocolSettings,omitempty"`
 }
 
-// ForwardProtoConfig defines how Envoy derives X-Forwarded-Proto from the
-// destination port in the PROXY protocol header.
-// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
-// for more information.
-type ForwardProtoConfig struct {
+// ProxyProtocolSettings defines settings that apply when PROXY protocol is
+// enabled with useProxyProtocol.
+// +kubebuilder:validation:XValidation:message="at least one of httpsDestinationPorts or httpDestinationPorts must be set",rule="(has(self.httpsDestinationPorts) && size(self.httpsDestinationPorts) > 0) || (has(self.httpDestinationPorts) && size(self.httpDestinationPorts) > 0)"
+// +kubebuilder:validation:XValidation:message="a port must not be in both httpsDestinationPorts and httpDestinationPorts",rule="!has(self.httpsDestinationPorts) || !has(self.httpDestinationPorts) || !self.httpsDestinationPorts.exists(p, p in self.httpDestinationPorts)"
+type ProxyProtocolSettings struct {
 	// HTTPSDestinationPorts lists the PROXY protocol destination ports for which
-	// X-Forwarded-Proto is set to "https", for example 443.
+	// X-Forwarded-Proto is set to "https", for example 443, instead of deriving
+	// it from the TLS state of the accepted connection. Use it when a load
+	// balancer terminates TLS and forwards plaintext with PROXY protocol.
 	// At least one of httpsDestinationPorts and httpDestinationPorts must be set,
 	// and a port must not appear in both.
 	//
 	// +kubebuilder:validation:items:Minimum=1
 	// +kubebuilder:validation:items:Maximum=65535
+	// +kubebuilder:validation:MaxItems=16
 	// +optional
 	HTTPSDestinationPorts []uint32 `json:"httpsDestinationPorts,omitempty"`
 
@@ -490,6 +491,7 @@ type ForwardProtoConfig struct {
 	//
 	// +kubebuilder:validation:items:Minimum=1
 	// +kubebuilder:validation:items:Maximum=65535
+	// +kubebuilder:validation:MaxItems=16
 	// +optional
 	HTTPDestinationPorts []uint32 `json:"httpDestinationPorts,omitempty"`
 }

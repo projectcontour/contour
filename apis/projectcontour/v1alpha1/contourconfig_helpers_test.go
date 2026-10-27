@@ -73,7 +73,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto: ptr.To(true),
-					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+					ProxyProtocolSettings: &contour_v1alpha1.ProxyProtocolSettings{
 						HTTPSDestinationPorts: []uint32{443, 8443},
 						HTTPDestinationPorts:  []uint32{80},
 					},
@@ -87,7 +87,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto: ptr.To(false),
-					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+					ProxyProtocolSettings: &contour_v1alpha1.ProxyProtocolSettings{
 						HTTPSDestinationPorts: []uint32{443},
 					},
 				},
@@ -98,7 +98,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
-					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+					ProxyProtocolSettings: &contour_v1alpha1.ProxyProtocolSettings{
 						HTTPSDestinationPorts: []uint32{443},
 					},
 				},
@@ -109,8 +109,8 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c = contour_v1alpha1.ContourConfigurationSpec{
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
-					UseProxyProto:      ptr.To(true),
-					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{},
+					UseProxyProto:         ptr.To(true),
+					ProxyProtocolSettings: &contour_v1alpha1.ProxyProtocolSettings{},
 				},
 			},
 		}
@@ -120,7 +120,7 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 			Envoy: &contour_v1alpha1.EnvoyConfig{
 				Listener: &contour_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto: ptr.To(true),
-					ForwardProtoConfig: &contour_v1alpha1.ForwardProtoConfig{
+					ProxyProtocolSettings: &contour_v1alpha1.ProxyProtocolSettings{
 						HTTPSDestinationPorts: []uint32{443},
 						HTTPDestinationPorts:  []uint32{80, 443},
 					},

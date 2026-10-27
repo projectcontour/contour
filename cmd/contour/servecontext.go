@@ -510,11 +510,11 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 		}
 	}
 
-	var forwardProtoConfig *contour_v1alpha1.ForwardProtoConfig
-	if ctx.Config.Listener.ForwardProtoConfig != nil {
-		forwardProtoConfig = &contour_v1alpha1.ForwardProtoConfig{
-			HTTPSDestinationPorts: ctx.Config.Listener.ForwardProtoConfig.HTTPSDestinationPorts,
-			HTTPDestinationPorts:  ctx.Config.Listener.ForwardProtoConfig.HTTPDestinationPorts,
+	var proxyProtocolSettings *contour_v1alpha1.ProxyProtocolSettings
+	if ctx.Config.Listener.ProxyProtocolSettings != nil {
+		proxyProtocolSettings = &contour_v1alpha1.ProxyProtocolSettings{
+			HTTPSDestinationPorts: ctx.Config.Listener.ProxyProtocolSettings.HTTPSDestinationPorts,
+			HTTPDestinationPorts:  ctx.Config.Listener.ProxyProtocolSettings.HTTPDestinationPorts,
 		}
 	}
 
@@ -572,7 +572,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				MaxConnectionsPerListener:            ctx.Config.Listener.MaxConnectionsPerListener,
 				MaxConnectionsToAcceptPerSocketEvent: ctx.Config.Listener.MaxConnectionsToAcceptPerSocketEvent,
 				MaxRequestBodyBytes:                  ctx.Config.Listener.MaxRequestBodyBytes,
-				ForwardProtoConfig:                   forwardProtoConfig,
+				ProxyProtocolSettings:                proxyProtocolSettings,
 				TLS: &contour_v1alpha1.EnvoyListenerTLS{
 					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,

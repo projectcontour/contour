@@ -222,7 +222,7 @@ type httpConnectionManagerBuilder struct {
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
 	compression                   *contour_v1alpha1.EnvoyCompression
-	forwardProtoConfig            *contour_v1alpha1.ForwardProtoConfig
+	forwardProtoConfig            *contour_v1alpha1.ProxyProtocolSettings
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -345,16 +345,17 @@ func (b *httpConnectionManagerBuilder) StripTrailingHostDot(strip bool) *httpCon
 	return b
 }
 
-// ForwardProtoConfig sets how the connection manager derives X-Forwarded-Proto.
-// nil keeps Envoy's default, which is the TLS state of the accepted connection.
-func (b *httpConnectionManagerBuilder) ForwardProtoConfig(config *contour_v1alpha1.ForwardProtoConfig) *httpConnectionManagerBuilder {
+// ForwardProtoConfig sets how the connection manager derives X-Forwarded-Proto
+// from the PROXY protocol settings. nil keeps Envoy's default, which is the TLS
+// state of the accepted connection.
+func (b *httpConnectionManagerBuilder) ForwardProtoConfig(config *contour_v1alpha1.ProxyProtocolSettings) *httpConnectionManagerBuilder {
 	b.forwardProtoConfig = config
 	return b
 }
 
-// forwardProtoConfig converts the Contour forward proto configuration into
-// the HTTP connection manager's.
-func forwardProtoConfig(config *contour_v1alpha1.ForwardProtoConfig) *envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig {
+// forwardProtoConfig converts the destination ports of the PROXY protocol
+// settings into the HTTP connection manager's forward proto configuration.
+func forwardProtoConfig(config *contour_v1alpha1.ProxyProtocolSettings) *envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig {
 	if config == nil {
 		return nil
 	}

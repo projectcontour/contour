@@ -54,12 +54,12 @@ spec:
 If the load balancer terminates TLS itself, for example an AWS NLB with a TLS listener and an ACM certificate, and forwards plaintext to Envoy with the PROXY protocol, every connection Envoy accepts is plaintext.
 Envoy then sets `X-Forwarded-Proto: http` on every request, so backends cannot tell HTTPS requests from HTTP ones, and anything that redirects HTTP to HTTPS based on that header, in the application or in an HTTPProxy route, redirects in a loop.
 
-Envoy 1.38 and later can derive `X-Forwarded-Proto` from the destination port carried in the PROXY protocol header instead.
+Envoy can derive `X-Forwarded-Proto` from the destination port carried in the PROXY protocol header instead.
 Enable it in the Contour configuration file, together with `--use-proxy-protocol` (Contour rejects the setting without it):
 
 ```yaml
 listener:
-  forward-proto-config:
+  proxy-protocol-settings:
     https-destination-ports: [443]
     http-destination-ports: [80]
 ```
@@ -71,10 +71,12 @@ spec:
   envoy:
     listener:
       useProxyProtocol: true
-      forwardProtoConfig:
+      proxyProtocolSettings:
         httpsDestinationPorts: [443]
         httpDestinationPorts: [80]
 ```
+
+When Contour is deployed with the Gateway provisioner, set the same fields under `spec.runtimeSettings.envoy.listener` in the `ContourDeployment` resource.
 
 Requests that reached the load balancer on a port listed in `https-destination-ports` get `X-Forwarded-Proto: https`, those on a port in `http-destination-ports` get `http`, and any other port keeps Envoy's default behavior.
 

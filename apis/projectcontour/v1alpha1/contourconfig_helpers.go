@@ -163,14 +163,12 @@ func (e *EnvoyConfig) Validate() error {
 		}
 	}
 
-	// Envoy forward proto configuration. Envoy only applies it to connections
-	// whose destination address the PROXY protocol listener filter restored, so
-	// without useProxyProtocol it is a silent no-op.
-	if e.Listener != nil && e.Listener.ForwardProtoConfig != nil {
+	// Envoy forward proto configuration
+	if e.Listener != nil && e.Listener.ProxyProtocolSettings != nil {
 		if e.Listener.UseProxyProto == nil || !*e.Listener.UseProxyProto {
-			return errors.New("invalid forward proto config: forwardProtoConfig requires useProxyProtocol (--use-proxy-protocol)")
+			return errors.New("invalid proxy protocol settings: proxyProtocolSettings requires useProxyProtocol (--use-proxy-protocol)")
 		}
-		if err := e.Listener.ForwardProtoConfig.Validate(); err != nil {
+		if err := e.Listener.ProxyProtocolSettings.Validate(); err != nil {
 			return err
 		}
 	}
@@ -181,9 +179,9 @@ func (e *EnvoyConfig) Validate() error {
 // Validate ensures the port lists are usable: at least one port is given and
 // no port is listed as both HTTPS and HTTP. Port ranges are validated by the
 // CRD schema.
-func (f *ForwardProtoConfig) Validate() error {
+func (f *ProxyProtocolSettings) Validate() error {
 	if len(f.HTTPSDestinationPorts) == 0 && len(f.HTTPDestinationPorts) == 0 {
-		return errors.New("invalid forward proto config: at least one of httpsDestinationPorts or httpDestinationPorts must be set")
+		return errors.New("invalid proxy protocol settings: at least one HTTPS or HTTP destination port must be set")
 	}
 
 	https := make(map[uint32]struct{}, len(f.HTTPSDestinationPorts))
@@ -192,7 +190,7 @@ func (f *ForwardProtoConfig) Validate() error {
 	}
 	for _, port := range f.HTTPDestinationPorts {
 		if _, ok := https[port]; ok {
-			return fmt.Errorf("invalid forward proto config: port %d is in both httpsDestinationPorts and httpDestinationPorts", port)
+			return fmt.Errorf("invalid proxy protocol settings: port %d is listed as both an HTTPS and an HTTP destination port", port)
 		}
 	}
 

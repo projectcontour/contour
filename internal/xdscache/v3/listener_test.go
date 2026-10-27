@@ -3672,8 +3672,8 @@ func TestListenerForwardProtoConfig(t *testing.T) {
 		return hcms
 	}
 
-	config := &contour_v1alpha1.ForwardProtoConfig{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80}}
-	for _, hcm := range connectionManagers(ListenerConfig{UseProxyProto: true, ForwardProtoConfig: config}) {
+	config := &contour_v1alpha1.ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80}}
+	for _, hcm := range connectionManagers(ListenerConfig{UseProxyProto: true, ProxyProtocolSettings: config}) {
 		protobuf.ExpectEqual(t, &envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig{
 			HttpsDestinationPorts: []uint32{443},
 			HttpDestinationPorts:  []uint32{80},

@@ -861,10 +861,10 @@ func TestTracingConfigValidation(t *testing.T) {
 	require.Error(t, trace.Validate())
 }
 
-func TestParseForwardProtoConfig(t *testing.T) {
+func TestParseProxyProtocolSettings(t *testing.T) {
 	conf, err := Parse(strings.NewReader(`
 listener:
-  forward-proto-config:
+  proxy-protocol-settings:
     https-destination-ports: [443, 8443]
     http-destination-ports: [80]
 `))
@@ -872,49 +872,53 @@ listener:
 	require.NoError(t, conf.Validate())
 
 	wanted := Defaults()
-	wanted.Listener.ForwardProtoConfig = &ForwardProtoConfig{
+	wanted.Listener.ProxyProtocolSettings = &ProxyProtocolSettings{
 		HTTPSDestinationPorts: []uint32{443, 8443},
 		HTTPDestinationPorts:  []uint32{80},
 	}
 	assert.Equal(t, &wanted, conf)
 }
 
-func TestValidateForwardProtoConfig(t *testing.T) {
+func TestValidateProxyProtocolSettings(t *testing.T) {
 	tests := map[string]struct {
-		config  *ForwardProtoConfig
+		config  *ProxyProtocolSettings
 		wantErr string
 	}{
 		"absent": {
 			config: nil,
 		},
 		"https only": {
-			config: &ForwardProtoConfig{HTTPSDestinationPorts: []uint32{443}},
+			config: &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{443}},
 		},
 		"http only": {
-			config: &ForwardProtoConfig{HTTPDestinationPorts: []uint32{80}},
+			config: &ProxyProtocolSettings{HTTPDestinationPorts: []uint32{80}},
 		},
 		"no ports": {
-			config:  &ForwardProtoConfig{},
-			wantErr: "at least one of",
+			config:  &ProxyProtocolSettings{},
+			wantErr: "at least one HTTPS or HTTP destination port",
 		},
 		"port zero": {
-			config:  &ForwardProtoConfig{HTTPSDestinationPorts: []uint32{0}},
+			config:  &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{0}},
 			wantErr: "https-destination-ports value 0",
 		},
 		"port too large": {
-			config:  &ForwardProtoConfig{HTTPDestinationPorts: []uint32{65536}},
+			config:  &ProxyProtocolSettings{HTTPDestinationPorts: []uint32{65536}},
 			wantErr: "http-destination-ports value 65536",
 		},
+		"too many ports": {
+			config:  &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}},
+			wantErr: "https-destination-ports, must have at most 16 ports",
+		},
 		"port in both lists": {
-			config:  &ForwardProtoConfig{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80, 443}},
-			wantErr: "port 443 is in both",
+			config:  &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80, 443}},
+			wantErr: "port 443 is listed as both",
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			p := Defaults()
-			p.Listener.ForwardProtoConfig = tc.config
+			p.Listener.ProxyProtocolSettings = tc.config
 			err := p.Validate()
 			if tc.wantErr == "" {
 				require.NoError(t, err)
