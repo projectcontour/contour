@@ -2158,6 +2158,65 @@ func TestAddBodySizeLimitFilterTypedConfig(t *testing.T) {
 	assert.Equal(t, limit, bodySizeLimit.GetMaxRequestBytes().GetValue())
 }
 
+// TestBodySizeLimitWebsocketUpgradeConfig checks that websocket upgrades dont include body size limit filter.
+func TestBodySizeLimitWebsocketUpgradeConfig(t *testing.T) {
+	envoygen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	limit := ptr.To(uint64(1024))
+
+	jwtAuthn := FilterJWTAuthN([]dag.JWTProvider{{Name: "provider", Issuer: "issuer"}})
+
+	// Expected upgrade filters: same filters as in the test, built without the limit.
+	withoutLimit := envoygen.HTTPConnectionManagerBuilder().
+		DefaultFilters().
+		AddFilter(jwtAuthn)
+	upgradeFilters := withoutLimit.filters
+
+	tests := map[string]struct {
+		bodySizeLimit    *uint64
+		enableWebsockets bool
+		want             []*envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig
+	}{
+		"no limit, websockets per route": {},
+		"no limit, websockets on all routes": {
+			enableWebsockets: true,
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
+				{UpgradeType: "websocket"},
+			},
+		},
+		"limit, websockets per route": {
+			bodySizeLimit: limit,
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
+				{UpgradeType: "websocket", Filters: upgradeFilters, Enabled: wrapperspb.Bool(false)},
+			},
+		},
+		"limit, websockets on all routes": {
+			bodySizeLimit:    limit,
+			enableWebsockets: true,
+			want: []*envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
+				{UpgradeType: "websocket", Filters: upgradeFilters},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			filter := envoygen.HTTPConnectionManagerBuilder().
+				DefaultFilters().
+				AddBodySizeLimitFilter(tc.bodySizeLimit).
+				AddFilter(jwtAuthn).
+				EnableWebsockets(tc.enableWebsockets).
+				Get()
+
+			cm := &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager{}
+			require.NoError(t, filter.GetTypedConfig().UnmarshalTo(cm))
+			protobuf.ExpectEqual(t, tc.want, cm.GetUpgradeConfigs())
+		})
+	}
+}
+
 // bodySizeLimitFilter returns the HTTP filter that AddBodySizeLimitFilter is
 // expected to generate for the given limit.
 func bodySizeLimitFilter(maxRequestBytes uint64) *envoy_filter_network_http_connection_manager_v3.HttpFilter {

@@ -1,1 +1,1 @@
-Support configuring the Envoy `body_size_limit` filter.
+Add support for limiting the maximum request body size with `listener.max-request-body-bytes` in the Contour configuration file or `spec.envoy.listener.maxRequestBodyBytes` in the `ContourConfiguration` CRD. Requests with a larger body are rejected with 413.

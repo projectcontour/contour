@@ -454,6 +454,7 @@ type EnvoyListenerConfig struct {
 
 	// MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
 	// Requests with a larger body are rejected with 413. Minimum value is 1.
+	// The limit does not apply to websocket connections.
 	// If not specified, there is no limit.
 	//
 	// +kubebuilder:validation:Minimum=1
