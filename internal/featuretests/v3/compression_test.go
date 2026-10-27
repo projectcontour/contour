@@ -96,3 +96,59 @@ func TestCompression(t *testing.T) {
 		})
 	}
 }
+
+func TestCompressionAlgorithms(t *testing.T) {
+	s1 := fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
+
+	hp1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: matchconditions(prefixMatchCondition("/")),
+				Services: []contour_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	compression := &contour_v1alpha1.EnvoyCompression{
+		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+			contour_v1alpha1.BrotliCompression,
+			contour_v1alpha1.GzipCompression,
+		},
+	}
+
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.Compression = compression
+	})
+	defer done()
+
+	rh.OnAdd(s1)
+	rh.OnAdd(hp1)
+	httpListener := defaultHTTPListener()
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
+		Compression(compression).
+		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG, "", nil, contour_v1alpha1.LogLevelInfo)).
+		DefaultFilters().
+		Get(),
+	)
+
+	c.Request(listenerType, xdscache_v3.ENVOY_HTTP_LISTENER).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, httpListener),
+	})
+}

@@ -1,0 +1,1 @@
+HTTP compression can now be configured with a list of algorithms via `compression.algorithms` in the configuration file or `spec.envoy.listener.compression.algorithms` in the `ContourConfiguration` CRD. Envoy negotiates the encoding from the request `Accept-Encoding` header. An empty `algorithms` list disables compression. The existing `algorithm` field is deprecated.
