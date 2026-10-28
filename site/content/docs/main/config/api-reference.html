@@ -5174,6 +5174,39 @@ Only one of IPAllowFilterPolicy and IPDenyFilterPolicy can be defined.
 The rules defined here may be overridden in a Route.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>includeRequestAttemptCount</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IncludeRequestAttemptCount, when true, causes Envoy to include the
+x-envoy-attempt-count header in requests forwarded to the upstream.
+The value starts at 1 for the initial attempt and is incremented for
+each retry, allowing upstream services to observe how many times a
+request has been attempted.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>includeAttemptCountInResponse</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IncludeAttemptCountInResponse, when true, causes Envoy to include the
+x-envoy-attempt-count header in responses returned to the downstream
+client, reflecting the number of times the request was attempted on the
+upstream.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <hr/>
