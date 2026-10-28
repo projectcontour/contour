@@ -15,6 +15,7 @@ package v3
 
 import (
 	"errors"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -221,6 +222,7 @@ type httpConnectionManagerBuilder struct {
 	maxRequestsPerConnection      *uint32
 	http2MaxConcurrentStreams     *uint32
 	enableWebsockets              bool
+	bodySizeLimitFilter           *envoy_filter_network_http_connection_manager_v3.HttpFilter
 	compression                   *contour_v1alpha1.EnvoyCompression
 }
 
@@ -499,6 +501,7 @@ func (b *httpConnectionManagerBuilder) AddBodySizeLimitFilter(maxRequestBodyByte
 		},
 	}
 
+	b.bodySizeLimitFilter = filter
 	return b.AddFilter(filter)
 }
 
@@ -665,12 +668,32 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		}
 	}
 
+	var upgradeConfig *envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig
+
 	if b.enableWebsockets {
-		cm.UpgradeConfigs = append(cm.UpgradeConfigs,
-			&envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
+		upgradeConfig = &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
+			UpgradeType: "websocket",
+		}
+	}
+
+	if b.bodySizeLimitFilter != nil {
+		if upgradeConfig == nil {
+			// No upgrade config means websockets are enabled per route. Create one only to set the filters, and disable it.
+			// Routes with Websocket set enable it and use these filters.
+			upgradeConfig = &envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_UpgradeConfig{
 				UpgradeType: "websocket",
-			},
-		)
+				Enabled:     wrapperspb.Bool(false),
+			}
+		}
+		// Websocket upgrades use filters in UpgradeConfigs instead of the main filter chain.
+		// Leave out the body size limit from UpgradeConfigs to avoid Envoy counting all websocket messages as one request body
+		// and resetting the connection when the limit is reached.
+		i := slices.Index(b.filters, b.bodySizeLimitFilter)
+		upgradeConfig.Filters = slices.Concat(b.filters[:i], b.filters[i+1:])
+	}
+
+	if upgradeConfig != nil {
+		cm.UpgradeConfigs = append(cm.UpgradeConfigs, upgradeConfig)
 	}
 
 	return &envoy_config_listener_v3.Filter{
