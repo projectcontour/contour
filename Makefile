@@ -54,7 +54,7 @@ BUILD_GOPROXY ?= https://proxy.golang.org
 # Checksum db to use.
 BUILD_GOSUMDB ?= sum.golang.org
 
-BUILD_GOEXPERIMENT ?= none
+BUILD_GOEXPERIMENT ?=
 
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
