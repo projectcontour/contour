@@ -224,6 +224,7 @@ type httpConnectionManagerBuilder struct {
 	enableWebsockets              bool
 	bodySizeLimitFilter           *envoy_filter_network_http_connection_manager_v3.HttpFilter
 	compression                   *contour_v1alpha1.EnvoyCompression
+	forwardProtoConfig            *contour_v1alpha1.ProxyProtocolSettings
 }
 
 func (b *httpConnectionManagerBuilder) EnableWebsockets(enable bool) *httpConnectionManagerBuilder {
@@ -344,6 +345,27 @@ func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectio
 func (b *httpConnectionManagerBuilder) StripTrailingHostDot(strip bool) *httpConnectionManagerBuilder {
 	b.stripTrailingHostDot = strip
 	return b
+}
+
+// ForwardProtoConfig sets how the connection manager derives X-Forwarded-Proto
+// from the PROXY protocol settings. nil keeps Envoy's default, which is the TLS
+// state of the accepted connection.
+func (b *httpConnectionManagerBuilder) ForwardProtoConfig(config *contour_v1alpha1.ProxyProtocolSettings) *httpConnectionManagerBuilder {
+	b.forwardProtoConfig = config
+	return b
+}
+
+// forwardProtoConfig converts the destination ports of the PROXY protocol
+// settings into the HTTP connection manager's forward proto configuration.
+func forwardProtoConfig(config *contour_v1alpha1.ProxyProtocolSettings) *envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig {
+	if config == nil {
+		return nil
+	}
+
+	return &envoy_filter_network_http_connection_manager_v3.ForwardProtoConfig{
+		HttpsDestinationPorts: config.HTTPSDestinationPorts,
+		HttpDestinationPorts:  config.HTTPDestinationPorts,
+	}
 }
 
 // MaxRequestsPerConnection sets max requests per connection for the downstream.
@@ -613,6 +635,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		UseRemoteAddress:     wrapperspb.Bool(true),
 		XffNumTrustedHops:    b.numTrustedHops,
 		StripTrailingHostDot: b.stripTrailingHostDot,
+		ForwardProtoConfig:   forwardProtoConfig(b.forwardProtoConfig),
 
 		NormalizePath: wrapperspb.Bool(true),
 

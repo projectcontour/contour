@@ -7525,6 +7525,22 @@ The limit does not apply to websocket connections.
 If not specified, there is no limit.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>proxyProtocolSettings</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ProxyProtocolSettings">
+ProxyProtocolSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
+Requires useProxyProtocol.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListenerTLS">EnvoyListenerTLS
@@ -9087,6 +9103,58 @@ bool
 <em>(Optional)</em>
 <p>ApplyToIngress determines if the Policies will apply to ingress objects</p>
 <p>Contour&rsquo;s default is false.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ProxyProtocolSettings">ProxyProtocolSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyListenerConfig">EnvoyListenerConfig</a>)
+</p>
+<p>
+<p>ProxyProtocolSettings defines settings that apply when PROXY protocol is
+enabled with useProxyProtocol.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>httpsDestinationPorts</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+X-Forwarded-Proto is set to &ldquo;https&rdquo;, for example 443, instead of deriving
+it from the TLS state of the accepted connection. Use it when a load
+balancer terminates TLS and forwards plaintext with PROXY protocol.
+At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+and a port must not appear in both.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>httpDestinationPorts</code>
+<br>
+<em>
+[]uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTPDestinationPorts lists the PROXY protocol destination ports for which
+X-Forwarded-Proto is set to &ldquo;http&rdquo;, for example 80.</p>
 </td>
 </tr>
 </tbody>

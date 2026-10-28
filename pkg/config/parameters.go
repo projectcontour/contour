@@ -550,6 +550,51 @@ type ListenerParameters struct {
 	// The limit does not apply to websocket connections.
 	// If not specified, there is no limit.
 	MaxRequestBodyBytes *uint64 `yaml:"max-request-body-bytes,omitempty"`
+
+	// ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
+	// Requires --use-proxy-protocol.
+	//
+	// +optional
+	ProxyProtocolSettings *ProxyProtocolSettings `yaml:"proxy-protocol-settings,omitempty"`
+}
+
+// ProxyProtocolSettings defines settings that apply when PROXY protocol is
+// enabled with --use-proxy-protocol.
+type ProxyProtocolSettings struct {
+	// HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "https", for example 443, instead of deriving
+	// it from the TLS state of the accepted connection.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
+	// for more information.
+	HTTPSDestinationPorts []uint32 `yaml:"https-destination-ports,omitempty"`
+
+	// HTTPDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "http", for example 80.
+	HTTPDestinationPorts []uint32 `yaml:"http-destination-ports,omitempty"`
+}
+
+// Validate checks the port ranges and list sizes, which the CRD schema covers
+// on the ContourConfiguration path, and defers the rest to the v1alpha1 checks.
+func (f *ProxyProtocolSettings) Validate() error {
+	if f == nil {
+		return nil
+	}
+
+	for _, ports := range []struct {
+		scheme string
+		ports  []uint32
+	}{{"https", f.HTTPSDestinationPorts}, {"http", f.HTTPDestinationPorts}} {
+		if len(ports.ports) > 16 {
+			return fmt.Errorf("invalid proxy-protocol-settings %s-destination-ports, must have at most 16 ports", ports.scheme)
+		}
+		for _, port := range ports.ports {
+			if port < 1 || port > 65535 {
+				return fmt.Errorf("invalid proxy-protocol-settings %s-destination-ports value %d, must be between 1 and 65535", ports.scheme, port)
+			}
+		}
+	}
+
+	return (*contour_v1alpha1.ProxyProtocolSettings)(f).Validate()
 }
 
 func (p *ListenerParameters) Validate() error {
@@ -587,6 +632,10 @@ func (p *ListenerParameters) Validate() error {
 
 	if p.MaxRequestBodyBytes != nil && *p.MaxRequestBodyBytes < 1 {
 		return fmt.Errorf("invalid max request body bytes value %d set on listener, minimum value is 1", *p.MaxRequestBodyBytes)
+	}
+
+	if err := p.ProxyProtocolSettings.Validate(); err != nil {
+		return err
 	}
 
 	return p.SocketOptions.Validate()

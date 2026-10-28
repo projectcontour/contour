@@ -341,6 +341,7 @@ type DebugConfig struct {
 }
 
 // EnvoyListenerConfig hold various configurable Envoy listener values.
+// +kubebuilder:validation:XValidation:message="proxyProtocolSettings requires useProxyProtocol",rule="!has(self.proxyProtocolSettings) || (has(self.useProxyProtocol) && self.useProxyProtocol)"
 type EnvoyListenerConfig struct {
 	// Use PROXY protocol for all listeners.
 	//
@@ -460,6 +461,40 @@ type EnvoyListenerConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxRequestBodyBytes *uint64 `json:"maxRequestBodyBytes,omitempty"`
+
+	// ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
+	// Requires useProxyProtocol.
+	//
+	// +optional
+	ProxyProtocolSettings *ProxyProtocolSettings `json:"proxyProtocolSettings,omitempty"`
+}
+
+// ProxyProtocolSettings defines settings that apply when PROXY protocol is
+// enabled with useProxyProtocol.
+// +kubebuilder:validation:XValidation:message="at least one of httpsDestinationPorts or httpDestinationPorts must be set",rule="(has(self.httpsDestinationPorts) && size(self.httpsDestinationPorts) > 0) || (has(self.httpDestinationPorts) && size(self.httpDestinationPorts) > 0)"
+// +kubebuilder:validation:XValidation:message="a port must not be in both httpsDestinationPorts and httpDestinationPorts",rule="!has(self.httpsDestinationPorts) || !has(self.httpDestinationPorts) || !self.httpsDestinationPorts.exists(p, p in self.httpDestinationPorts)"
+type ProxyProtocolSettings struct {
+	// HTTPSDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "https", for example 443, instead of deriving
+	// it from the TLS state of the accepted connection. Use it when a load
+	// balancer terminates TLS and forwards plaintext with PROXY protocol.
+	// At least one of httpsDestinationPorts and httpDestinationPorts must be set,
+	// and a port must not appear in both.
+	//
+	// +kubebuilder:validation:items:Minimum=1
+	// +kubebuilder:validation:items:Maximum=65535
+	// +kubebuilder:validation:MaxItems=16
+	// +optional
+	HTTPSDestinationPorts []uint32 `json:"httpsDestinationPorts,omitempty"`
+
+	// HTTPDestinationPorts lists the PROXY protocol destination ports for which
+	// X-Forwarded-Proto is set to "http", for example 80.
+	//
+	// +kubebuilder:validation:items:Minimum=1
+	// +kubebuilder:validation:items:Maximum=65535
+	// +kubebuilder:validation:MaxItems=16
+	// +optional
+	HTTPDestinationPorts []uint32 `json:"httpDestinationPorts,omitempty"`
 }
 
 // SocketOptions defines configurable socket options for Envoy listeners.

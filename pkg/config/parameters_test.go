@@ -860,3 +860,71 @@ func TestTracingConfigValidation(t *testing.T) {
 	}
 	require.Error(t, trace.Validate())
 }
+
+func TestParseProxyProtocolSettings(t *testing.T) {
+	conf, err := Parse(strings.NewReader(`
+listener:
+  proxy-protocol-settings:
+    https-destination-ports: [443, 8443]
+    http-destination-ports: [80]
+`))
+	require.NoError(t, err)
+	require.NoError(t, conf.Validate())
+
+	wanted := Defaults()
+	wanted.Listener.ProxyProtocolSettings = &ProxyProtocolSettings{
+		HTTPSDestinationPorts: []uint32{443, 8443},
+		HTTPDestinationPorts:  []uint32{80},
+	}
+	assert.Equal(t, &wanted, conf)
+}
+
+func TestValidateProxyProtocolSettings(t *testing.T) {
+	tests := map[string]struct {
+		config  *ProxyProtocolSettings
+		wantErr string
+	}{
+		"absent": {
+			config: nil,
+		},
+		"https only": {
+			config: &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{443}},
+		},
+		"http only": {
+			config: &ProxyProtocolSettings{HTTPDestinationPorts: []uint32{80}},
+		},
+		"no ports": {
+			config:  &ProxyProtocolSettings{},
+			wantErr: "at least one HTTPS or HTTP destination port",
+		},
+		"port zero": {
+			config:  &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{0}},
+			wantErr: "https-destination-ports value 0",
+		},
+		"port too large": {
+			config:  &ProxyProtocolSettings{HTTPDestinationPorts: []uint32{65536}},
+			wantErr: "http-destination-ports value 65536",
+		},
+		"too many ports": {
+			config:  &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}},
+			wantErr: "https-destination-ports, must have at most 16 ports",
+		},
+		"port in both lists": {
+			config:  &ProxyProtocolSettings{HTTPSDestinationPorts: []uint32{443}, HTTPDestinationPorts: []uint32{80, 443}},
+			wantErr: "port 443 is listed as both",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			p := Defaults()
+			p.Listener.ProxyProtocolSettings = tc.config
+			err := p.Validate()
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
+}
