@@ -110,6 +110,8 @@ func ClusterIPServiceChanged(current, expected *core_v1.Service) (*core_v1.Servi
 
 	if !apiequality.Semantic.DeepEqual(current.Spec.Type, expected.Spec.Type) {
 		updated.Spec.Type = expected.Spec.Type
+		// Remove source ranges when switching away from LoadBalancer, Kubernetes rejects the update otherwise.
+		updated.Spec.LoadBalancerSourceRanges = nil
 		changed = true
 	}
 
@@ -174,6 +176,8 @@ func LoadBalancerServiceChanged(current, expected *core_v1.Service) (*core_v1.Se
 
 	if !apiequality.Semantic.DeepEqual(current.Spec.Type, expected.Spec.Type) {
 		updated.Spec.Type = expected.Spec.Type
+		// Restore class when switching back to LoadBalancer, Kubernetes removed it when switching away.
+		updated.Spec.LoadBalancerClass = expected.Spec.LoadBalancerClass
 		changed = true
 	}
 
@@ -184,6 +188,11 @@ func LoadBalancerServiceChanged(current, expected *core_v1.Service) (*core_v1.Se
 
 	if !apiequality.Semantic.DeepEqual(current.Spec.LoadBalancerIP, expected.Spec.LoadBalancerIP) {
 		updated.Spec.LoadBalancerIP = expected.Spec.LoadBalancerIP
+		changed = true
+	}
+
+	if !apiequality.Semantic.DeepEqual(current.Spec.LoadBalancerSourceRanges, expected.Spec.LoadBalancerSourceRanges) {
+		updated.Spec.LoadBalancerSourceRanges = expected.Spec.LoadBalancerSourceRanges
 		changed = true
 	}
 
@@ -235,6 +244,8 @@ func NodePortServiceChanged(current, expected *core_v1.Service) (*core_v1.Servic
 
 	if !apiequality.Semantic.DeepEqual(current.Spec.Type, expected.Spec.Type) {
 		updated.Spec.Type = expected.Spec.Type
+		// Remove source ranges when switching away from LoadBalancer, Kubernetes rejects the update otherwise.
+		updated.Spec.LoadBalancerSourceRanges = nil
 		changed = true
 	}
 
