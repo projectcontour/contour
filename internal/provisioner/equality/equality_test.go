@@ -14,6 +14,7 @@
 package equality_test
 
 import (
+	"reflect"
 	"testing"
 
 	apps_v1 "k8s.io/api/apps/v1"
@@ -581,6 +582,44 @@ func TestNodePortServiceChanged(t *testing.T) {
 			if _, changedAgain := equality.NodePortServiceChanged(updated, expected); changedAgain {
 				t.Errorf("%s, NodePortServiceChanged does not behave as a fixed point function", tc.description)
 			}
+		}
+	}
+}
+
+// Changing the Service type must give a valid Service of the new type.
+func TestServiceTypeChanged(t *testing.T) {
+	testCases := []struct {
+		description    string
+		serviceChanged func(current, expected *core_v1.Service) (*core_v1.Service, bool)
+		current        core_v1.ServiceSpec
+		expected       core_v1.ServiceSpec
+	}{
+		{
+			description:    "if changed from load balancer to cluster IP, leftover source ranges are cleared",
+			serviceChanged: equality.ClusterIPServiceChanged,
+			current:        core_v1.ServiceSpec{Type: core_v1.ServiceTypeLoadBalancer, LoadBalancerSourceRanges: []string{"10.0.0.0/8"}},
+			expected:       core_v1.ServiceSpec{Type: core_v1.ServiceTypeClusterIP},
+		},
+		{
+			description:    "if changed from load balancer to node port, leftover source ranges are cleared",
+			serviceChanged: equality.NodePortServiceChanged,
+			current:        core_v1.ServiceSpec{Type: core_v1.ServiceTypeLoadBalancer, LoadBalancerSourceRanges: []string{"10.0.0.0/8"}},
+			expected:       core_v1.ServiceSpec{Type: core_v1.ServiceTypeNodePort},
+		},
+		{
+			description:    "if changed from node port to load balancer, load balancer class is set",
+			serviceChanged: equality.LoadBalancerServiceChanged,
+			current:        core_v1.ServiceSpec{Type: core_v1.ServiceTypeNodePort},
+			expected:       core_v1.ServiceSpec{Type: core_v1.ServiceTypeLoadBalancer, LoadBalancerClass: ptr.To("example.com/lb")},
+		},
+	}
+
+	for _, tc := range testCases {
+		updated, changed := tc.serviceChanged(&core_v1.Service{Spec: tc.current}, &core_v1.Service{Spec: tc.expected})
+		if !changed {
+			t.Errorf("%s, expected change to be detected", tc.description)
+		} else if !reflect.DeepEqual(updated.Spec, tc.expected) {
+			t.Errorf("%s, expected spec %+v, got %+v", tc.description, tc.expected, updated.Spec)
 		}
 	}
 }
