@@ -1,1 +1,0 @@
-The request body size limit set with `listener.max-request-body-bytes` in the Contour configuration file or `spec.envoy.listener.maxRequestBodyBytes` in the `ContourConfiguration` CRD no longer applies to websocket connections.

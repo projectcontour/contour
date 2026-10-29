@@ -547,7 +547,6 @@ type ListenerParameters struct {
 	MaxConnectionsToAcceptPerSocketEvent *uint32 `yaml:"max-connections-to-accept-per-socket-event,omitempty"`
 
 	// Defines the maximum request body size in bytes for all routes.
-	// The limit does not apply to websocket connections.
 	// If not specified, there is no limit.
 	MaxRequestBodyBytes *uint64 `yaml:"max-request-body-bytes,omitempty"`
 
