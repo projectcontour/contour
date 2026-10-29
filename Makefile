@@ -40,7 +40,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.26.8@sha256:ec0383e177f24920f5498de7d96d1cd81ada095b430dda72f8b863b99a485ff6
+BUILD_BASE_IMAGE ?= golang:1.26.10@sha256:670bb5aa5349ae03b8516764718486f4f16399134bdc9acd0c46a23f043ab05c
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
