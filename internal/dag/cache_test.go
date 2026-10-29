@@ -2164,6 +2164,35 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		}
 	}
 
+	ingressBackendResource := func(namespace, name string) *networking_v1.Ingress {
+		resource := &networking_v1.IngressBackend{
+			Resource: &core_v1.TypedLocalObjectReference{
+				APIGroup: ptr.To("k8s.example.com"),
+				Kind:     "StorageBucket",
+				Name:     name,
+			},
+		}
+		return &networking_v1.Ingress{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: resource,
+				Rules: []networking_v1.IngressRule{{
+					Host: "test.projectcontour.io",
+					IngressRuleValue: networking_v1.IngressRuleValue{
+						HTTP: &networking_v1.HTTPIngressRuleValue{
+							Paths: []networking_v1.HTTPIngressPath{{
+								Backend: *resource,
+							}},
+						},
+					},
+				}},
+			},
+		}
+	}
+
 	httpProxy := func(namespace, name string) *contour_v1.HTTPProxy {
 		return &contour_v1.HTTPProxy{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -2305,6 +2334,14 @@ func TestServiceTriggersRebuild(t *testing.T) {
 			cache: cache(
 				service("default", "service-1"),
 				ingressDefaultBackend("user", "service-1"),
+			),
+			svc:  service("default", "service-1"),
+			want: false,
+		},
+		"ingress resource backend does not trigger rebuild": {
+			cache: cache(
+				service("default", "service-1"),
+				ingressBackendResource("default", "service-1"),
 			),
 			svc:  service("default", "service-1"),
 			want: false,

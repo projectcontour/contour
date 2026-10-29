@@ -196,6 +196,16 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		// Default to implementation specific path matching if not set.
 		pathType := ptr.Deref(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
 		be := httppath.Backend
+		if be.Service == nil {
+			// The Ingress API also allows a backend to reference an
+			// arbitrary resource instead of a Service, which is not
+			// supported.
+			p.WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("path", path).
+				Error("ingress backend does not reference a service, resource backends are not supported")
+			continue
+		}
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
 		port := int(be.Service.Port.Number)
@@ -370,12 +380,7 @@ func defaultBackendRule(be *networking_v1.IngressBackend) networking_v1.IngressR
 		IngressRuleValue: networking_v1.IngressRuleValue{
 			HTTP: &networking_v1.HTTPIngressRuleValue{
 				Paths: []networking_v1.HTTPIngressPath{{
-					Backend: networking_v1.IngressBackend{
-						Service: &networking_v1.IngressServiceBackend{
-							Name: be.Service.Name,
-							Port: be.Service.Port,
-						},
-					},
+					Backend: *be,
 				}},
 			},
 		},
