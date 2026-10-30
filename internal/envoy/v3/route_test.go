@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -1196,6 +1197,53 @@ func TestWeightedClusters(t *testing.T) {
 				}, {
 					Name:   "default/notraffic/8080/da39a3ee5e",
 					Weight: wrapperspb.UInt32(0),
+				}},
+			},
+		},
+		"service with cookie rewrite policy": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "kuard",
+							ServiceNamespace: "default",
+							ServicePort: core_v1.ServicePort{
+								Port: 8080,
+							},
+						},
+					},
+					CookieRewritePolicies: []dag.CookieRewritePolicy{{
+						Name: "session",
+						Path: ptr.To("/rewritten"),
+					}},
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "nginx",
+							ServiceNamespace: "default",
+							ServicePort: core_v1.ServicePort{
+								Port: 8080,
+							},
+						},
+					},
+				}},
+			},
+			want: &envoy_config_route_v3.WeightedCluster{
+				Clusters: []*envoy_config_route_v3.WeightedCluster_ClusterWeight{{
+					Name:   "default/kuard/8080/da39a3ee5e",
+					Weight: wrapperspb.UInt32(1),
+					// Must target only the cookie rewrite Lua filter, not the misdirected requests filter.
+					TypedPerFilterConfig: map[string]*anypb.Any{
+						LuaCookieRewriteFilterName: cookieRewriteConfig(nil, []dag.CookieRewritePolicy{{
+							Name: "session",
+							Path: ptr.To("/rewritten"),
+						}}),
+					},
+				}, {
+					Name:   "default/nginx/8080/da39a3ee5e",
+					Weight: wrapperspb.UInt32(1),
 				}},
 			},
 		},

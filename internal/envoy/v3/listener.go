@@ -15,6 +15,7 @@ package v3
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -174,17 +175,18 @@ func Listener(name, address string, port int, perConnectionBufferLimitBytes *uin
 }
 
 const (
-	CORSFilterName            string = "envoy.filters.http.cors"
-	LocalRateLimitFilterName  string = "envoy.filters.http.local_ratelimit"
-	GlobalRateLimitFilterName string = "envoy.filters.http.ratelimit"
-	RBACFilterName            string = "envoy.filters.http.rbac"
-	ExtAuthzFilterName        string = "envoy.filters.http.ext_authz"
-	JWTAuthnFilterName        string = "envoy.filters.http.jwt_authn"
-	LuaFilterName             string = "envoy.filters.http.lua"
-	CompressorFilterName      string = "envoy.filters.http.compressor"
-	GRPCWebFilterName         string = "envoy.filters.http.grpc_web"
-	GRPCStatsFilterName       string = "envoy.filters.http.grpc_stats"
-	FilterChainFilterName     string = "envoy.filters.http.filter_chain"
+	CORSFilterName                   string = "envoy.filters.http.cors"
+	LocalRateLimitFilterName         string = "envoy.filters.http.local_ratelimit"
+	GlobalRateLimitFilterName        string = "envoy.filters.http.ratelimit"
+	RBACFilterName                   string = "envoy.filters.http.rbac"
+	ExtAuthzFilterName               string = "envoy.filters.http.ext_authz"
+	JWTAuthnFilterName               string = "envoy.filters.http.jwt_authn"
+	CompressorFilterName             string = "envoy.filters.http.compressor"
+	GRPCWebFilterName                string = "envoy.filters.http.grpc_web"
+	GRPCStatsFilterName              string = "envoy.filters.http.grpc_stats"
+	FilterChainFilterName            string = "envoy.filters.http.filter_chain"
+	LuaMisdirectedRequestsFilterName string = "envoy.filters.http.lua.misdirected_requests"
+	LuaCookieRewriteFilterName       string = "envoy.filters.http.lua.cookie_rewrite"
 )
 
 var compressorContentTypes = []string{
@@ -466,7 +468,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&envoy_filter_network_http_connection_manager_v3.HttpFilter{
-			Name: LuaFilterName,
+			Name: LuaCookieRewriteFilterName,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
 					SourceCodes: map[string]*envoy_config_core_v3.DataSource{
@@ -592,6 +594,16 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 	lastIndex := len(b.filters) - 1
 	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_filter_http_router_v3.Router{}) {
 		return errors.New("last filter is not a Router filter")
+	}
+
+	// Filter names must be unique. A route can change the settings of a filter by its name.
+	// If two filters had the same name, a change meant for one would also apply to the other.
+	names := make(map[string]struct{}, len(b.filters))
+	for _, f := range b.filters {
+		if _, ok := names[f.GetName()]; ok {
+			return fmt.Errorf("duplicate HTTP filter name %q", f.GetName())
+		}
+		names[f.GetName()] = struct{}{}
 	}
 
 	return nil
@@ -881,14 +893,14 @@ function envoy_on_request(request_handle)
 	if host ~= target then
 		request_handle:respond(
 			{[":status"] = "421"},
-			string.format("misdirected request to %%q", host)
+			string.format("misdirected request to %q", host)
 		)
 	end
 end
 	`
 
 	return &envoy_filter_network_http_connection_manager_v3.HttpFilter{
-		Name: LuaFilterName,
+		Name: LuaMisdirectedRequestsFilterName,
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
 				DefaultSourceCode: &envoy_config_core_v3.DataSource{
