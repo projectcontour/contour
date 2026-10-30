@@ -55,6 +55,15 @@ func TestParse(t *testing.T) {
 			want:     DefaultSetting(),
 			wantErr:  true,
 		},
+		"negative": {
+			duration: "-10s",
+			want:     DefaultSetting(),
+			wantErr:  true,
+		},
+		"negative zero": {
+			duration: "-0s",
+			want:     DefaultSetting(),
+		},
 	}
 
 	for name, tc := range tests {

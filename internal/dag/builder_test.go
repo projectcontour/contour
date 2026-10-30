@@ -6282,6 +6282,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i12gV1 := &networking_v1.Ingress{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/response-timeout": "-1m",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	// i13_v1 a and b are a pair of ingressesv1 for the same vhost
 	// they represent a tricky way over 'overlaying' routes from one
 	// ingress onto another
@@ -10234,6 +10256,24 @@ func TestDAGInsert(t *testing.T) {
 		"ingressv1: insert ingress w/ invalid timeout annotation": {
 			objs: []any{
 				i12dV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clustermap(s1),
+						}),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ negative timeout annotation": {
+			objs: []any{
+				i12gV1,
 				s1,
 			},
 			want: listeners(
