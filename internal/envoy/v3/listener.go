@@ -198,6 +198,18 @@ var compressorContentTypes = []string{
 	"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
 }
 
+// compressorContentTypeMatchers matches each of compressorContentTypes exactly, ignoring case.
+var compressorContentTypeMatchers = func() []*envoy_matcher_v3.StringMatcher {
+	matchers := make([]*envoy_matcher_v3.StringMatcher, 0, len(compressorContentTypes))
+	for _, contentType := range compressorContentTypes {
+		matchers = append(matchers, &envoy_matcher_v3.StringMatcher{
+			MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{Exact: contentType},
+			IgnoreCase:   true,
+		})
+	}
+	return matchers
+}()
+
 type httpConnectionManagerBuilder struct {
 	routeConfigName               string
 	routeConfigSource             *envoy_config_core_v3.ConfigSource
@@ -405,8 +417,7 @@ func compressorFilter(algorithm contour_v1alpha1.CompressionAlgorithm, chooseFir
 				ChooseFirst: chooseFirst,
 				ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 					CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-						//nolint:staticcheck
-						ContentType: compressorContentTypes,
+						ContentTypeMatcher: compressorContentTypeMatchers,
 					},
 					// Accept-Encoding is deliberately passed to the upstream so it can still compress
 					// responses itself, e.g. content types not listed above or pre-compressed files.

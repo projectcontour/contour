@@ -596,8 +596,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 					},
 					ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 						CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-							//nolint:staticcheck
-							ContentType: compressorContentTypes,
+							ContentTypeMatcher: compressorContentTypeMatchers,
 						},
 					},
 				}),
@@ -1886,8 +1885,7 @@ func TestAddFilter(t *testing.T) {
 				},
 				ResponseDirectionConfig: &envoy_filter_http_compressor_v3.Compressor_ResponseDirectionConfig{
 					CommonConfig: &envoy_filter_http_compressor_v3.Compressor_CommonDirectionConfig{
-						//nolint:staticcheck
-						ContentType: compressorContentTypes,
+						ContentTypeMatcher: compressorContentTypeMatchers,
 					},
 				},
 			}),
@@ -2267,6 +2265,15 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 				assert.Equal(t, want.chooseFirst, compressor.ChooseFirst)
 				// Accept-Encoding must reach the upstream so it can compress responses itself.
 				assert.False(t, compressor.ResponseDirectionConfig.RemoveAcceptEncodingHeader)
+
+				// Content types are matched with content_type_matcher.
+				commonConfig := compressor.ResponseDirectionConfig.CommonConfig
+				require.NotNil(t, commonConfig)
+				require.Len(t, commonConfig.ContentTypeMatcher, len(compressorContentTypes))
+				for j, contentType := range compressorContentTypes {
+					assert.Equal(t, contentType, commonConfig.ContentTypeMatcher[j].GetExact())
+					assert.True(t, commonConfig.ContentTypeMatcher[j].IgnoreCase)
+				}
 			}
 		})
 	}
