@@ -673,7 +673,7 @@ func weightedClusters(route *dag.Route) *envoy_config_route_v3.WeightedCluster {
 			if c.TypedPerFilterConfig == nil {
 				c.TypedPerFilterConfig = map[string]*anypb.Any{}
 			}
-			c.TypedPerFilterConfig[LuaFilterName] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
+			c.TypedPerFilterConfig[LuaCookieRewriteFilterName] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
 		}
 		wc.Clusters = append(wc.Clusters, c)
 	}

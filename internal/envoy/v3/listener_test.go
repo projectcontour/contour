@@ -631,7 +631,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				),
 			},
 		}, {
-			Name: LuaFilterName,
+			Name: LuaCookieRewriteFilterName,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
 					SourceCodes: map[string]*envoy_config_core_v3.DataSource{
@@ -1808,6 +1808,24 @@ func TestBuilderValidation(t *testing.T) {
 		},
 	})
 	require.Errorf(t, badBuilder.Validate(), "Adding a filter after the Router filter should fail")
+
+	require.NoError(t, envoygen.HTTPConnectionManagerBuilder().
+		AddFilter(FilterMisdirectedRequests()).
+		DefaultFilters().
+		AddBodySizeLimitFilter(ptr.To(uint64(1024))).
+		Validate(),
+		"ConnectionManager with misdirected requests, default and body size limit filters failed validation")
+
+	duplicateName := envoygen.HTTPConnectionManagerBuilder().
+		DefaultFilters().
+		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+			Name: "some-filter",
+		}).
+		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
+			Name: "some-filter",
+		})
+	require.EqualError(t, duplicateName.Validate(), `duplicate HTTP filter name "some-filter"`,
+		"Filters with the same name should fail validation")
 }
 
 func TestAddFilter(t *testing.T) {
@@ -1842,7 +1860,7 @@ func TestAddFilter(t *testing.T) {
 		},
 	}
 	luaFilter := &envoy_filter_network_http_connection_manager_v3.HttpFilter{
-		Name: LuaFilterName,
+		Name: LuaCookieRewriteFilterName,
 		ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_lua_v3.Lua{
 				SourceCodes: map[string]*envoy_config_core_v3.DataSource{
