@@ -498,6 +498,9 @@ func httpHealthCheckPolicy(hc *contour_v1.HTTPHealthCheckPolicy) (*HTTPHealthChe
 		if statusRange.End < 101 || statusRange.End > 600 {
 			return nil, fmt.Errorf("invalid expected status range: end must be in the range [101, 600]")
 		}
+		if statusRange.Start >= statusRange.End {
+			return nil, fmt.Errorf("invalid expected status range: start must be less than end")
+		}
 
 		expectedStatuses = append(expectedStatuses, HTTPStatusRange{
 			Start: statusRange.Start,
