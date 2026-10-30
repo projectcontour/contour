@@ -28,6 +28,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -159,6 +160,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 	defer commit()
 
 	var defaultJWTProvider string
+	var defaultAuthzProvider *contour_v1.AuthorizationProvider
 
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
@@ -193,6 +195,19 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		if proxy.Spec.VirtualHost.TLS == nil || len(proxy.Spec.VirtualHost.TLS.SecretName) == 0 {
 			validCond.AddError(contour_v1.ConditionTypeJWTVerificationError, "JWTVerificationNotPermitted",
 				"Spec.VirtualHost.JWTProviders can only be defined for root HTTPProxies that terminate TLS")
+			return
+		}
+	}
+
+	if len(proxy.Spec.VirtualHost.AuthzProviders) > 0 {
+		if proxy.Spec.VirtualHost.AuthorizationConfigured() {
+			validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthorizationAndProvidersConflict",
+				"Spec.VirtualHost.Authorization and Spec.VirtualHost.AuthorizationProviders cannot be used together")
+			return
+		}
+		if proxy.Spec.VirtualHost.TLS == nil || len(proxy.Spec.VirtualHost.TLS.SecretName) == 0 {
+			validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthNotPermitted",
+				"Spec.VirtualHost.AuthorizationProviders can only be defined for root HTTPProxies that terminate TLS")
 			return
 		}
 	}
@@ -301,6 +316,12 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				return
 			}
 
+			if tls.EnableFallbackCertificate && len(proxy.Spec.VirtualHost.AuthzProviders) > 0 {
+				validCond.AddError(contour_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
+					"Spec.Virtualhost.TLS fallback & authorization providers are incompatible")
+				return
+			}
+
 			// If FallbackCertificate is enabled, but no cert passed, set error
 			if tls.EnableFallbackCertificate {
 				if p.FallbackCertificate == nil {
@@ -380,18 +401,93 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 				svhost.DownstreamValidation = dv
 			}
 
+			if len(proxy.Spec.VirtualHost.AuthzProviders) > 0 {
+				authProviderNames := sets.NewString()
+				for _, provider := range proxy.Spec.VirtualHost.AuthzProviders {
+					if authProviderNames.Has(provider.Name) {
+						validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "DuplicateProviderName",
+							"Spec.VirtualHost.AuthorizationProviders is invalid: duplicate name %s", provider.Name)
+						return
+					}
+					authProviderNames.Insert(provider.Name)
+
+					if provider.Default {
+						if defaultAuthzProvider != nil {
+							validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "MultipleDefaultProvidersSpecified",
+								"Spec.VirtualHost.AuthorizationProviders is invalid: at most one provider can be set as the default")
+							return
+						}
+						defaultAuthzProvider = &provider
+					}
+				}
+
+				for _, provider := range proxy.Spec.VirtualHost.AuthzProviders {
+					if len(provider.Context) > 0 && provider.ServiceType == contour_v1.AuthorizationHTTPService {
+						validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthContextForHTTP",
+							"Spec.VirtualHost.AuthzProviders.Context are only applied to grpc service type")
+						return
+					}
+
+					if provider.HTTPServerSettings != nil {
+						if provider.HTTPServerSettings.PathPrefix != "" && provider.HTTPServerSettings.PathOverride != "" {
+							validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthBadPathConfig",
+								"Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings is invalid: only one of pathPrefix and pathOverride may be set")
+							return
+						}
+						if !authzPathValid(provider.HTTPServerSettings.PathPrefix) || !authzPathValid(provider.HTTPServerSettings.PathOverride) {
+							validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthBadPathConfig",
+								"Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings is invalid: pathPrefix and pathOverride must start with /")
+							return
+						}
+						if err := ExternalAuthAllowedHeadersValid(provider.HTTPServerSettings.AllowedUpstreamHeaders); err != nil {
+							validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
+								"Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings.AllowedUpstreamHeaders is invalid: %s", err)
+							return
+						}
+						// Envoy does not allow adding :-prefixed or Host headers.
+						for key := range provider.HTTPServerSettings.HeadersToAdd {
+							if len(validation.IsHTTPHeaderName(key)) != 0 || http.CanonicalHeaderKey(key) == "Host" {
+								validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadHeadersToAdd",
+									"Spec.VirtualHost.AuthorizationProviders.HTTPServerSettings.HeadersToAdd is invalid: header %q is not allowed", key)
+								return
+							}
+						}
+					}
+
+					if _, err := timeout.Parse(provider.ResponseTimeout); err != nil {
+						validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid",
+							"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
+						return
+					}
+
+					if !provider.ExtensionServiceRef.IsConfigured() {
+						validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthProviderExtensionNotDefined",
+							"Spec.VirtualHost.AuthorizationProviders: provider %q must specify extensionRef", provider.Name)
+						return
+					}
+
+					if ok, _ := validateExternalAuthExtensionService(defaultExtensionRef(provider.ExtensionServiceRef),
+						validCond,
+						proxy,
+						p.dag.GetExtensionCluster,
+					); !ok {
+						return
+					}
+				}
+			}
+
 			if !p.computeSecureVirtualHostAuthorization(validCond, proxy, svhost) {
 				return
 			}
 
-			providerNames := sets.NewString()
+			jwtProviderNames := sets.NewString()
 			for _, jwtProvider := range proxy.Spec.VirtualHost.JWTProviders {
-				if providerNames.Has(jwtProvider.Name) {
+				if jwtProviderNames.Has(jwtProvider.Name) {
 					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "DuplicateProviderName",
 						"Spec.VirtualHost.JWTProviders is invalid: duplicate name %s", jwtProvider.Name)
 					return
 				}
-				providerNames.Insert(jwtProvider.Name)
+				jwtProviderNames.Insert(jwtProvider.Name)
 
 				if jwtProvider.Default {
 					if len(defaultJWTProvider) > 0 {
@@ -565,7 +661,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 		}
 	}
 
-	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider)
+	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled, defaultJWTProvider, defaultAuthzProvider)
 
 	listener, err := p.dag.GetSingleListener("http")
 	if err != nil {
@@ -696,12 +792,12 @@ func (p *HTTPProxyProcessor) addStatusBadGatewayRoute(routes []*Route, conds []c
 
 func (p *HTTPProxyProcessor) computeRoutes(
 	validCond *contour_v1.DetailedCondition,
-	rootProxy *contour_v1.HTTPProxy,
-	proxy *contour_v1.HTTPProxy,
+	rootProxy, proxy *contour_v1.HTTPProxy,
 	conditions []contour_v1.MatchCondition,
 	visited []*contour_v1.HTTPProxy,
 	enforceTLS bool,
 	defaultJWTProvider string,
+	defaultAuthzProvider *contour_v1.AuthorizationProvider,
 ) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
@@ -779,7 +875,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		inc, incCommit := p.dag.StatusCache.ProxyAccessor(includedProxy)
 		incValidCond := inc.ConditionFor(status.ValidCondition)
-		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS, defaultJWTProvider)...)
+		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS, defaultJWTProvider, defaultAuthzProvider)...)
 		incCommit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -894,46 +990,34 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			r.Name = proxy.Name
 		}
 
-		// If the enclosing root proxy enabled authorization,
-		// enable it on the route and propagate defaults
-		// downwards.
-		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() || p.GlobalExternalAuthorization != nil {
-			// Global external or vhost-level authorization is enabled by default
-			// unless an AuthPolicy explicitly disables it. By default, `disabled`
-			// is set to false, meaning authorization is active. This global setting
-			// can be overridden by vhost-level AuthPolicy, which can further be
-			// overridden by route-specific AuthPolicy.
-			// Therefore, the final authorization state is determined by the
-			// most specific policy applied at the route level.
-			disabled := false
-
-			if p.GlobalExternalAuthorization != nil && p.GlobalExternalAuthorization.AuthPolicy != nil {
-				disabled = p.GlobalExternalAuthorization.AuthPolicy.Disabled
+		authzProvider := defaultAuthzProvider
+		if route.AuthPolicy != nil {
+			if len(route.AuthPolicy.Require) > 0 && route.AuthPolicy.Disabled {
+				validCond.AddError(contour_v1.ConditionTypeAuthError, "InvalidAuthPolicy",
+					"route's auth policy cannot specify both require and disabled")
+				return nil
 			}
-
-			// When the ext_authz filter is added to a
-			// vhost, it is in enabled state, but we can
-			// disable it per route. We emulate disabling
-			// it at the vhost layer by defaulting the state
-			// from the root proxy.
-			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
-				disabled = rootProxy.Spec.VirtualHost.DisableAuthorization()
+			if len(route.AuthPolicy.Require) > 0 {
+				authzProvider = findAuthzProvider(rootProxy.Spec.VirtualHost.AuthzProviders, route.AuthPolicy.Require)
+				if authzProvider == nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthzProviderNotDefined",
+						"Route references an undefined authz provider %q", route.AuthPolicy.Require)
+					return nil
+				}
 			}
+		}
 
-			// Take the default for enabling authorization
-			// from the virtualhost/global-extauth. If this
-			// route has a policy, let that override.
-			if route.AuthPolicy != nil {
-				disabled = route.AuthPolicy.Disabled
+		authzOverride := p.routeAuthorization(validCond, rootProxy, &route, authzProvider)
+		if len(rootProxy.Spec.VirtualHost.AuthzProviders) > 0 {
+			// HTTP providers have their own ext_authz filter.
+			disabled := &PerRouteAuthzOverride{Disabled: true}
+			if authzOverride != nil && authzOverride.ServiceType == contour_v1.AuthorizationHTTPService {
+				r.AuthzOverride, r.HTTPAuthzOverride = disabled, authzOverride
+			} else {
+				r.AuthzOverride, r.HTTPAuthzOverride = authzOverride, disabled
 			}
-
-			r.AuthDisabled = disabled
-
-			if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
-				r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
-			} else if p.GlobalExternalAuthorization != nil {
-				r.AuthContext = route.AuthorizationContext(p.GlobalAuthorizationContext())
-			}
+		} else {
+			r.AuthzOverride = authzOverride
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
@@ -1162,6 +1246,124 @@ func (p *HTTPProxyProcessor) computeRoutes(
 	routes = expandPrefixMatches(routes)
 
 	return routes
+}
+
+// routeAuthorization returns the authorization settings for a route, or nil
+// if authorization is not configured. A route authPolicy takes precedence
+// over vhost and global authPolicy.
+func (p *HTTPProxyProcessor) routeAuthorization(validCond *contour_v1.DetailedCondition, rootProxy *contour_v1.HTTPProxy, route *contour_v1.Route, authzProvider *contour_v1.AuthorizationProvider) *PerRouteAuthzOverride {
+	vhost := rootProxy.Spec.VirtualHost
+	global := p.GlobalExternalAuthorization
+
+	switch {
+	case route.AuthPolicy != nil && route.AuthPolicy.Disabled:
+		return &PerRouteAuthzOverride{Disabled: true}
+
+	case authzProvider != nil:
+		var extensionSvc *ExtensionCluster
+		if authzProvider.ExtensionServiceRef.IsConfigured() {
+			_, extensionSvc = validateExternalAuthExtensionService(defaultExtensionRef(authzProvider.ExtensionServiceRef),
+				validCond,
+				rootProxy,
+				p.dag.GetExtensionCluster,
+			)
+		}
+		return GetRouteAuthorizationProvider(authzProvider, extensionSvc, route.AuthorizationContext(authzProvider, nil))
+
+	case len(vhost.AuthzProviders) > 0:
+		// The route selects no provider and there is no default.
+		return &PerRouteAuthzOverride{Disabled: true}
+
+	case vhost.AuthorizationConfigured():
+		if route.AuthPolicy == nil && vhost.DisableAuthorization() {
+			return &PerRouteAuthzOverride{Disabled: true}
+		}
+		return &PerRouteAuthzOverride{Context: route.AuthorizationContext(nil, vhost.AuthorizationContext())}
+
+	case global != nil:
+		if route.AuthPolicy == nil && global.AuthPolicy != nil && global.AuthPolicy.Disabled {
+			return &PerRouteAuthzOverride{Disabled: true}
+		}
+		return &PerRouteAuthzOverride{Context: route.AuthorizationContext(nil, p.GlobalAuthorizationContext())}
+	}
+
+	return nil
+}
+
+// authzPathValid returns true if path is empty or starts with "/".
+func authzPathValid(path string) bool {
+	return path == "" || strings.HasPrefix(path, "/")
+}
+
+// findAuthzProvider returns the provider with the given name, or nil.
+func findAuthzProvider(providers []contour_v1.AuthorizationProvider, name string) *contour_v1.AuthorizationProvider {
+	for i := range providers {
+		if providers[i].Name == name {
+			return &providers[i]
+		}
+	}
+	return nil
+}
+
+// GetRouteAuthorizationProvider returns the authorization override settings for this Route.
+func GetRouteAuthorizationProvider(authzProvider *contour_v1.AuthorizationProvider, extensionSvc *ExtensionCluster, mergedAuthContext map[string]string) *PerRouteAuthzOverride {
+	if authzProvider == nil {
+		return nil
+	}
+
+	// An empty service type means gRPC, as for vhost authorization.
+	serviceType := authzProvider.ServiceType
+	if serviceType == "" {
+		serviceType = contour_v1.AuthorizationGRPCService
+	}
+
+	authzOverride := PerRouteAuthzOverride{
+		ServiceType: serviceType,
+	}
+	if authzProvider.HTTPServerSettings != nil {
+		authzOverride.PathPrefix = authzProvider.HTTPServerSettings.PathPrefix
+		authzOverride.PathOverride = authzProvider.HTTPServerSettings.PathOverride
+		// Escape values like other header policies. Envoy parses them as
+		// formatter strings, and an invalid one crashes Envoy at request time.
+		for key, value := range authzProvider.HTTPServerSettings.HeadersToAdd {
+			if authzOverride.HeadersToAdd == nil {
+				authzOverride.HeadersToAdd = map[string]string{}
+			}
+			authzOverride.HeadersToAdd[key] = escapeHeaderValue(value, nil)
+		}
+
+		if authzProvider.HTTPServerSettings.AllowedUpstreamHeaders != nil {
+			authzOverride.AllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(authzProvider.HTTPServerSettings.AllowedUpstreamHeaders)
+		}
+	}
+
+	tout, err := timeout.Parse(authzProvider.ResponseTimeout)
+	if err == nil && !tout.UseDefault() {
+		authzOverride.AuthorizationResponseTimeout = tout
+	} else if extensionSvc != nil {
+		authzOverride.AuthorizationResponseTimeout = extensionSvc.RouteTimeoutPolicy.ResponseTimeout
+	}
+
+	if extensionSvc != nil {
+		authzOverride.ExtensionCluster = extensionSvc
+	}
+	if mergedAuthContext != nil {
+		authzOverride.Context = mergedAuthContext
+	}
+
+	if authzProvider.WithRequestBody != nil {
+		maxRequestBytes := defaultMaxRequestBytes
+		if authzProvider.WithRequestBody.MaxRequestBytes != 0 {
+			maxRequestBytes = authzProvider.WithRequestBody.MaxRequestBytes
+		}
+		authzOverride.WithRequestBody = &AuthorizationServerBufferSettings{
+			PackAsBytes:         authzProvider.WithRequestBody.PackAsBytes,
+			AllowPartialMessage: authzProvider.WithRequestBody.AllowPartialMessage,
+			MaxRequestBytes:     maxRequestBytes,
+		}
+	}
+
+	return &authzOverride
 }
 
 // toIPFilterRules converts ip filter settings from the api into the
@@ -1488,6 +1690,7 @@ func NewExternalAuthorization(auth *contour_v1.AuthorizationServer, validCond *c
 	extAuthz := &ExternalAuthorization{
 		AuthorizationFailOpen:        auth.FailOpen,
 		AuthorizationResponseTimeout: tout,
+		ClearRouteCache:              true,
 	}
 
 	switch auth.ServiceType {
@@ -1505,6 +1708,16 @@ func NewExternalAuthorization(auth *contour_v1.AuthorizationServer, validCond *c
 	}
 
 	if auth.HTTPServerSettings != nil {
+		if auth.HTTPServerSettings.PathPrefix != "" && auth.HTTPServerSettings.PathOverride != "" {
+			validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthBadPathConfig",
+				"Spec.Virtualhost.Authorization.HTTPServerSettings is invalid: only one of pathPrefix and pathOverride may be set")
+			return nil
+		}
+		if !authzPathValid(auth.HTTPServerSettings.PathPrefix) || !authzPathValid(auth.HTTPServerSettings.PathOverride) {
+			validCond.AddError(contour_v1.ConditionTypeAuthError, "AuthBadPathConfig",
+				"Spec.Virtualhost.Authorization.HTTPServerSettings is invalid: pathPrefix and pathOverride must start with /")
+			return nil
+		}
 		if err := ExternalAuthAllowedHeadersValid(auth.HTTPServerSettings.AllowedAuthorizationHeaders); err != nil {
 			validCond.AddErrorf(contour_v1.ConditionTypeAuthError, "AuthBadAllowedHeader",
 				"Spec.Virtualhost.Authorization.HTTPServerSettings.AllowedAuthorizationHeaders is invalid: %s", err)
@@ -1520,6 +1733,7 @@ func NewExternalAuthorization(auth *contour_v1.AuthorizationServer, validCond *c
 		extAuthz.HTTPAllowedUpstreamHeaders = convertHTTPAuthzAllowedHeaders(auth.HTTPServerSettings.AllowedUpstreamHeaders)
 
 		extAuthz.HTTPPathPrefix = auth.HTTPServerSettings.PathPrefix
+		extAuthz.HTTPPathOverride = auth.HTTPServerSettings.PathOverride
 	}
 
 	if auth.WithRequestBody != nil {
@@ -1560,14 +1774,38 @@ func validateExternalAuthExtensionService(ref contour_v1.ExtensionServiceReferen
 }
 
 func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *contour_v1.DetailedCondition, httpproxy *contour_v1.HTTPProxy, svhost *SecureVirtualHost) bool {
-	if httpproxy.Spec.VirtualHost.AuthorizationConfigured() && httpproxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.IsConfigured() {
+	switch {
+	case httpproxy.Spec.VirtualHost.AuthorizationConfigured() && httpproxy.Spec.VirtualHost.Authorization.ExtensionServiceRef.IsConfigured():
 		authorization := p.computeVirtualHostAuthorization(httpproxy.Spec.VirtualHost.Authorization, validCond, httpproxy)
 		if authorization == nil {
 			return false
 		}
 
 		svhost.ExternalAuthorization = authorization
-	} else if p.GlobalExternalAuthorization != nil {
+	case len(httpproxy.Spec.VirtualHost.AuthzProviders) > 0:
+		// Envoy's allowed_headers selects which client request headers are sent to the authorization server.
+		// It can only be set on the filter, and it is not impacted by route's service_override.
+		// Default headers depend on the filter's service type: all headers for gRPC, and only some for HTTP.
+		// As a workaround, gRPC and HTTP providers use separate filters. This way gRPC providers always get
+		// all headers and HTTP providers get only a few, regardless of whether the default/base provider is gRPC or HTTP.
+		grpcBase := authorizationServerFromProviders(httpproxy.Spec.VirtualHost.AuthzProviders, contour_v1.AuthorizationGRPCService)
+		httpBase := authorizationServerFromProviders(httpproxy.Spec.VirtualHost.AuthzProviders, contour_v1.AuthorizationHTTPService)
+
+		if grpcBase != nil {
+			svhost.ExternalAuthorization = p.computeVirtualHostAuthorization(grpcBase, validCond, httpproxy)
+			if svhost.ExternalAuthorization == nil {
+				return false
+			}
+			svhost.ExternalAuthorization.ClearRouteCache = false
+		}
+		if httpBase != nil {
+			svhost.HTTPExternalAuthorization = p.computeVirtualHostAuthorization(httpBase, validCond, httpproxy)
+			if svhost.HTTPExternalAuthorization == nil {
+				return false
+			}
+			svhost.HTTPExternalAuthorization.ClearRouteCache = false
+		}
+	case p.GlobalExternalAuthorization != nil:
 		globalAuthorization := p.computeVirtualHostAuthorization(p.GlobalExternalAuthorization, validCond, httpproxy)
 		if globalAuthorization == nil {
 			return false
@@ -1577,6 +1815,31 @@ func (p *HTTPProxyProcessor) computeSecureVirtualHostAuthorization(validCond *co
 	}
 
 	return true
+}
+
+// authorizationServerFromProviders returns the authorization server for the
+// default provider of the given service type, or for the first one if there
+// is no default. Returns nil if there are no providers of that type.
+func authorizationServerFromProviders(providers []contour_v1.AuthorizationProvider, serviceType contour_v1.AuthorizationServiceType) *contour_v1.AuthorizationServer {
+	var base *contour_v1.AuthorizationProvider
+	for i := range providers {
+		providerType := providers[i].ServiceType
+		if providerType == "" {
+			providerType = contour_v1.AuthorizationGRPCService
+		}
+		if providerType == serviceType && (base == nil || providers[i].Default) {
+			base = &providers[i]
+		}
+	}
+	if base == nil {
+		return nil
+	}
+
+	return &contour_v1.AuthorizationServer{
+		ExtensionServiceRef: base.ExtensionServiceRef,
+		ServiceType:         serviceType,
+		ResponseTimeout:     base.ResponseTimeout,
+	}
 }
 
 func computeVirtualHostRateLimitPolicy(proxy *contour_v1.HTTPProxy, rls *contour_v1alpha1.RateLimitServiceConfig, validCond *contour_v1.DetailedCondition) (*RateLimitPolicy, bool) {

@@ -3543,6 +3543,7 @@ func TestListenerVisit(t *testing.T) {
 							AuthorizationService: &dag.ExtensionCluster{
 								Name: "extension/extension/auth",
 							},
+							ClearRouteCache: true,
 						})).
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).

@@ -3383,7 +3383,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 								Name: "backend",
 								Port: 80,
 							}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 								Context: map[string]string{
 									"header_2": "new_message_2",
 									"header_3": "message_3",
@@ -3452,7 +3452,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 								Name: "backend",
 								Port: 80,
 							}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 								Disabled: true,
 							},
 						}},
@@ -3515,7 +3515,7 @@ func TestRouteVisit_GlobalExternalAuthorization(t *testing.T) {
 								Name: "backend",
 								Port: 80,
 							}},
-							AuthPolicy: &contour_v1.AuthorizationPolicy{
+							AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 								Context: map[string]string{
 									"header_2": "new_message_2",
 									"header_3": "message_3",

@@ -25,6 +25,7 @@ import (
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -58,7 +59,7 @@ var (
 		},
 	}
 
-	disabledGlobalExtAuthConfig contour_v1.AuthorizationServer = contour_v1.AuthorizationServer{
+	disabledGlobalExtAuthConfig = contour_v1.AuthorizationServer{
 		ExtensionServiceRef: contour_v1.ExtensionServiceReference{
 			Name:      "extension",
 			Namespace: "auth",
@@ -267,7 +268,7 @@ func globalExternalAuthorizationWithMergedAuthPolicy(t *testing.T, rh ResourceEv
 							Port: 80,
 						},
 					},
-					AuthPolicy: &contour_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 						Context: map[string]string{
 							"header_type": "proxy_config",
 							"header_2":    "message_2",
@@ -403,7 +404,7 @@ func GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute(t *testing.T,
 							Port: 80,
 						},
 					},
-					AuthPolicy: &contour_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 						Disabled: false,
 					},
 				},
@@ -473,7 +474,7 @@ func globalExternalAuthorizationWithMergedAuthPolicyTLS(t *testing.T, rh Resourc
 							Port: 80,
 						},
 					},
-					AuthPolicy: &contour_v1.AuthorizationPolicy{
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{
 						Context: map[string]string{
 							"header_type": "proxy_config",
 							"header_2":    "message_2",
@@ -746,6 +747,166 @@ func globalExternalAuthorizationFilterTLSWithFallbackCertificate(t *testing.T, r
 	}).Status(p).IsValid()
 }
 
+func globalExternalAuthorizationWithProviders(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	p := fixture.NewProxy("providers").
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &contour_v1.TLS{
+					SecretName: "certificate",
+				},
+				AuthzProviders: []contour_v1.AuthorizationProvider{{
+					Name:        "provider-a",
+					ServiceType: contour_v1.AuthorizationHTTPService,
+					ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+						Namespace: "auth",
+						Name:      "extension",
+					},
+				}},
+			},
+			Routes: []contour_v1.Route{
+				{
+					Conditions: matchconditions(prefixMatchCondition("/strict")),
+					Services:   []contour_v1.Service{{Name: "s1", Port: 80}},
+					AuthPolicy: &contour_v1.RouteAuthorizationPolicy{Require: "provider-a"},
+				},
+				{
+					Services: []contour_v1.Service{{Name: "s1", Port: 80}},
+				},
+			},
+		})
+
+	rh.OnAdd(p)
+
+	httpAuthz := providersExtAuthz()
+	httpAuthz.Services = httpCluster("extension/auth/extension")
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCM())
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			httpListener,
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_config_listener_v3.FilterChain{
+					filterchaintls("foo.com",
+						featuretests.TLSSecret(t, "certificate", &featuretests.ServerCertificate),
+						authzProvidersFilterFor("foo.com", nil, httpAuthz),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"ingress_http",
+				envoy_v3.VirtualHost("foo.com",
+					&envoy_config_route_v3.Route{
+						Match:                routePrefix("/strict"),
+						Action:               withRedirect(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
+					},
+					&envoy_config_route_v3.Route{
+						Match:                routePrefix("/"),
+						Action:               withRedirect(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
+					},
+				),
+			),
+			envoy_v3.RouteConfiguration(
+				"https/foo.com",
+				envoy_v3.VirtualHost("foo.com",
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/strict"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: httpProviderRouteConfig(
+							&envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+								Override: &envoy_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+									CheckSettings: &envoy_filter_http_ext_authz_v3.CheckSettings{
+										ServiceOverride: &envoy_filter_http_ext_authz_v3.CheckSettings_HttpService{
+											HttpService: &envoy_filter_http_ext_authz_v3.HttpService{
+												ServerUri: &envoy_config_core_v3.HttpUri{
+													Uri: "http://dummy/",
+													HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+														Cluster: "extension/auth/extension",
+													},
+													Timeout: durationpb.New(defaultResponseTimeout),
+												},
+											},
+										},
+									},
+								},
+							},
+						),
+					},
+					&envoy_config_route_v3.Route{
+						Match:                routePrefix("/"),
+						Action:               routeCluster("default/s1/80/da39a3ee5e"),
+						TypedPerFilterConfig: providersDisabledRouteConfig(),
+					},
+				),
+			),
+		),
+	}).Status(p).IsValid()
+}
+
+func globalExternalAuthorizationDisabledWithVhostAuthorization(t *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	p := fixture.NewProxy("vhost-authz").
+		WithSpec(contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+				TLS: &contour_v1.TLS{
+					SecretName: "certificate",
+				},
+				Authorization: &contour_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_v1.ExtensionServiceReference{
+						Namespace: "auth",
+						Name:      "extension",
+					},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{Name: "s1", Port: 80}},
+			}},
+		})
+
+	rh.OnAdd(p)
+
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: routeType,
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration(
+				"ingress_http",
+				envoy_v3.VirtualHost("foo.com",
+					&envoy_config_route_v3.Route{
+						Match:                routePrefix("/"),
+						Action:               withRedirect(),
+						TypedPerFilterConfig: envoy_v3.DisabledExtAuthConfig(),
+					},
+				),
+			),
+			envoy_v3.RouteConfiguration(
+				"https/foo.com",
+				envoy_v3.VirtualHost("foo.com",
+					// No per-route override: the vhost filter applies.
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/s1/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+	}).Status(p).IsValid()
+}
+
 func TestGlobalAuthorization(t *testing.T) {
 	subtests := map[string]struct {
 		globalExtAuthConfig *contour_v1.AuthorizationServer
@@ -775,6 +936,10 @@ func TestGlobalAuthorization(t *testing.T) {
 		"GlobalExternalAuthorizationWithMergedAuthPolicyTLS": {
 			&normalGlobalExtAuthConfig, globalExternalAuthorizationWithMergedAuthPolicyTLS,
 		},
+		// extAuthz with authzProviders on TLS host.
+		"GlobalExternalAuthorizationWithProviders": {
+			&normalGlobalExtAuthConfig, globalExternalAuthorizationWithProviders,
+		},
 		// extAuthz on TLS host with Fallback Certificate enabled.
 		"GlobalExternalAuthorizationFilterTLSWithFallbackCertificate": {
 			&normalGlobalExtAuthConfig, globalExternalAuthorizationFilterTLSWithFallbackCertificate,
@@ -786,6 +951,10 @@ func TestGlobalAuthorization(t *testing.T) {
 		// extAuthz non-empty vhost authPolicy enables authorization
 		"GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute": {
 			&disabledGlobalExtAuthConfig, GlobalExternalAuthorizationDisabledByDefaultAndEnabledOnRoute,
+		},
+		// vhost authorization applies when global auth is disabled by default
+		"GlobalExternalAuthorizationDisabledWithVhostAuthorization": {
+			&disabledGlobalExtAuthConfig, globalExternalAuthorizationDisabledWithVhostAuthorization,
 		},
 		// extAuthz authPolicy.disabled propagation
 		"GlobalExternalAuthorizationDisabledByDefaultMergeAuthPolicy": {
@@ -804,8 +973,7 @@ func TestGlobalAuthorization(t *testing.T) {
 							Timeout:          timeout.DurationSetting(defaultResponseTimeout),
 						},
 						ExternalAuthorization: dag.ExternalAuthorization{
-							ServiceAPIType:               dag.AuthorizationServiceGRPC,
-							AuthorizationResponseTimeout: timeout.DurationSetting(defaultResponseTimeout),
+							ServiceAPIType: dag.AuthorizationServiceGRPC,
 						},
 						Context: map[string]string{
 							"header_type": "root_config",
@@ -865,6 +1033,20 @@ func TestGlobalAuthorization(t *testing.T) {
 
 // getGlobalExtAuthHCM returns a HTTP Connection Manager with Global External Authorization configured.
 func getGlobalExtAuthHCM() *envoy_config_listener_v3.Filter {
+	return getGlobalExtAuthHCMWithAuthzConfig(&envoy_filter_http_ext_authz_v3.ExtAuthz{
+		Services:               grpcCluster("extension/auth/extension"),
+		ClearRouteCache:        true,
+		IncludePeerCertificate: true,
+		StatusOnError: &envoy_type_v3.HttpStatus{
+			Code: envoy_type_v3.StatusCode_Forbidden,
+		},
+		TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+	})
+}
+
+// getGlobalExtAuthHCMWithAuthzConfig returns a HTTP Connection Manager whose
+// global extAuthz filter uses the given ExtAuthz configuration.
+func getGlobalExtAuthHCMWithAuthzConfig(authz *envoy_filter_http_ext_authz_v3.ExtAuthz) *envoy_config_listener_v3.Filter {
 	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
 		XDSClusterName: "contour",
 	})
@@ -876,16 +1058,96 @@ func getGlobalExtAuthHCM() *envoy_config_listener_v3.Filter {
 		AddFilter(&envoy_filter_network_http_connection_manager_v3.HttpFilter{
 			Name: wellknown.HTTPExternalAuthorization,
 			ConfigType: &envoy_filter_network_http_connection_manager_v3.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&envoy_filter_http_ext_authz_v3.ExtAuthz{
-					Services:               grpcCluster("extension/auth/extension"),
-					ClearRouteCache:        true,
-					IncludePeerCertificate: true,
-					StatusOnError: &envoy_type_v3.HttpStatus{
-						Code: envoy_type_v3.StatusCode_Forbidden,
-					},
-					TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
-				}),
+				TypedConfig: protobuf.MustMarshalAny(authz),
 			},
 		}).
 		Get()
+}
+
+// TestGlobalAuthorizationHTTPPathOverride verifies that a global HTTP
+// authorization server configured with a path override generates an
+// ExtAuthz filter whose HTTP service uses the override path.
+func TestGlobalAuthorizationHTTPPathOverride(t *testing.T) {
+	rh, c, done := setup(t,
+		func(cfg *xdscache_v3.ListenerConfig) {
+			cfg.GlobalExternalAuthConfig = &xdscache_v3.GlobalExternalAuthConfig{
+				ExtensionServiceConfig: xdscache_v3.ExtensionServiceConfig{
+					ExtensionService: k8s.NamespacedNameFrom("auth/extension"),
+					Timeout:          timeout.DurationSetting(defaultResponseTimeout),
+				},
+				ExternalAuthorization: dag.ExternalAuthorization{
+					ServiceAPIType:   dag.AuthorizationServiceHTTP,
+					HTTPPathOverride: "/auth",
+				},
+			}
+		})
+	defer done()
+
+	// Add common test fixtures.
+	rh.OnAdd(fixture.NewService("s1").WithPorts(core_v1.ServicePort{Port: 80}))
+	rh.OnAdd(fixture.NewService("auth/oidc-server").
+		WithPorts(core_v1.ServicePort{Port: 8081}))
+
+	rh.OnAdd(featuretests.EndpointSlice("auth", "oidc-es", "oidc-server",
+		featuretests.Endpoints(featuretests.Endpoint("192.168.183.21", true)),
+		featuretests.Ports(featuretests.Port("", 8081)),
+	))
+
+	rh.OnAdd(&contour_v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("auth/extension"),
+		Spec: contour_v1alpha1.ExtensionServiceSpec{
+			Services: []contour_v1alpha1.ExtensionServiceTarget{
+				{Name: "oidc-server", Port: 8081},
+			},
+			TimeoutPolicy: &contour_v1.TimeoutPolicy{
+				Response: defaultResponseTimeout.String(),
+			},
+		},
+	})
+
+	p := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "default",
+			Name:      "proxy1",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "foo.com",
+			},
+			Routes: []contour_v1.Route{
+				{
+					Services: []contour_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+				},
+			},
+		},
+	}
+	rh.OnAdd(p)
+
+	httpListener := defaultHTTPListener()
+
+	// replace the default filter chains with an HCM that includes the global
+	// extAuthz filter.
+	cluster := httpCluster("extension/auth/extension")
+	cluster.HttpService.PathOverride = "/auth"
+	httpListener.FilterChains = envoy_v3.FilterChains(getGlobalExtAuthHCMWithAuthzConfig(&envoy_filter_http_ext_authz_v3.ExtAuthz{
+		Services:               cluster,
+		ClearRouteCache:        true,
+		IncludePeerCertificate: true,
+		StatusOnError: &envoy_type_v3.HttpStatus{
+			Code: envoy_type_v3.StatusCode_Forbidden,
+		},
+		TransportApiVersion: envoy_config_core_v3.ApiVersion_V3,
+	}))
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			httpListener,
+			statsListener()),
+	}).Status(p).IsValid()
 }

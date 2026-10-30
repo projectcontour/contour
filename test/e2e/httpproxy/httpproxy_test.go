@@ -370,6 +370,8 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-ext-auth-http", testExternalAuthzHTTP)
 
+	f.NamespacedTest("httpproxy-ext-auth-providers", testExternalAuthProviders)
+
 	f.NamespacedTest("httpproxy-jwt-local-jwks", testJWTVerification(localJWKSProvider))
 
 	f.NamespacedTest("httpproxy-jwt-remote-jwks", testJWTVerification(remoteJWKSProvider))
@@ -862,5 +864,7 @@ descriptors:
 		f.NamespacedTest("httpproxy-global-ext-auth-non-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthNonTLSAuthDisabled))
 
 		f.NamespacedTest("httpproxy-global-ext-auth-tls-disabled", withGlobalExtAuth(testGlobalExternalAuthTLSAuthDisabled))
+
+		f.NamespacedTest("httpproxy-global-ext-auth-providers", withGlobalExtAuth(testGlobalExternalAuthWithProviders))
 	})
 })

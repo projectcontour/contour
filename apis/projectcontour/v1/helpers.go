@@ -69,11 +69,15 @@ func (r *Route) GetPrefixReplacements() []ReplacePrefix {
 // AuthorizationContext merges the parent context entries with the
 // context from this Route. Common keys from the parent map will be
 // overwritten by keys from the route. The parent map may be nil.
-func (r *Route) AuthorizationContext(parent map[string]string) map[string]string {
+// If authzProvider is set, its context is merged before the route's.
+func (r *Route) AuthorizationContext(authzProvider *AuthorizationProvider, parent map[string]string) map[string]string {
 	values := make(map[string]string, len(parent))
 
 	maps.Copy(values, parent)
 
+	if authzProvider != nil {
+		maps.Copy(values, authzProvider.Context)
+	}
 	if r.AuthPolicy != nil {
 		maps.Copy(values, r.AuthPolicy.Context)
 	}
