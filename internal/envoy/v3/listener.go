@@ -198,8 +198,7 @@ var compressorContentTypes = []string{
 	"application/grpc-web-text", "application/grpc-web-text+proto", "application/grpc-web-text+thrift",
 }
 
-// compressorContentTypeMatchers matches each of compressorContentTypes exactly, ignoring case,
-// which is how Envoy interprets the deprecated content_type field.
+// compressorContentTypeMatchers matches each of compressorContentTypes exactly, ignoring case.
 var compressorContentTypeMatchers = func() []*envoy_matcher_v3.StringMatcher {
 	matchers := make([]*envoy_matcher_v3.StringMatcher, 0, len(compressorContentTypes))
 	for _, contentType := range compressorContentTypes {

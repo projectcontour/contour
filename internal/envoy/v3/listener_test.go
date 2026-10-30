@@ -2266,10 +2266,9 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 				// Accept-Encoding must reach the upstream so it can compress responses itself.
 				assert.False(t, compressor.ResponseDirectionConfig.RemoveAcceptEncodingHeader)
 
-				// Content types are matched with content_type_matcher instead of the deprecated content_type.
+				// Content types are matched with content_type_matcher.
 				commonConfig := compressor.ResponseDirectionConfig.CommonConfig
 				require.NotNil(t, commonConfig)
-				assert.Empty(t, commonConfig.ContentType) //nolint:staticcheck
 				require.Len(t, commonConfig.ContentTypeMatcher, len(compressorContentTypes))
 				for j, contentType := range compressorContentTypes {
 					assert.Equal(t, contentType, commonConfig.ContentTypeMatcher[j].GetExact())
