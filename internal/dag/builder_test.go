@@ -2836,6 +2836,44 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"Route rule with request header modifier values containing newlines": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
+						RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+							Set: []gatewayapi_v1.HTTPHeader{
+								{Name: gatewayapi_v1.HTTPHeaderName("custom-header-set"), Value: "foo-bar"},
+								{Name: gatewayapi_v1.HTTPHeaderName("Host"), Value: "bar.com\n"},
+							},
+							Add: []gatewayapi_v1.HTTPHeader{
+								{Name: gatewayapi_v1.HTTPHeaderName("custom-header-add"), Value: "foo-bar\n"},
+							},
+						},
+					}},
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clustersWeight(service(kuardService)),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{"Custom-Header-Set": "foo-bar"},
+								Add: map[string]string{}, // Invalid header values should not be set.
+							},
+						},
+					)),
+				},
+			),
+		},
 		"HTTP backend with invalid request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,

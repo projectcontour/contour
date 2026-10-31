@@ -3026,6 +3026,40 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	invalidRequestHeadersPolicyValueRoute := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "invalidRHPValueRoute",
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{
+					{
+						Name: fixture.ServiceRootsKuard.Name,
+						Port: 8080,
+					},
+				},
+				RequestHeadersPolicy: &contour_v1.HeadersPolicy{
+					Set: []contour_v1.HeaderValue{{
+						Name:  "X-Foo",
+						Value: "bar\n",
+					}},
+				},
+			}},
+		},
+	}
+
+	run(t, "requestHeadersPolicy, header value with newline invalid on Route", testcase{
+		objs: []any{invalidRequestHeadersPolicyValueRoute, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: invalidRequestHeadersPolicyValueRoute.Name, Namespace: invalidRequestHeadersPolicyValueRoute.Namespace}: fixture.NewValidCondition().
+				WithError(contour_v1.ConditionTypeRouteError, "RequestHeadersPolicyInvalid", `invalid set header "X-Foo": value must not contain NUL, CR or LF characters on request headers`),
+		},
+	})
+
 	duplicateCookieRewritePolicyRoute := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "invalidCRPRoute",
@@ -8604,6 +8638,52 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							status.ReasonDegraded,
 							"invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers",
 						),
+						routeAcceptedHTTPRouteCondition(),
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+	})
+
+	run(t, "Invalid RequestHeaderModifier due to invalid header value", testcase{
+		objs: []any{
+			kuardService,
+			&gatewayapi_v1.HTTPRoute{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+				},
+				Spec: gatewayapi_v1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1.HTTPRouteFilter{{
+							Type: gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier,
+							RequestHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+								Set: []gatewayapi_v1.HTTPHeader{
+									{Name: "custom", Value: "foo\n"},
+								},
+							},
+						}},
+					}},
+				},
+			},
+		},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []meta_v1.Condition{
+						resolvedRefsFalse(status.ReasonDegraded, "invalid set header \"Custom\": value must not contain NUL, CR or LF characters on request headers"),
 						routeAcceptedHTTPRouteCondition(),
 					},
 				},
