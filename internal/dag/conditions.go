@@ -26,22 +26,41 @@ import (
 // prefix/exact/regex Condition.
 // In the case no regex is present then the leaf condition of the include tree
 // decides whether the merged condition will be prefix or exact.
-// In case there is a regex condition present the entire condition becomes a regex condition.
-// pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
-// / character, so we can simply concatenate.
-func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition {
-	mergedPath := ""
+// In case there is a regex condition present the entire condition becomes a regex condition,
+// with prefixes escaped and the regex wrapped in a non-capturing group.
+// An error is returned if the merged regex is not valid.
+func mergePathMatchConditions(conds []contour_v1.MatchCondition) (MatchCondition, error) {
 	isRegex := false
+	for _, cond := range conds {
+		if cond.Regex != "" {
+			isRegex = true
+			break
+		}
+	}
 
+	mergedPath := ""
 	for _, cond := range conds {
 		switch {
 		case cond.Prefix != "":
-			mergedPath += cond.Prefix
+			if isRegex {
+				// Drop trailing "/" from prefix so the child regex's leading "/" is not doubled when wrapped in a non-capturing group.
+				// "/team-a/" + "/x" -> "/team-a(?:/x)".
+				trimmed := strings.TrimRight(cond.Prefix, "/")
+				mergedPath += regexp.QuoteMeta(trimmed)
+			} else {
+				mergedPath += cond.Prefix
+			}
 		case cond.Exact != "":
+			// "Exact" cannot be used with "Regex" in the same chain so there is no need to escape it.
+			// Specifically, includeMatchConditionsValid() forbids Exact/Regex in parent includes.
 			mergedPath += cond.Exact
 		case cond.Regex != "":
-			mergedPath += cond.Regex
-			isRegex = true
+			if mergedPath != "" {
+				// Wrap in a non-capturing group so that "|" cannot escape the parent prefix.
+				mergedPath += "(?:" + cond.Regex + ")"
+			} else {
+				mergedPath += cond.Regex
+			}
 		}
 	}
 
@@ -57,28 +76,32 @@ func mergePathMatchConditions(conds []contour_v1.MatchCondition) MatchCondition 
 		mergedPath = `/`
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
-		}
+		}, nil
 	}
 
 	// If mergedPath is not empty then choose match type using the last rule of the delegation chain
 	lastCondition := conds[len(conds)-1]
 	switch {
 	case isRegex:
+		// Merged regex can be invalid even if each part was valid alone according to pathMatchConditionsValid().
+		if err := ValidateRegex(mergedPath); err != nil {
+			return nil, errors.New("regex invalid after merging with include prefix")
+		}
 		return &RegexMatchCondition{
 			Regex: mergedPath,
-		}
+		}, nil
 	case lastCondition.Prefix != "":
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
-		}
+		}, nil
 	case lastCondition.Exact != "":
 		return &ExactMatchCondition{
 			Path: mergedPath,
-		}
+		}, nil
 	default:
 		return &PrefixMatchCondition{
 			Prefix: mergedPath,
-		}
+		}, nil
 	}
 }
 
