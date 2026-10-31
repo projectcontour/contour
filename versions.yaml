@@ -14,8 +14,18 @@ versions:
         - "1.35"
       gateway-api:
         - "1.3.0"
-  - version: v1.33.7
+  - version: v1.33.8
     supported: "true"
+    dependencies:
+      envoy: "1.38.9"
+      kubernetes:
+        - "1.37"
+        - "1.36"
+        - "1.35"
+      gateway-api:
+        - "1.3.0"
+  - version: v1.33.7
+    supported: "false"
     dependencies:
       envoy: "1.38.4"
       kubernetes:
