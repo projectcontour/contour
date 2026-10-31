@@ -10,6 +10,7 @@ This page lists the versions of Envoy and Kubernetes that each Contour release w
 | Contour Version | Tested Envoy Version | Tested Kubernetes Versions | Gateway API Version |
 | --------------- | :------------------- | -------------------------- | --------------------|
 | main            | [1.40.2][85]         | 1.37, 1.36, 1.35    | [1.3.0][113]        |
+| 1.33.8          | [1.38.9][86]         | 1.37, 1.36, 1.35    | [1.3.0][113]        |
 | 1.33.7          | [1.38.4][84]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.6          | [1.38.3][83]         | 1.34, 1.33, 1.32    | [1.3.0][113]        |
 | 1.33.5          | [1.35.10][80]        | 1.34, 1.33, 1.32    | [1.3.0][113]        |
@@ -264,6 +265,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [83]: https://www.envoyproxy.io/docs/envoy/v1.38.3/version_history/v1.38/v1.38.3
 [84]: https://www.envoyproxy.io/docs/envoy/v1.38.4/version_history/v1.38/v1.38.4
 [85]: https://www.envoyproxy.io/docs/envoy/v1.40.2/version_history/v1.40/v1.40.2
+[86]: https://www.envoyproxy.io/docs/envoy/v1.38.9/version_history/v1.38/v1.38.9
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix
