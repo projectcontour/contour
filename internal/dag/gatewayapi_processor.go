@@ -275,7 +275,7 @@ func (p *GatewayAPIProcessor) processRoute(
 			case *gatewayapi_v1alpha2.TLSRoute:
 				p.computeTLSRouteForListener(route, routeParentStatus, listener, hosts)
 			case *gatewayapi_v1.GRPCRoute:
-				p.computeGRPCRouteForListener(route, routeParentStatus, listener, hosts)
+				p.computeGRPCRouteForListener(route, routeParentStatus, routeParentRef, listener, hosts)
 			case *gatewayapi_v1alpha2.TCPRoute:
 				p.computeTCPRouteForListener(route, routeParentStatus, listener)
 			}
@@ -1530,7 +1530,7 @@ func (p *GatewayAPIProcessor) hasConflictRoute(listener *listenerInfo, hosts set
 	return false
 }
 
-func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, listener *listenerInfo, hosts sets.Set[string]) bool {
+func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.GRPCRoute, routeAccessor *status.RouteParentStatusUpdate, routeParentRef gatewayapi_v1.ParentReference, listener *listenerInfo, hosts sets.Set[string]) bool {
 	var programmed bool
 	invalidRuleCnt := 0
 	for ruleIndex, rule := range route.Spec.Rules {
@@ -1636,7 +1636,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 		// conditions, all with the same action.
 		var routes []*Route
 
-		clusters, totalWeight, ok := p.grpcClusters(route.Namespace, rule.BackendRefs, routeAccessor, listener.listener.Protocol)
+		clusters, totalWeight, ok := p.grpcClusters(route.Namespace, rule.BackendRefs, routeAccessor, listener.listener.Protocol, routeParentRef)
 		if !ok {
 			continue
 		}
@@ -2082,7 +2082,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 			continue
 		}
 
-		upstreamValidation, upstreamTLS := p.computeBackendTLSPolicies(routeNamespace, backendRef, service, routeParentRef)
+		upstreamValidation, upstreamTLS := p.computeBackendTLSPolicies(routeNamespace, backendRef.BackendRef, service, routeParentRef)
 		if upstreamValidation != nil {
 			service.Protocol = "tls"
 		}
@@ -2161,7 +2161,7 @@ func (p *GatewayAPIProcessor) httpClusters(routeNamespace string, backendRefs []
 //
 // If no BackendTLSPolicy is found or the BackendTLSPolicy is invalid then nil
 // is returned for both fields.
-func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, backendRef gatewayapi_v1.HTTPBackendRef, service *Service, routeParentRef gatewayapi_v1.ParentReference) (*PeerValidationContext, *UpstreamTLS) {
+func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, backendRef gatewayapi_v1.BackendRef, service *Service, routeParentRef gatewayapi_v1.ParentReference) (*PeerValidationContext, *UpstreamTLS) {
 	var upstreamValidation *PeerValidationContext
 	var upstreamTLS *UpstreamTLS
 
@@ -2269,7 +2269,7 @@ func (p *GatewayAPIProcessor) computeBackendTLSPolicies(routeNamespace string, b
 }
 
 // grpcClusters builds clusters from backendRef.
-func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []gatewayapi_v1.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1.ProtocolType) ([]*Cluster, uint32, bool) {
+func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []gatewayapi_v1.GRPCBackendRef, routeAccessor *status.RouteParentStatusUpdate, protocolType gatewayapi_v1.ProtocolType, routeParentRef gatewayapi_v1.ParentReference) ([]*Cluster, uint32, bool) {
 	totalWeight := uint32(0)
 
 	if len(backendRefs) == 0 {
@@ -2339,6 +2339,13 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 		// If protocol is not set on the service, need to set a default one based on listener's protocol type.
 		setDefaultServiceProtocol(service, protocolType)
 
+		// If a BackendTLSPolicy applies to the backend, connect to it over TLS.
+		// gRPC requires HTTP/2, so use "h2" rather than plain "tls".
+		upstreamValidation, upstreamTLS := p.computeBackendTLSPolicies(routeNamespace, backendRef.BackendRef, service, routeParentRef)
+		if upstreamValidation != nil {
+			service.Protocol = "h2"
+		}
+
 		// https://github.com/projectcontour/contour/issues/3593
 		service.Weighted.Weight = routeWeight
 		clusters = append(clusters, &Cluster{
@@ -2350,6 +2357,8 @@ func (p *GatewayAPIProcessor) grpcClusters(routeNamespace string, backendRefs []
 			TimeoutPolicy:                 ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			MaxRequestsPerConnection:      p.MaxRequestsPerConnection,
 			PerConnectionBufferLimitBytes: p.PerConnectionBufferLimitBytes,
+			UpstreamValidation:            upstreamValidation,
+			UpstreamTLS:                   upstreamTLS,
 		})
 	}
 	return clusters, totalWeight, true
