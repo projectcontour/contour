@@ -76,6 +76,19 @@ func testIncludeRegexCondition(namespace string) {
 							},
 						},
 					},
+					{
+						Services: []contour_v1.Service{
+							{
+								Name: "echo-1",
+								Port: 80,
+							},
+						},
+						Conditions: []contour_v1.MatchCondition{
+							{
+								Regex: "/x|/admin/.*",
+							},
+						},
+					},
 				},
 			},
 		}
@@ -149,6 +162,15 @@ func testIncludeRegexCondition(namespace string) {
 							},
 						},
 					},
+					{
+						Name:      echo1Proxy.Name,
+						Namespace: echo1Proxy.Namespace,
+						Conditions: []contour_v1.MatchCondition{
+							{
+								Prefix: "/v1.0",
+							},
+						},
+					},
 				},
 			},
 		}
@@ -183,6 +205,9 @@ func testIncludeRegexCondition(namespace string) {
 			"/echo1/us-west-1/test": "echo-1", // "Prefix: /echo1 with included Regex: /us-west-1/.*"
 			"/echo1/us-west-3/test": "echo-1", // "Prefix: /echo1 with included Regex: /us-west-3/.*"
 			"/echo2/dev/utils":      "echo-2", // "Prefix: /echo2 with included Regex: /(dev|staging)/.*"
+			"/echo1/x":              "echo-1", // "Prefix: /echo1 with included Regex: /x|/admin/.*"
+			"/echo1/admin/secret":   "echo-1", // "Prefix: /echo1 with included Regex: /x|/admin/.*"
+			"/v1.0/us-west-1/test":  "echo-1", // "Prefix: /v1.0 with included Regex: /us-west-1/.*"
 		}
 
 		for path, expectedService := range cases {
@@ -198,6 +223,23 @@ func testIncludeRegexCondition(namespace string) {
 			}
 
 			assert.Equal(t, expectedService, f.GetEchoResponseBody(res.Body).Service)
+		}
+
+		notFound := []string{
+			"/x",                   // "/x" branch of the child regex, outside /echo1
+			"/admin/secret",        // "/admin/.*" branch of the child regex, outside /echo1
+			"/v1X0/us-west-1/test", // "." in the delegated prefix /v1.0 used as a wildcard
+		}
+
+		for _, path := range notFound {
+			t.Logf("Querying %q, expecting 404", path)
+
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host:      rootProxy.Spec.VirtualHost.Fqdn,
+				Path:      path,
+				Condition: e2e.HasStatusCode(404),
+			})
+			assert.Truef(t, ok, "expected 404 response code for %q, got %d", path, res.StatusCode)
 		}
 	})
 }

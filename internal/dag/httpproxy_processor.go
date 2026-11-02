@@ -676,8 +676,11 @@ func addRoutes(vhost vhost, routes []*Route) {
 
 func (p *HTTPProxyProcessor) addStatusBadGatewayRoute(routes []*Route, conds []contour_v1.MatchCondition, proxy *contour_v1.HTTPProxy) []*Route {
 	if len(conds) > 0 {
+		// Include conditions are prefix only, so no regex is merged and no error can be returned.
+		pathMatchCondition, _ := mergePathMatchConditions(conds)
+
 		route := &Route{
-			PathMatchCondition:        mergePathMatchConditions(conds),
+			PathMatchCondition:        pathMatchCondition,
 			HeaderMatchConditions:     mergeHeaderMatchConditions(conds),
 			QueryParamMatchConditions: mergeQueryParamMatchConditions(conds),
 			DirectResponse:            directResponse(http.StatusBadGateway, ""),
@@ -869,8 +872,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
+		pathMatchCondition, err := mergePathMatchConditions(routeConditions)
+		if err != nil {
+			validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid",
+				"route: %s", err)
+			return nil
+		}
+
 		r := &Route{
-			PathMatchCondition:        mergePathMatchConditions(routeConditions),
+			PathMatchCondition:        pathMatchCondition,
 			HeaderMatchConditions:     mergeHeaderMatchConditions(routeConditions),
 			QueryParamMatchConditions: mergeQueryParamMatchConditions(routeConditions),
 			Websocket:                 route.EnableWebsockets,
@@ -1870,7 +1880,10 @@ type matchConditionAggregate struct {
 func includeMatchConditionsIdentical(includeConds []contour_v1.MatchCondition, seenConds map[string][]matchConditionAggregate) bool {
 	pathPrefix := ""
 
-	switch pathPrefixRef := mergePathMatchConditions(includeConds).(type) {
+	// Include conditions are prefix only, so no regex is merged and no error can be returned.
+	mergedCond, _ := mergePathMatchConditions(includeConds)
+
+	switch pathPrefixRef := mergedCond.(type) {
 	case *PrefixMatchCondition:
 		pathPrefix = pathPrefixRef.Prefix
 	default:
