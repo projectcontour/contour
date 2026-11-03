@@ -866,6 +866,24 @@ func TestToIPFilterRule(t *testing.T) {
 				},
 			},
 		},
+		"invalid cidr followed by a valid cidr is an error": {
+			denyPolicy: []contour_v1.IPFilterPolicy{{
+				Source: contour_v1.IPFilterSourceRemote,
+				CIDR:   "10.0.0.0/33",
+			}, {
+				Source: contour_v1.IPFilterSourceRemote,
+				CIDR:   "192.168.0.0/16",
+			}},
+			wantErr: true,
+			wantConditionErrs: []contour_v1.SubCondition{
+				{
+					Type:    "IPFilterError",
+					Status:  "True",
+					Reason:  "InvalidCIDR",
+					Message: "10.0.0.0/33 failed to parse: invalid CIDR address: 10.0.0.0/33",
+				},
+			},
+		},
 		"parses multiple allow rules": {
 			allowPolicy: []contour_v1.IPFilterPolicy{{
 				Source: contour_v1.IPFilterSourceRemote,
