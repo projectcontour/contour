@@ -457,6 +457,12 @@ type EnvoyListenerConfig struct {
 	// Requests with a larger body are rejected with 413. Minimum value is 1.
 	// If not specified, there is no limit.
 	//
+	// Note: Not compatible with WebSocket or gRPC client-streaming and
+	// bidirectional streaming calls. The limit counts the total data the client
+	// sends over the connection or call, so long-lived streams are closed once
+	// it is exceeded, even if each message is small. Clients see a connection
+	// reset or a failed gRPC call instead of 413.
+	//
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	MaxRequestBodyBytes *uint64 `json:"maxRequestBodyBytes,omitempty"`
