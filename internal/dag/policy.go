@@ -126,14 +126,14 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_v1.Heade
 	}
 	for k, v := range defaultPolicy.Set {
 		key := http.CanonicalHeaderKey(k)
-		if err := validateHeaderValue(v); err != nil {
-			return nil, fmt.Errorf("invalid set header %q: %v", key, err)
-		}
 		if key == "Host" {
 			if !allowHostRewrite {
 				return nil, fmt.Errorf("rewriting %q header is not supported", key)
 			}
 			if len(userPolicy.HostRewrite) == 0 {
+				if err := validateHeaderValue(v); err != nil {
+					return nil, fmt.Errorf("invalid set header %q: %v", key, err)
+				}
 				// check for the hostRewriteHeader on the service. Return error if set since this
 				// is not supported on envoy.
 				if HostRewriteHeader := extractHostRewriteHeaderValue(v); HostRewriteHeader != "" {
@@ -148,6 +148,9 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_v1.Heade
 		}
 		// if the user policy set on the object does not contain this header then use the default
 		if _, exists := userPolicy.Set[key]; !exists {
+			if err := validateHeaderValue(v); err != nil {
+				return nil, fmt.Errorf("invalid set header %q: %v", key, err)
+			}
 			userPolicy.Set[key] = escapeHeaderValue(v, dynamicHeaders)
 		}
 	}
@@ -641,11 +644,11 @@ func localRateLimitPolicy(in *contour_v1.LocalRateLimitPolicy) (*LocalRateLimitP
 		if _, ok := res.ResponseHeadersToAdd[key]; ok {
 			return nil, fmt.Errorf("duplicate header addition: %q", key)
 		}
+		if err := validateHeaderValue(header.Value); err != nil {
+			return nil, fmt.Errorf("invalid header value %q: %v", key, err)
+		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
-		}
-		if err := validateHeaderValue(header.Value); err != nil {
-			return nil, fmt.Errorf("invalid header %q: %v", key, err)
 		}
 		res.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value, map[string]string{})
 	}

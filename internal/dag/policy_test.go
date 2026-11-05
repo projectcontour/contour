@@ -817,7 +817,7 @@ func TestRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantErr: `invalid header "Header-1": value must not contain NUL, CR or LF characters`,
+			wantErr: `invalid header value "Header-1": value must not contain NUL, CR or LF characters`,
 		},
 		"local - invalid unit": {
 			in: &contour_v1.RateLimitPolicy{
@@ -1053,6 +1053,8 @@ func TestValidateHeaderAlteration(t *testing.T) {
 		dhp     *HeadersPolicy
 		want    *HeadersPolicy
 		wantErr error
+
+		allowHostRewrite bool
 	}{{
 		name: "empty is fine",
 	}, {
@@ -1171,7 +1173,44 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				"Host": "bar\n",
 			},
 		},
-		wantErr: errors.New(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
+		allowHostRewrite: true,
+		wantErr:          errors.New(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
+	}, {
+		name: "invalid set default header value overridden by user policy",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{{
+				Name:  "K-Foo",
+				Value: "user",
+			}},
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": "bar\n",
+			},
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": "user",
+			},
+		},
+	}, {
+		name: "invalid set default Host header value overridden by user policy",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{{
+				Name:  "Host",
+				Value: "user.com",
+			}},
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"Host": "bar\n",
+			},
+		},
+		want: &HeadersPolicy{
+			Set:         map[string]string{},
+			HostRewrite: "user.com",
+		},
+		allowHostRewrite: true,
 	}, {
 		name: "invalid remove header",
 		in: &contour_v1.HeadersPolicy{
@@ -1343,7 +1382,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
+			got, gotErr := headersPolicyService(test.dhp, test.in, test.allowHostRewrite, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})
