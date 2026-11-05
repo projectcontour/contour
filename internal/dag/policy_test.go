@@ -783,6 +783,21 @@ func TestRateLimitPolicy(t *testing.T) {
 			},
 			wantErr: `invalid header name "Invalid-Header!": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`,
 		},
+		"local - invalid response header value": {
+			in: &contour_v1.RateLimitPolicy{
+				Local: &contour_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_v1.HeaderValue{
+						{
+							Name:  "header-1",
+							Value: "header-value-1\n",
+						},
+					},
+				},
+			},
+			wantErr: `invalid header "Header-1": value must not contain NUL, CR or LF characters`,
+		},
 		"local - invalid unit": {
 			in: &contour_v1.RateLimitPolicy{
 				Local: &contour_v1.LocalRateLimitPolicy{
@@ -1095,6 +1110,47 @@ func TestValidateHeaderAlteration(t *testing.T) {
 			},
 		},
 		wantErr: errors.New(`invalid set header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
+	}, {
+		name: "invalid set header value",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{{
+				Name:  "K-Foo",
+				Value: "bar\n",
+			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
+		dhp:     nil,
+		wantErr: errors.New(`invalid set header "K-Foo": value must not contain NUL, CR or LF characters`),
+	}, {
+		name: "invalid set default header value",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": "bar\r\n",
+			},
+		},
+		wantErr: errors.New(`invalid set header "K-Foo": value must not contain NUL, CR or LF characters`),
+	}, {
+		name: "invalid set default Host header value",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"Host": "bar\n",
+			},
+		},
+		wantErr: errors.New(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
 	}, {
 		name: "invalid remove header",
 		in: &contour_v1.HeadersPolicy{
@@ -1447,6 +1503,35 @@ func TestHeadersPolicyRoute(t *testing.T) {
 				Set: []contour_v1.HeaderValue{{Name: " Invalid-Header ", Value: "Test"}},
 			},
 			expectedErr: fmt.Errorf(`invalid set header " Invalid-Header ": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
+		},
+		{
+			name: "header value with newline",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-Header", Value: "Test\n"}},
+			},
+			expectedErr: fmt.Errorf(`invalid set header "X-Header": value must not contain NUL, CR or LF characters`),
+		},
+		{
+			name: "header value with carriage return",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-Header", Value: "Te\rst"}},
+			},
+			expectedErr: fmt.Errorf(`invalid set header "X-Header": value must not contain NUL, CR or LF characters`),
+		},
+		{
+			name: "header value with NUL",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-Header", Value: "Te\x00st"}},
+			},
+			expectedErr: fmt.Errorf(`invalid set header "X-Header": value must not contain NUL, CR or LF characters`),
+		},
+		{
+			name: "host rewrite value with newline",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "Host", Value: "Test\n"}},
+			},
+			allowRewrite: true,
+			expectedErr:  fmt.Errorf(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
 		},
 		{
 			name: "duplicate remove headers",

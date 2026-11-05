@@ -126,6 +126,9 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_v1.Heade
 	}
 	for k, v := range defaultPolicy.Set {
 		key := http.CanonicalHeaderKey(k)
+		if err := validateHeaderValue(v); err != nil {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, err)
+		}
 		if key == "Host" {
 			if !allowHostRewrite {
 				return nil, fmt.Errorf("rewriting %q header is not supported", key)
@@ -178,6 +181,9 @@ func headersPolicyRoute(policy *contour_v1.HeadersPolicy, allowHostRewrite bool,
 		key := http.CanonicalHeaderKey(entry.Name)
 		if _, ok := set[key]; ok {
 			return nil, fmt.Errorf("duplicate header addition: %q", key)
+		}
+		if err := validateHeaderValue(entry.Value); err != nil {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, err)
 		}
 		if key == "Host" {
 			if !allowHostRewrite {
@@ -235,6 +241,16 @@ func extractHostRewriteHeaderValue(s string) string {
 	return ""
 }
 
+// validateHeaderValue returns an error if the supplied header value contains
+// a NUL, CR or LF character. Envoy rejects the whole route configuration if
+// a header value, or the Host rewrite value, contains any of these characters.
+func validateHeaderValue(value string) error {
+	if strings.ContainsAny(value, "\x00\r\n") {
+		return errors.New("value must not contain NUL, CR or LF characters")
+	}
+	return nil
+}
+
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
 func headersPolicyGatewayAPI(hf *gatewayapi_v1.HTTPHeaderFilter, headerPolicyType string) (*HeadersPolicy, error) {
@@ -251,6 +267,10 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1.HTTPHeaderFilter, headerPolicyTyp
 			key := http.CanonicalHeaderKey(string(header.Name))
 			if _, ok := m[key]; ok {
 				errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
+				continue
+			}
+			if err := validateHeaderValue(header.Value); err != nil {
+				errlist = append(errlist, fmt.Errorf("invalid %s header %q: %v", op, key, err))
 				continue
 			}
 			if key == "Host" && (headerPolicyType == string(gatewayapi_v1.HTTPRouteFilterRequestHeaderModifier) ||
@@ -623,6 +643,9 @@ func localRateLimitPolicy(in *contour_v1.LocalRateLimitPolicy) (*LocalRateLimitP
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
+		}
+		if err := validateHeaderValue(header.Value); err != nil {
+			return nil, fmt.Errorf("invalid header %q: %v", key, err)
 		}
 		res.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value, map[string]string{})
 	}
