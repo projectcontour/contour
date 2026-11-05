@@ -1,0 +1,1 @@
+Negative durations in timeout settings are now rejected instead of being passed to Envoy, which rejected them. An Ingress with a negative `projectcontour.io/response-timeout`, `projectcontour.io/request-timeout` or `projectcontour.io/per-try-timeout` annotation now gets the default timeout, and a negative timeout in the Contour configuration is reported as an error at startup.

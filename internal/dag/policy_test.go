@@ -111,6 +111,21 @@ func TestRetryPolicyIngress(t *testing.T) {
 				PerTryTimeout: timeout.DefaultSetting(),
 			},
 		},
+		"negative per try timeout": {
+			i: &networking_v1.Ingress{
+				ObjectMeta: meta_v1.ObjectMeta{
+					Annotations: map[string]string{
+						"projectcontour.io/retry-on":        "5xx",
+						"projectcontour.io/per-try-timeout": "-10s",
+					},
+				},
+			},
+			want: &RetryPolicy{
+				RetryOn:       "5xx",
+				NumRetries:    1,
+				PerTryTimeout: timeout.DefaultSetting(),
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -222,6 +237,12 @@ func TestTimeoutPolicy(t *testing.T) {
 		"invalid response timeout": {
 			tp: &contour_v1.TimeoutPolicy{
 				Response: "90", // 90 what?
+			},
+			wantErr: true,
+		},
+		"negative response timeout": {
+			tp: &contour_v1.TimeoutPolicy{
+				Response: "-90s",
 			},
 			wantErr: true,
 		},

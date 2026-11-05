@@ -67,7 +67,7 @@ func DurationSetting(duration time.Duration) Setting {
 //   - any valid representation of "0" means "use the default".
 //   - a valid Go duration string is used as the specific timeout value.
 //   - "infinity" or "infinite" means "disable the timeout".
-//   - any other value results in an error.
+//   - any other value, including a negative duration, results in an error.
 func Parse(timeout string) (Setting, error) {
 	// An empty string is interpreted as no explicit timeout specified, so
 	// use the Envoy default.
@@ -84,6 +84,12 @@ func Parse(timeout string) (Setting, error) {
 	d, err := time.ParseDuration(timeout)
 	if err != nil {
 		return Setting{}, fmt.Errorf("unable to parse timeout string %q: %w", timeout, err)
+	}
+
+	// Envoy rejects negative durations, which would cause the whole
+	// configuration update containing the timeout to be rejected.
+	if d < 0 {
+		return Setting{}, fmt.Errorf("invalid timeout string %q: duration must not be negative", timeout)
 	}
 
 	if d == 0 {
