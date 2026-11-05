@@ -214,6 +214,11 @@ func (e *EnvoyGen) DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v
 	cluster := clusterDefaults()
 
 	cluster.Name = envoy.DNSNameClusterName(c)
+
+	// Envoy takes the envoy_cluster_name tag from the stat name up to the
+	// first dot, so the hostname in the cluster name would cut it short.
+	cluster.AltStatName = strings.NewReplacer("/", "_", ".", "_").Replace(cluster.Name)
+
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
 
 	clusterType := envoy_config_cluster_v3.Cluster_STRICT_DNS
