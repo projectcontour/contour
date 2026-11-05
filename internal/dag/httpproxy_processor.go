@@ -1205,11 +1205,12 @@ func toIPFilterRules(allowPolicy, denyPolicy []contour_v1.IPFilterPolicy, validC
 				unparsedCIDR += "/32"
 			}
 		}
-		var cidr *net.IPNet
-		_, cidr, err = net.ParseCIDR(unparsedCIDR)
-		if err != nil {
+		_, cidr, parseErr := net.ParseCIDR(unparsedCIDR)
+		if parseErr != nil {
 			validCond.AddErrorf(contour_v1.ConditionTypeIPFilterError, "InvalidCIDR",
-				"%s failed to parse: %s", p.CIDR, err)
+				"%s failed to parse: %s", p.CIDR, parseErr)
+			// Keep the error so that a later valid entry does not clear it.
+			err = parseErr
 			continue
 		}
 		filters = append(filters, IPFilterRule{
