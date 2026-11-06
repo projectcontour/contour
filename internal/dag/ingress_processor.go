@@ -98,6 +98,24 @@ func (p *IngressProcessor) Run(dag *DAG, source *KubernetesCache) {
 // secure virtual hosts.
 func (p *IngressProcessor) computeSecureVirtualhosts() {
 	for _, ing := range p.source.ingresses {
+		if len(ing.Spec.TLS) == 0 {
+			continue
+		}
+
+		// default to a minimum TLS version of 1.2 if it's not specified
+		minTLSVer := annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
+		// default to a maximum TLS version of 1.3 if it's not specified
+		maxTLSVer := annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-maximum-protocol-version"), "1.3")
+
+		if maxTLSVer < minTLSVer {
+			p.WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("minTLSVersion", minTLSVer).
+				WithField("maxTLSVersion", maxTLSVer).
+				Errorf("error TLS protocol version, the minimum protocol version is greater than the maximum protocol version")
+			continue
+		}
+
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
 			sec, err := p.source.LookupTLSSecret(secretName, ing.GetNamespace())
@@ -128,21 +146,6 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 						WithField("name", ing.GetName()).
 						WithField("namespace", ing.GetNamespace()).
 						Errorf("error identifying listener")
-					return
-				}
-
-				// default to a minimum TLS version of 1.2 if it's not specified
-				minTLSVer := annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
-				// default to a maximum TLS version of 1.3 if it's not specified
-				maxTLSVer := annotation.TLSVersion(annotation.ContourAnnotation(ing, "tls-maximum-protocol-version"), "1.3")
-
-				if maxTLSVer < minTLSVer {
-					p.WithError(err).
-						WithField("name", ing.GetName()).
-						WithField("namespace", ing.GetNamespace()).
-						WithField("minTLSVersion", minTLSVer).
-						WithField("maxTLSVersion", maxTLSVer).
-						Errorf("error TLS protocol version, the minimum protocol version is greater than the maximum protocol version")
 					return
 				}
 

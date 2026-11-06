@@ -1,0 +1,1 @@
+Fix an Ingress whose `projectcontour.io/tls-minimum-protocol-version` annotation is greater than its `projectcontour.io/tls-maximum-protocol-version` annotation stopping TLS virtual host processing for all remaining Ingresses. Only the misconfigured Ingress is now skipped.
