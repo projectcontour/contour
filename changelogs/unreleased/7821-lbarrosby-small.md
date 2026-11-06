@@ -1,0 +1,1 @@
+Remote JWKS clusters now set `alt_stat_name` to `dnsname_<scheme>_<host>_<port>` (dots in the host replaced by `_`), so the `envoy_cluster_name` label in Envoy metrics is no longer cut at the first dot of the hostname and stays stable for the same upstream server.
