@@ -41,6 +41,20 @@ Now you can start editing content:
 1. For new content for future versions, it should be created in `main`
 1. For edits to older versioned docs, first make the edits to that specific version (spelling errors, broken links etc) and then verify if those changes should also be incorporated in the `main` directory for the latest development docs
 
+### Stale content checking cycle
+
+The documentation working group runs a stale content check once every quarter and as part of each release. Anyone can take part in a check; announce the review in the Contour Slack channel and open a tracking issue for the work.
+
+For each check:
+
+1. Choose a section of the documentation so that the whole site is reviewed over time. Include the `main` documentation and any currently supported version that has changed since the previous check.
+1. Read the pages as a user would and check that commands, configuration examples, API references, version numbers, links, and screenshots still match the current project.
+1. Compare technical claims with the source code, release notes, and supported Kubernetes versions. Run the site locally and follow the key getting-started paths.
+1. Record every problem in the tracking issue. Fix small issues in the same cycle; create a separate issue when a change needs design or maintainer input.
+1. When a page is no longer correct or supported, update it, clearly mark the limitation, or remove it. Do not leave an unmaintained page available without documenting its status.
+
+Close the cycle only when the tracking issue links to the review notes and all follow-up work has an owner. Include the reviewed paths, the date, and any deliberately deferred issues in the issue or the pull request. When a release changes behavior, repeat the review for the affected `main` and versioned pages even if the quarterly check is not due.
+
 ### Create a Pull Request with your changes
 
 Please see the [CONTRIBUTING doc](https://github.com/projectcontour/contour/blob/main/CONTRIBUTING.md#contribution-workflow) in the section "Contribution workflow" for more detailed information on how to commit your changes and submit a pull request.
