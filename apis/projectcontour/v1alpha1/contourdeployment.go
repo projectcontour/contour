@@ -237,6 +237,16 @@ type EnvoySettings struct {
 	// +optional
 	BaseID int32 `json:"baseID,omitempty"`
 
+	// Concurrency specifies the number of worker threads to run for Envoy.
+	// If not specified, Envoy defaults to the number of hardware threads on
+	// the machine. Setting this to a lower value on high-core-count machines
+	// avoids excessive worker threads and reduces idle CPU and Memory usage.
+	// defaults to 0 (use Envoy's default behavior).
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	Concurrency int32 `json:"concurrency,omitempty"`
+
 	// OverloadMaxHeapSize defines the maximum heap memory of the envoy controlled by the overload manager.
 	// When the value is greater than 0, the overload manager is enabled,
 	// and when envoy reaches 95% of the maximum heap size, it performs a shrink heap operation,
