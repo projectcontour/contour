@@ -169,7 +169,7 @@ func TestJWTVerification(t *testing.T) {
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
 				Name:        "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
-				AltStatName: "dnsname_https_jwt_example_com_443_0771aeda175c510932e2",
+				AltStatName: "dnsname_https_jwt_example_com_443",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -655,7 +655,7 @@ func TestJWTVerification(t *testing.T) {
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
 				Name:        "dnsname/https/jwt.example.com/8443/f3c7698ae471934ed629",
-				AltStatName: "dnsname_https_jwt_example_com_8443_f3c7698ae471934ed629",
+				AltStatName: "dnsname_https_jwt_example_com_8443",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -804,7 +804,7 @@ func TestJWTVerification(t *testing.T) {
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
 				Name:        "dnsname/https/jwt.example.com/443/62f2fd0c5a55f640f78f",
-				AltStatName: "dnsname_https_jwt_example_com_443_62f2fd0c5a55f640f78f",
+				AltStatName: "dnsname_https_jwt_example_com_443",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -969,7 +969,7 @@ func TestJWTVerification(t *testing.T) {
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
 				Name:        "dnsname/https/jwt.example.com/8443/51f45c0f9f76d6a8681c",
-				AltStatName: "dnsname_https_jwt_example_com_8443_51f45c0f9f76d6a8681c",
+				AltStatName: "dnsname_https_jwt_example_com_8443",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -1116,7 +1116,7 @@ func TestJWTVerification(t *testing.T) {
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
 				Name:        "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
-				AltStatName: "dnsname_https_jwt_example_com_443_0771aeda175c510932e2",
+				AltStatName: "dnsname_https_jwt_example_com_443",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},
@@ -1331,7 +1331,7 @@ func TestJWTVerification_Inclusion(t *testing.T) {
 		Resources: resources(t,
 			&envoy_config_cluster_v3.Cluster{
 				Name:        "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
-				AltStatName: "dnsname_https_jwt_example_com_443_0771aeda175c510932e2",
+				AltStatName: "dnsname_https_jwt_example_com_443",
 				ClusterDiscoveryType: &envoy_config_cluster_v3.Cluster_Type{
 					Type: envoy_config_cluster_v3.Cluster_STRICT_DNS,
 				},

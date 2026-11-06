@@ -895,7 +895,7 @@ func TestDNSNameCluster(t *testing.T) {
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/http/foo.projectcontour.io/80/c1a5cfb578cafae01a91",
-				AltStatName:          "dnsname_http_foo_projectcontour_io_80_c1a5cfb578cafae01a91",
+				AltStatName:          "dnsname_http_foo_projectcontour_io_80",
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
@@ -925,7 +925,7 @@ func TestDNSNameCluster(t *testing.T) {
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/http/foo.projectcontour.io/80/23b4f1ac31c67cc50a67",
-				AltStatName:          "dnsname_http_foo_projectcontour_io_80_23b4f1ac31c67cc50a67",
+				AltStatName:          "dnsname_http_foo_projectcontour_io_80",
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_V4_ONLY,
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
@@ -955,7 +955,7 @@ func TestDNSNameCluster(t *testing.T) {
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/http/foo.projectcontour.io/80/3fc4a884a77ef80f294e",
-				AltStatName:          "dnsname_http_foo_projectcontour_io_80_3fc4a884a77ef80f294e",
+				AltStatName:          "dnsname_http_foo_projectcontour_io_80",
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_ALL,
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_LOGICAL_DNS),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
@@ -985,7 +985,7 @@ func TestDNSNameCluster(t *testing.T) {
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/https/foo.projectcontour.io/443/92e2d87ab4868b426840",
-				AltStatName:          "dnsname_https_foo_projectcontour_io_443_92e2d87ab4868b426840",
+				AltStatName:          "dnsname_https_foo_projectcontour_io_443",
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{
@@ -1028,7 +1028,7 @@ func TestDNSNameCluster(t *testing.T) {
 			},
 			want: &envoy_config_cluster_v3.Cluster{
 				Name:                 "dnsname/https/foo.projectcontour.io/443/4177316d05096dff8011",
-				AltStatName:          "dnsname_https_foo_projectcontour_io_443_4177316d05096dff8011",
+				AltStatName:          "dnsname_https_foo_projectcontour_io_443",
 				DnsLookupFamily:      envoy_config_cluster_v3.Cluster_AUTO,
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment: &envoy_config_endpoint_v3.ClusterLoadAssignment{

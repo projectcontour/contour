@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -217,7 +218,8 @@ func (e *EnvoyGen) DNSNameCluster(c *dag.DNSNameCluster) *envoy_config_cluster_v
 
 	// Envoy takes the envoy_cluster_name tag from the stat name up to the
 	// first dot, so the hostname in the cluster name would cut it short.
-	cluster.AltStatName = strings.NewReplacer("/", "_", ".", "_").Replace(cluster.Name)
+	// The hash is left out to get one stable stat name per upstream server.
+	cluster.AltStatName = fmt.Sprintf("dnsname_%s_%s_%d", c.Scheme, strings.ReplaceAll(c.Address, ".", "_"), c.Port)
 
 	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
 
