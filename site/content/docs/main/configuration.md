@@ -252,7 +252,7 @@ Concretely:
 If you rely on prefix-based routing or external authorization for access control:
 
 - Leave `disableNormalizePath` at `false`. Only set it to `true` when your backends treat paths as opaque identifiers — object storage gateways, artifact registries, or APIs whose request signatures cover the raw path — and make sure no route match condition or authorization policy is load-bearing for security on those paths.
-- Prefer `pathWithEscapedSlashesAction: reject_request`, which returns a 400, or `unescape_and_redirect`, which redirects the client to the unescaped path so the second request is matched against a normalized path. Avoid `unescape_and_forward`, which unescapes the path only after route matching has already run.
+- Prefer `pathWithEscapedSlashesAction: reject_request`, which returns a 400, or `unescape_and_redirect`, which redirects the client to the normalized path. Avoid `unescape_and_forward` unless upstream servers treat escaped and unescaped slashes equivalently. It may increase the risk of path confusion if intermediaries perform path-based access control.
 
 `disableNormalizePath` and `pathWithEscapedSlashesAction` are global listener settings. There is no per-HTTPProxy or per-HTTPRoute equivalent, because these transformations run before Contour's routing rules are consulted.
 
