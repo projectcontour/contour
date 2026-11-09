@@ -244,14 +244,14 @@ An example with all three at their defaults: a request for `//foo/../bar` is fir
 Loosening any of these transformations means route match conditions and authorization policies are evaluated against a less-normalized path. An attacker can then craft a path that reaches a backend without matching the route or policy that was meant to guard it.
 {{< /notice >}}
 
-Concretely:
+These examples use two routes that send requests to the same backend. The `/admin` route requires authorization, but the `/public` route does not:
 
 - With `disableNormalizePath: true`, a request for `/public/../admin` does **not** match a route or authorization policy scoped to the `/admin` prefix, but the raw path is still forwarded upstream. A backend that resolves the dot segments itself then serves `/admin` with the guard bypassed.
 - With `pathWithEscapedSlashesAction: keep_unchanged` (the default), a request for `/public%2F..%2Fadmin` does not match an `/admin` prefix route. Backends that decode `%2F` as a path separator will nonetheless treat it as `/public/../admin`.
 
 If you rely on prefix-based routing or external authorization for access control:
 
-- Leave `disableNormalizePath` at `false`. Only set it to `true` when your backends treat paths as opaque identifiers — object storage gateways, artifact registries, or APIs whose request signatures cover the raw path — and make sure no route match condition or authorization policy is load-bearing for security on those paths.
+- Leave `disableNormalizePath` at `false`. Only set it to `true` if the backend requires paths that Envoy would otherwise normalize to remain unchanged, for example, paths containing `.` or `..` segments. If you set it to `true`, do not rely on path prefixes such as `/admin` for access control if the backend interprets those paths differently.
 - Prefer `pathWithEscapedSlashesAction: reject_request`, which returns a 400, or `unescape_and_redirect`, which redirects the client to the normalized path. Avoid `unescape_and_forward` unless upstream servers treat escaped and unescaped slashes equivalently. It may increase the risk of path confusion if intermediaries perform path-based access control.
 
 `disableNormalizePath` and `pathWithEscapedSlashesAction` are global listener settings. There is no per-HTTPProxy or per-HTTPRoute equivalent, because these transformations run before Contour's routing rules are consulted.
