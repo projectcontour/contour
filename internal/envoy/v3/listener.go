@@ -776,6 +776,8 @@ func (e *EnvoyGen) HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder 
 		// Default to Contour's behavior rather than to the proto zero value
 		// IMPLEMENTATION_SPECIFIC_DEFAULT, so that callers that never set this
 		// still get an explicit, stable action.
+		// As a side effect, Envoy ignores the
+		// http_connection_manager.path_with_escaped_slashes_action runtime key, if set.
 		pathWithEscapedSlashesAction: envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_KEEP_UNCHANGED,
 	}
 }
