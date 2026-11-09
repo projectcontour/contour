@@ -247,7 +247,7 @@ Loosening any of these transformations means route match conditions and authoriz
 Concretely:
 
 - With `disableNormalizePath: true`, a request for `/public/../admin` does **not** match a route or authorization policy scoped to the `/admin` prefix, but the raw path is still forwarded upstream. A backend that resolves the dot segments itself then serves `/admin` with the guard bypassed.
-- With `pathWithEscapedSlashesAction: keep_unchanged` (the default) or `unescape_and_forward`, a request for `/public%2F..%2Fadmin` does not match an `/admin` prefix route. Backends that decode `%2F` as a path separator will nonetheless treat it as `/public/../admin`.
+- With `pathWithEscapedSlashesAction: keep_unchanged` (the default), a request for `/public%2F..%2Fadmin` does not match an `/admin` prefix route. Backends that decode `%2F` as a path separator will nonetheless treat it as `/public/../admin`.
 
 If you rely on prefix-based routing or external authorization for access control:
 
