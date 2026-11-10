@@ -1112,6 +1112,15 @@ type CompressionParameters struct {
 	// Mutually exclusive with Algorithm.
 	// +optional
 	Algorithms *[]CompressionAlgorithm `yaml:"algorithms,omitempty"`
+
+	// ETag configures how responses that carry an ETag header are handled when compression is enabled.
+	// Valid options are 'remove' (default), 'weaken' and 'skip'.
+	// - remove: compress the response and remove a strong ETag. Weak ETags are preserved.
+	// - weaken: compress the response and weaken a strong ETag by prepending 'W/' to it.
+	// - skip: do not compress responses that carry an ETag header, strong or weak.
+	// Has no effect when compression is disabled.
+	// +optional
+	ETag CompressionETagAction `yaml:"etag,omitempty"`
 }
 
 func (c CompressionParameters) Validate() error {
@@ -1122,6 +1131,7 @@ func (c CompressionParameters) Validate() error {
 func (c CompressionParameters) ToEnvoyCompression() *contour_v1alpha1.EnvoyCompression {
 	out := &contour_v1alpha1.EnvoyCompression{
 		Algorithm: contour_v1alpha1.CompressionAlgorithm(c.Algorithm),
+		ETag:      contour_v1alpha1.CompressionETagAction(c.ETag),
 	}
 	if c.Algorithms == nil {
 		return out
@@ -1146,6 +1156,14 @@ const (
 	CompressionDisabled CompressionAlgorithm = "disabled"
 	CompressionZstd     CompressionAlgorithm = "zstd"
 	CompressionDefault                       = CompressionGzip
+)
+
+type CompressionETagAction string
+
+const (
+	CompressionETagRemove CompressionETagAction = "remove"
+	CompressionETagWeaken CompressionETagAction = "weaken"
+	CompressionETagSkip   CompressionETagAction = "skip"
 )
 
 // Validate verifies that the parameter values do not have any syntax errors.

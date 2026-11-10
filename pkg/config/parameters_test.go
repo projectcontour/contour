@@ -22,6 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 	"k8s.io/utils/ptr"
+
+	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 )
 
 func TestGetenvOr(t *testing.T) {
@@ -359,6 +361,46 @@ func TestCompressionValidation(t *testing.T) {
 	require.ErrorContains(t, CompressionParameters{
 		Algorithms: &[]CompressionAlgorithm{CompressionDisabled},
 	}.Validate(), "cannot include")
+
+	require.NoError(t, CompressionParameters{ETag: CompressionETagRemove}.Validate())
+	require.NoError(t, CompressionParameters{ETag: CompressionETagWeaken}.Validate())
+	require.NoError(t, CompressionParameters{
+		Algorithms: &[]CompressionAlgorithm{CompressionBrotli},
+		ETag:       CompressionETagSkip,
+	}.Validate())
+	require.ErrorContains(t, CompressionParameters{ETag: "bogus"}.Validate(), "invalid compression etag action")
+}
+
+func TestParseCompressionETag(t *testing.T) {
+	conf, err := Parse(strings.NewReader(`
+compression:
+  algorithms:
+    - gzip
+  etag: weaken
+`))
+	require.NoError(t, err)
+	require.Equal(t, CompressionETagWeaken, conf.Compression.ETag)
+	require.Equal(t, &contour_v1alpha1.EnvoyCompression{
+		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.GzipCompression},
+		ETag:       contour_v1alpha1.WeakenCompressionETag,
+	}, conf.Compression.ToEnvoyCompression())
+
+	conf, err = Parse(strings.NewReader(`
+compression:
+  etag: skip
+`))
+	require.NoError(t, err)
+	require.Equal(t, CompressionETagSkip, conf.Compression.ETag)
+	require.Equal(t, &contour_v1alpha1.EnvoyCompression{
+		ETag: contour_v1alpha1.SkipCompressionETag,
+	}, conf.Compression.ToEnvoyCompression())
+
+	conf, err = Parse(strings.NewReader(`
+compression:
+  etag: bogus
+`))
+	require.NoError(t, err)
+	require.ErrorContains(t, conf.Validate(), "invalid compression etag action")
 }
 
 func TestParseCompressionAlgorithms(t *testing.T) {
