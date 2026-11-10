@@ -328,6 +328,24 @@ func extInvalidTimeout(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour)
 	})
 }
 
+func extResponseTimeoutTooLarge(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
+	rh.OnAdd(&contour_v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: contour_v1alpha1.ExtensionServiceSpec{
+			Services: []contour_v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+			},
+			TimeoutPolicy: &contour_v1.TimeoutPolicy{
+				Response: "1193046h28m16s",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+	})
+}
+
 func extInconsistentProto(_ *testing.T, rh ResourceEventHandlerWrapper, c *Contour) {
 	es := &contour_v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
@@ -731,6 +749,7 @@ func TestExtensionService(t *testing.T) {
 		"MissingService":                extMissingService,
 		"InconsistentProto":             extInconsistentProto,
 		"InvalidTimeout":                extInvalidTimeout,
+		"ResponseTimeoutTooLarge":       extResponseTimeoutTooLarge,
 		"InvalidLoadBalancerPolicy":     extInvalidLoadBalancerPolicy,
 		"CircuitBreakers":               extCircuitBreakers,
 		"GlobalCircuitBreakers":         extGlobalCircuitBreakers,

@@ -326,30 +326,35 @@ spec:
                               single Envoy instance allows to the Kubernetes Service;
                               defaults to 1024.
                             format: int32
+                            minimum: 0
                             type: integer
                           maxPendingRequests:
                             description: The maximum number of pending requests that
                               a single Envoy instance allows to the Kubernetes Service;
                               defaults to 1024.
                             format: int32
+                            minimum: 0
                             type: integer
                           maxRequests:
                             description: The maximum parallel requests a single Envoy
                               instance allows to the Kubernetes Service; defaults
                               to 1024
                             format: int32
+                            minimum: 0
                             type: integer
                           maxRetries:
                             description: The maximum number of parallel retries a
                               single Envoy instance allows to the Kubernetes Service;
                               defaults to 3.
                             format: int32
+                            minimum: 0
                             type: integer
                           perHostMaxConnections:
                             description: |-
                               PerHostMaxConnections is the maximum number of connections
                               that Envoy will allow to each individual host in a cluster.
                             format: int32
+                            minimum: 0
                             type: integer
                         type: object
                       dnsLookupFamily:
@@ -1209,6 +1214,10 @@ spec:
                       The string "infinity" is also a valid input and specifies no timeout.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                     type: string
+                    x-kubernetes-validations:
+                    - message: must be less than 4294967296s
+                      rule: self == 'infinity' || self == 'infinite' || duration(self)
+                        < duration('4294967296s')
                   serviceType:
                     default: grpc
                     description: |-
@@ -1424,6 +1433,7 @@ spec:
                                         description: HeaderName defines the name of
                                           the header to look for on the request.
                                         minLength: 1
+                                        pattern: ^[^\x00\r\n]*$
                                         type: string
                                     required:
                                     - descriptorKey
@@ -1476,6 +1486,7 @@ spec:
                                                 Name is the name of the header to match against. Name is required.
                                                 Header names are case insensitive.
                                               minLength: 1
+                                              pattern: ^[^\x00\r\n]*$
                                               type: string
                                             notcontains:
                                               description: |-
@@ -4691,30 +4702,35 @@ spec:
                                   a single Envoy instance allows to the Kubernetes
                                   Service; defaults to 1024.
                                 format: int32
+                                minimum: 0
                                 type: integer
                               maxPendingRequests:
                                 description: The maximum number of pending requests
                                   that a single Envoy instance allows to the Kubernetes
                                   Service; defaults to 1024.
                                 format: int32
+                                minimum: 0
                                 type: integer
                               maxRequests:
                                 description: The maximum parallel requests a single
                                   Envoy instance allows to the Kubernetes Service;
                                   defaults to 1024
                                 format: int32
+                                minimum: 0
                                 type: integer
                               maxRetries:
                                 description: The maximum number of parallel retries
                                   a single Envoy instance allows to the Kubernetes
                                   Service; defaults to 3.
                                 format: int32
+                                minimum: 0
                                 type: integer
                               perHostMaxConnections:
                                 description: |-
                                   PerHostMaxConnections is the maximum number of connections
                                   that Envoy will allow to each individual host in a cluster.
                                 format: int32
+                                minimum: 0
                                 type: integer
                             type: object
                           dnsLookupFamily:
@@ -5576,6 +5592,10 @@ spec:
                           The string "infinity" is also a valid input and specifies no timeout.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                         type: string
+                        x-kubernetes-validations:
+                        - message: must be less than 4294967296s
+                          rule: self == 'infinity' || self == 'infinite' || duration(self)
+                            < duration('4294967296s')
                       serviceType:
                         default: grpc
                         description: |-
@@ -5792,6 +5812,7 @@ spec:
                                             description: HeaderName defines the name
                                               of the header to look for on the request.
                                             minLength: 1
+                                            pattern: ^[^\x00\r\n]*$
                                             type: string
                                         required:
                                         - descriptorKey
@@ -5844,6 +5865,7 @@ spec:
                                                     Name is the name of the header to match against. Name is required.
                                                     Header names are case insensitive.
                                                   minLength: 1
+                                                  pattern: ^[^\x00\r\n]*$
                                                   type: string
                                                 notcontains:
                                                   description: |-
@@ -6188,28 +6210,33 @@ spec:
                     description: The maximum number of connections that a single Envoy
                       instance allows to the Kubernetes Service; defaults to 1024.
                     format: int32
+                    minimum: 0
                     type: integer
                   maxPendingRequests:
                     description: The maximum number of pending requests that a single
                       Envoy instance allows to the Kubernetes Service; defaults to
                       1024.
                     format: int32
+                    minimum: 0
                     type: integer
                   maxRequests:
                     description: The maximum parallel requests a single Envoy instance
                       allows to the Kubernetes Service; defaults to 1024
                     format: int32
+                    minimum: 0
                     type: integer
                   maxRetries:
                     description: The maximum number of parallel retries a single Envoy
                       instance allows to the Kubernetes Service; defaults to 3.
                     format: int32
+                    minimum: 0
                     type: integer
                   perHostMaxConnections:
                     description: |-
                       PerHostMaxConnections is the maximum number of connections
                       that Envoy will allow to each individual host in a cluster.
                     format: int32
+                    minimum: 0
                     type: integer
                 type: object
               loadBalancerPolicy:
@@ -6335,6 +6362,7 @@ spec:
                       description: Weight defines proportion of traffic to balance
                         to the Kubernetes Service.
                       format: int32
+                      minimum: 0
                       type: integer
                   required:
                   - name
@@ -6386,12 +6414,14 @@ spec:
                       Deprecated: migrate to using the plural field subjectNames.
                     maxLength: 250
                     minLength: 1
+                    pattern: ^[^\x00\r\n]*$
                     type: string
                   subjectNames:
                     description: |-
                       List of keys, of which at least one is expected to be present in the 'subjectAltName of the
                       presented certificate.
                     items:
+                      pattern: ^[^\x00\r\n]*$
                       type: string
                     maxItems: 8
                     minItems: 1
@@ -6722,6 +6752,7 @@ spec:
                                   Name is the name of the header to match against. Name is required.
                                   Header names are case insensitive.
                                 minLength: 1
+                                pattern: ^[^\x00\r\n]*$
                                 type: string
                               notcontains:
                                 description: |-
@@ -6786,6 +6817,7 @@ spec:
                                 description: |-
                                   Name is the name of the query parameter to match against. Name is required.
                                   Query parameter names are case insensitive.
+                                minLength: 1
                                 type: string
                               prefix:
                                 description: Prefix defines a prefix match for the
@@ -6904,6 +6936,7 @@ spec:
                                   Name is the name of the header to match against. Name is required.
                                   Header names are case insensitive.
                                 minLength: 1
+                                pattern: ^[^\x00\r\n]*$
                                 type: string
                               notcontains:
                                 description: |-
@@ -6968,6 +7001,7 @@ spec:
                                 description: |-
                                   Name is the name of the query parameter to match against. Name is required.
                                   Query parameter names are case insensitive.
+                                minLength: 1
                                 type: string
                               prefix:
                                 description: Prefix defines a prefix match for the
@@ -7127,19 +7161,26 @@ spec:
                             The value of the host header in the HTTP health check request.
                             If left empty (default value), the name "contour-envoy-healthcheck"
                             will be used.
+                          pattern: ^[^\x00-\x08\x0A-\x1F\x7F]*$
                           type: string
                         intervalSeconds:
                           description: The interval (seconds) between health checks
                           format: int64
+                          maximum: 9223372035
+                          minimum: 0
                           type: integer
                         path:
                           description: HTTP endpoint used to perform health checks
                             on upstream service
+                          minLength: 1
+                          pattern: ^[^\x00-\x08\x0A-\x1F\x7F]*$
                           type: string
                         timeoutSeconds:
                           description: The time to wait (seconds) for a health check
                             response
                           format: int64
+                          maximum: 9223372035
+                          minimum: 0
                           type: integer
                         unhealthyThresholdCount:
                           description: The number of unhealthy health checks required
@@ -7177,6 +7218,7 @@ spec:
                             MaxInternalRedirects An internal redirect is not handled, unless the number of previous internal
                             redirects that a downstream request has encountered is lower than this value.
                           format: int32
+                          minimum: 0
                           type: integer
                         redirectResponseCodes:
                           description: |-
@@ -7193,6 +7235,7 @@ spec:
                             - 308
                             format: int32
                             type: integer
+                          maxItems: 5
                           type: array
                       type: object
                     ipAllowPolicy:
@@ -7376,6 +7419,7 @@ spec:
                                   Replacement is the string that the routing path prefix
                                   will be replaced with. This must not be empty.
                                 minLength: 1
+                                pattern: ^[^\x00\r\n]*$
                                 type: string
                             required:
                             - replacement
@@ -7451,6 +7495,7 @@ spec:
                                                 name of the header to look for on
                                                 the request.
                                               minLength: 1
+                                              pattern: ^[^\x00\r\n]*$
                                               type: string
                                           required:
                                           - descriptorKey
@@ -7503,6 +7548,7 @@ spec:
                                                       Name is the name of the header to match against. Name is required.
                                                       Header names are case insensitive.
                                                     minLength: 1
+                                                    pattern: ^[^\x00\r\n]*$
                                                     type: string
                                                   notcontains:
                                                     description: |-
@@ -7577,6 +7623,7 @@ spec:
                                 Burst defines the number of requests above the requests per
                                 unit that should be allowed within a short period of time.
                               format: int32
+                              minimum: 0
                               type: integer
                             requests:
                               description: |-
@@ -7595,6 +7642,7 @@ spec:
                                 properties:
                                   name:
                                     description: Name represents a key of a header
+                                    maxLength: 16384
                                     minLength: 1
                                     type: string
                                   value:
@@ -7648,6 +7696,7 @@ spec:
                           description: Remove specifies a list of HTTP header names
                             to remove.
                           items:
+                            maxLength: 16384
                             type: string
                           type: array
                         set:
@@ -7660,6 +7709,7 @@ spec:
                             properties:
                               name:
                                 description: Name represents a key of a header
+                                maxLength: 16384
                                 minLength: 1
                                 type: string
                               value:
@@ -7692,7 +7742,7 @@ spec:
                             original on the request. The path must start with a
                             leading slash.
                             Note: Only one of Path or Prefix can be defined.
-                          pattern: ^\/.*$
+                          pattern: ^\/[^\x00\r\n]*$
                           type: string
                         port:
                           description: |-
@@ -7708,7 +7758,7 @@ spec:
                             Prefix defines the value to swap the matched prefix or path with.
                             The prefix must start with a leading slash.
                             Note: Only one of Path or Prefix can be defined.
-                          pattern: ^\/.*$
+                          pattern: ^\/[^\x00\r\n]*$
                           type: string
                         scheme:
                           description: |-
@@ -7741,6 +7791,7 @@ spec:
                           description: Remove specifies a list of HTTP header names
                             to remove.
                           items:
+                            maxLength: 16384
                             type: string
                           type: array
                         set:
@@ -7753,6 +7804,7 @@ spec:
                             properties:
                               name:
                                 description: Name represents a key of a header
+                                maxLength: 16384
                                 minLength: 1
                                 type: string
                               value:
@@ -7791,6 +7843,7 @@ spec:
                             This field is only respected when you include `retriable-status-codes` in the `RetryOn` field.
                           items:
                             format: int32
+                            minimum: 0
                             type: integer
                           type: array
                         retryOn:
@@ -7950,6 +8003,7 @@ spec:
                                 description: Remove specifies a list of HTTP header
                                   names to remove.
                                 items:
+                                  maxLength: 16384
                                   type: string
                                 type: array
                               set:
@@ -7962,6 +8016,7 @@ spec:
                                   properties:
                                     name:
                                       description: Name represents a key of a header
+                                      maxLength: 16384
                                       minLength: 1
                                       type: string
                                     value:
@@ -7984,6 +8039,7 @@ spec:
                                 description: Remove specifies a list of HTTP header
                                   names to remove.
                                 items:
+                                  maxLength: 16384
                                   type: string
                                 type: array
                               set:
@@ -7996,6 +8052,7 @@ spec:
                                   properties:
                                     name:
                                       description: Name represents a key of a header
+                                      maxLength: 16384
                                       minLength: 1
                                       type: string
                                     value:
@@ -8063,12 +8120,14 @@ spec:
                                   Deprecated: migrate to using the plural field subjectNames.
                                 maxLength: 250
                                 minLength: 1
+                                pattern: ^[^\x00\r\n]*$
                                 type: string
                               subjectNames:
                                 description: |-
                                   List of keys, of which at least one is expected to be present in the 'subjectAltName of the
                                   presented certificate.
                                 items:
+                                  pattern: ^[^\x00\r\n]*$
                                   type: string
                                 maxItems: 8
                                 minItems: 1
@@ -8085,6 +8144,7 @@ spec:
                             description: Weight defines percentage of traffic to balance
                               traffic
                             format: int64
+                            maximum: 4294967295
                             minimum: 0
                             type: integer
                         required:
@@ -8128,20 +8188,26 @@ spec:
                         description: The number of healthy health checks required
                           before a host is marked healthy
                         format: int32
+                        minimum: 0
                         type: integer
                       intervalSeconds:
                         description: The interval (seconds) between health checks
                         format: int64
+                        maximum: 9223372035
+                        minimum: 0
                         type: integer
                       timeoutSeconds:
                         description: The time to wait (seconds) for a health check
                           response
                         format: int64
+                        maximum: 9223372035
+                        minimum: 0
                         type: integer
                       unhealthyThresholdCount:
                         description: The number of unhealthy health checks required
                           before a host is marked unhealthy
                         format: int32
+                        minimum: 0
                         type: integer
                     type: object
                   include:
@@ -8362,6 +8428,7 @@ spec:
                               description: Remove specifies a list of HTTP header
                                 names to remove.
                               items:
+                                maxLength: 16384
                                 type: string
                               type: array
                             set:
@@ -8374,6 +8441,7 @@ spec:
                                 properties:
                                   name:
                                     description: Name represents a key of a header
+                                    maxLength: 16384
                                     minLength: 1
                                     type: string
                                   value:
@@ -8396,6 +8464,7 @@ spec:
                               description: Remove specifies a list of HTTP header
                                 names to remove.
                               items:
+                                maxLength: 16384
                                 type: string
                               type: array
                             set:
@@ -8408,6 +8477,7 @@ spec:
                                 properties:
                                   name:
                                     description: Name represents a key of a header
+                                    maxLength: 16384
                                     minLength: 1
                                     type: string
                                   value:
@@ -8475,12 +8545,14 @@ spec:
                                 Deprecated: migrate to using the plural field subjectNames.
                               maxLength: 250
                               minLength: 1
+                              pattern: ^[^\x00\r\n]*$
                               type: string
                             subjectNames:
                               description: |-
                                 List of keys, of which at least one is expected to be present in the 'subjectAltName of the
                                 presented certificate.
                               items:
+                                pattern: ^[^\x00\r\n]*$
                                 type: string
                               maxItems: 8
                               minItems: 1
@@ -8497,6 +8569,7 @@ spec:
                           description: Weight defines percentage of traffic to balance
                             traffic
                           format: int64
+                          maximum: 4294967295
                           minimum: 0
                           type: integer
                       required:
@@ -8664,6 +8737,10 @@ spec:
                           The string "infinity" is also a valid input and specifies no timeout.
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                         type: string
+                        x-kubernetes-validations:
+                        - message: must be less than 4294967296s
+                          rule: self == 'infinity' || self == 'infinite' || duration(self)
+                            < duration('4294967296s')
                       serviceType:
                         default: grpc
                         description: |-
@@ -8733,6 +8810,7 @@ spec:
                           Note that regex patterns are validated and a simple "glob" pattern (e.g. *.foo.com)
                           will be rejected or produce unexpected matches when applied as a regex.
                         items:
+                          minLength: 1
                           type: string
                         minItems: 1
                         type: array
@@ -8896,6 +8974,10 @@ spec:
                                 Envoy's default of 5m applies.
                               pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
                               type: string
+                              x-kubernetes-validations:
+                              - message: must be at least 1ms and less than 9000000000s
+                                rule: duration(self) >= duration('1ms') && duration(self)
+                                  < duration('9000000000s')
                             dnsLookupFamily:
                               description: |-
                                 The DNS IP address resolution policy for the JWKS URI.
@@ -8921,9 +9003,13 @@ spec:
                                 If not specified, a default of 1s applies.
                               pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$
                               type: string
+                              x-kubernetes-validations:
+                              - message: must be less than 4294967296s
+                                rule: duration(self) < duration('4294967296s')
                             uri:
                               description: The URI for the JWKS.
                               minLength: 1
+                              pattern: ^[A-Za-z][A-Za-z0-9+.-]*://([A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])(:[0-9]+)?([/?#][!-~]*)?$
                               type: string
                             validation:
                               description: UpstreamValidation defines how to verify
@@ -8945,12 +9031,14 @@ spec:
                                     Deprecated: migrate to using the plural field subjectNames.
                                   maxLength: 250
                                   minLength: 1
+                                  pattern: ^[^\x00\r\n]*$
                                   type: string
                                 subjectNames:
                                   description: |-
                                     List of keys, of which at least one is expected to be present in the 'subjectAltName of the
                                     presented certificate.
                                   items:
+                                    pattern: ^[^\x00\r\n]*$
                                     type: string
                                   maxItems: 8
                                   minItems: 1
@@ -9038,6 +9126,7 @@ spec:
                                             description: HeaderName defines the name
                                               of the header to look for on the request.
                                             minLength: 1
+                                            pattern: ^[^\x00\r\n]*$
                                             type: string
                                         required:
                                         - descriptorKey
@@ -9090,6 +9179,7 @@ spec:
                                                     Name is the name of the header to match against. Name is required.
                                                     Header names are case insensitive.
                                                   minLength: 1
+                                                  pattern: ^[^\x00\r\n]*$
                                                   type: string
                                                 notcontains:
                                                   description: |-
@@ -9164,6 +9254,7 @@ spec:
                               Burst defines the number of requests above the requests per
                               unit that should be allowed within a short period of time.
                             format: int32
+                            minimum: 0
                             type: integer
                           requests:
                             description: |-
@@ -9182,6 +9273,7 @@ spec:
                               properties:
                                 name:
                                   description: Name represents a key of a header
+                                  maxLength: 16384
                                   minLength: 1
                                   type: string
                                 value:

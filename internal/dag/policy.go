@@ -74,9 +74,9 @@ func retryOn(ron []contour_v1.RetryOn) string {
 	return strings.Join(ss, ",")
 }
 
-func retryPolicy(rp *contour_v1.RetryPolicy) *RetryPolicy {
+func retryPolicy(rp *contour_v1.RetryPolicy) (*RetryPolicy, error) {
 	if rp == nil {
-		return nil
+		return nil, nil
 	}
 
 	// If PerTryTimeout is not a valid duration string, use the Envoy default
@@ -86,6 +86,10 @@ func retryPolicy(rp *contour_v1.RetryPolicy) *RetryPolicy {
 	// in a disabled per-try timeout if the input was not a valid duration.
 	perTryTimeout := timeout.DefaultSetting()
 	if perTryDuration, err := time.ParseDuration(rp.PerTryTimeout); err == nil {
+		// timeout.Parse rejects durations that Envoy does not accept.
+		if _, err := timeout.Parse(rp.PerTryTimeout); err != nil {
+			return nil, err
+		}
 		perTryTimeout = timeout.DurationSetting(perTryDuration)
 	}
 
@@ -106,7 +110,7 @@ func retryPolicy(rp *contour_v1.RetryPolicy) *RetryPolicy {
 		RetriableStatusCodes: rp.RetriableStatusCodes,
 		NumRetries:           uint32(numRetries), //nolint:gosec // disable G115
 		PerTryTimeout:        perTryTimeout,
-	}
+	}, nil
 }
 
 func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_v1.HeadersPolicy, allowHostRewrite bool, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
@@ -151,7 +155,11 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_v1.Heade
 			if err := validateHeaderValue(v); err != nil {
 				return nil, fmt.Errorf("invalid set header %q: %v", key, err)
 			}
-			userPolicy.Set[key] = escapeHeaderValue(v, dynamicHeaders)
+			value := escapeHeaderValue(v, dynamicHeaders)
+			if err := validateHeaderValueLength(value); err != nil {
+				return nil, fmt.Errorf("invalid set header %q: %v", key, err)
+			}
+			userPolicy.Set[key] = value
 		}
 	}
 	// add any default remove header policy if not already set
@@ -202,7 +210,11 @@ func headersPolicyRoute(policy *contour_v1.HeadersPolicy, allowHostRewrite bool,
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
-		set[key] = escapeHeaderValue(entry.Value, dynamicHeaders)
+		value := escapeHeaderValue(entry.Value, dynamicHeaders)
+		if err := validateHeaderValueLength(value); err != nil {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, err)
+		}
+		set[key] = value
 	}
 
 	remove := sets.NewString()
@@ -250,6 +262,18 @@ func extractHostRewriteHeaderValue(s string) string {
 func validateHeaderValue(value string) error {
 	if strings.ContainsAny(value, "\x00\r\n") {
 		return errors.New("value must not contain NUL, CR or LF characters")
+	}
+	return nil
+}
+
+// maxHeaderValueLength is the maximum length of a header value that Envoy accepts in route configuration.
+// https://github.com/envoyproxy/envoy/blob/v1.40.2/api/envoy/config/core/v3/base.proto#L425
+const maxHeaderValueLength = 16384
+
+// validateHeaderValueLength returns an error if the header value is longer than Envoy accepts after escaping.
+func validateHeaderValueLength(value string) error {
+	if len(value) > maxHeaderValueLength {
+		return fmt.Errorf("value must not be longer than %d bytes", maxHeaderValueLength)
 	}
 	return nil
 }
@@ -650,7 +674,11 @@ func localRateLimitPolicy(in *contour_v1.LocalRateLimitPolicy) (*LocalRateLimitP
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
 		}
-		res.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value, map[string]string{})
+		value := escapeHeaderValue(header.Value, map[string]string{})
+		if err := validateHeaderValueLength(value); err != nil {
+			return nil, fmt.Errorf("invalid header value %q: %v", key, err)
+		}
+		res.ResponseHeadersToAdd[key] = value
 	}
 
 	return res, nil
@@ -695,9 +723,21 @@ func globalRateLimitPolicy(in *contour_v1.GlobalRateLimitPolicy) (*GlobalRateLim
 			if entry.RequestHeaderValueMatch != nil {
 				set++
 
+				headers := headerMatchConditions(entry.RequestHeaderValueMatch.Headers)
+				if len(headers) == 0 {
+					return nil, errors.New("rate limit descriptor entry request header value match must have at least one header match condition")
+				}
+				for _, h := range headers {
+					if h.MatchType == HeaderMatchTypeRegex {
+						if err := ValidateRegex(h.Value); err != nil {
+							return nil, fmt.Errorf("rate limit descriptor entry header %q has invalid regular expression %q", h.Name, h.Value)
+						}
+					}
+				}
+
 				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
 					HeaderValueMatch: &HeaderValueMatchDescriptorEntry{
-						Headers:     headerMatchConditions(entry.RequestHeaderValueMatch.Headers),
+						Headers:     headers,
 						ExpectMatch: entry.RequestHeaderValueMatch.ExpectMatch,
 						Value:       entry.RequestHeaderValueMatch.Value,
 					},

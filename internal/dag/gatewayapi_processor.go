@@ -1336,6 +1336,16 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 						continue
 					}
 
+					if strings.ContainsAny(prefixRewrite+fullPathRewrite, "\x00\r\n") {
+						routeAccessor.AddCondition(
+							gatewayapi_v1.RouteConditionAccepted,
+							meta_v1.ConditionFalse,
+							gatewayapi_v1.RouteReasonUnsupportedValue,
+							"HTTPRoute.Spec.Rules.Filters.RequestRedirect.Path: path must not contain NUL, CR or LF characters.",
+						)
+						continue
+					}
+
 					pathRewritePolicy = &PathRewritePolicy{
 						PrefixRewrite:   prefixRewrite,
 						FullPathRewrite: fullPathRewrite,
@@ -1399,6 +1409,16 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 						meta_v1.ConditionFalse,
 						gatewayapi_v1.RouteReasonUnsupportedValue,
 						fmt.Sprintf("HTTPRoute.Spec.Rules.Filters.URLRewrite.Path.Type: invalid type %q: only ReplacePrefixMatch and ReplaceFullPath are supported.", filter.URLRewrite.Path.Type),
+					)
+					continue
+				}
+
+				if strings.ContainsAny(prefixRewrite+fullPathRewrite, "\x00\r\n") {
+					routeAccessor.AddCondition(
+						gatewayapi_v1.RouteConditionAccepted,
+						meta_v1.ConditionFalse,
+						gatewayapi_v1.RouteReasonUnsupportedValue,
+						"HTTPRoute.Spec.Rules.Filters.URLRewrite.Path: path must not contain NUL, CR or LF characters.",
 					)
 					continue
 				}

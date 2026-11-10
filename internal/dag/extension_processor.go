@@ -85,6 +85,11 @@ func ExtensionClusterName(meta types.NamespacedName) string {
 	return strings.Join([]string{"extension", meta.Namespace, meta.Name}, "/")
 }
 
+// maxHTTPURITimeout is the limit for the response timeout of an HTTP
+// authorization server. Envoy rejects timeouts equal to or above it.
+// https://github.com/envoyproxy/envoy/blob/v1.40.2/api/envoy/config/core/v3/http_uri.proto#L53-L57
+const maxHTTPURITimeout = 4294967296 * time.Second
+
 // buildExtensionService builds one ExtensionCluster record based
 // on the corresponding CRD.
 func (p *ExtensionServiceProcessor) buildExtensionService(
@@ -96,6 +101,9 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	if err != nil {
 		validCondition.AddErrorf(contour_v1.ConditionTypeSpecError, "TimeoutPolicyNotValid",
 			"spec.timeoutPolicy failed to parse: %s", err)
+	} else if rtp.ResponseTimeout.Duration() >= maxHTTPURITimeout {
+		validCondition.AddErrorf(contour_v1.ConditionTypeSpecError, "TimeoutPolicyNotValid",
+			"spec.timeoutPolicy.response is invalid: must be less than %s", maxHTTPURITimeout)
 	}
 
 	var clientCertSecret *Secret

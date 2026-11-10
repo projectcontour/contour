@@ -64,6 +64,15 @@ func TestParse(t *testing.T) {
 			duration: "-0s",
 			want:     DefaultSetting(),
 		},
+		"maximum": {
+			duration: "9223372035.999999999s",
+			want:     DurationSetting(9223372035*time.Second + 999999999),
+		},
+		"too large": {
+			duration: "9223372036s",
+			want:     DefaultSetting(),
+			wantErr:  true,
+		},
 	}
 
 	for name, tc := range tests {

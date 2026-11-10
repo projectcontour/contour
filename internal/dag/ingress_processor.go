@@ -195,6 +195,15 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		path := stringOrDefault(httppath.Path, "/")
 		// Default to implementation specific path matching if not set.
 		pathType := ptr.Deref(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
+		// Prefix paths are sent to Envoy as path_separated_prefix, which must not contain '?' or '#'.
+		// https://github.com/envoyproxy/envoy/blob/v1.40.2/api/envoy/config/route/v3/route_components.proto#L711
+		if pathType == networking_v1.PathTypePrefix && strings.ContainsAny(path, "?#") {
+			p.WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("path", path).
+				Error("prefix path must not contain '?' or '#' characters")
+			continue
+		}
 		be := httppath.Backend
 		if be.Service == nil {
 			// The Ingress API also allows a backend to reference an
