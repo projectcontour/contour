@@ -1188,6 +1188,17 @@ type HTTPHealthCheckPolicy struct {
 	// is considered healthy.
 	// +optional
 	ExpectedStatuses []HTTPStatusRange `json:"expectedStatuses,omitempty"`
+	// The healthy panic threshold (percentage) for the upstream cluster.
+	// When the percentage of healthy hosts in the cluster drops below this
+	// value, Envoy enters panic mode and balances traffic across all hosts,
+	// including the ones that failed health checks.
+	// Must be within the range [0,100]. If not specified or set to 0,
+	// panic mode is disabled and Envoy only forwards traffic to healthy hosts,
+	// returning a 503 response when none are available.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	PanicThreshold uint32 `json:"panicThreshold,omitempty"`
 }
 
 type HTTPStatusRange struct {
@@ -1215,6 +1226,17 @@ type TCPHealthCheckPolicy struct {
 	// The number of healthy health checks required before a host is marked healthy
 	// +optional
 	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
+	// The healthy panic threshold (percentage) for the upstream cluster.
+	// When the percentage of healthy hosts in the cluster drops below this
+	// value, Envoy enters panic mode and balances traffic across all hosts,
+	// including the ones that failed health checks.
+	// Must be within the range [0,100]. If not specified or set to 0,
+	// panic mode is disabled and Envoy only forwards connections to healthy
+	// hosts, closing new connections when none are available.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	PanicThreshold uint32 `json:"panicThreshold,omitempty"`
 }
 
 // TimeoutPolicy configures timeouts that are used for handling network requests.

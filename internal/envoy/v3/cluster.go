@@ -80,6 +80,12 @@ func (e *EnvoyGen) Cluster(c *dag.Cluster) *envoy_config_cluster_v3.Cluster {
 		cluster.IgnoreHealthOnHostRemoval = true
 	}
 
+	if threshold := healthyPanicThreshold(c); threshold > 0 {
+		cluster.CommonLbConfig.HealthyPanicThreshold = &envoy_type_v3.Percent{
+			Value: float64(threshold),
+		}
+	}
+
 	applyCircuitBreakers(cluster, service.CircuitBreakers)
 
 	httpVersion := HTTPVersionAuto
@@ -276,6 +282,19 @@ func edshealthcheck(c *dag.Cluster) []*envoy_config_core_v3.HealthCheck {
 
 	return []*envoy_config_core_v3.HealthCheck{
 		tcpHealthCheck(c),
+	}
+}
+
+// healthyPanicThreshold returns the healthy panic threshold percentage
+// configured in the health check policy of the cluster, or 0 if not set.
+func healthyPanicThreshold(c *dag.Cluster) uint32 {
+	switch {
+	case c.HTTPHealthCheckPolicy != nil:
+		return c.HTTPHealthCheckPolicy.PanicThreshold
+	case c.TCPHealthCheckPolicy != nil:
+		return c.TCPHealthCheckPolicy.PanicThreshold
+	default:
+		return 0
 	}
 }
 

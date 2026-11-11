@@ -525,6 +525,10 @@ func httpHealthCheckPolicy(hc *contour_v1.HTTPHealthCheckPolicy) (*HTTPHealthChe
 		})
 	}
 
+	if hc.PanicThreshold > 100 {
+		return nil, errors.New("invalid panic threshold: must be in the range [0, 100]")
+	}
+
 	return &HTTPHealthCheckPolicy{
 		Path:               hc.Path,
 		Host:               hc.Host,
@@ -533,19 +537,26 @@ func httpHealthCheckPolicy(hc *contour_v1.HTTPHealthCheckPolicy) (*HTTPHealthChe
 		UnhealthyThreshold: uint32(hc.UnhealthyThresholdCount), //nolint:gosec // disable G115
 		HealthyThreshold:   uint32(hc.HealthyThresholdCount),   //nolint:gosec // disable G115
 		ExpectedStatuses:   expectedStatuses,
+		PanicThreshold:     hc.PanicThreshold,
 	}, nil
 }
 
-func tcpHealthCheckPolicy(hc *contour_v1.TCPHealthCheckPolicy) *TCPHealthCheckPolicy {
+func tcpHealthCheckPolicy(hc *contour_v1.TCPHealthCheckPolicy) (*TCPHealthCheckPolicy, error) {
 	if hc == nil {
-		return nil
+		return nil, nil
 	}
+
+	if hc.PanicThreshold > 100 {
+		return nil, errors.New("invalid panic threshold: must be in the range [0, 100]")
+	}
+
 	return &TCPHealthCheckPolicy{
 		Interval:           time.Duration(hc.IntervalSeconds) * time.Second,
 		Timeout:            time.Duration(hc.TimeoutSeconds) * time.Second,
 		UnhealthyThreshold: hc.UnhealthyThresholdCount,
 		HealthyThreshold:   hc.HealthyThresholdCount,
-	}
+		PanicThreshold:     hc.PanicThreshold,
+	}, nil
 }
 
 // loadBalancerPolicy returns the load balancer strategy or
