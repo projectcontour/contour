@@ -340,6 +340,23 @@ func (s *StatusResult) HasError(condType, reason, message string) *Contour {
 	return s.Contour
 }
 
+// HasWarning asserts that the proxy is valid and there is a warning on the
+// Valid Condition that matches the given values.
+func (s *StatusResult) HasWarning(condType, reason, message string) *Contour {
+	assert.Equal(s.T, string(status.ProxyStatusValid), s.Have.CurrentStatus)
+	validCond := s.Have.GetConditionFor(contour_v1.ValidConditionType)
+	assert.NotNil(s.T, validCond)
+
+	subCond, ok := validCond.GetWarning(condType)
+	if !ok {
+		s.Fatalf("Did not find warning %s", condType)
+	}
+	assert.Equal(s.T, reason, subCond.Reason)
+	assert.Equal(s.T, message, subCond.Message)
+
+	return s.Contour
+}
+
 // IsValid asserts that the proxy's CurrentStatus field is equal to "valid".
 func (s *StatusResult) IsValid() *Contour {
 	s.Helper()
