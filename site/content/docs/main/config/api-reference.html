@@ -2494,6 +2494,56 @@ on includes.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.JWTClaimToHeader">JWTClaimToHeader
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.JWTProvider">JWTProvider</a>)
+</p>
+<p>
+<p>JWTClaimToHeader defines a JWT claim to copy to a request header.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="white-space:nowrap">
+<code>headerName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>HeaderName is the name of the request header to copy
+the claim value to.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>claimName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ClaimName is the name of the claim to copy. Nested claims
+can be referenced by separating the claim names with &ldquo;.&rdquo;,
+for example &ldquo;nested.claim.key&rdquo;. Claims of type string,
+number or boolean are copied as is. Claims of type object
+or array are serialized to JSON and copied base64-encoded.
+If the claim is not present in the JWT, the header is
+not set.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.JWTProvider">JWTProvider
 </h3>
 <p>
@@ -2612,6 +2662,24 @@ bool
 <p>Whether the JWT should be forwarded to the backend
 service after successful verification. By default,
 the JWT is not forwarded.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>claimToHeaders</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.JWTClaimToHeader">
+[]JWTClaimToHeader
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ClaimToHeaders defines JWT claims that should be copied
+to request headers after successful verification, so
+that the backend service can consume the claims without
+decoding the JWT itself.</p>
 </td>
 </tr>
 </tbody>

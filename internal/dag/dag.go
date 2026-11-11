@@ -843,12 +843,20 @@ type SecureVirtualHost struct {
 }
 
 type JWTProvider struct {
-	Name       string
-	Issuer     string
-	Audiences  []string
-	RemoteJWKS *RemoteJWKS
-	LocalJWKS  *LocalJWKS
-	ForwardJWT bool
+	Name           string
+	Issuer         string
+	Audiences      []string
+	RemoteJWKS     *RemoteJWKS
+	LocalJWKS      *LocalJWKS
+	ForwardJWT     bool
+	ClaimToHeaders []JWTClaimToHeader
+}
+
+// JWTClaimToHeader defines a JWT claim to copy to a request header
+// after successful verification.
+type JWTClaimToHeader struct {
+	HeaderName string
+	ClaimName  string
 }
 
 type RemoteJWKS struct {

@@ -8844,6 +8844,38 @@ spec:
                           items:
                             type: string
                           type: array
+                        claimToHeaders:
+                          description: |-
+                            ClaimToHeaders defines JWT claims that should be copied
+                            to request headers after successful verification, so
+                            that the backend service can consume the claims without
+                            decoding the JWT itself.
+                          items:
+                            description: JWTClaimToHeader defines a JWT claim to copy
+                              to a request header.
+                            properties:
+                              claimName:
+                                description: |-
+                                  ClaimName is the name of the claim to copy. Nested claims
+                                  can be referenced by separating the claim names with ".",
+                                  for example "nested.claim.key". Claims of type string,
+                                  number or boolean are copied as is. Claims of type object
+                                  or array are serialized to JSON and copied base64-encoded.
+                                  If the claim is not present in the JWT, the header is
+                                  not set.
+                                minLength: 1
+                                type: string
+                              headerName:
+                                description: |-
+                                  HeaderName is the name of the request header to copy
+                                  the claim value to.
+                                minLength: 1
+                                type: string
+                            required:
+                            - claimName
+                            - headerName
+                            type: object
+                          type: array
                         default:
                           description: |-
                             Whether the provider should apply to all
