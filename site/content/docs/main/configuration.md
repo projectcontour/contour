@@ -81,7 +81,9 @@ Where Contour settings can also be specified with command-line flags, the comman
 | default-http-versions     | string array           | <code style="white-space:nowrap">HTTP/1.1</code> <br> <code style="white-space:nowrap">HTTP/2</code> | This array specifies the HTTP versions that Contour should program Envoy to serve. HTTP versions are specified as strings of the form "HTTP/x", where "x" represents the version number.                                                                                              |
 | disableAllowChunkedLength | boolean                | `false`                                                                                              | If this field is true, Contour will disable the RFC-compliant Envoy behavior to strip the `Content-Length` header if `Transfer-Encoding: chunked` is also set. This is an emergency off-switch to revert back to Envoy's default behavior in case of failures.
 | compression               | CompressionParameters  |                                                                                                      | The [compression configuration](#compression-parameters).                                                                                                                                                                                                                             |
-| disableMergeSlashes       | boolean                | `false`                                                                                              | This field disables Envoy's non-standard merge_slashes path transformation behavior that strips duplicate slashes from request URL paths.
+| disableMergeSlashes       | boolean                | `false`                                                                                              | This field disables Envoy's non-standard merge_slashes path transformation behavior that strips duplicate slashes from request URL paths. See [path transformation](#path-transformation).
+| disableNormalizePath      | boolean                | `false`                                                                                              | This field disables Envoy's normalize_path behavior that normalizes request URL paths according to RFC 3986. See [path transformation](#path-transformation).
+| pathWithEscapedSlashesAction | string              | `keep_unchanged`                                                                                     | This field defines how Envoy handles request paths containing escaped slash sequences (`%2F`, `%2f`, `%5C` and `%5c`). Values: `keep_unchanged` (default), `reject_request`, `unescape_and_redirect`, `unescape_and_forward`. See [path transformation](#path-transformation).
 | serverHeaderTransformation       | string                | `overwrite`                                                                                              | This field defines the action to be applied to the Server header on the response path. Values: `overwrite` (default), `append_if_absent`, `pass_through`
 | disablePermitInsecure     | boolean                | `false`                                                                                              | If this field is true, Contour will ignore `PermitInsecure` field in HTTPProxy documents.                                                                                                                                                                                             |
 | envoy-service-name        | string                 | `envoy`                                                                                              | This sets the service name that will be inspected for address details to be applied to Ingress objects.                                                                                                                                                                               |
@@ -215,6 +217,46 @@ The listener configuration block can be used to configure various parameters for
 | proxy-protocol-settings           | ProxyProtocolSettings | | The [PROXY protocol settings](#proxy-protocol-settings), for example to derive `X-Forwarded-Proto` from the PROXY protocol destination port when a load balancer in front of Envoy terminates TLS. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
+
+### Path Transformation
+
+Before Envoy matches a request against any route, it applies up to three path transformations, always in this order:
+
+1. `pathWithEscapedSlashesAction` — decides what to do with escaped slash sequences (`%2F`, `%2f`, `%5C`, `%5c`).
+2. `disableNormalizePath` — controls RFC 3986 normalization, which resolves `.` and `..` segments.
+3. `disableMergeSlashes` — controls collapsing of consecutive slashes.
+
+Route match conditions, and any external authorization policy, therefore see the **transformed** path, not the path the client sent.
+
+Contour's defaults normalize paths and merge slashes, but leave escaped slashes unchanged:
+
+```yaml
+disableMergeSlashes: false
+disableNormalizePath: false
+pathWithEscapedSlashesAction: keep_unchanged
+```
+
+An example with all three at their defaults: a request for `//foo/../bar` is first left unchanged (no escaped slashes), then normalized to `//bar`, then merged to `/bar`. A route with the prefix condition `/bar` matches it.
+
+#### Security implications
+
+{{< notice warning >}}
+Loosening any of these transformations means route match conditions and authorization policies are evaluated against a less-normalized path. An attacker can then craft a path that reaches a backend without matching the route or policy that was meant to guard it.
+{{< /notice >}}
+
+These examples use two routes that send requests to the same backend. The `/admin` route requires authorization, but the `/public` route does not:
+
+- With `disableNormalizePath: true`, a request for `/public/../admin` does **not** match a route or authorization policy scoped to the `/admin` prefix, but the raw path is still forwarded upstream. A backend that resolves the dot segments itself then serves `/admin` with the guard bypassed.
+- With `pathWithEscapedSlashesAction: keep_unchanged` (the default), a request for `/public%2F..%2Fadmin` does not match an `/admin` prefix route. Backends that decode `%2F` as a path separator will nonetheless treat it as `/public/../admin`.
+
+If you rely on prefix-based routing or external authorization for access control:
+
+- Leave `disableNormalizePath` at `false`. Only set it to `true` if the backend requires paths that Envoy would otherwise normalize to remain unchanged, for example, paths containing `.` or `..` segments. If you set it to `true`, do not rely on path prefixes such as `/admin` for access control if the backend interprets those paths differently.
+- Prefer `pathWithEscapedSlashesAction: reject_request`, which returns a 400, or `unescape_and_redirect`, which redirects the client to the normalized path. Avoid `unescape_and_forward` unless upstream servers treat escaped and unescaped slashes equivalently. It may increase the risk of path confusion if intermediaries perform path-based access control.
+
+`disableNormalizePath` and `pathWithEscapedSlashesAction` are global listener settings. There is no per-HTTPProxy or per-HTTPRoute equivalent, because these transformations run before Contour's routing rules are consulted.
+
+The stats, health, and admin listeners always normalize paths, regardless of `disableNormalizePath`.
 
 ### Gateway Configuration
 
