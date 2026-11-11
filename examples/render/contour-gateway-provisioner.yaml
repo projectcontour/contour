@@ -6917,6 +6917,19 @@ spec:
                           description: The interval (seconds) between health checks
                           format: int64
                           type: integer
+                        panicThreshold:
+                          description: |-
+                            The healthy panic threshold (percentage) for the upstream cluster.
+                            When the percentage of healthy hosts in the cluster drops below this
+                            value, Envoy enters panic mode and balances traffic across all hosts,
+                            including the ones that failed health checks.
+                            Must be within the range [0,100]. If not specified or set to 0,
+                            panic mode is disabled and Envoy only forwards traffic to healthy hosts,
+                            returning a 503 response when none are available.
+                          format: int32
+                          maximum: 100
+                          minimum: 0
+                          type: integer
                         path:
                           description: HTTP endpoint used to perform health checks
                             on upstream service
@@ -7917,6 +7930,19 @@ spec:
                       intervalSeconds:
                         description: The interval (seconds) between health checks
                         format: int64
+                        type: integer
+                      panicThreshold:
+                        description: |-
+                          The healthy panic threshold (percentage) for the upstream cluster.
+                          When the percentage of healthy hosts in the cluster drops below this
+                          value, Envoy enters panic mode and balances traffic across all hosts,
+                          including the ones that failed health checks.
+                          Must be within the range [0,100]. If not specified or set to 0,
+                          panic mode is disabled and Envoy only forwards connections to healthy
+                          hosts, closing new connections when none are available.
+                        format: int32
+                        maximum: 100
+                        minimum: 0
                         type: integer
                       timeoutSeconds:
                         description: The time to wait (seconds) for a health check

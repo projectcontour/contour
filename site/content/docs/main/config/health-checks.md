@@ -45,6 +45,7 @@ Health check configuration parameters:
 - `unhealthyThresholdCount`: The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.
 - `healthyThresholdCount`: The number of healthy health checks required before a host is marked healthy. Note that during startup, only a single successful health check is required to mark a host healthy.
 - `expectedStatuses`: An optional list of HTTP status ranges that are considered healthy. Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. Statuses must be between 100 (inclusive) and 600 (exclusive).
+- `panicThreshold`: The healthy panic threshold, as a percentage between 0 and 100. When the percentage of healthy hosts drops below this value, Envoy ignores health check results and balances traffic across all hosts. Defaults to 0, which disables panic mode. See [Panic threshold](#panic-threshold) below.
 
 ### Non-default expected statuses
 
@@ -87,6 +88,41 @@ spec:
 
 Note that if `expectedStatuses` is specified, `200` must be explicitly included in one of the specified ranges if it is desired as a healthy status code.
 
+### Panic threshold
+
+By default, Contour disables Envoy's [panic mode][1].
+If health checks mark every upstream host as unhealthy, Envoy stops forwarding traffic to them and responds with a 503.
+
+Setting `panicThreshold` to a value between 1 and 100 enables panic mode.
+When the percentage of healthy hosts drops below the threshold, Envoy ignores the health check results and balances traffic across all hosts, including the ones that failed their health checks.
+This can be useful when hosts may fail their health checks while still being able to serve traffic, and sending requests to them is preferable to returning errors to clients.
+For example:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: health-check
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: health.bar.com
+  routes:
+  - conditions:
+    - prefix: /
+    healthCheckPolicy:
+      path: /healthy
+      # Balance traffic across all hosts if less than 50% of them are healthy.
+      panicThreshold: 50
+    services:
+      - name: s1-health
+        port: 80
+      - name: s2-health
+        port: 80
+```
+
+With a threshold of 50, if only one of four hosts passes its health check (25% healthy), Envoy balances traffic across all four hosts.
+
 ## TCP Proxy Health Checking
 
 Contour also supports TCP health checking and can be configured with various settings to tune the behavior.
@@ -123,6 +159,7 @@ TCP Health check policy configuration parameters:
 - `timeoutSeconds`: The time to wait (seconds) for a health check response. If the timeout is reached the health check attempt will be considered a failure. Defaults to 2 seconds if not set.
 - `unhealthyThresholdCount`: The number of unhealthy health checks required before a host is marked unhealthy. Note that for http health checking if a host responds with 503 this threshold is ignored and the host is considered unhealthy immediately. Defaults to 3 if not defined.
 - `healthyThresholdCount`: The number of healthy health checks required before a host is marked healthy. Note that during startup, only a single successful health check is required to mark a host healthy.
+- `panicThreshold`: The healthy panic threshold, as a percentage between 0 and 100. When the percentage of healthy hosts drops below this value, Envoy ignores health check results and balances connections across all hosts. Defaults to 0, which disables panic mode. See [Panic threshold](#panic-threshold) above.
 
 ## Specify the service health check port
 
@@ -158,3 +195,5 @@ spec:
 ```
 
 In this example, envoy will send a health check request to port `8998` of the `s1-health` service and port `80` of the `s2-health` service respectively . If the host is healthy, envoy will forward traffic to the `s1-health` service on port `80` and to the `s2-health` service on port `80`.
+
+[1]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/panic_threshold

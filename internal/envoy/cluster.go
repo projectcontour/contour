@@ -45,6 +45,12 @@ func Clustername(cluster *dag.Cluster) string {
 			buf += strconv.Itoa(int(hc.HealthyThreshold))
 		}
 		buf += hc.Path
+		if hc.PanicThreshold > 0 {
+			buf += "panic" + strconv.Itoa(int(hc.PanicThreshold))
+		}
+	}
+	if hc := cluster.TCPHealthCheckPolicy; hc != nil && hc.PanicThreshold > 0 {
+		buf += "panic" + strconv.Itoa(int(hc.PanicThreshold))
 	}
 	if uv := cluster.UpstreamValidation; uv != nil {
 		if len(uv.CACertificates) > 0 {

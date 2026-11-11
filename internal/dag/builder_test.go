@@ -11107,6 +11107,101 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert httpproxy w/ healthcheck w/ panic threshold": {
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "example-com",
+						Namespace: "default",
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "example.com",
+						},
+						Routes: []contour_v1.Route{{
+							Conditions: []contour_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							HealthCheckPolicy: &contour_v1.HTTPHealthCheckPolicy{
+								Path:           "/healthz",
+								PanicThreshold: 50,
+							},
+							Services: []contour_v1.Service{{
+								Name: "kuard",
+								Port: 8080,
+							}},
+						}},
+					},
+				},
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 8080,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/", &Cluster{
+								Upstream: service(s1),
+								HTTPHealthCheckPolicy: &HTTPHealthCheckPolicy{
+									Path:           "/healthz",
+									PanicThreshold: 50,
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tcpproxy w/ healthcheck w/ panic threshold": {
+			objs: []any{
+				&contour_v1.HTTPProxy{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "kuard-tcp",
+						Namespace: s1.Namespace,
+					},
+					Spec: contour_v1.HTTPProxySpec{
+						VirtualHost: &contour_v1.VirtualHost{
+							Fqdn: "kuard.example.com",
+							TLS: &contour_v1.TLS{
+								Passthrough: true,
+							},
+						},
+						TCPProxy: &contour_v1.TCPProxy{
+							HealthCheckPolicy: &contour_v1.TCPHealthCheckPolicy{
+								PanicThreshold: 50,
+							},
+							Services: []contour_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+						},
+					},
+				},
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 8443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "kuard.example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: []*Cluster{{
+									Upstream: service(s1),
+									TCPHealthCheckPolicy: &TCPHealthCheckPolicy{
+										PanicThreshold: 50,
+									},
+								}},
+							},
+						},
+					),
+				},
+			),
+		},
 		"insert httpproxy with mirroring route": {
 			objs: []any{
 				proxy12, s1, s2,

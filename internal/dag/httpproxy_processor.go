@@ -1262,10 +1262,15 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_v1.Deta
 	}
 
 	if len(tcpproxy.Services) > 0 {
+		healthPolicy, err := tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy)
+		if err != nil {
+			validCond.AddError(contour_v1.ConditionTypeTCPProxyError, "HealthCheckPolicyInvalid", err.Error())
+			return false
+		}
+
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
 			var healthPort int
-			healthPolicy := tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy)
 			if healthPolicy != nil && service.HealthPort > 0 {
 				healthPort = service.HealthPort
 			} else {

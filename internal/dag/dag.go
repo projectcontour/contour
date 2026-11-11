@@ -1247,6 +1247,7 @@ type HTTPHealthCheckPolicy struct {
 	UnhealthyThreshold uint32
 	HealthyThreshold   uint32
 	ExpectedStatuses   []HTTPStatusRange
+	PanicThreshold     uint32
 }
 
 type HTTPStatusRange struct {
@@ -1260,6 +1261,7 @@ type TCPHealthCheckPolicy struct {
 	Timeout            time.Duration
 	UnhealthyThreshold uint32
 	HealthyThreshold   uint32
+	PanicThreshold     uint32
 }
 
 // ExtensionCluster generates an Envoy cluster (aka ClusterLoadAssignment)

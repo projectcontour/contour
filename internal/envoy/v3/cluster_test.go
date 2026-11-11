@@ -654,6 +654,74 @@ func TestCluster(t *testing.T) {
 				}},
 			},
 		},
+		"tcp service with healthcheck and panic threshold": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				TCPHealthCheckPolicy: &dag.TCPHealthCheckPolicy{
+					PanicThreshold: 50,
+				},
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/1060b87aca",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   edsConfig,
+					ServiceName: "default/kuard/http",
+				},
+				CommonLbConfig: &envoy_config_cluster_v3.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type_v3.Percent{
+						Value: 50,
+					},
+				},
+				IgnoreHealthOnHostRemoval: true,
+				HealthChecks: []*envoy_config_core_v3.HealthCheck{{
+					Timeout:            durationOrDefault(0, envoy.HCTimeout),
+					Interval:           durationOrDefault(0, envoy.HCInterval),
+					UnhealthyThreshold: protobuf.UInt32OrDefault(0, envoy.HCUnhealthyThreshold),
+					HealthyThreshold:   protobuf.UInt32OrDefault(0, envoy.HCHealthyThreshold),
+					HealthChecker: &envoy_config_core_v3.HealthCheck_TcpHealthCheck_{
+						TcpHealthCheck: &envoy_config_core_v3.HealthCheck_TcpHealthCheck{},
+					},
+				}},
+			},
+		},
+		"http service with healthcheck and panic threshold": {
+			cluster: &dag.Cluster{
+				Upstream: service(s1),
+				HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
+					Path:           "/healthz",
+					PanicThreshold: 100,
+				},
+			},
+			want: &envoy_config_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/fb0a657aae",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   edsConfig,
+					ServiceName: "default/kuard/http",
+				},
+				CommonLbConfig: &envoy_config_cluster_v3.Cluster_CommonLbConfig{
+					HealthyPanicThreshold: &envoy_type_v3.Percent{
+						Value: 100,
+					},
+				},
+				IgnoreHealthOnHostRemoval: true,
+				HealthChecks: []*envoy_config_core_v3.HealthCheck{{
+					Timeout:            durationOrDefault(0, envoy.HCTimeout),
+					Interval:           durationOrDefault(0, envoy.HCInterval),
+					UnhealthyThreshold: protobuf.UInt32OrDefault(0, envoy.HCUnhealthyThreshold),
+					HealthyThreshold:   protobuf.UInt32OrDefault(0, envoy.HCHealthyThreshold),
+					HealthChecker: &envoy_config_core_v3.HealthCheck_HttpHealthCheck_{
+						HttpHealthCheck: &envoy_config_core_v3.HealthCheck_HttpHealthCheck{
+							Path: "/healthz",
+							Host: envoy.HCHost,
+						},
+					},
+				}},
+			},
+		},
 		"use client certificate to authentication towards backend": {
 			cluster: &dag.Cluster{
 				Upstream:          service(s1, "tls"),
@@ -1159,6 +1227,56 @@ func TestClustername(t *testing.T) {
 			},
 		},
 		want: "default/backend/80/5c26077e1d",
+	})
+
+	run(t, "http healthcheck with panic threshold", testcase{
+		cluster: &dag.Cluster{
+			Upstream: &dag.Service{
+				Weighted: dag.WeightedService{
+					Weight:           1,
+					ServiceName:      "backend",
+					ServiceNamespace: "default",
+					ServicePort: core_v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+				},
+			},
+			LoadBalancerPolicy: "Random",
+			HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
+				Path:               "/healthz",
+				Interval:           5 * time.Second,
+				Timeout:            30 * time.Second,
+				UnhealthyThreshold: 3,
+				HealthyThreshold:   1,
+				PanicThreshold:     50,
+			},
+		},
+		want: "default/backend/80/29bd19fb7a",
+	})
+
+	run(t, "tcp healthcheck with panic threshold", testcase{
+		cluster: &dag.Cluster{
+			Upstream: &dag.Service{
+				Weighted: dag.WeightedService{
+					Weight:           1,
+					ServiceName:      "backend",
+					ServiceNamespace: "default",
+					ServicePort: core_v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+				},
+			},
+			TCPHealthCheckPolicy: &dag.TCPHealthCheckPolicy{
+				PanicThreshold: 50,
+			},
+		},
+		want: "default/backend/80/1060b87aca",
 	})
 
 	cluster1 := &dag.Cluster{
