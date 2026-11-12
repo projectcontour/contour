@@ -467,9 +467,36 @@ func ExternalAuthAllowedHeadersValid(allowedHeaders []contour_v1.HTTPAuthorizati
 	return nil
 }
 
+// supportedEscapes matches regexes that Envoy accepts. Envoy uses RE2 in Latin-1 mode,
+// which rejects some escapes that Go accepts.
+// https://github.com/envoyproxy/envoy/blob/v1.40.2/source/common/common/regex.cc#L18-L24
+// To keep the check simple, some rare escapes that Envoy would accept are also rejected.
+//
+// Rejected:
+//
+//	\x{41}     hex escape in braces, use \x41 instead
+//	\x{20AC}   code point above 0xFF
+//	\400       octal escape above \377
+//	\pL        Unicode class
+//	\p{Greek}  Unicode class
+//	\PL        negated Unicode class
+//
+// Accepted:
+//
+//	\x41       hex escape with two digits
+//	\101       octal escape up to \377
+//	\d \w \s   character classes
+//	\. \\ \/   escaped characters
+var supportedEscapes = regexp.MustCompile(`^(?:[^\\]|\\[^xpP4-7]|\\x[0-9A-Fa-f]{2})*$`)
+
 // ValidateRegex returns an error if the supplied
 // RE2 regex syntax is invalid.
 func ValidateRegex(regex string) error {
-	_, err := regexp.Compile(regex)
-	return err
+	if _, err := regexp.Compile(regex); err != nil {
+		return err
+	}
+	if !supportedEscapes.MatchString(regex) {
+		return errors.New(`unsupported escape sequence: \x{...}, \p, \P and octal escapes above \377 are not supported, use \xHH instead`)
+	}
+	return nil
 }

@@ -952,6 +952,24 @@ func TestRegexMatchConditionsValid(t *testing.T) {
 			}},
 			want: false,
 		},
+		"regex with unsupported hex escape": {
+			matchconditions: []contour_v1.MatchCondition{{
+				Regex: `/\x{20AC}`,
+			}},
+			want: false,
+		},
+		"regex with unsupported Unicode class": {
+			matchconditions: []contour_v1.MatchCondition{{
+				Regex: `/\pp`,
+			}},
+			want: false,
+		},
+		"regex with supported escapes": {
+			matchconditions: []contour_v1.MatchCondition{{
+				Regex: `/\x41\377\d\\x\.`,
+			}},
+			want: true,
+		},
 	}
 
 	for name, tc := range tests {

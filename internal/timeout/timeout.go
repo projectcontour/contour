@@ -15,8 +15,14 @@ package timeout
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
+
+// maxEnvoySeconds is the longest timeout, in seconds, that Envoy accepts.
+// Envoy stores timeouts as nanoseconds in an int64.
+// https://github.com/envoyproxy/envoy/blob/v1.40.2/source/common/protobuf/utility.cc#L37-L52
+const maxEnvoySeconds = (math.MaxInt64 - 999999999) / int64(time.Second)
 
 // Setting describes a timeout setting that can be exactly one of:
 // disable the timeout entirely, use the default, or use a specific
@@ -90,6 +96,11 @@ func Parse(timeout string) (Setting, error) {
 	// configuration update containing the timeout to be rejected.
 	if d < 0 {
 		return Setting{}, fmt.Errorf("invalid timeout string %q: duration must not be negative", timeout)
+	}
+
+	// Envoy rejects durations that cannot be stored as nanoseconds in an int64.
+	if int64(d/time.Second) > maxEnvoySeconds {
+		return Setting{}, fmt.Errorf("invalid timeout string %q: duration must be less than %ds", timeout, maxEnvoySeconds+1)
 	}
 
 	if d == 0 {

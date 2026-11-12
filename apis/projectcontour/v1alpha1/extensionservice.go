@@ -56,6 +56,7 @@ type ExtensionServiceTarget struct {
 	// Weight defines proportion of traffic to balance to the Kubernetes Service.
 	//
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	Weight uint32 `json:"weight,omitempty"`
 }
 

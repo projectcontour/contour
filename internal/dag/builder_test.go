@@ -6485,6 +6485,33 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i15InvalidPrefixV1 := &networking_v1.Ingress{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "prefix",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
+								Path:     "/foo?bar",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(ptr.To("Prefix")),
+								Path:     "/foo#bar",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	i16V1 := &networking_v1.Ingress{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "wildcards",
@@ -10632,6 +10659,13 @@ func TestDAGInsert(t *testing.T) {
 		"ingressv1: insert ingress with invalid regex route": {
 			objs: []any{
 				i15InvalidRegexV1,
+				s1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress with invalid prefix route": {
+			objs: []any{
+				i15InvalidPrefixV1,
 				s1,
 			},
 			want: listeners(),

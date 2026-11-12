@@ -96,19 +96,24 @@ type FeatureFlags []string
 type CircuitBreakers struct {
 	// The maximum number of connections that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MaxConnections uint32 `json:"maxConnections,omitempty" yaml:"max-connections,omitempty"`
 	// The maximum number of pending requests that a single Envoy instance allows to the Kubernetes Service; defaults to 1024.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MaxPendingRequests uint32 `json:"maxPendingRequests,omitempty" yaml:"max-pending-requests,omitempty"`
 	// The maximum parallel requests a single Envoy instance allows to the Kubernetes Service; defaults to 1024
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MaxRequests uint32 `json:"maxRequests,omitempty" yaml:"max-requests,omitempty"`
 	// The maximum number of parallel retries a single Envoy instance allows to the Kubernetes Service; defaults to 3.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MaxRetries uint32 `json:"maxRetries,omitempty" yaml:"max-retries,omitempty"`
 
 	// PerHostMaxConnections is the maximum number of connections
 	// that Envoy will allow to each individual host in a cluster.
+	// +kubebuilder:validation:Minimum=0
 	PerHostMaxConnections uint32 `json:"perHostMaxConnections,omitempty" yaml:"per-host-max-connections,omitempty"`
 }
 
