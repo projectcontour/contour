@@ -28,6 +28,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -413,6 +414,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 					return
 				}
 
+				claimToHeaders, err := jwtClaimToHeaders(jwtProvider.ClaimToHeaders)
+				if err != nil {
+					validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "ClaimToHeadersInvalid",
+						"Spec.VirtualHost.JWTProviders.ClaimToHeaders for provider %q is invalid: %s", jwtProvider.Name, err)
+					return
+				}
+
 				switch {
 				case jwtProvider.LocalJWKS.SecretName != "":
 					jwksSecretNamespacedName := types.NamespacedName{
@@ -432,7 +440,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 						LocalJWKS: &LocalJWKS{
 							JWKS: jwksData,
 						},
-						ForwardJWT: jwtProvider.ForwardJWT,
+						ForwardJWT:     jwtProvider.ForwardJWT,
+						ClaimToHeaders: claimToHeaders,
 					})
 				case jwtProvider.RemoteJWKS.URI != "":
 					jwksURL, err := url.Parse(jwtProvider.RemoteJWKS.URI)
@@ -547,7 +556,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 							},
 							CacheDuration: cacheDuration,
 						},
-						ForwardJWT: jwtProvider.ForwardJWT,
+						ForwardJWT:     jwtProvider.ForwardJWT,
+						ClaimToHeaders: claimToHeaders,
 					})
 				}
 			}
@@ -1870,6 +1880,44 @@ func toStringSlice(hvs []contour_v1.CORSHeaderValue) []string {
 		s[i] = string(v)
 	}
 	return s
+}
+
+// jwtClaimToHeaders validates the claim to header mappings of a
+// JWT provider and converts them to their DAG representation.
+func jwtClaimToHeaders(claimToHeaders []contour_v1.JWTClaimToHeader) ([]JWTClaimToHeader, error) {
+	if len(claimToHeaders) == 0 {
+		return nil, nil
+	}
+
+	headerNames := sets.New[string]()
+	res := make([]JWTClaimToHeader, 0, len(claimToHeaders))
+	for _, claimToHeader := range claimToHeaders {
+		key := http.CanonicalHeaderKey(claimToHeader.HeaderName)
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid header name %q: %v", claimToHeader.HeaderName, msgs)
+		}
+		// Envoy removes the claim headers from the request before
+		// it extracts the JWT, so a claim cannot be copied to the
+		// header that the JWT is read from.
+		if key == "Authorization" {
+			return nil, fmt.Errorf("header name %q is reserved for the JWT", claimToHeader.HeaderName)
+		}
+		if headerNames.Has(key) {
+			return nil, fmt.Errorf("duplicate header name %q", claimToHeader.HeaderName)
+		}
+		headerNames.Insert(key)
+
+		if len(claimToHeader.ClaimName) == 0 {
+			return nil, fmt.Errorf("claim name for header %q must not be empty", claimToHeader.HeaderName)
+		}
+
+		res = append(res, JWTClaimToHeader{
+			HeaderName: claimToHeader.HeaderName,
+			ClaimName:  claimToHeader.ClaimName,
+		})
+	}
+
+	return res, nil
 }
 
 // matchConditionAggregate is used to compare collections of match conditions

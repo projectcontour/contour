@@ -1180,6 +1180,90 @@ func TestJWTVerification(t *testing.T) {
 			),
 		),
 	})
+
+	// JWT Provider with ClaimToHeaders specified.
+	proxy10 := fixture.NewProxy("simple").WithSpec(
+		contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "jwt.example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: "secret",
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name:   "provider-1",
+						Issuer: "issuer.jwt.example.com",
+						RemoteJWKS: contour_v1.RemoteJWKS{
+							URI:           "https://jwt.example.com/jwks.json",
+							Timeout:       "7s",
+							CacheDuration: "30s",
+						},
+						ClaimToHeaders: []contour_v1.JWTClaimToHeader{
+							{HeaderName: "x-jwt-sub", ClaimName: "sub"},
+							{HeaderName: "x-jwt-tenant", ClaimName: "org.tenant"},
+						},
+					},
+				},
+			},
+			Routes: []contour_v1.Route{{
+				Services: []contour_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+				JWTVerificationPolicy: &contour_v1.JWTVerificationPolicy{Require: "provider-1"},
+			}},
+		})
+
+	rh.OnUpdate(proxy9, proxy10)
+
+	// the JWT Provider should copy the claims to the headers.
+	c.Request(listenerType, "ingress_https").Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_config_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("jwt.example.com", sec1,
+						jwtAuthnFilterFor("jwt.example.com", &envoy_filter_http_jwt_authn_v3.JwtAuthentication{
+							Providers: map[string]*envoy_filter_http_jwt_authn_v3.JwtProvider{
+								"provider-1": {
+									Issuer: "issuer.jwt.example.com",
+									JwksSourceSpecifier: &envoy_filter_http_jwt_authn_v3.JwtProvider_RemoteJwks{
+										RemoteJwks: &envoy_filter_http_jwt_authn_v3.RemoteJwks{
+											HttpUri: &envoy_config_core_v3.HttpUri{
+												Uri: "https://jwt.example.com/jwks.json",
+												HttpUpstreamType: &envoy_config_core_v3.HttpUri_Cluster{
+													Cluster: "dnsname/https/jwt.example.com/443/0771aeda175c510932e2",
+												},
+												Timeout: durationpb.New(7 * time.Second),
+											},
+											CacheDuration: durationpb.New(30 * time.Second),
+										},
+									},
+									ClaimToHeaders: []*envoy_filter_http_jwt_authn_v3.JwtClaimToHeader{
+										{HeaderName: "x-jwt-sub", ClaimName: "sub"},
+										{HeaderName: "x-jwt-tenant", ClaimName: "org.tenant"},
+									},
+								},
+							},
+							RequirementMap: map[string]*envoy_filter_http_jwt_authn_v3.JwtRequirement{
+								"provider-1": {
+									RequiresType: &envoy_filter_http_jwt_authn_v3.JwtRequirement_ProviderName{
+										ProviderName: "provider-1",
+									},
+								},
+							},
+						}),
+						nil, "h2", "http/1.1"),
+				),
+				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
+			},
+		),
+	})
 }
 
 func TestJWTVerification_Inclusion(t *testing.T) {

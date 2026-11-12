@@ -4014,6 +4014,90 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	invalidClaimToHeaders := map[string]struct {
+		claimToHeaders []contour_v1.JWTClaimToHeader
+		wantErr        string
+	}{
+		"invalid header name": {
+			claimToHeaders: []contour_v1.JWTClaimToHeader{
+				{HeaderName: "x-jwt sub", ClaimName: "sub"},
+			},
+			wantErr: "invalid header name \"x-jwt sub\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]",
+		},
+		"authorization header": {
+			claimToHeaders: []contour_v1.JWTClaimToHeader{
+				{HeaderName: "authorization", ClaimName: "sub"},
+			},
+			wantErr: "header name \"authorization\" is reserved for the JWT",
+		},
+		"duplicate header name": {
+			claimToHeaders: []contour_v1.JWTClaimToHeader{
+				{HeaderName: "x-jwt-claim", ClaimName: "sub"},
+				{HeaderName: "X-JWT-Claim", ClaimName: "iss"},
+			},
+			wantErr: "duplicate header name \"X-JWT-Claim\"",
+		},
+		"empty claim name": {
+			claimToHeaders: []contour_v1.JWTClaimToHeader{
+				{HeaderName: "x-jwt-sub"},
+			},
+			wantErr: "claim name for header \"x-jwt-sub\" must not be empty",
+		},
+	}
+
+	for name, tc := range invalidClaimToHeaders {
+		jwtVerificationInvalidClaimToHeaders := &contour_v1.HTTPProxy{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Namespace: "roots",
+				Name:      "jwt-verification-invalid-claim-to-headers",
+			},
+			Spec: contour_v1.HTTPProxySpec{
+				VirtualHost: &contour_v1.VirtualHost{
+					Fqdn: "example.com",
+					TLS: &contour_v1.TLS{
+						SecretName: fixture.SecretRootsCert.Name,
+					},
+					JWTProviders: []contour_v1.JWTProvider{
+						{
+							Name: "provider-1",
+							RemoteJWKS: contour_v1.RemoteJWKS{
+								URI: "https://jwt.example.com/jwks.json",
+							},
+							ClaimToHeaders: tc.claimToHeaders,
+						},
+					},
+				},
+				Routes: []contour_v1.Route{
+					{
+						Conditions: []contour_v1.MatchCondition{{
+							Prefix: "/foo",
+						}},
+						Services: []contour_v1.Service{{
+							Name: "home",
+							Port: 8080,
+						}},
+					},
+				},
+			},
+		}
+
+		run(t, "JWT verification invalid claimToHeaders: "+name, testcase{
+			objs: []any{
+				jwtVerificationInvalidClaimToHeaders,
+				fixture.SecretRootsCert,
+				fixture.ServiceRootsHome,
+			},
+			want: map[types.NamespacedName]contour_v1.DetailedCondition{
+				k8s.NamespacedNameOf(jwtVerificationInvalidClaimToHeaders): fixture.NewValidCondition().
+					WithError(
+						contour_v1.ConditionTypeJWTVerificationError,
+						"ClaimToHeadersInvalid",
+						"Spec.VirtualHost.JWTProviders.ClaimToHeaders for provider \"provider-1\" is invalid: "+tc.wantErr,
+					),
+			},
+		})
+	}
+
 	localJWKSInvalidJSONSecretKey := "key"
 	jwtVerificationLocalJWKSInvalidJSONSecret := &core_v1.Secret{
 		ObjectMeta: meta_v1.ObjectMeta{
