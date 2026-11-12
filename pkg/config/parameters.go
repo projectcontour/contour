@@ -548,6 +548,12 @@ type ListenerParameters struct {
 
 	// Defines the maximum request body size in bytes for all routes.
 	// If not specified, there is no limit.
+	//
+	// Note: Not compatible with WebSocket or gRPC client-streaming and
+	// bidirectional streaming calls. The limit counts the total data the client
+	// sends over the connection or call, so long-lived streams are closed once
+	// it is exceeded, even if each message is small. Clients see a connection
+	// reset or a failed gRPC call instead of 413.
 	MaxRequestBodyBytes *uint64 `yaml:"max-request-body-bytes,omitempty"`
 
 	// ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
