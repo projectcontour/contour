@@ -989,8 +989,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		healthPolicy, err := httpHealthCheckPolicy(route.HealthCheckPolicy)
 		if err != nil {
-			validCond.AddError(contour_v1.ConditionTypeRouteError, "HealthCheckPolicyInvalid", err.Error())
-			return nil
+			validCond.AddWarningf(contour_v1.ConditionTypeSpecError, "IgnoredField",
+				"ignoring field %q; %s", "Spec.Routes.HealthCheckPolicy", err)
 		}
 
 		for _, service := range route.Services {

@@ -52,6 +52,7 @@ By default, only responses with a 200 status code will be considered healthy.
 The set of response codes considered healthy can be customized by specifying ranges in `expectedStatuses`.
 Ranges follow half-open semantics, meaning the start is inclusive and the end is exclusive. 
 Statuses must be between 100 (inclusive) and 600 (exclusive).
+If a range is invalid, the health check policy is ignored, and the HTTPProxy status reports a warning.
 For example:
 
 ```yaml
