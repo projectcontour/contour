@@ -6148,6 +6148,33 @@ Allowable values are defined as names of well known compression algorithms.</p>
 </td>
 </tr></tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.CompressionETagAction">CompressionETagAction
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyCompression">EnvoyCompression</a>)
+</p>
+<p>
+<p>CompressionETagAction defines how the compression HTTP filters handle responses that carry an ETag header.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;remove&#34;</p></td>
+<td><p>RemoveCompressionETag removes a strong ETag from compressed responses and preserves a weak one.</p>
+</td>
+</tr><tr><td><p>&#34;skip&#34;</p></td>
+<td><p>SkipCompressionETag disables compression of responses that carry an ETag header.</p>
+</td>
+</tr><tr><td><p>&#34;weaken&#34;</p></td>
+<td><p>WeakenCompressionETag converts a strong ETag of a compressed response into a weak one.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
 </h3>
 <p>
@@ -6948,6 +6975,27 @@ This field is a tri-state:
 <p>The first entry is preferred if the client accepts it and has no stronger preference.
 Values: <code>gzip</code>, <code>brotli</code>, <code>zstd</code>. Cannot include <code>disabled</code>; use an empty list to disable.
 Mutually exclusive with Algorithm.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>etag</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.CompressionETagAction">
+CompressionETagAction
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ETag selects how responses that carry an ETag header are handled when compression is enabled.
+Compressing a response changes its body, so a strong ETag no longer identifies it byte-for-byte.
+Values:
+- <code>remove</code> (default): compress the response and remove a strong ETag. Weak ETags are preserved.
+- <code>weaken</code>: compress the response and weaken a strong ETag by prepending <code>W/</code> to it.
+- <code>skip</code>: do not compress responses that carry an ETag header, strong or weak.
+Has no effect when compression is disabled.</p>
 </td>
 </tr>
 </tbody>
