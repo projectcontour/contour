@@ -56,12 +56,12 @@ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Ve
 
 Contour Gateway Provisioner:
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway-provisioner.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway-provisioner.yaml
 ```
 
 Statically provisioned Contour with Gateway API:
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway.yaml
+kubectl apply --server-side -f https://raw.githubusercontent.com/projectcontour/contour/{{ .Version }}/examples/render/contour-gateway.yaml
 ```
 {{ else }}
 For a fresh install of Contour, consult the [getting started documentation](https://projectcontour.io/getting-started/).
