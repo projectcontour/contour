@@ -14,7 +14,9 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"regexp"
 	"slices"
@@ -1141,7 +1143,53 @@ func (p *GatewayAPIProcessor) resolveRouteRefs(route any, routeAccessor *status.
 	}
 }
 
-func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) (*RouteTimeoutPolicy, error) {
+// parseHTTPRouteRetry converts an HTTPRoute rule's retry configuration into a
+// RetryPolicy. Requests are only retried when the backend did not process them:
+// on connection failures, refused streams, resets before the request was sent
+// and, if Retry.Codes is set, on the listed response codes.
+func parseHTTPRouteRetry(retry *gatewayapi_v1.HTTPRouteRetry) (*RetryPolicy, error) {
+	if retry == nil {
+		return nil, nil
+	}
+
+	// Envoy's backoff picks a random delay starting from zero, so it can't
+	// guarantee the minimum wait between attempts that Retry.Backoff requires.
+	if retry.Backoff != nil {
+		return nil, errors.New("HTTPRoute.Spec.Rules.Retry.Backoff is not supported")
+	}
+
+	attempts := 1
+	if retry.Attempts != nil {
+		attempts = *retry.Attempts
+	}
+	if attempts < 0 || uint64(attempts) > math.MaxUint32 {
+		return nil, fmt.Errorf("invalid HTTPRoute.Spec.Rules.Retry.Attempts: %d", attempts)
+	}
+
+	// An explicit zero disables retries.
+	if attempts == 0 {
+		return nil, nil
+	}
+
+	retryPolicy := &RetryPolicy{
+		RetryOn:    "connect-failure,refused-stream,reset-before-request",
+		NumRetries: uint32(attempts), //nolint:gosec // disable G115
+	}
+
+	if len(retry.Codes) > 0 {
+		retryPolicy.RetryOn += ",retriable-status-codes"
+		for _, code := range retry.Codes {
+			retryPolicy.RetriableStatusCodes = append(retryPolicy.RetriableStatusCodes, uint32(code)) //nolint:gosec // disable G115
+		}
+	}
+
+	return retryPolicy, nil
+}
+
+// parseHTTPRouteTimeouts converts an HTTPRoute rule's timeouts into a
+// RouteTimeoutPolicy. If retryPolicy is not nil, Timeouts.BackendRequest is
+// set as its per-try timeout.
+func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts, retryPolicy *RetryPolicy) (*RouteTimeoutPolicy, error) {
 	if httpRouteTimeouts == nil || (httpRouteTimeouts.Request == nil && httpRouteTimeouts.BackendRequest == nil) {
 		return nil, nil
 	}
@@ -1162,10 +1210,10 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 		responseTimeout = requestTimeout
 	}
 
-	// Note, since retries are not yet implemented in Gateway API, the backend
-	// request timeout is functionally equivalent to the request timeout for now.
-	// The API spec requires that it be less than/equal to the request timeout if
-	// both are specified. This implementation will change when retries are implemented.
+	// The API spec requires that the backend request timeout be less
+	// than/equal to the request timeout if both are specified. Without
+	// retries, there is only one backend request, so the backend request
+	// timeout is functionally equivalent to the request timeout.
 	if httpRouteTimeouts.BackendRequest != nil {
 		backendRequestTimeout, err := timeout.Parse(string(*httpRouteTimeouts.BackendRequest))
 		if err != nil {
@@ -1183,7 +1231,11 @@ func parseHTTPRouteTimeouts(httpRouteTimeouts *gatewayapi_v1.HTTPRouteTimeouts) 
 			return nil, fmt.Errorf("HTTPRoute.Spec.Rules.Timeouts.BackendRequest must be less than/equal to HTTPRoute.Spec.Rules.Timeouts.Request when both are specified")
 		}
 
-		responseTimeout = backendRequestTimeout
+		if retryPolicy != nil {
+			retryPolicy.PerTryTimeout = backendRequestTimeout
+		} else {
+			responseTimeout = backendRequestTimeout
+		}
 	}
 
 	return &RouteTimeoutPolicy{
@@ -1248,9 +1300,16 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 			responseHeaderPolicy *HeadersPolicy
 			pathRewritePolicy    *PathRewritePolicy
 			timeoutPolicy        *RouteTimeoutPolicy
+			retryPolicy          *RetryPolicy
 		)
 
-		timeoutPolicy, err = parseHTTPRouteTimeouts(rule.Timeouts)
+		retryPolicy, err = parseHTTPRouteRetry(rule.Retry)
+		if err != nil {
+			routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, err.Error())
+			continue
+		}
+
+		timeoutPolicy, err = parseHTTPRouteTimeouts(rule.Timeouts, retryPolicy)
 		if err != nil {
 			routeAccessor.AddCondition(gatewayapi_v1.RouteConditionAccepted, meta_v1.ConditionFalse, gatewayapi_v1.RouteReasonUnsupportedValue, err.Error())
 			continue
@@ -1474,6 +1533,7 @@ func (p *GatewayAPIProcessor) computeHTTPRouteForListener(
 				mirrorPolicies,
 				pathRewritePolicy,
 				timeoutPolicy,
+				retryPolicy,
 			)
 		}
 
@@ -1651,6 +1711,7 @@ func (p *GatewayAPIProcessor) computeGRPCRouteForListener(route *gatewayapi_v1.G
 			requestHeaderPolicy,
 			responseHeaderPolicy,
 			mirrorPolicies,
+			nil,
 			nil,
 			nil,
 		)
@@ -2369,6 +2430,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	mirrorPolicies []*MirrorPolicy,
 	pathRewritePolicy *PathRewritePolicy,
 	timeoutPolicy *RouteTimeoutPolicy,
+	retryPolicy *RetryPolicy,
 ) []*Route {
 	var routes []*Route
 
@@ -2391,6 +2453,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 			MirrorPolicies:            mirrorPolicies,
 			Priority:                  priority,
 			PathRewritePolicy:         pathRewritePolicy,
+			RetryPolicy:               retryPolicy,
 		}
 		if timeoutPolicy != nil {
 			route.TimeoutPolicy = *timeoutPolicy
