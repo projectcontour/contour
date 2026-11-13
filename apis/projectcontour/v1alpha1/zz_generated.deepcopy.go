@@ -643,6 +643,11 @@ func (in *EnvoyListenerConfig) DeepCopyInto(out *EnvoyListenerConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.Proxy100Continue != nil {
+		in, out := &in.Proxy100Continue, &out.Proxy100Continue
+		*out = new(bool)
+		**out = **in
+	}
 	if in.MaxRequestsPerConnection != nil {
 		in, out := &in.MaxRequestsPerConnection, &out.MaxRequestsPerConnection
 		*out = new(uint32)
