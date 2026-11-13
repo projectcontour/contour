@@ -227,6 +227,7 @@ type httpConnectionManagerBuilder struct {
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
 	mergeSlashes                  bool
+	proxy100Continue              bool
 	serverHeaderTransformation    envoy_filter_network_http_connection_manager_v3.HttpConnectionManager_ServerHeaderTransformation
 	forwardClientCertificate      *dag.ClientCertificateDetails
 	numTrustedHops                uint32
@@ -317,6 +318,14 @@ func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpCon
 // MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option on the connection manager.
 func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectionManagerBuilder {
 	b.mergeSlashes = enabled
+	return b
+}
+
+// Proxy100Continue toggles proxying of "Expect: 100-continue" request headers upstream
+// and "100 Continue" responses downstream on the connection manager. When disabled,
+// Envoy removes the "Expect: 100-continue" header and responds with "100 Continue" itself.
+func (b *httpConnectionManagerBuilder) Proxy100Continue(enabled bool) *httpConnectionManagerBuilder {
+	b.proxy100Continue = enabled
 	return b
 }
 
@@ -663,6 +672,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_config_listener_v3.Filter {
 		PreserveExternalRequestId:  true,
 		MergeSlashes:               b.mergeSlashes,
 		ServerHeaderTransformation: b.serverHeaderTransformation,
+		Proxy_100Continue:          b.proxy100Continue,
 
 		RequestTimeout:      envoy.Timeout(b.requestTimeout),
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),

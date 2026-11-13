@@ -212,6 +212,7 @@ The listener configuration block can be used to configure various parameters for
 | http2-max-concurrent-streams      | int    | none    | Defines the value for SETTINGS_MAX_CONCURRENT_STREAMS Envoy will advertise in the SETTINGS frame in HTTP/2 connections and the limit for concurrent streams allowed for a peer on a single HTTP/2 connection. It is recommended to not set this lower than 100 but this field can be used to bound resource usage by HTTP/2 connections and mitigate attacks like CVE-2023-44487. The default value when this is not set is unlimited. |
 | max-connections-to-accept-per-socket-event | int | none | Defines the maximum number of connections Envoy will accept from the kernel per event loop iteration. If no value is provided, Envoy will accept all pending connections at once. It is recommended to set this to a low value. |
 | max-request-body-bytes            | int    | none    | Defines the maximum request body size in bytes for all routes. Requests with a larger body are rejected with 413. Minimum value is 1. If not specified, there is no limit. |
+| proxy-100-continue                | bool   | false   | If set to true, Envoy proxies the `Expect: 100-continue` request header to the upstream service and forwards its `100 Continue` response to the client, so the upstream service decides whether the client sends the request body. If set to false, Envoy removes the `Expect: 100-continue` header and responds with `100 Continue` itself. See [the Envoy documentation][18] for more information. |
 | proxy-protocol-settings           | ProxyProtocolSettings | | The [PROXY protocol settings](#proxy-protocol-settings), for example to derive `X-Forwarded-Proto` from the PROXY protocol destination port when a load balancer in front of Envoy terminates TLS. |
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
@@ -538,6 +539,7 @@ data:
     #  socket-options:
     #    tos: 64
     #    traffic-class: 64
+    #  proxy-100-continue: true
     #  proxy-protocol-settings:
     #    https-destination-ports: [443]
     #    http-destination-ports: [80]
@@ -610,3 +612,4 @@ connects to Contour:
 [15]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=strip_trailing_host_dot
 [16]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-msg-extensions-filters-network-http-connection-manager-v3-forwardprotoconfig
 [17]: guides/proxy-proto.md
+[18]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-proxy-100-continue

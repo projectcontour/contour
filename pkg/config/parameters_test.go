@@ -588,6 +588,13 @@ listener:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
+		assert.True(t, conf.Listener.Proxy100Continue)
+	}, `
+listener:
+  proxy-100-continue: true
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
 		assert.Equal(t, ptr.To(uint32(1)), conf.Cluster.MaxRequestsPerConnection)
 	}, `
 cluster:

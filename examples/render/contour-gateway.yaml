@@ -467,6 +467,17 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
+                      proxy100Continue:
+                        description: |-
+                          Proxy100Continue enables proxying of the "Expect: 100-continue" request
+                          header to the upstream service and forwarding of its "100 Continue"
+                          response to the client. When disabled, Envoy removes the
+                          "Expect: 100-continue" header and responds with "100 Continue" itself
+                          before the upstream service receives the request.
+                          See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-proxy-100-continue
+                          for more information.
+                          Contour's default is false.
+                        type: boolean
                       proxyProtocolSettings:
                         description: |-
                           ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
@@ -4833,6 +4844,17 @@ spec:
                             format: int32
                             minimum: 1
                             type: integer
+                          proxy100Continue:
+                            description: |-
+                              Proxy100Continue enables proxying of the "Expect: 100-continue" request
+                              header to the upstream service and forwarding of its "100 Continue"
+                              response to the client. When disabled, Envoy removes the
+                              "Expect: 100-continue" header and responds with "100 Continue" itself
+                              before the upstream service receives the request.
+                              See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-proxy-100-continue
+                              for more information.
+                              Contour's default is false.
+                            type: boolean
                           proxyProtocolSettings:
                             description: |-
                               ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.

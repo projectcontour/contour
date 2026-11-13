@@ -1370,6 +1370,63 @@ func TestHTTPProxyStripTrailingHostDot(t *testing.T) {
 	})
 }
 
+func TestHTTPProxyProxy100Continue(t *testing.T) {
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.Proxy100Continue = true
+	})
+
+	defer done()
+	envoyGen := envoy_v3.NewEnvoyGen(envoy_v3.EnvoyGenOpt{
+		XDSClusterName: envoy_v3.DefaultXDSClusterName,
+	})
+
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
+
+	// p1 is a httpproxy
+	p1 := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_v1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(p1)
+
+	// verify that proxy_100_continue has been enabled.
+	httpListener := defaultHTTPListener()
+
+	httpListener.FilterChains = envoy_v3.FilterChains(envoyGen.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_v1alpha1.LogLevelInfo)).
+		RequestTimeout(timeout.DurationSetting(0)).
+		Proxy100Continue(true).
+		DefaultFilters().
+		Get())
+
+	c.Request(listenerType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			httpListener,
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
 func TestHTTPProxyServerHeaderTransformation(t *testing.T) {
 	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
 		conf.ServerHeaderTransformation = contour_v1alpha1.AppendIfAbsentServerHeader
