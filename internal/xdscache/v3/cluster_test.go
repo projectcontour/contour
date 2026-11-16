@@ -396,7 +396,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&envoy_config_cluster_v3.Cluster{
-					Name:                 "default/backend/80/7f8051653a",
+					Name:                 "default/backend/80/53bf904643",
 					AltStatName:          "default_backend_80",
 					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 					EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{

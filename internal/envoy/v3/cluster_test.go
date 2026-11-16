@@ -635,7 +635,7 @@ func TestCluster(t *testing.T) {
 				},
 			},
 			want: &envoy_config_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/da39a3ee5e",
+				Name:                 "default/kuard/443/5488b043a6",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
@@ -1210,6 +1210,72 @@ func TestClustername(t *testing.T) {
 		cluster: cluster1,
 		want:    "default/backend/80/50abc1400c",
 	})
+}
+
+func TestClusternameDistinguishesClusters(t *testing.T) {
+	newCluster := func(f func(*dag.Cluster)) *dag.Cluster {
+		c := &dag.Cluster{
+			Upstream: &dag.Service{
+				Weighted: dag.WeightedService{
+					ServiceName:      "backend",
+					ServiceNamespace: "default",
+					ServicePort:      core_v1.ServicePort{Port: 80},
+				},
+			},
+		}
+		f(c)
+		return c
+	}
+	ca := func(name string) *dag.Secret {
+		return &dag.Secret{Object: &core_v1.Secret{ObjectMeta: meta_v1.ObjectMeta{Name: name, Namespace: "default"}}}
+	}
+
+	pairs := map[string][2]*dag.Cluster{
+		"http health check host": {
+			newCluster(func(c *dag.Cluster) { c.HTTPHealthCheckPolicy = &dag.HTTPHealthCheckPolicy{Path: "/healthz"} }),
+			newCluster(func(c *dag.Cluster) {
+				c.HTTPHealthCheckPolicy = &dag.HTTPHealthCheckPolicy{Path: "/healthz", Host: "backend.example.com"}
+			}),
+		},
+		"http health check expected statuses": {
+			newCluster(func(c *dag.Cluster) {
+				c.HTTPHealthCheckPolicy = &dag.HTTPHealthCheckPolicy{Path: "/healthz", ExpectedStatuses: []dag.HTTPStatusRange{{Start: 200, End: 300}}}
+			}),
+			newCluster(func(c *dag.Cluster) {
+				c.HTTPHealthCheckPolicy = &dag.HTTPHealthCheckPolicy{Path: "/healthz", ExpectedStatuses: []dag.HTTPStatusRange{{Start: 200, End: 400}}}
+			}),
+		},
+		"tcp health check enabled": {
+			newCluster(func(*dag.Cluster) {}),
+			newCluster(func(c *dag.Cluster) { c.TCPHealthCheckPolicy = &dag.TCPHealthCheckPolicy{} }),
+		},
+		"tcp health check interval": {
+			newCluster(func(c *dag.Cluster) { c.TCPHealthCheckPolicy = &dag.TCPHealthCheckPolicy{Interval: time.Second} }),
+			newCluster(func(c *dag.Cluster) { c.TCPHealthCheckPolicy = &dag.TCPHealthCheckPolicy{Interval: time.Minute} }),
+		},
+		"additional subject names": {
+			newCluster(func(c *dag.Cluster) {
+				c.UpstreamValidation = &dag.PeerValidationContext{CACertificates: []*dag.Secret{ca("ca")}, SubjectNames: []string{"a", "b"}}
+			}),
+			newCluster(func(c *dag.Cluster) {
+				c.UpstreamValidation = &dag.PeerValidationContext{CACertificates: []*dag.Secret{ca("ca")}, SubjectNames: []string{"a", "c"}}
+			}),
+		},
+		"additional CA certificates": {
+			newCluster(func(c *dag.Cluster) {
+				c.UpstreamValidation = &dag.PeerValidationContext{CACertificates: []*dag.Secret{ca("ca"), ca("ca-1")}}
+			}),
+			newCluster(func(c *dag.Cluster) {
+				c.UpstreamValidation = &dag.PeerValidationContext{CACertificates: []*dag.Secret{ca("ca"), ca("ca-2")}}
+			}),
+		},
+	}
+
+	for name, pair := range pairs {
+		t.Run(name, func(t *testing.T) {
+			assert.NotEqual(t, envoy.Clustername(pair[0]), envoy.Clustername(pair[1]))
+		})
+	}
 }
 
 func TestLBPolicy(t *testing.T) {
