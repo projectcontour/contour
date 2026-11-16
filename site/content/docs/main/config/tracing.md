@@ -23,38 +23,43 @@ Contour supports configuring envoy to export data to OpenTelemetry, and allows u
 
 In order to use this feature, you must first select and deploy an opentelemetry-collector to receive the tracing data exported by envoy.
 
-First we should deploy an opentelemetry-collector to receive the tracing data exported by envoy
+This guide assumes Contour is installed in the `projectcontour` namespace.
+Install [cert-manager][3] before installing the OpenTelemetry Operator:
 ```bash
 # install operator
 kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
 ```
 
-Install an otel collector instance, with verbose logging exporter enabled:
+Wait until the operator deployment is ready, then create a collector instance with detailed debug output:
 ```shell
 kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   namespace: projectcontour
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
           grpc:
+            endpoint: 0.0.0.0:4317
           http:
+            endpoint: 0.0.0.0:4318
     exporters:
-      logging:
+      debug:
         verbosity: detailed
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [logging]
+          exporters: [debug]
 EOF
 ```
+
+The OTLP receivers listen on all Pod interfaces so Envoy can reach the collector through its Kubernetes Service.
 
 Define extension service:
 ```shell
@@ -124,3 +129,4 @@ Trace and span identifiers can also be included in [access logs](access-logging.
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing
 [2]: https://opentelemetry.io/
+[3]: https://cert-manager.io/docs/installation/
