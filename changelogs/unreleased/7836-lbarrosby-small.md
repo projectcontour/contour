@@ -1,0 +1,1 @@
+Routes and TCP proxies to the same Service that differ only in health check host, expected statuses, TCP health check settings, or in upstream validation subject names or CAs after the first one now get their own Envoy cluster, instead of being merged into one cluster with another route's settings.
