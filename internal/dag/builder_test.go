@@ -15,6 +15,7 @@ package dag
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"testing"
 	"time"
@@ -3555,6 +3556,318 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []any{
 				kuardService,
 				makeHTTPRouteWithTimeouts("5s", "6s"),
+			},
+			want: listeners(),
+		},
+
+		"HTTPRoute rule with retry codes and attempts": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Codes:    []gatewayapi_v1.HTTPRouteRetryStatusCode{500, 503},
+					Attempts: ptr.To(3),
+				}, nil),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								RetryPolicy: &RetryPolicy{
+									RetryOn:              "connect-failure,refused-stream,reset-before-request,retriable-status-codes",
+									RetriableStatusCodes: []uint32{500, 503},
+									NumRetries:           3,
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with empty retry": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{}, nil),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								RetryPolicy: &RetryPolicy{
+									RetryOn:    "connect-failure,refused-stream,reset-before-request",
+									NumRetries: 1,
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry attempts set to 0": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Codes:    []gatewayapi_v1.HTTPRouteRetryStatusCode{500},
+					Attempts: ptr.To(0),
+				}, nil),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry and request and backendRequest timeouts": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(2),
+				}, makeHTTPRouteTimeouts("10s", "2s")),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(10 * time.Second),
+								},
+								RetryPolicy: &RetryPolicy{
+									RetryOn:       "connect-failure,refused-stream,reset-before-request",
+									NumRetries:    2,
+									PerTryTimeout: timeout.DurationSetting(2 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry and request timeout only": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(2),
+				}, makeHTTPRouteTimeouts("10s", "")),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(10 * time.Second),
+								},
+								RetryPolicy: &RetryPolicy{
+									RetryOn:    "connect-failure,refused-stream,reset-before-request",
+									NumRetries: 2,
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry and 0s (disabled) request timeout and backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(2),
+				}, makeHTTPRouteTimeouts("0s", "2s")),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DisabledSetting(),
+								},
+								RetryPolicy: &RetryPolicy{
+									RetryOn:       "connect-failure,refused-stream,reset-before-request",
+									NumRetries:    2,
+									PerTryTimeout: timeout.DurationSetting(2 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry and backendRequest timeout only": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(2),
+				}, makeHTTPRouteTimeouts("", "2s")),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								RetryPolicy: &RetryPolicy{
+									RetryOn:       "connect-failure,refused-stream,reset-before-request",
+									NumRetries:    2,
+									PerTryTimeout: timeout.DurationSetting(2 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry and 0s (disabled) backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(2),
+				}, makeHTTPRouteTimeouts("10s", "0s")),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(10 * time.Second),
+								},
+								RetryPolicy: &RetryPolicy{
+									RetryOn:       "connect-failure,refused-stream,reset-before-request",
+									NumRetries:    2,
+									PerTryTimeout: timeout.DisabledSetting(),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry attempts set to 0 and backendRequest timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(0),
+				}, makeHTTPRouteTimeouts("10s", "2s")),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								Clusters:           clustersWeight(service(kuardService)),
+								TimeoutPolicy: RouteTimeoutPolicy{
+									ResponseTimeout: timeout.DurationSetting(2 * time.Second),
+								},
+							},
+						),
+					),
+				},
+			),
+		},
+		"HTTPRoute rule with retry backoff": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Backoff: ptr.To(gatewayapi_v1.Duration("100ms")),
+				}, nil),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with negative retry attempts": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(-1),
+				}, nil),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with retry attempts greater than MaxUint32": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(math.MaxUint32 + 1),
+				}, nil),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with retry backoff and retry attempts set to 0": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(0),
+					Backoff:  ptr.To(gatewayapi_v1.Duration("100ms")),
+				}, nil),
+			},
+			want: listeners(),
+		},
+		"HTTPRoute rule with retry and backend request timeout greater than request timeout": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRouteWithRetry(&gatewayapi_v1.HTTPRouteRetry{
+					Attempts: ptr.To(2),
+				}, makeHTTPRouteTimeouts("5s", "6s")),
 			},
 			want: listeners(),
 		},
@@ -16478,6 +16791,15 @@ func makeHTTPRouteWithTimeouts(request, backendRequest string) *gatewayapi_v1.HT
 			}},
 		},
 	}
+}
+
+func makeHTTPRouteWithRetry(retry *gatewayapi_v1.HTTPRouteRetry, timeouts *gatewayapi_v1.HTTPRouteTimeouts) *gatewayapi_v1.HTTPRoute {
+	return makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+		Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+		BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+		Retry:       retry,
+		Timeouts:    timeouts,
+	})
 }
 
 func makeHTTPRoute(name, namespace, hostname string, firstRule gatewayapi_v1.HTTPRouteRule, additionalRules ...gatewayapi_v1.HTTPRouteRule) *gatewayapi_v1.HTTPRoute {
