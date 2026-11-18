@@ -1,0 +1,1 @@
+Fix route sorting bug where two routes with identical path matches and an equal number of header or query parameter match conditions could be ordered inconsistently, which could produce a nondeterministic route order.
