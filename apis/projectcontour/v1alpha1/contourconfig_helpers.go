@@ -153,6 +153,9 @@ func (e *EnvoyConfig) Validate() error {
 	}
 
 	if e.Listener != nil {
+		if err := e.Listener.PathWithEscapedSlashesAction.Validate(); err != nil {
+			return err
+		}
 		if err := e.Listener.Compression.Validate(); err != nil {
 			return err
 		}
