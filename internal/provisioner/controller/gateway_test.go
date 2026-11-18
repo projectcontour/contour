@@ -926,7 +926,7 @@ func TestGatewayReconcile(t *testing.T) {
 							From: ptr.To(gatewayapi_v1.NamespacesFromAll),
 						},
 					},
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 					},
 				},

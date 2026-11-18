@@ -13,7 +13,7 @@ versions:
         - "1.36"
         - "1.35"
       gateway-api:
-        - "1.3.0"
+        - "1.4.1"
   - version: v1.33.8
     supported: "true"
     dependencies:
