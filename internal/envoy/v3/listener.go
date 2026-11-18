@@ -1060,6 +1060,13 @@ func FilterJWTAuthN(jwtProviders []dag.JWTProvider) *envoy_filter_network_http_c
 			Forward:   provider.ForwardJWT,
 		}
 
+		for _, claimToHeader := range provider.ClaimToHeaders {
+			envProv.ClaimToHeaders = append(envProv.ClaimToHeaders, &envoy_filter_http_jwt_authn_v3.JwtClaimToHeader{
+				HeaderName: claimToHeader.HeaderName,
+				ClaimName:  claimToHeader.ClaimName,
+			})
+		}
+
 		switch {
 		case provider.LocalJWKS != nil:
 			envProv.JwksSourceSpecifier = &envoy_filter_http_jwt_authn_v3.JwtProvider_LocalJwks{

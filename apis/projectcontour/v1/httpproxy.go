@@ -485,6 +485,33 @@ type JWTProvider struct {
 	// the JWT is not forwarded.
 	// +optional
 	ForwardJWT bool `json:"forwardJWT,omitempty"`
+
+	// ClaimToHeaders defines JWT claims that should be copied
+	// to request headers after successful verification, so
+	// that the backend service can consume the claims without
+	// decoding the JWT itself.
+	// +optional
+	ClaimToHeaders []JWTClaimToHeader `json:"claimToHeaders,omitempty"`
+}
+
+// JWTClaimToHeader defines a JWT claim to copy to a request header.
+type JWTClaimToHeader struct {
+	// HeaderName is the name of the request header to copy
+	// the claim value to.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	HeaderName string `json:"headerName"`
+
+	// ClaimName is the name of the claim to copy. Nested claims
+	// can be referenced by separating the claim names with ".",
+	// for example "nested.claim.key". Claims of type string,
+	// number or boolean are copied as is. Claims of type object
+	// or array are serialized to JSON and copied base64-encoded.
+	// If the claim is not present in the JWT, the header is
+	// not set.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	ClaimName string `json:"claimName"`
 }
 
 // LocalJWKS defines how to fetch a JWKS from a Kubernetes secret.
