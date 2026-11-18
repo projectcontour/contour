@@ -401,6 +401,11 @@ spec:
                           MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
                           Requests with a larger body are rejected with 413. Minimum value is 1.
                           If not specified, there is no limit.
+                          Note: Not compatible with WebSocket or gRPC client-streaming and
+                          bidirectional streaming calls. The limit counts the total data the client
+                          sends over the connection or call, so long-lived streams are closed once
+                          it is exceeded, even if each message is small. Clients see a connection
+                          reset or a failed gRPC call instead of 413.
                         format: int64
                         minimum: 1
                         type: integer
@@ -4767,6 +4772,11 @@ spec:
                               MaxRequestBodyBytes defines the maximum request body size in bytes for all routes.
                               Requests with a larger body are rejected with 413. Minimum value is 1.
                               If not specified, there is no limit.
+                              Note: Not compatible with WebSocket or gRPC client-streaming and
+                              bidirectional streaming calls. The limit counts the total data the client
+                              sends over the connection or call, so long-lived streams are closed once
+                              it is exceeded, even if each message is small. Clients see a connection
+                              reset or a failed gRPC call instead of 413.
                             format: int64
                             minimum: 1
                             type: integer
