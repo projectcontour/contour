@@ -1016,6 +1016,24 @@ func TestServeContextCompressionOptions(t *testing.T) {
 				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{},
 			},
 		},
+		"ETag": {
+			serveCompression: config.CompressionParameters{
+				ETag: config.CompressionETagWeaken,
+			},
+			configCompression: &contour_v1alpha1.EnvoyCompression{
+				ETag: contour_v1alpha1.WeakenCompressionETag,
+			},
+		},
+		"AlgorithmsAndETag": {
+			serveCompression: config.CompressionParameters{
+				Algorithms: &[]config.CompressionAlgorithm{config.CompressionZstd},
+				ETag:       config.CompressionETagSkip,
+			},
+			configCompression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.ZstdCompression},
+				ETag:       contour_v1alpha1.SkipCompressionETag,
+			},
+		},
 	}
 
 	for name, tc := range cases {

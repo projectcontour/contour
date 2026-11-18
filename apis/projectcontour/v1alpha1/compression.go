@@ -46,6 +46,17 @@ type EnvoyCompression struct {
 	// +kubebuilder:validation:XValidation:rule="self.all(x, self.exists_one(y, y == x))",message="duplicate compression algorithm"
 	// +optional
 	Algorithms *[]CompressionAlgorithm `json:"algorithms,omitempty"`
+
+	// ETag selects how responses that carry an ETag header are handled when compression is enabled.
+	// Compressing a response changes its body, so a strong ETag no longer identifies it byte-for-byte.
+	// Values:
+	// - `remove` (default): compress the response and remove a strong ETag. Weak ETags are preserved.
+	// - `weaken`: compress the response and weaken a strong ETag by prepending `W/` to it.
+	// - `skip`: do not compress responses that carry an ETag header, strong or weak.
+	// Has no effect when compression is disabled.
+	// +kubebuilder:validation:Enum="remove";"weaken";"skip"
+	// +optional
+	ETag CompressionETagAction `json:"etag,omitempty"`
 }
 
 func (a CompressionAlgorithm) Validate() error {
@@ -63,6 +74,9 @@ func (c *EnvoyCompression) Validate() error {
 		return nil
 	}
 	if err := c.Algorithm.Validate(); err != nil {
+		return err
+	}
+	if err := c.ETag.Validate(); err != nil {
 		return err
 	}
 	if c.Algorithm != "" && c.Algorithms != nil {
@@ -116,6 +130,18 @@ func (c *EnvoyCompression) EffectiveAlgorithms() []CompressionAlgorithm {
 	}
 }
 
+// CompressionETagAction defines how the compression HTTP filters handle responses that carry an ETag header.
+type CompressionETagAction string
+
+func (a CompressionETagAction) Validate() error {
+	switch a {
+	case RemoveCompressionETag, WeakenCompressionETag, SkipCompressionETag, "":
+		return nil
+	default:
+		return fmt.Errorf("invalid compression etag action: %q", a)
+	}
+}
+
 const (
 	// BrotliCompression specifies brotli as the default HTTP filter chain compression mechanism
 	BrotliCompression CompressionAlgorithm = "brotli"
@@ -128,4 +154,15 @@ const (
 
 	// ZstdCompression specifies zstd as the default HTTP filter chain compression mechanism
 	ZstdCompression CompressionAlgorithm = "zstd"
+)
+
+const (
+	// RemoveCompressionETag removes a strong ETag from compressed responses and preserves a weak one.
+	RemoveCompressionETag CompressionETagAction = "remove"
+
+	// WeakenCompressionETag converts a strong ETag of a compressed response into a weak one.
+	WeakenCompressionETag CompressionETagAction = "weaken"
+
+	// SkipCompressionETag disables compression of responses that carry an ETag header.
+	SkipCompressionETag CompressionETagAction = "skip"
 )

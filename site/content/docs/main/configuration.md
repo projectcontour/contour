@@ -331,6 +331,7 @@ Sets the compression configuration applied in the compression HTTP filters of th
 |------------|--------|--------|-------------------------|
 | algorithm   | string        | "gzip" | **Deprecated.** Use `algorithms` instead. Single compression algorithm. Setting this to `disabled` will make Envoy not compress responses. Responses already compressed by the upstream are passed through unchanged. Values: `gzip` (default), `brotli`, `zstd`, `disabled`. Mutually exclusive with `algorithms`. |
 | algorithms  | string array  | "gzip" | Compression algorithms. An empty list disables compression. A populated list installs one compressor filter per entry and negotiates the encoding from the request `Accept-Encoding` header. The first entry is preferred if the client accepts it and has no stronger preference. Values: `gzip`, `brotli`, `zstd`. Cannot include `disabled`. Mutually exclusive with `algorithm`. |
+| etag        | string        | "remove" | How responses that carry an `ETag` header are handled when compression is enabled. `remove` compresses the response and removes a strong `ETag`; weak `ETag` values are preserved. `weaken` compresses the response and weakens a strong `ETag` by prepending `W/` to it. `skip` does not compress responses that carry an `ETag` header, strong or weak. Has no effect when compression is disabled. Values: `remove` (default), `weaken`, `skip`. |
 
 ### Overload Manager Enforced Health Listener Config
 
