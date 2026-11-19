@@ -1,0 +1,1 @@
+Reject tracing `overallSampling`, `clientSampling` and `randomSampling` values that are not a number between 0 and 100 when Contour loads its configuration. Envoy rejects other values, which previously caused it to refuse the listener configuration instead of Contour reporting the invalid setting.
