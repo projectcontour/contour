@@ -261,6 +261,44 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single with response header add only": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
+					},
+					ResponseHeadersPolicy: &dag.HeadersPolicy{
+						Add: map[string]string{
+							"K-Blah": "boo",
+						},
+					},
+				}},
+			},
+			want: &envoy_config_route_v3.Route_Route{
+				Route: &envoy_config_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_config_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_config_route_v3.WeightedCluster{
+							Clusters: []*envoy_config_route_v3.WeightedCluster_ClusterWeight{{
+								Name:   "default/kuard/8080/da39a3ee5e",
+								Weight: wrapperspb.UInt32(1),
+								ResponseHeadersToAdd: []*envoy_config_core_v3.HeaderValueOption{{
+									Header: &envoy_config_core_v3.HeaderValue{
+										Key:   "K-Blah",
+										Value: "boo",
+									},
+									AppendAction: envoy_config_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
+								}},
+							}},
+						},
+					},
+				},
+			},
+		},
 		"single service without retry-on": {
 			route: &dag.Route{
 				RetryPolicy: &dag.RetryPolicy{
