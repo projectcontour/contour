@@ -336,6 +336,43 @@ func TestContourConfigurationSpecValidate(t *testing.T) {
 		c.Tracing.CustomTags = customTags
 		require.Error(t, c.Validate())
 	})
+
+	// Envoy only accepts a percentage between 0 and 100 for the sampling
+	// rates and rejects the whole listener configuration otherwise.
+	t.Run("tracing sampling must be a percentage", func(t *testing.T) {
+		setters := map[string]func(*contour_v1alpha1.TracingConfig, *string){
+			"overallSampling": func(tc *contour_v1alpha1.TracingConfig, v *string) { tc.OverallSampling = v },
+			"clientSampling":  func(tc *contour_v1alpha1.TracingConfig, v *string) { tc.ClientSampling = v },
+			"randomSampling":  func(tc *contour_v1alpha1.TracingConfig, v *string) { tc.RandomSampling = v },
+		}
+
+		newConfig := func(set func(*contour_v1alpha1.TracingConfig, *string), value string) contour_v1alpha1.ContourConfigurationSpec {
+			tc := &contour_v1alpha1.TracingConfig{
+				ExtensionService: &contour_v1alpha1.NamespacedName{
+					Name:      "otel-collector",
+					Namespace: "projectcontour",
+				},
+			}
+			set(tc, ptr.To(value))
+			return contour_v1alpha1.ContourConfigurationSpec{Tracing: tc}
+		}
+
+		for field, set := range setters {
+			for _, value := range []string{"0", "0.5", "50", "100"} {
+				t.Run(fmt.Sprintf("%s %s is valid", field, value), func(t *testing.T) {
+					c := newConfig(set, value)
+					require.NoError(t, c.Validate())
+				})
+			}
+
+			for _, value := range []string{"-1", "-0.01", "100.01", "150", "NaN", "Inf", "-Inf"} {
+				t.Run(fmt.Sprintf("%s %s is invalid", field, value), func(t *testing.T) {
+					c := newConfig(set, value)
+					require.Error(t, c.Validate())
+				})
+			}
+		}
+	})
 }
 
 func TestSanitizeCipherSuites(t *testing.T) {
