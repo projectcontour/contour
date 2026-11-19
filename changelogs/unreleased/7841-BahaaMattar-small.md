@@ -1,0 +1,1 @@
+Fix Gateway API HTTPRoute `ResponseHeaderModifier` filters on a `backendRef` being ignored when the route has a single backend and the filter only adds headers. The headers are now added to responses, the same as when the filter also sets or removes headers.

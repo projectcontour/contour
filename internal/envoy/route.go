@@ -81,6 +81,7 @@ func SingleSimpleCluster(route *dag.Route) bool {
 	}
 	if cluster.ResponseHeadersPolicy != nil &&
 		(len(cluster.ResponseHeadersPolicy.Set) != 0 ||
+			len(cluster.ResponseHeadersPolicy.Add) != 0 ||
 			len(cluster.ResponseHeadersPolicy.Remove) != 0) {
 		return false
 	}
