@@ -1040,16 +1040,22 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
-			dynamicHeaders["CONTOUR_SERVICE_NAME"] = service.Name
-			dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(service.Port)
+			// The service variables only apply to this service's header policies.
+			// Use a copy so they do not leak into the route-level header policies
+			// of the routes processed after this one.
+			serviceDynamicHeaders := map[string]string{
+				"CONTOUR_NAMESPACE":    proxy.Namespace,
+				"CONTOUR_SERVICE_NAME": service.Name,
+				"CONTOUR_SERVICE_PORT": strconv.Itoa(service.Port),
+			}
 
-			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, true, dynamicHeaders)
+			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, true, serviceDynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid",
 					"%s on request headers", err)
 				return nil
 			}
-			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, false, dynamicHeaders)
+			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, false, serviceDynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid",
 					"%s on response headers", err)

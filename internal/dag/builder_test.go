@@ -16071,6 +16071,97 @@ func TestDefaultHeadersPolicies(t *testing.T) {
 	}
 }
 
+// TestRouteHeadersPolicyServiceDynamicHeaders checks that the
+// %CONTOUR_SERVICE_NAME% and %CONTOUR_SERVICE_PORT% dynamic header values are
+// only expanded in per-Service header policies. In per-Route header policies
+// they must stay literal on every route, not only on the first one.
+func TestRouteHeadersPolicyServiceDynamicHeaders(t *testing.T) {
+	newService := func(name string) *core_v1.Service {
+		return &core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{Name: name, Namespace: "default"},
+			Spec: core_v1.ServiceSpec{
+				Ports: []core_v1.ServicePort{makeServicePort("http", "TCP", 8080, 8080)},
+			},
+		}
+	}
+
+	dynamicPolicy := func() *contour_v1.HeadersPolicy {
+		return &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{{
+				Name:  "X-Dest",
+				Value: "%CONTOUR_SERVICE_NAME%:%CONTOUR_SERVICE_PORT%",
+			}},
+		}
+	}
+
+	proxy := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{Name: "example-com", Namespace: "default"},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{Fqdn: "example.com"},
+			Routes: []contour_v1.Route{{
+				Conditions:            []contour_v1.MatchCondition{{Prefix: "/a"}},
+				RequestHeadersPolicy:  dynamicPolicy(),
+				ResponseHeadersPolicy: dynamicPolicy(),
+				Services:              []contour_v1.Service{{Name: "svc-a", Port: 8080}},
+			}, {
+				Conditions:            []contour_v1.MatchCondition{{Prefix: "/b"}},
+				RequestHeadersPolicy:  dynamicPolicy(),
+				ResponseHeadersPolicy: dynamicPolicy(),
+				Services:              []contour_v1.Service{{Name: "svc-b", Port: 8080}},
+			}, {
+				Conditions:            []contour_v1.MatchCondition{{Prefix: "/c"}},
+				RequestHeadersPolicy:  dynamicPolicy(),
+				ResponseHeadersPolicy: dynamicPolicy(),
+				Services: []contour_v1.Service{{
+					Name:                  "svc-c",
+					Port:                  8080,
+					RequestHeadersPolicy:  dynamicPolicy(),
+					ResponseHeadersPolicy: dynamicPolicy(),
+				}},
+			}},
+		},
+	}
+
+	builder := Builder{
+		Source: KubernetesCache{
+			FieldLogger: fixture.NewTestLogger(t),
+		},
+		Processors: []Processor{
+			&ListenerProcessor{},
+			&HTTPProxyProcessor{},
+		},
+	}
+	for _, o := range []any{proxy, newService("svc-a"), newService("svc-b"), newService("svc-c")} {
+		builder.Source.Insert(o)
+	}
+	d := builder.Build()
+
+	var gotRoutes []*Route
+	for _, routes := range d.GetVirtualHostRoutes() {
+		gotRoutes = append(gotRoutes, routes...)
+	}
+	assert.Len(t, gotRoutes, 3)
+
+	for _, r := range gotRoutes {
+		prefix := r.PathMatchCondition.(*PrefixMatchCondition).Prefix
+
+		// Route level: the service variables are not available, so they stay literal.
+		const literal = "%%CONTOUR_SERVICE_NAME%%:%%CONTOUR_SERVICE_PORT%%"
+		assert.Equal(t, map[string]string{"X-Dest": literal}, r.RequestHeadersPolicy.Set, "route %s request headers", prefix)
+		assert.Equal(t, map[string]string{"X-Dest": literal}, r.ResponseHeadersPolicy.Set, "route %s response headers", prefix)
+	}
+
+	// Service level: the variables are expanded for the service itself.
+	for _, r := range gotRoutes {
+		if r.PathMatchCondition.(*PrefixMatchCondition).Prefix != "/c" {
+			continue
+		}
+		assert.Len(t, r.Clusters, 1)
+		assert.Equal(t, map[string]string{"X-Dest": "svc-c:8080"}, r.Clusters[0].RequestHeadersPolicy.Set)
+		assert.Equal(t, map[string]string{"X-Dest": "svc-c:8080"}, r.Clusters[0].ResponseHeadersPolicy.Set)
+	}
+}
+
 func routes(routes ...*Route) map[string]*Route {
 	if len(routes) == 0 {
 		return nil
