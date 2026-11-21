@@ -90,14 +90,16 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 	return nil
 }
 
-// tagFromImage returns the tag from the provided image or an
-// empty string if the image does not contain a tag.
+// tagFromImage returns the tag from the provided image, the digest if
+// the image is only pinned by digest, or an empty string if the image
+// has neither.
 func tagFromImage(image string) string {
-	if strings.Contains(image, ":") {
-		parsed := strings.Split(image, ":")
-		return parsed[1]
+	ref, digest, _ := strings.Cut(image, "@")
+	// A colon before the last "/" belongs to the registry port, not to a tag.
+	if i := strings.LastIndex(ref, ":"); i > strings.LastIndex(ref, "/") {
+		return ref[i+1:]
 	}
-	return ""
+	return digest
 }
 
 func tlsSecretsExist(contour *model.Contour, cli client.Client, generatedByVersion string) bool {
