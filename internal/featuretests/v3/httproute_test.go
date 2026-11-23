@@ -16,6 +16,7 @@ package v3
 import (
 	"testing"
 
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -177,5 +178,87 @@ func TestGateway_TLS(t *testing.T) {
 				SocketOptions: envoy_v3.NewSocketOptions().TCPKeepalive().Build(),
 			},
 		),
+	})
+}
+
+// A response header modifier on a single backendRef that only adds
+// headers must be programmed, in the same way as one that sets headers.
+func TestHTTPRoute_BackendRefResponseHeaderModifierAdd(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
+
+	rh.OnAdd(featuretests.TLSSecret(t, "projectcontour/tlscert", &featuretests.ServerCertificate))
+
+	rh.OnAdd(gc)
+
+	rh.OnAdd(gateway)
+
+	rh.OnAdd(&gatewayapi_v1.HTTPRoute{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1.ParentReference{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1.HTTPRouteRule{{
+				Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+				BackendRefs: []gatewayapi_v1.HTTPBackendRef{{
+					BackendRef: gatewayapi_v1.BackendRef{
+						BackendObjectReference: gatewayapi.ServiceBackendObjectRef("svc1", 80),
+						Weight:                 ptr.To(int32(1)),
+					},
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterResponseHeaderModifier,
+						ResponseHeaderModifier: &gatewayapi_v1.HTTPHeaderFilter{
+							Add: []gatewayapi_v1.HTTPHeader{
+								{Name: "X-Added", Value: "yes"},
+							},
+						},
+					}},
+				}},
+			}},
+		},
+	})
+
+	action := routeWeightedCluster(weightedCluster{name: "default/svc1/80/da39a3ee5e", weight: 1})
+	action.Route.GetWeightedClusters().Clusters[0].ResponseHeadersToAdd = []*envoy_config_core_v3.HeaderValueOption{{
+		Header: &envoy_config_core_v3.HeaderValue{
+			Key:   "X-Added",
+			Value: "yes",
+		},
+		AppendAction: envoy_config_core_v3.HeaderValueOption_APPEND_IF_EXISTS_OR_ADD,
+	}}
+
+	c.Request(routeType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("http-80",
+				envoy_v3.VirtualHost("test.projectcontour.io",
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: action,
+					},
+				),
+			),
+			envoy_v3.RouteConfiguration("https-443/test.projectcontour.io",
+				envoy_v3.VirtualHost("test.projectcontour.io",
+					&envoy_config_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: action,
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
 	})
 }
