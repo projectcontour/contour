@@ -16,6 +16,7 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -53,30 +54,41 @@ func (c *ContourConfigurationSpec) Validate() error {
 	return nil
 }
 
+// validateSamplingRate checks that a tracing sampling rate, if set, is a
+// number between 0 and 100. Envoy takes the rate as a percentage and does
+// not accept a value outside that range.
+func validateSamplingRate(rate *string) error {
+	if rate == nil {
+		return nil
+	}
+
+	value, err := strconv.ParseFloat(*rate, 64)
+	if err != nil {
+		return err
+	}
+
+	if math.IsNaN(value) || value < 0 || value > 100 {
+		return fmt.Errorf("%q must be a number between 0 and 100", *rate)
+	}
+
+	return nil
+}
+
 func (t *TracingConfig) Validate() error {
 	if t.ExtensionService == nil {
 		return fmt.Errorf("tracing.extensionService must be defined")
 	}
 
-	if t.OverallSampling != nil {
-		_, err := strconv.ParseFloat(*t.OverallSampling, 64)
-		if err != nil {
-			return fmt.Errorf("invalid tracing sampling: %v", err)
-		}
+	if err := validateSamplingRate(t.OverallSampling); err != nil {
+		return fmt.Errorf("invalid tracing sampling: %v", err)
 	}
 
-	if t.ClientSampling != nil {
-		_, err := strconv.ParseFloat(*t.ClientSampling, 64)
-		if err != nil {
-			return fmt.Errorf("invalid tracing client sampling: %v", err)
-		}
+	if err := validateSamplingRate(t.ClientSampling); err != nil {
+		return fmt.Errorf("invalid tracing client sampling: %v", err)
 	}
 
-	if t.RandomSampling != nil {
-		_, err := strconv.ParseFloat(*t.RandomSampling, 64)
-		if err != nil {
-			return fmt.Errorf("invalid tracing random sampling: %v", err)
-		}
+	if err := validateSamplingRate(t.RandomSampling); err != nil {
+		return fmt.Errorf("invalid tracing random sampling: %v", err)
 	}
 
 	var customTagNames []string
