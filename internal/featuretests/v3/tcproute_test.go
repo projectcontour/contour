@@ -215,7 +215,7 @@ func TestTCPRoute_TLSTermination(t *testing.T) {
 					Name:     "tls",
 					Port:     5000,
 					Protocol: gatewayapi_v1.TLSProtocolType,
-					TLS: &gatewayapi_v1.GatewayTLSConfig{
+					TLS: &gatewayapi_v1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapi_v1.TLSModeTerminate),
 						CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 							gatewayapi.CertificateRef("tlscert", ""),

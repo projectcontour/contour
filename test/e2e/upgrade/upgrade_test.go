@@ -250,16 +250,8 @@ var _ = Describe("When upgrading", func() {
 				require.NoError(f.T(), err)
 
 				By("updating gateway-api CRDs to latest")
-				// Delete existing BackendTLSPolicy CRD.
-				// TODO: remove this hack once BackendTLSPolicy v1alpha3 or
-				// above is available in multiple consecutive releases.
-				cmd := exec.Command("kubectl", "delete", "crd", "backendtlspolicies.gateway.networking.k8s.io")
+				cmd := exec.Command("kubectl", "apply", "--server-side", "-f", "../../../examples/gateway/00-crds.yaml")
 				sess, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				require.NoError(f.T(), err)
-				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
-
-				cmd = exec.Command("kubectl", "apply", "-f", "../../../examples/gateway/00-crds.yaml")
-				sess, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				require.NoError(f.T(), err)
 				Eventually(sess, f.RetryTimeout, f.RetryInterval).Should(gexec.Exit(0))
 

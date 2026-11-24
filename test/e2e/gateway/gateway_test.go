@@ -219,7 +219,7 @@ var _ = Describe("Gateway API", func() {
 							Name:     "secure",
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert", ""),
 								},
@@ -267,7 +267,7 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-1.gateway.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-1", ""),
 								},
@@ -286,7 +286,7 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-2.gateway.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-2", ""),
 								},
@@ -305,7 +305,7 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1.HTTPSProtocolType,
 							Port:     gatewayapi_v1.PortNumber(443),
 							Hostname: ptr.To(gatewayapi_v1.Hostname("https-3.gateway.projectcontour.io")),
-							TLS: &gatewayapi_v1.GatewayTLSConfig{
+							TLS: &gatewayapi_v1.ListenerTLSConfig{
 								CertificateRefs: []gatewayapi_v1.SecretObjectReference{
 									gatewayapi.CertificateRef("tlscert-3", ""),
 								},

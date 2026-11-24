@@ -20,7 +20,7 @@ This can be done using either [static or dynamic provisioning][6].
 
 Create Gateway API CRDs:
 ```shell
-$ kubectl apply -f {{< param github_raw_url>}}/{{< param branch >}}/examples/gateway/00-crds.yaml
+$ kubectl apply --server-side -f {{< param github_raw_url>}}/{{< param branch >}}/examples/gateway/00-crds.yaml
 ```
 
 Create a GatewayClass:
@@ -99,7 +99,7 @@ See [Configure an HTTPRoute](#configure-an-httproute) for how to deploy an appli
 
 Deploy the Gateway provisioner:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/contour-gateway-provisioner.yaml
+$ kubectl apply --server-side -f {{< param base_url >}}/quickstart/contour-gateway-provisioner.yaml
 ```
 
 This command creates:

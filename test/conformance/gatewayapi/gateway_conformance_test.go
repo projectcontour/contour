@@ -66,12 +66,12 @@ func TestGatewayConformance(t *testing.T) {
 		Client: client,
 		// This clientset is needed in addition to the client only because
 		// controller-runtime client doesn't support non CRUD sub-resources yet (https://github.com/kubernetes-sigs/controller-runtime/issues/452).
-		Clientset:                  clientset,
-		RestConfig:                 cfg,
-		GatewayClassName:           *flags.GatewayClassName,
-		Debug:                      *flags.ShowDebug,
-		CleanupBaseResources:       *flags.CleanupBaseResources,
-		EnableAllSupportedFeatures: true,
+		Clientset:            clientset,
+		RestConfig:           cfg,
+		GatewayClassName:     *flags.GatewayClassName,
+		Debug:                *flags.ShowDebug,
+		CleanupBaseResources: *flags.CleanupBaseResources,
+		SupportedFeatures:    features.SetsToNamesSet(features.AllFeatures),
 		// Keep the list of skipped features in sync with
 		// test/scripts/run-gateway-conformance.sh.
 		SkipTests: []string{
@@ -106,6 +106,15 @@ func TestGatewayConformance(t *testing.T) {
 			// TODO: implement percentage based mirroring
 			// See: https://github.com/projectcontour/contour/issues/7021
 			features.SupportHTTPRouteRequestPercentageMirror,
+
+			// Not implemented yet
+			features.SupportHTTPRouteCORS,
+			features.SupportBackendTLSPolicySANValidation,
+
+			// Contour still reconciles BackendTLSPolicy v1alpha3, so it does
+			// not set the v1 status conditions that the tests check.
+			// See: https://github.com/projectcontour/contour/issues/7474
+			features.SupportBackendTLSPolicy,
 		),
 	}
 	if os.Getenv("GENERATE_GATEWAY_CONFORMANCE_REPORT") == "true" {
@@ -138,11 +147,6 @@ func TestGatewayConformance(t *testing.T) {
 			suite.GatewayTLSConformanceProfileName,
 			suite.GatewayGRPCConformanceProfileName,
 		)
-
-		// Workaround since the experimental suite doesn't properly
-		// exclude tests we don't want to run using the ExemptFeatures
-		// field.
-		options.EnableAllSupportedFeatures = false
 
 		supportedFeatures := features.AllFeatures
 		supportedFeatures.Delete(features.MeshCoreFeatures.UnsortedList()...)

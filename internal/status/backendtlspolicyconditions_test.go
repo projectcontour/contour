@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gatewayapi_v1 "sigs.k8s.io/gateway-api/apis/v1"
 	gatewayapi_v1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -38,14 +38,14 @@ func TestBackendTLSPolicyAddCondition(t *testing.T) {
 
 	basUpdate := backendTLSPolicyUpdate.StatusUpdateFor(ancestorRef)
 
-	basUpdate.AddCondition(gatewayapi_v1alpha2.PolicyConditionAccepted, meta_v1.ConditionTrue, gatewayapi_v1alpha2.PolicyReasonAccepted, "Valid BackendTLSPolicy")
+	basUpdate.AddCondition(gatewayapi_v1.PolicyConditionAccepted, meta_v1.ConditionTrue, gatewayapi_v1.PolicyReasonAccepted, "Valid BackendTLSPolicy")
 
 	require.Len(t, backendTLSPolicyUpdate.ConditionsForAncestorRef(ancestorRef), 1)
 	got := backendTLSPolicyUpdate.ConditionsForAncestorRef(ancestorRef)[0]
 
-	assert.EqualValues(t, gatewayapi_v1alpha2.PolicyConditionAccepted, got.Type)
+	assert.EqualValues(t, gatewayapi_v1.PolicyConditionAccepted, got.Type)
 	assert.Equal(t, meta_v1.ConditionTrue, got.Status)
-	assert.EqualValues(t, gatewayapi_v1alpha2.PolicyReasonAccepted, got.Reason)
+	assert.EqualValues(t, gatewayapi_v1.PolicyReasonAccepted, got.Reason)
 	assert.Equal(t, "Valid BackendTLSPolicy", got.Message)
 	assert.EqualValues(t, 7, got.ObservedGeneration)
 }
@@ -58,14 +58,14 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 		FullName:       k8s.NamespacedNameFrom("test/test"),
 		Generation:     testGeneration,
 		TransitionTime: testTransitionTime,
-		PolicyAncestorStatuses: []*gatewayapi_v1alpha2.PolicyAncestorStatus{
+		PolicyAncestorStatuses: []*gatewayapi_v1.PolicyAncestorStatus{
 			{
 				AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 				Conditions: []meta_v1.Condition{
 					{
-						Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+						Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 						Status:  contour_v1.ConditionTrue,
-						Reason:  string(gatewayapi_v1alpha2.PolicyReasonAccepted),
+						Reason:  string(gatewayapi_v1.PolicyReasonAccepted),
 						Message: "Accepted BackendTLSPolicy",
 					},
 				},
@@ -78,15 +78,15 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 			Name:      "test",
 			Namespace: "test",
 		},
-		Status: gatewayapi_v1alpha2.PolicyStatus{
-			Ancestors: []gatewayapi_v1alpha2.PolicyAncestorStatus{
+		Status: gatewayapi_v1.PolicyStatus{
+			Ancestors: []gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("externalgateway", "some-gateway"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  contour_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonAccepted),
+							Reason:  string(gatewayapi_v1.PolicyReasonAccepted),
 							Message: "This was added by some other gateway and should not be removed.",
 						},
 					},
@@ -100,17 +100,17 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 			Name:      "test",
 			Namespace: "test",
 		},
-		Status: gatewayapi_v1alpha2.PolicyStatus{
-			Ancestors: []gatewayapi_v1alpha2.PolicyAncestorStatus{
+		Status: gatewayapi_v1.PolicyStatus{
+			Ancestors: []gatewayapi_v1.PolicyAncestorStatus{
 				{
 					AncestorRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
 					Conditions: []meta_v1.Condition{
 						{
 							ObservedGeneration: testGeneration,
 							LastTransitionTime: testTransitionTime,
-							Type:               string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:               string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:             contour_v1.ConditionTrue,
-							Reason:             string(gatewayapi_v1alpha2.PolicyReasonAccepted),
+							Reason:             string(gatewayapi_v1.PolicyReasonAccepted),
 							Message:            "Accepted BackendTLSPolicy",
 						},
 					},
@@ -119,9 +119,9 @@ func TestBackendTLSPolicyMutate(t *testing.T) {
 					AncestorRef: gatewayapi.GatewayParentRef("externalgateway", "some-gateway"),
 					Conditions: []meta_v1.Condition{
 						{
-							Type:    string(gatewayapi_v1alpha2.PolicyConditionAccepted),
+							Type:    string(gatewayapi_v1.PolicyConditionAccepted),
 							Status:  contour_v1.ConditionTrue,
-							Reason:  string(gatewayapi_v1alpha2.PolicyReasonAccepted),
+							Reason:  string(gatewayapi_v1.PolicyReasonAccepted),
 							Message: "This was added by some other gateway and should not be removed.",
 						},
 					},
