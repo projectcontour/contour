@@ -18,19 +18,30 @@ import (
 	"fmt"
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/projectcontour/contour/internal/metrics"
 )
 
+// versionChecker is the subset of kubernetes.Clientset used by the health handler.
+type versionChecker interface {
+	ServerVersion() (*version.Info, error)
+}
+
+var _ versionChecker = (*kubernetes.Clientset)(nil)
+
 // Handler returns a http Handler for a health endpoint.
-func Handler(client *kubernetes.Clientset) http.Handler {
+func Handler(client versionChecker, m *metrics.Metrics) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		// Try and lookup Kubernetes server version as a quick and dirty check
 		_, err := client.ServerVersion()
 		if err != nil {
+			m.IncHealthzRequest(false)
 			msg := fmt.Sprintf("Failed Kubernetes Check: %v", err)
 			http.Error(w, msg, http.StatusServiceUnavailable)
 			return
 		}
+		m.IncHealthzRequest(true)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "OK")
 	})
