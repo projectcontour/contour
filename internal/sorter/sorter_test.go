@@ -317,6 +317,65 @@ func TestSortRoutesPathMatch(t *testing.T) {
 	shuffleAndCheckSort(t, want)
 }
 
+// TestSortRoutesComparatorAntisymmetric verifies that the route comparator
+// defines a strict weak ordering. When two routes have identical path matches,
+// an equal number of match conditions, and the same priority, their ordering
+// is decided by an element-by-element comparison of the match conditions. That
+// comparison must stop at the first condition that differs, otherwise the
+// comparator can report that both routes sort before each other, which breaks
+// sort.Stable.
+func TestSortRoutesComparatorAntisymmetric(t *testing.T) {
+	// Each route's conditions are already sorted (as they are before the
+	// route sort runs), but they "cross": the first route's leading header
+	// sorts later while its trailing header sorts earlier. A correct
+	// comparator decides on the first differing header only.
+	headerA := &dag.Route{
+		PathMatchCondition: matchExact("/path"),
+		HeaderMatchConditions: []dag.HeaderMatchCondition{
+			exactHeader("header-b", "value"),
+			exactHeader("header-c", "value"),
+		},
+	}
+	headerB := &dag.Route{
+		PathMatchCondition: matchExact("/path"),
+		HeaderMatchConditions: []dag.HeaderMatchCondition{
+			exactHeader("header-a", "value"),
+			exactHeader("header-d", "value"),
+		},
+	}
+
+	queryA := &dag.Route{
+		PathMatchCondition: matchExact("/path"),
+		QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+			exactQueryParam("param-b", "value"),
+			exactQueryParam("param-c", "value"),
+		},
+	}
+	queryB := &dag.Route{
+		PathMatchCondition: matchExact("/path"),
+		QueryParamMatchConditions: []dag.QueryParamMatchCondition{
+			exactQueryParam("param-a", "value"),
+			exactQueryParam("param-d", "value"),
+		},
+	}
+
+	cases := map[string]struct {
+		lhs, rhs *dag.Route
+	}{
+		"header match conditions":      {lhs: headerA, rhs: headerB},
+		"query param match conditions": {lhs: queryA, rhs: queryB},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			s := routeSorter([]*dag.Route{tc.lhs, tc.rhs})
+			if s.Less(0, 1) && s.Less(1, 0) {
+				t.Error("comparator is not antisymmetric: both Less(lhs, rhs) and Less(rhs, lhs) returned true")
+			}
+		})
+	}
+}
+
 func TestSortRoutesMethod(t *testing.T) {
 	want := []*dag.Route{
 		{

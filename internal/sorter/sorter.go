@@ -259,25 +259,38 @@ func compareRoutesByMethodHeaderQueryParams(lhs, rhs *dag.Route) bool {
 		return lhs.Priority < rhs.Priority
 	}
 
-	// HeaderMatchConditions are equal length: compare item by item.
+	// HeaderMatchConditions are equal length: compare item by item and
+	// decide on the first condition that differs. Checking only whether the
+	// left side sorts first would keep scanning past a condition where the
+	// right side sorts first, which can make the comparator report that both
+	// routes sort before each other.
 	pair := make([]dag.HeaderMatchCondition, 2)
 	for i := range len(lhsHeaderMatchConditions) {
 		pair[0] = lhsHeaderMatchConditions[i]
 		pair[1] = rhsHeaderMatchConditions[i]
 
-		if headerMatchConditionSorter(pair).Less(0, 1) {
+		s := headerMatchConditionSorter(pair)
+		if s.Less(0, 1) {
 			return true
+		}
+		if s.Less(1, 0) {
+			return false
 		}
 	}
 
-	// QueryParamMatchConditions are equal length: compare item by item.
+	// QueryParamMatchConditions are equal length: compare item by item and
+	// decide on the first condition that differs.
 	for i := range len(lhs.QueryParamMatchConditions) {
 		qPair := make([]dag.QueryParamMatchCondition, 2)
 		qPair[0] = lhs.QueryParamMatchConditions[i]
 		qPair[1] = rhs.QueryParamMatchConditions[i]
 
-		if queryParamMatchConditionSorter(qPair).Less(0, 1) {
+		s := queryParamMatchConditionSorter(qPair)
+		if s.Less(0, 1) {
 			return true
+		}
+		if s.Less(1, 0) {
+			return false
 		}
 	}
 
