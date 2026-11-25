@@ -220,6 +220,6 @@ Piping the output to `base64 -d | od -c` we can see the raw text gRPC response:
 [3]: https://github.com/grpc/grpc/blob/master/doc/health-checking.md
 [4]: https://github.com/grpc-ecosystem/grpc-health-probe
 [5]: https://github.com/fullstorydev/grpcurl
-[6]: https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.GRPCRoute
+[6]: https://gateway-api.sigs.k8s.io/reference/api-spec/main/spec/#grpcroute
 [7]: https://github.com/grpc/grpc-web
 [8]: https://github.com/projectcontour/contour/issues/4290
