@@ -1072,7 +1072,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	c.Status(proxy2).IsValid()
 	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", []*envoy_type_v3.Int64Range{
+			clusterWithHealthCheck("default/kuard/80/06649415b3", "default/kuard", "default_kuard_80", "/healthz", []*envoy_type_v3.Int64Range{
 				{Start: 200, End: 300},
 				{Start: 500, End: 600},
 			}),
@@ -1199,6 +1199,52 @@ func TestClusterWithHealthChecks(t *testing.T) {
 	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
+		),
+		TypeUrl: clusterType,
+	})
+}
+
+// Routes to the same Service whose health checks differ only in fields
+// other than the path must not share a cluster.
+func TestClusterWithDifferentHealthChecksPerRoute(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
+	)
+
+	route := func(prefix string, hc *contour_v1.HTTPHealthCheckPolicy) contour_v1.Route {
+		return contour_v1.Route{
+			Conditions:        []contour_v1.MatchCondition{{Prefix: prefix}},
+			HealthCheckPolicy: hc,
+			Services:          []contour_v1.Service{{Name: "kuard", Port: 80}},
+		}
+	}
+	proxy := fixture.NewProxy("default/simple").WithSpec(contour_v1.HTTPProxySpec{
+		VirtualHost: &contour_v1.VirtualHost{Fqdn: "www.example.com"},
+		Routes: []contour_v1.Route{
+			route("/a", &contour_v1.HTTPHealthCheckPolicy{Path: "/healthz"}),
+			route("/b", &contour_v1.HTTPHealthCheckPolicy{
+				Path:             "/healthz",
+				ExpectedStatuses: []contour_v1.HTTPStatusRange{{Start: 200, End: 300}},
+			}),
+			route("/c", &contour_v1.HTTPHealthCheckPolicy{Path: "/healthz", Host: "kuard.example.com"}),
+		},
+	})
+	rh.OnAdd(proxy)
+
+	withHost := clusterWithHealthCheck("default/kuard/80/7d7ed797aa", "default/kuard", "default_kuard_80", "/healthz", nil)
+	withHost.HealthChecks[0].GetHttpHealthCheck().Host = "kuard.example.com"
+
+	c.Status(proxy).IsValid()
+	c.Request(clusterType).Equals(&envoy_service_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", nil),
+			clusterWithHealthCheck("default/kuard/80/1d43bea1b8", "default/kuard", "default_kuard_80", "/healthz", []*envoy_type_v3.Int64Range{
+				{Start: 200, End: 300},
+			}),
+			withHost,
 		),
 		TypeUrl: clusterType,
 	})

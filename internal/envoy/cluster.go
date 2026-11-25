@@ -45,6 +45,17 @@ func Clustername(cluster *dag.Cluster) string {
 			buf += strconv.Itoa(int(hc.HealthyThreshold))
 		}
 		buf += hc.Path
+		// Fields added later are appended only when set, so that existing
+		// cluster names stay the same.
+		if hc.Host != "" {
+			buf += "host" + strconv.Quote(hc.Host)
+		}
+		for _, r := range hc.ExpectedStatuses {
+			buf += fmt.Sprintf("status%d-%d", r.Start, r.End)
+		}
+	}
+	if hc := cluster.TCPHealthCheckPolicy; hc != nil {
+		buf += fmt.Sprintf("tcphc%d/%d/%d/%d", hc.Timeout, hc.Interval, hc.UnhealthyThreshold, hc.HealthyThreshold)
 	}
 	if uv := cluster.UpstreamValidation; uv != nil {
 		if len(uv.CACertificates) > 0 {
@@ -52,6 +63,18 @@ func Clustername(cluster *dag.Cluster) string {
 		}
 		if len(uv.SubjectNames) > 0 {
 			buf += uv.SubjectNames[0]
+		}
+		if len(uv.CACertificates) > 1 {
+			for _, ca := range uv.CACertificates[1:] {
+				if ca != nil {
+					buf += "ca" + strconv.Quote(ca.Namespace()) + strconv.Quote(ca.Name())
+				}
+			}
+		}
+		if len(uv.SubjectNames) > 1 {
+			for _, sn := range uv.SubjectNames[1:] {
+				buf += "san" + strconv.Quote(sn)
+			}
 		}
 	}
 	buf += cluster.Protocol + cluster.SNI
