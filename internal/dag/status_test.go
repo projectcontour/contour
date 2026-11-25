@@ -618,6 +618,41 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	proxyInvalidWeightSum := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_v1.Route{{
+				Conditions: []contour_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_v1.Service{{
+					Name:   "home",
+					Port:   8080,
+					Weight: 4294967295,
+				}, {
+					Name:   "kuard",
+					Port:   8080,
+					Weight: 1,
+				}},
+			}},
+		},
+	}
+
+	run(t, "sum of service weights too large", testcase{
+		objs: []any{proxyInvalidWeightSum, fixture.ServiceRootsHome, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			{Name: proxyInvalidWeightSum.Name, Namespace: proxyInvalidWeightSum.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyInvalidWeightSum.Generation).
+				WithError(contour_v1.ConditionTypeServiceError, "ServiceWeightInvalid", "sum of service weights must not exceed 4294967295"),
+		},
+	})
+
 	// proxyInvalidOutsideRootNamespace is invalid because it lives outside the roots namespace
 	proxyInvalidOutsideRootNamespace := &contour_v1.HTTPProxy{
 		ObjectMeta: meta_v1.ObjectMeta{
@@ -3756,6 +3791,56 @@ func TestDAGStatus(t *testing.T) {
 					contour_v1.ConditionTypeJWTVerificationError,
 					"RemoteJWKSSchemeInvalid",
 					"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has invalid scheme \"ftp\", must be http or https",
+				),
+		},
+	})
+
+	jwtVerificationRemoteJWKSPortOutOfRange := &contour_v1.HTTPProxy{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "jwt-verification-remote-jwks-port-out-of-range",
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			VirtualHost: &contour_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_v1.TLS{
+					SecretName: fixture.SecretRootsCert.Name,
+				},
+				JWTProviders: []contour_v1.JWTProvider{
+					{
+						Name: "provider-1",
+						RemoteJWKS: contour_v1.RemoteJWKS{
+							URI: "https://jwt.example.com:65536/jwks.json",
+						},
+					},
+				},
+			},
+			Routes: []contour_v1.Route{
+				{
+					Conditions: []contour_v1.MatchCondition{{
+						Prefix: "/foo",
+					}},
+					Services: []contour_v1.Service{{
+						Name: "home",
+						Port: 8080,
+					}},
+				},
+			},
+		},
+	}
+
+	run(t, "JWT verification remote JWKS port out of range", testcase{
+		objs: []any{
+			jwtVerificationRemoteJWKSPortOutOfRange,
+			fixture.SecretRootsCert,
+			fixture.ServiceRootsHome,
+		},
+		want: map[types.NamespacedName]contour_v1.DetailedCondition{
+			k8s.NamespacedNameOf(jwtVerificationRemoteJWKSPortOutOfRange): fixture.NewValidCondition().
+				WithError(
+					contour_v1.ConditionTypeJWTVerificationError,
+					"RemoteJWKSPortInvalid",
+					`Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has an invalid port: strconv.ParseUint: parsing "65536": value out of range`,
 				),
 		},
 	})
@@ -8544,6 +8629,66 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		// Invalid filters still result in an attached route.
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
 	})
+
+	for filterName, filter := range map[string]gatewayapi_v1.HTTPRouteFilter{
+		"RequestRedirect": {
+			Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
+			RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+				Path: &gatewayapi_v1.HTTPPathModifier{
+					Type:            gatewayapi_v1.FullPathHTTPPathModifier,
+					ReplaceFullPath: ptr.To("/foo\n"),
+				},
+			},
+		},
+		"URLRewrite": {
+			Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
+			URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+				Path: &gatewayapi_v1.HTTPPathModifier{
+					Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
+					ReplacePrefixMatch: ptr.To("/foo\n"),
+				},
+			},
+		},
+	} {
+		run(t, "HTTPRouteFilter"+filterName+" with newline in path is not supported", testcase{
+			objs: []any{
+				kuardService,
+				&gatewayapi_v1.HTTPRoute{
+					ObjectMeta: meta_v1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+							Filters:     []gatewayapi_v1.HTTPRouteFilter{filter},
+						}},
+					},
+				},
+			},
+			wantRouteConditions: []*status.RouteStatusUpdate{{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+				RouteParentStatuses: []*gatewayapi_v1.RouteParentStatus{
+					{
+						ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+						Conditions: []meta_v1.Condition{
+							routeResolvedRefsCondition(),
+							routeAcceptedFalse(gatewayapi_v1.RouteReasonUnsupportedValue, "HTTPRoute.Spec.Rules.Filters."+filterName+".Path: path must not contain NUL, CR or LF characters."),
+						},
+					},
+				},
+			}},
+			// Invalid filters still result in an attached route.
+			wantGatewayStatusUpdate: validGatewayStatusUpdate("http", gatewayapi_v1.HTTPProtocolType, 1),
+		})
+	}
 
 	run(t, "Invalid RequestHeaderModifier due to duplicated headers", testcase{
 		objs: []any{

@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -138,8 +139,9 @@ func TestRetryPolicyIngress(t *testing.T) {
 
 func TestRetryPolicy(t *testing.T) {
 	tests := map[string]struct {
-		rp   *contour_v1.RetryPolicy
-		want *RetryPolicy
+		rp      *contour_v1.RetryPolicy
+		want    *RetryPolicy
+		wantErr bool
 	}{
 		"nil retry policy": {
 			rp:   nil,
@@ -181,6 +183,12 @@ func TestRetryPolicy(t *testing.T) {
 				PerTryTimeout: timeout.DefaultSetting(),
 			},
 		},
+		"per try timeout too large": {
+			rp: &contour_v1.RetryPolicy{
+				PerTryTimeout: "2562047h47m16s",
+			},
+			wantErr: true,
+		},
 		"retry on": {
 			rp: &contour_v1.RetryPolicy{
 				RetryOn: []contour_v1.RetryOn{"gateway-error", "connect-failure"},
@@ -204,7 +212,8 @@ func TestRetryPolicy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := retryPolicy(tc.rp)
+			got, err := retryPolicy(tc.rp)
+			assert.Equal(t, tc.wantErr, err != nil)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -817,7 +826,57 @@ func TestRateLimitPolicy(t *testing.T) {
 					},
 				},
 			},
-			wantErr: `invalid header "Header-1": value must not contain NUL, CR or LF characters`,
+			wantErr: `invalid header value "Header-1": value must not contain NUL, CR or LF characters`,
+		},
+		"local - response header value too long": {
+			in: &contour_v1.RateLimitPolicy{
+				Local: &contour_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_v1.HeaderValue{
+						{
+							Name:  "header-1",
+							Value: strings.Repeat("a", 16385),
+						},
+					},
+				},
+			},
+			wantErr: `invalid header value "Header-1": value must not be longer than 16384 bytes`,
+		},
+		"global - header value match without match criteria": {
+			in: &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{{
+						Entries: []contour_v1.RateLimitDescriptorEntry{{
+							RequestHeaderValueMatch: &contour_v1.RequestHeaderValueMatchDescriptor{
+								Headers: []contour_v1.HeaderMatchCondition{{
+									Name: "X-Header",
+								}},
+								Value: "header-is-present",
+							},
+						}},
+					}},
+				},
+			},
+			wantErr: "rate limit descriptor entry request header value match must have at least one header match condition",
+		},
+		"global - header value match with invalid regex": {
+			in: &contour_v1.RateLimitPolicy{
+				Global: &contour_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_v1.RateLimitDescriptor{{
+						Entries: []contour_v1.RateLimitDescriptorEntry{{
+							RequestHeaderValueMatch: &contour_v1.RequestHeaderValueMatchDescriptor{
+								Headers: []contour_v1.HeaderMatchCondition{{
+									Name:  "X-Header",
+									Regex: "(",
+								}},
+								Value: "header-matches",
+							},
+						}},
+					}},
+				},
+			},
+			wantErr: `rate limit descriptor entry header "X-Header" has invalid regular expression "("`,
 		},
 		"local - invalid unit": {
 			in: &contour_v1.RateLimitPolicy{
@@ -1053,6 +1112,8 @@ func TestValidateHeaderAlteration(t *testing.T) {
 		dhp     *HeadersPolicy
 		want    *HeadersPolicy
 		wantErr error
+
+		allowHostRewrite bool
 	}{{
 		name: "empty is fine",
 	}, {
@@ -1159,6 +1220,17 @@ func TestValidateHeaderAlteration(t *testing.T) {
 		},
 		wantErr: errors.New(`invalid set header "K-Foo": value must not contain NUL, CR or LF characters`),
 	}, {
+		name: "default header value too long",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{},
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": strings.Repeat("a", 16385),
+			},
+		},
+		wantErr: errors.New(`invalid set header "K-Foo": value must not be longer than 16384 bytes`),
+	}, {
 		name: "invalid set default Host header value",
 		in: &contour_v1.HeadersPolicy{
 			Set: []contour_v1.HeaderValue{},
@@ -1171,7 +1243,44 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				"Host": "bar\n",
 			},
 		},
-		wantErr: errors.New(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
+		allowHostRewrite: true,
+		wantErr:          errors.New(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
+	}, {
+		name: "invalid set default header value overridden by user policy",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{{
+				Name:  "K-Foo",
+				Value: "user",
+			}},
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": "bar\n",
+			},
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"K-Foo": "user",
+			},
+		},
+	}, {
+		name: "invalid set default Host header value overridden by user policy",
+		in: &contour_v1.HeadersPolicy{
+			Set: []contour_v1.HeaderValue{{
+				Name:  "Host",
+				Value: "user.com",
+			}},
+		},
+		dhp: &HeadersPolicy{
+			Set: map[string]string{
+				"Host": "bar\n",
+			},
+		},
+		want: &HeadersPolicy{
+			Set:         map[string]string{},
+			HostRewrite: "user.com",
+		},
+		allowHostRewrite: true,
 	}, {
 		name: "invalid remove header",
 		in: &contour_v1.HeadersPolicy{
@@ -1343,7 +1452,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.dhp, test.in, false, test.dyn)
+			got, gotErr := headersPolicyService(test.dhp, test.in, test.allowHostRewrite, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})
@@ -1553,6 +1662,20 @@ func TestHeadersPolicyRoute(t *testing.T) {
 			},
 			allowRewrite: true,
 			expectedErr:  fmt.Errorf(`invalid set header "Host": value must not contain NUL, CR or LF characters`),
+		},
+		{
+			name: "header value too long",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-Header", Value: strings.Repeat("a", 16385)}},
+			},
+			expectedErr: fmt.Errorf(`invalid set header "X-Header": value must not be longer than 16384 bytes`),
+		},
+		{
+			name: "header value too long after escaping",
+			policy: &contour_v1.HeadersPolicy{
+				Set: []contour_v1.HeaderValue{{Name: "X-Header", Value: strings.Repeat("%", 8193)}},
+			},
+			expectedErr: fmt.Errorf(`invalid set header "X-Header": value must not be longer than 16384 bytes`),
 		},
 		{
 			name: "duplicate remove headers",

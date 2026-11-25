@@ -119,6 +119,7 @@ type HeaderMatchCondition struct {
 	// Name is the name of the header to match against. Name is required.
 	// Header names are case insensitive.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^[^\x00\r\n]*$`
 	Name string `json:"name"`
 
 	// Present specifies that condition is true when the named header
@@ -178,6 +179,7 @@ type HeaderMatchCondition struct {
 type QueryParameterMatchCondition struct {
 	// Name is the name of the query parameter to match against. Name is required.
 	// Query parameter names are case insensitive.
+	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 
 	// Exact specifies a string that the query parameter value must be equal to.
@@ -287,6 +289,7 @@ type AuthorizationServer struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	// +kubebuilder:validation:XValidation:rule="self == 'infinity' || self == 'infinite' || duration(self) < duration('4294967296s')",message="must be less than 4294967296s"
 	ResponseTimeout string `json:"responseTimeout,omitempty"`
 
 	// If FailOpen is true, the client request is forwarded to the upstream service
@@ -505,6 +508,7 @@ type RemoteJWKS struct {
 	// The URI for the JWKS.
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^[A-Za-z][A-Za-z0-9+.-]*://([A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])(:[0-9]+)?([/?#][!-~]*)?$`
 	URI string `json:"uri"`
 
 	// UpstreamValidation defines how to verify the JWKS's TLS certificate.
@@ -515,12 +519,14 @@ type RemoteJWKS struct {
 	// If not specified, a default of 1s applies.
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	// +kubebuilder:validation:XValidation:rule="duration(self) < duration('4294967296s')",message="must be less than 4294967296s"
 	Timeout string `json:"timeout,omitempty"`
 
 	// How long to cache the JWKS locally. If not specified,
 	// Envoy's default of 5m applies.
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+)$`
+	// +kubebuilder:validation:XValidation:rule="duration(self) >= duration('1ms') && duration(self) < duration('9000000000s')",message="must be at least 1ms and less than 9000000000s"
 	CacheDuration string `json:"cacheDuration,omitempty"`
 
 	// The DNS IP address resolution policy for the JWKS URI.
@@ -606,6 +612,7 @@ type CORSPolicy struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:items:MinLength=1
 	AllowOrigin []string `json:"allowOrigin"`
 	// AllowMethods specifies the content for the *access-control-allow-methods* header.
 	// +kubebuilder:validation:Required
@@ -826,7 +833,7 @@ type HTTPRequestRedirectPolicy struct {
 	// Note: Only one of Path or Prefix can be defined.
 	//
 	// +optional
-	// +kubebuilder:validation:Pattern=`^\/.*$`
+	// +kubebuilder:validation:Pattern=`^\/[^\x00\r\n]*$`
 	Path *string `json:"path,omitempty"`
 
 	// Prefix defines the value to swap the matched prefix or path with.
@@ -835,7 +842,7 @@ type HTTPRequestRedirectPolicy struct {
 	// Note: Only one of Path or Prefix can be defined.
 	//
 	// +optional
-	// +kubebuilder:validation:Pattern=`^\/.*$`
+	// +kubebuilder:validation:Pattern=`^\/[^\x00\r\n]*$`
 	Prefix *string `json:"prefix,omitempty"`
 }
 
@@ -847,11 +854,13 @@ type HTTPInternalRedirectPolicy struct {
 	// MaxInternalRedirects An internal redirect is not handled, unless the number of previous internal
 	// redirects that a downstream request has encountered is lower than this value.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	MaxInternalRedirects uint32 `json:"maxInternalRedirects,omitempty"`
 
 	// RedirectResponseCodes If unspecified, only 302 will be treated as internal redirect.
 	// Only 301, 302, 303, 307 and 308 are valid values.
 	// +optional
+	// +kubebuilder:validation:MaxItems=5
 	RedirectResponseCodes []RedirectResponseCode `json:"redirectResponseCodes,omitempty"`
 
 	// AllowCrossSchemeRedirect Allow internal redirect to follow a target URI with a different scheme
@@ -952,6 +961,7 @@ type LocalRateLimitPolicy struct {
 	// Burst defines the number of requests above the requests per
 	// unit that should be allowed within a short period of time.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	Burst uint32 `json:"burst,omitempty"`
 
 	// ResponseStatusCode is the HTTP status code to use for responses
@@ -1038,6 +1048,7 @@ type RequestHeaderDescriptor struct {
 	// HeaderName defines the name of the header to look for on the request.
 	// +required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^[^\x00\r\n]*$`
 	HeaderName string `json:"headerName,omitempty" yaml:"headerName,omitempty"`
 
 	// DescriptorKey defines the key to use on the descriptor entry.
@@ -1134,6 +1145,7 @@ type Service struct {
 	// Weight defines percentage of traffic to balance traffic
 	// +optional
 	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=4294967295
 	Weight int64 `json:"weight,omitempty"`
 	// UpstreamValidation defines how to verify the backend service's certificate
 	// +optional
@@ -1163,16 +1175,23 @@ type Service struct {
 // HTTPHealthCheckPolicy defines health checks on the upstream service.
 type HTTPHealthCheckPolicy struct {
 	// HTTP endpoint used to perform health checks on upstream service
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^[^\x00-\x08\x0A-\x1F\x7F]*$`
 	Path string `json:"path"`
 	// The value of the host header in the HTTP health check request.
 	// If left empty (default value), the name "contour-envoy-healthcheck"
 	// will be used.
+	// +kubebuilder:validation:Pattern=`^[^\x00-\x08\x0A-\x1F\x7F]*$`
 	Host string `json:"host,omitempty"`
 	// The interval (seconds) between health checks
 	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=9223372035
 	IntervalSeconds int64 `json:"intervalSeconds"`
 	// The time to wait (seconds) for a health check response
 	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=9223372035
 	TimeoutSeconds int64 `json:"timeoutSeconds"`
 	// The number of unhealthy health checks required before a host is marked unhealthy
 	// +optional
@@ -1205,15 +1224,21 @@ type HTTPStatusRange struct {
 type TCPHealthCheckPolicy struct {
 	// The interval (seconds) between health checks
 	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=9223372035
 	IntervalSeconds int64 `json:"intervalSeconds"`
 	// The time to wait (seconds) for a health check response
 	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=9223372035
 	TimeoutSeconds int64 `json:"timeoutSeconds"`
 	// The number of unhealthy health checks required before a host is marked unhealthy
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	UnhealthyThresholdCount uint32 `json:"unhealthyThresholdCount"`
 	// The number of healthy health checks required before a host is marked healthy
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	HealthyThresholdCount uint32 `json:"healthyThresholdCount"`
 }
 
@@ -1295,6 +1320,7 @@ type RetryPolicy struct {
 	//
 	// This field is only respected when you include `retriable-status-codes` in the `RetryOn` field.
 	// +optional
+	// +kubebuilder:validation:items:Minimum=0
 	RetriableStatusCodes []uint32 `json:"retriableStatusCodes,omitempty"`
 }
 
@@ -1321,6 +1347,7 @@ type ReplacePrefix struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Pattern=`^[^\x00\r\n]*$`
 	Replacement string `json:"replacement"`
 }
 
@@ -1415,6 +1442,7 @@ type HeadersPolicy struct {
 	Set []HeaderValue `json:"set,omitempty"`
 	// Remove specifies a list of HTTP header names to remove.
 	// +optional
+	// +kubebuilder:validation:items:MaxLength=16384
 	Remove []string `json:"remove,omitempty"`
 }
 
@@ -1423,6 +1451,7 @@ type HeaderValue struct {
 	// Name represents a key of a header
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=16384
 	Name string `json:"name"`
 	// Value represents the value of a header specified by a key
 	// +kubebuilder:validation:Required
@@ -1446,12 +1475,14 @@ type UpstreamValidation struct {
 	// Deprecated: migrate to using the plural field subjectNames.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=250
+	// +kubebuilder:validation:Pattern=`^[^\x00\r\n]*$`
 	SubjectName string `json:"subjectName"`
 	// List of keys, of which at least one is expected to be present in the 'subjectAltName of the
 	// presented certificate.
 	// +optional
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=8
+	// +kubebuilder:validation:items:Pattern=`^[^\x00\r\n]*$`
 	SubjectNames []string `json:"subjectNames"`
 }
 

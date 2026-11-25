@@ -16,10 +16,10 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
-	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -500,16 +500,14 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_v1.HTTPProxy) {
 					var port int
 					switch {
 					case len(jwksURL.Port()) > 0:
-						p, err := strconv.Atoi(jwksURL.Port())
+						// jwksURL.Port() only returns a numeric value, but it can be out of range.
+						p, err := strconv.ParseUint(jwksURL.Port(), 10, 16)
 						if err != nil {
-							// This theoretically shouldn't be possible as jwksURL.Port() will
-							// only return a value if it's numeric, but we need to convert to
-							// int anyway so handle the error.
 							validCond.AddErrorf(contour_v1.ConditionTypeJWTVerificationError, "RemoteJWKSPortInvalid",
 								"Spec.VirtualHost.JWTProviders.RemoteJWKS.URI has an invalid port: %s", err)
 							return
 						}
-						port = p
+						port = int(p)
 					case jwksURL.Scheme == "http":
 						port = 80
 					case jwksURL.Scheme == "https":
@@ -870,6 +868,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		irp := internalRedirectPolicy(route.InternalRedirectPolicy)
 
+		retry, err := retryPolicy(route.RetryPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_v1.ConditionTypeRouteError, "RetryPolicyNotValid",
+				"route.retryPolicy is invalid: %s", err)
+			return nil
+		}
+
 		directPolicy := directResponsePolicy(route.DirectResponsePolicy)
 
 		pathMatchCondition, err := mergePathMatchConditions(routeConditions)
@@ -886,7 +891,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			Websocket:                 route.EnableWebsockets,
 			HTTPSUpgrade:              routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
 			TimeoutPolicy:             rtp,
-			RetryPolicy:               retryPolicy(route.RetryPolicy),
+			RetryPolicy:               retry,
 			RequestHeadersPolicy:      reqHP,
 			ResponseHeadersPolicy:     respHP,
 			CookieRewritePolicies:     cookieRP,
@@ -993,6 +998,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				"ignoring field %q; %s", "Spec.Routes.HealthCheckPolicy", err)
 		}
 
+		var totalWeight int64
 		for _, service := range route.Services {
 			if service.Port < 1 || service.Port > 65535 {
 				validCond.AddErrorf(contour_v1.ConditionTypeServiceError, "ServicePortInvalid",
@@ -1133,7 +1139,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			} else {
 				r.Clusters = append(r.Clusters, c)
+				totalWeight += service.Weight
 			}
+		}
+		// Envoy rejects routes where the sum of weights exceeds uint32.
+		// https://github.com/envoyproxy/envoy/blob/v1.40.2/source/common/router/weighted_cluster_specifier.cc#L152-L157
+		if totalWeight > math.MaxUint32 {
+			validCond.AddError(contour_v1.ConditionTypeServiceError, "ServiceWeightInvalid",
+				"sum of service weights must not exceed 4294967295")
+			return nil
 		}
 		if len(r.Clusters) == 0 && route.RequestRedirectPolicy == nil && route.DirectResponsePolicy == nil {
 			r.DirectResponse = directResponse(http.StatusServiceUnavailable, "")
@@ -1819,7 +1833,7 @@ func toCORSPolicy(policy *contour_v1.CORSPolicy) (*CORSPolicy, error) {
 		if parseURLErr != nil ||
 			parsedURL.Scheme == "" || parsedURL.Host == "" ||
 			parsedURL.Scheme+"://"+parsedURL.Host != ao {
-			_, regexErr := regexp.Compile(ao)
+			regexErr := ValidateRegex(ao)
 			if regexErr != nil {
 				return CORSAllowOriginMatch{}, errors.New("allowed origin is invalid exact match and invalid regex match")
 			}
