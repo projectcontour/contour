@@ -203,16 +203,16 @@ containers:
 ```
 
 [1]: https://gateway-api.sigs.k8s.io/
-[2]: https://gateway-api.sigs.k8s.io/concepts/conformance/#2-support-levels
+[2]: https://gateway-api.sigs.k8s.io/docs/conformance/#support-levels
 [3]: https://gateway-api.sigs.k8s.io/guides/#install-experimental-channel
 [4]: https://gateway-api.sigs.k8s.io/guides/#install-standard-channel
-[5]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-parameters
+[5]: https://gateway-api.sigs.k8s.io/reference/api-types/gatewayclass/#gatewayclass-parameters
 [6]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.ContourDeployment
 [7]: https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.GatewayConfig
-[8]: https://gateway-api.sigs.k8s.io/api-types/gatewayclass/#gatewayclass-controller-selection
+[8]: https://gateway-api.sigs.k8s.io/reference/api-types/gatewayclass/#gatewayclass-controller-selection
 [9]: https://projectcontour.io/quickstart/contour-gateway-provisioner.yaml
 [10]: https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io/v1.GatewayClass
-[11]: https://gateway-api.sigs.k8s.io/concepts/api-overview/#route-resources
+[11]: https://gateway-api.sigs.k8s.io/docs/concepts/api-overview/#route-types
 [12]: /docs/{{< param version >}}/guides/gateway-api
 [13]: https://github.com/projectcontour/contour/issues/5970
 [14]: https://github.com/kubernetes-sigs/gateway-api/issues/2592
