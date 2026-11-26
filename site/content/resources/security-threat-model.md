@@ -16,7 +16,7 @@ Contour's inputs are:
 
 ## Expected Users
 
-The expected users of of Contour are:
+The expected users of Contour are:
 - the Contour owner/administrator - installs and configures Contour
 - application developers exposing their in-cluster apps - create ingress configuration objects in Kubernetes referencing their Deployments and Services
 - external application consumers - their traffic passes through the Envoy data plane on the way to the hosted apps.
