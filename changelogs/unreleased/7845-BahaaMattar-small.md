@@ -1,0 +1,1 @@
+HTTPProxy per-route `requestHeadersPolicy` and `responseHeadersPolicy` no longer expand `%CONTOUR_SERVICE_NAME%` and `%CONTOUR_SERVICE_PORT%` with the service of a previous route. These variables are only available in per-service header policies and now stay literal on every route-level policy, as documented.
