@@ -563,6 +563,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_v1alpha1.Co
 				Compression:                          compression,
 				DisableAllowChunkedLength:            &ctx.Config.DisableAllowChunkedLength,
 				DisableMergeSlashes:                  &ctx.Config.DisableMergeSlashes,
+				Proxy100Continue:                     &ctx.Config.Listener.Proxy100Continue,
 				ServerHeaderTransformation:           serverHeaderTransformation,
 				ConnectionBalancer:                   ctx.Config.Listener.ConnectionBalancer,
 				PerConnectionBufferLimitBytes:        ctx.Config.Listener.PerConnectionBufferLimitBytes,

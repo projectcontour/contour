@@ -67,6 +67,7 @@ func Defaults() contour_v1alpha1.ContourConfigurationSpec {
 				UseProxyProto:              ptr.To(false),
 				DisableAllowChunkedLength:  ptr.To(false),
 				DisableMergeSlashes:        ptr.To(false),
+				Proxy100Continue:           ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
 				ConnectionBalancer:         "",
 				TLS: &contour_v1alpha1.EnvoyListenerTLS{

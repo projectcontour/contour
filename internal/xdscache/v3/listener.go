@@ -120,6 +120,10 @@ type ListenerConfig struct {
 	// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option for all listeners.
 	MergeSlashes bool
 
+	// Proxy100Continue enables proxying of "Expect: 100-continue" request headers
+	// upstream and "100 Continue" responses downstream for all listeners.
+	Proxy100Continue bool
+
 	// ServerHeaderTransformation defines the action to be applied to the Server header on the response path.
 	ServerHeaderTransformation contour_v1alpha1.ServerHeaderTransformationType
 
@@ -417,6 +421,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(cfg.AllowChunkedLength).
 				MergeSlashes(cfg.MergeSlashes).
+				Proxy100Continue(cfg.Proxy100Continue).
 				ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 				NumTrustedHops(cfg.XffNumTrustedHops).
 				StripTrailingHostDot(cfg.StripTrailingHostDot).
@@ -496,6 +501,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					Proxy100Continue(cfg.Proxy100Continue).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					StripTrailingHostDot(cfg.StripTrailingHostDot).
@@ -583,6 +589,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					MergeSlashes(cfg.MergeSlashes).
+					Proxy100Continue(cfg.Proxy100Continue).
 					ServerHeaderTransformation(cfg.ServerHeaderTransformation).
 					NumTrustedHops(cfg.XffNumTrustedHops).
 					StripTrailingHostDot(cfg.StripTrailingHostDot).

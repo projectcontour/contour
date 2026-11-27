@@ -550,6 +550,14 @@ type ListenerParameters struct {
 	// If not specified, there is no limit.
 	MaxRequestBodyBytes *uint64 `yaml:"max-request-body-bytes,omitempty"`
 
+	// Proxy100Continue enables proxying of the "Expect: 100-continue" request
+	// header to the upstream service and forwarding of its "100 Continue"
+	// response to the client. When disabled, Envoy removes the
+	// "Expect: 100-continue" header and responds with "100 Continue" itself.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-proxy-100-continue
+	// for more information.
+	Proxy100Continue bool `yaml:"proxy-100-continue,omitempty"`
+
 	// ProxyProtocolSettings configures how Envoy uses the PROXY protocol header.
 	// Requires --use-proxy-protocol.
 	//

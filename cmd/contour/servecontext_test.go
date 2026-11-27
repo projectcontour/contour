@@ -406,6 +406,7 @@ func defaultContourConfiguration() contour_v1alpha1.ContourConfigurationSpec {
 				UseProxyProto:              ptr.To(false),
 				DisableAllowChunkedLength:  ptr.To(false),
 				DisableMergeSlashes:        ptr.To(false),
+				Proxy100Continue:           ptr.To(false),
 				ServerHeaderTransformation: contour_v1alpha1.OverwriteServerHeader,
 				TLS: &contour_v1alpha1.EnvoyListenerTLS{
 					EnvoyTLS: contour_v1alpha1.EnvoyTLS{
@@ -769,6 +770,16 @@ func TestConvertServeContext(t *testing.T) {
 			},
 			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
 				cfg.Envoy.Listener.DisableMergeSlashes = ptr.To(true)
+				return cfg
+			},
+		},
+		"proxy 100-continue": {
+			getServeContext: func(ctx *serveContext) *serveContext {
+				ctx.Config.Listener.Proxy100Continue = true
+				return ctx
+			},
+			getContourConfiguration: func(cfg contour_v1alpha1.ContourConfigurationSpec) contour_v1alpha1.ContourConfigurationSpec {
+				cfg.Envoy.Listener.Proxy100Continue = ptr.To(true)
 				return cfg
 			},
 		},

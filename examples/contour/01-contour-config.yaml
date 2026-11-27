@@ -186,6 +186,7 @@ data:
     #    tos: 64
     #    traffic-class: 64
     #  max-request-body-bytes: 1000
+    #  proxy-100-continue: true
     #
     # omEnforcedHealthListener:
     #   address: 0.0.0.0
