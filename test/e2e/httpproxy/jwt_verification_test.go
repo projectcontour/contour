@@ -150,6 +150,9 @@ func testJWTVerification(setupProvider func(namespace string, jwksJSON []byte) c
 			provider.Issuer = "correct-issuer"
 			provider.Audiences = []string{"correct-audience"}
 			provider.ForwardJWT = true
+			provider.ClaimToHeaders = []contour_v1.JWTClaimToHeader{
+				{HeaderName: "X-JWT-Issuer", ClaimName: "iss"},
+			}
 
 			p := &contour_v1.HTTPProxy{
 				ObjectMeta: meta_v1.ObjectMeta{
@@ -198,6 +201,21 @@ func testJWTVerification(setupProvider func(namespace string, jwksJSON []byte) c
 			By("JWT is forwarded to backend")
 			body := f.GetEchoResponseBody(res.Body)
 			assert.Contains(t, body.RequestHeaders.Get("Authorization"), "Bearer ", "JWT should be forwarded to backend")
+
+			By("JWT claim is copied to a request header")
+			res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+				Host: p.Spec.VirtualHost.Fqdn,
+				Path: "/secured",
+				RequestOpts: []func(*http.Request){
+					bearerToken(validToken),
+					e2e.OptSetHeaders(map[string]string{"X-JWT-Issuer": "spoofed-issuer"}),
+				},
+				Condition: e2e.HasStatusCode(200),
+			})
+			require.NotNil(t, res, "request never succeeded")
+			require.True(t, ok, "expected 200, got %d", res.StatusCode)
+			body = f.GetEchoResponseBody(res.Body)
+			assert.Equal(t, []string{"correct-issuer"}, body.RequestHeaders.Values("X-JWT-Issuer"), "claim should replace the client supplied header")
 
 			By("missing JWT is rejected")
 			res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
@@ -280,6 +298,18 @@ func testJWTVerification(setupProvider func(namespace string, jwksJSON []byte) c
 			})
 			require.NotNil(t, res, "request never succeeded")
 			assert.True(t, ok, "expected 200 (auth bypassed), got %d", res.StatusCode)
+
+			By("client supplied claim header is removed when JWT verification is disabled")
+			res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+				Host:        p.Spec.VirtualHost.Fqdn,
+				Path:        "/open",
+				RequestOpts: []func(*http.Request){e2e.OptSetHeaders(map[string]string{"X-JWT-Issuer": "spoofed-issuer"})},
+				Condition:   e2e.HasStatusCode(200),
+			})
+			require.NotNil(t, res, "request never succeeded")
+			require.True(t, ok, "expected 200 (auth bypassed), got %d", res.StatusCode)
+			body = f.GetEchoResponseBody(res.Body)
+			assert.Empty(t, body.RequestHeaders.Values("X-JWT-Issuer"), "client supplied claim header should not reach the backend")
 		})
 	}
 }

@@ -90,6 +90,45 @@ If the CA secret's namespace is not the same namespace as the `HTTPProxy` resour
 
 **Note:** If `spec.virtualhost.jwtProviders[].remoteJWKS.validation` is present, `spec.virtualhost.jwtProviders[].remoteJWKS.uri` must have a scheme of `https`.
 
+### Copying JWT claims to request headers
+
+A provider can copy claims of a successfully verified JWT to request headers, so that the backend service can use them without decoding the JWT itself:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: jwt-verification
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: example.com
+    tls:
+      secretName: example-com-tls-cert
+    jwtProviders:
+      - name: provider-1
+        issuer: example.com
+        remoteJWKS:
+          uri: https://example.com/jwks.json
+        claimToHeaders:
+          - headerName: x-jwt-subject
+            claimName: sub
+          - headerName: x-jwt-tenant
+            claimName: org.tenant
+  routes:
+    ...
+```
+
+With the provider above, the backend receives the `sub` claim in the `x-jwt-subject` header and the nested `tenant` claim of the `org` claim in the `x-jwt-tenant` header.
+Claims of type string, number or boolean are copied as is.
+Claims of type object or array are serialized to JSON and copied base64-encoded.
+If a claim is not present in the JWT, the corresponding header is not set.
+
+Any value that the client sends in one of the configured headers is removed from requests to the virtual host, including on routes where JWT verification is disabled, so the backend can trust that the header was set from a verified JWT.
+This does not apply to routes that are served over plain HTTP using `permitInsecure`, because JWT verification is only performed on the TLS-terminating virtual host.
+
+A claim cannot be copied to the `Authorization` header, because that is the header the JWT is read from.
+
 ## Using a local JWKS from a Kubernetes Secret
 
 Instead of fetching keys from a remote endpoint, you can load them from a Kubernetes Secret:
