@@ -3108,6 +3108,52 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"HTTPRoute rule with request redirect filter with ReplacePrefixMatch to \"/\" and multiple matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: append(
+						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/foo"),
+						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/bar")...,
+					),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterRequestRedirect,
+						RequestRedirect: &gatewayapi_v1.HTTPRequestRedirectFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
+								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
+								ReplacePrefixMatch: ptr.To("/"),
+							},
+						},
+					}},
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixSegment("/foo"),
+							Redirect: &Redirect{
+								PathRewritePolicy: &PathRewritePolicy{
+									PrefixRegexRemove: "^/foo/*",
+								},
+							},
+						},
+						&Route{
+							PathMatchCondition: prefixSegment("/bar"),
+							Redirect: &Redirect{
+								PathRewritePolicy: &PathRewritePolicy{
+									PrefixRegexRemove: "^/bar/*",
+								},
+							},
+						},
+					)),
+				},
+			),
+		},
 		"HTTPRoute rule with request redirect filter with ReplaceFullPath": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
@@ -3293,6 +3339,50 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							PathMatchCondition: prefixSegment("/prefix"),
 							PathRewritePolicy: &PathRewritePolicy{
 								PrefixRegexRemove: "^/prefix/*",
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"HTTPRoute rule with URLRewrite filter with ReplacePrefixMatch to \"/\" and multiple matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []any{
+				kuardService,
+				makeHTTPRoute("basic", "projectcontour", "test.projectcontour.io", gatewayapi_v1.HTTPRouteRule{
+					Matches: append(
+						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/foo"),
+						gatewayapi.HTTPRouteMatch(gatewayapi_v1.PathMatchPathPrefix, "/bar")...,
+					),
+					Filters: []gatewayapi_v1.HTTPRouteFilter{{
+						Type: gatewayapi_v1.HTTPRouteFilterURLRewrite,
+						URLRewrite: &gatewayapi_v1.HTTPURLRewriteFilter{
+							Path: &gatewayapi_v1.HTTPPathModifier{
+								Type:               gatewayapi_v1.PrefixMatchHTTPPathModifier,
+								ReplacePrefixMatch: ptr.To("/"),
+							},
+						},
+					}},
+					BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+				}),
+			},
+			want: listeners(
+				&Listener{
+					Name: "http-80",
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixSegment("/foo"),
+							PathRewritePolicy: &PathRewritePolicy{
+								PrefixRegexRemove: "^/foo/*",
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						},
+						&Route{
+							PathMatchCondition: prefixSegment("/bar"),
+							PathRewritePolicy: &PathRewritePolicy{
+								PrefixRegexRemove: "^/bar/*",
 							},
 							Clusters: clustersWeight(service(kuardService)),
 						},

@@ -2377,10 +2377,6 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 	// the matches is satisfied." To implement this,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
-		// Re-configure the PathRewritePolicy if we're trying to remove
-		// the prefix entirely.
-		pathRewritePolicy = handlePathRewritePrefixRemoval(pathRewritePolicy, mc)
-
 		route := &Route{
 			Clusters:                  clusters,
 			PathMatchCondition:        mc.path,
@@ -2390,7 +2386,9 @@ func (p *GatewayAPIProcessor) clusterRoutes(
 			ResponseHeadersPolicy:     responseHeaderPolicy,
 			MirrorPolicies:            mirrorPolicies,
 			Priority:                  priority,
-			PathRewritePolicy:         pathRewritePolicy,
+			// Re-configure the PathRewritePolicy if we're trying to remove
+			// the prefix entirely.
+			PathRewritePolicy: handlePathRewritePrefixRemoval(pathRewritePolicy, mc),
 		}
 		if timeoutPolicy != nil {
 			route.TimeoutPolicy = *timeoutPolicy
@@ -2452,13 +2450,17 @@ func (p *GatewayAPIProcessor) redirectRoutes(
 	// the matches is satisfied." To implement this,
 	// we create a separate route per match.
 	for _, mc := range matchConditions {
+		// Give each route its own copy of the redirect, so that
+		// re-configuring the PathRewritePolicy for this match does
+		// not affect the routes for the other matches.
+		matchRedirect := *redirect
 		// Re-configure the PathRewritePolicy if we're trying to remove
 		// the prefix entirely.
-		redirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
+		matchRedirect.PathRewritePolicy = handlePathRewritePrefixRemoval(redirect.PathRewritePolicy, mc)
 
 		route := &Route{
 			Priority:              priority,
-			Redirect:              redirect,
+			Redirect:              &matchRedirect,
 			PathMatchCondition:    mc.path,
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  requestHeaderPolicy,
@@ -2487,13 +2489,18 @@ func handlePathRewritePrefixRemoval(p *PathRewritePolicy, mc *matchConditions) *
 	//
 	// This logic is implemented here rather than in internal/envoy because there
 	// is already special handling at the DAG level for similar issues for HTTPProxy.
+	//
+	// The policy is shared by all the matches of a rule, and the regex depends on
+	// the prefix of the match, so return a modified copy instead of changing p.
 	if p != nil && p.PrefixRewrite == "/" {
 		prefixMatch, ok := mc.path.(*PrefixMatchCondition)
 		if ok {
-			p.PrefixRewrite = ""
+			rewritten := *p
+			rewritten.PrefixRewrite = ""
 			// The regex below will capture/remove all consecutive trailing slashes
 			// immediately after the prefix, to handle requests like /prefix///foo.
-			p.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
+			rewritten.PrefixRegexRemove = "^" + regexp.QuoteMeta(prefixMatch.Prefix) + "/*"
+			return &rewritten
 		}
 	}
 

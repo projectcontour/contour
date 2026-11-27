@@ -1,0 +1,1 @@
+Gateway API: an HTTPRoute rule that has several  matches and a  or  filter replacing the matched prefix with  now removes the prefix of each match. Previously every match used the prefix of the first one, so requests to the other matches kept their prefix.
