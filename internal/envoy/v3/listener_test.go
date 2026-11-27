@@ -2296,3 +2296,99 @@ func TestHTTPConnectionManagerCompressionAlgorithms(t *testing.T) {
 		})
 	}
 }
+
+func TestHTTPConnectionManagerCompressionETag(t *testing.T) {
+	envoyGen := NewEnvoyGen(EnvoyGenOpt{
+		XDSClusterName: DefaultXDSClusterName,
+	})
+
+	tests := map[string]struct {
+		compression              *contour_v1alpha1.EnvoyCompression
+		wantCompressors          int
+		wantDisableOnEtagHeader  bool
+		wantWeakenEtagOnCompress bool
+	}{
+		"default compression": {
+			compression:     nil,
+			wantCompressors: 1,
+		},
+		"etag not set": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				Algorithm: contour_v1alpha1.BrotliCompression,
+			},
+			wantCompressors: 1,
+		},
+		"etag remove": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				ETag: contour_v1alpha1.RemoveCompressionETag,
+			},
+			wantCompressors: 1,
+		},
+		"etag weaken": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				ETag: contour_v1alpha1.WeakenCompressionETag,
+			},
+			wantCompressors:          1,
+			wantWeakenEtagOnCompress: true,
+		},
+		"etag skip": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				ETag: contour_v1alpha1.SkipCompressionETag,
+			},
+			wantCompressors:         1,
+			wantDisableOnEtagHeader: true,
+		},
+		"etag weaken applies to every algorithm": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+					contour_v1alpha1.BrotliCompression,
+					contour_v1alpha1.GzipCompression,
+					contour_v1alpha1.ZstdCompression,
+				},
+				ETag: contour_v1alpha1.WeakenCompressionETag,
+			},
+			wantCompressors:          3,
+			wantWeakenEtagOnCompress: true,
+		},
+		"etag skip applies to every algorithm": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{
+					contour_v1alpha1.GzipCompression,
+					contour_v1alpha1.BrotliCompression,
+				},
+				ETag: contour_v1alpha1.SkipCompressionETag,
+			},
+			wantCompressors:         2,
+			wantDisableOnEtagHeader: true,
+		},
+		"etag with compression disabled": {
+			compression: &contour_v1alpha1.EnvoyCompression{
+				Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{},
+				ETag:       contour_v1alpha1.SkipCompressionETag,
+			},
+			wantCompressors: 0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			gotFilter := envoyGen.HTTPConnectionManagerBuilder().
+				Compression(tc.compression).
+				DefaultFilters().
+				Get()
+
+			var got envoy_filter_network_http_connection_manager_v3.HttpConnectionManager
+			require.NoError(t, gotFilter.GetTypedConfig().UnmarshalTo(&got))
+			require.Greater(t, len(got.HttpFilters), tc.wantCompressors)
+			assert.Equal(t, GRPCWebFilterName, got.HttpFilters[tc.wantCompressors].Name)
+
+			for i := range tc.wantCompressors {
+				var compressor envoy_filter_http_compressor_v3.Compressor
+				require.NoError(t, got.HttpFilters[i].GetTypedConfig().UnmarshalTo(&compressor))
+				require.NotNil(t, compressor.ResponseDirectionConfig)
+				assert.Equal(t, tc.wantDisableOnEtagHeader, compressor.ResponseDirectionConfig.DisableOnEtagHeader)
+				assert.Equal(t, tc.wantWeakenEtagOnCompress, compressor.ResponseDirectionConfig.WeakenEtagOnCompress)
+			}
+		})
+	}
+}

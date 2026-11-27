@@ -352,6 +352,20 @@ spec:
                             x-kubernetes-validations:
                             - message: duplicate compression algorithm
                               rule: self.all(x, self.exists_one(y, y == x))
+                          etag:
+                            description: |-
+                              ETag selects how responses that carry an ETag header are handled when compression is enabled.
+                              Compressing a response changes its body, so a strong ETag no longer identifies it byte-for-byte.
+                              Values:
+                              - `remove` (default): compress the response and remove a strong ETag. Weak ETags are preserved.
+                              - `weaken`: compress the response and weaken a strong ETag by prepending `W/` to it.
+                              - `skip`: do not compress responses that carry an ETag header, strong or weak.
+                              Has no effect when compression is disabled.
+                            enum:
+                            - remove
+                            - weaken
+                            - skip
+                            type: string
                         type: object
                         x-kubernetes-validations:
                         - message: only one of algorithm and algorithms can be set
@@ -4717,6 +4731,20 @@ spec:
                                 x-kubernetes-validations:
                                 - message: duplicate compression algorithm
                                   rule: self.all(x, self.exists_one(y, y == x))
+                              etag:
+                                description: |-
+                                  ETag selects how responses that carry an ETag header are handled when compression is enabled.
+                                  Compressing a response changes its body, so a strong ETag no longer identifies it byte-for-byte.
+                                  Values:
+                                  - `remove` (default): compress the response and remove a strong ETag. Weak ETags are preserved.
+                                  - `weaken`: compress the response and weaken a strong ETag by prepending `W/` to it.
+                                  - `skip`: do not compress responses that carry an ETag header, strong or weak.
+                                  Has no effect when compression is disabled.
+                                enum:
+                                - remove
+                                - weaken
+                                - skip
+                                type: string
                             type: object
                             x-kubernetes-validations:
                             - message: only one of algorithm and algorithms can be

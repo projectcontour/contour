@@ -31,6 +31,15 @@ func TestValidateEnvoyCompressionAlgorithmType(t *testing.T) {
 	require.NoError(t, contour_v1alpha1.ZstdCompression.Validate())
 }
 
+func TestValidateCompressionETagAction(t *testing.T) {
+	require.Error(t, contour_v1alpha1.CompressionETagAction("foo").Validate())
+
+	require.NoError(t, contour_v1alpha1.CompressionETagAction("").Validate())
+	require.NoError(t, contour_v1alpha1.RemoveCompressionETag.Validate())
+	require.NoError(t, contour_v1alpha1.WeakenCompressionETag.Validate())
+	require.NoError(t, contour_v1alpha1.SkipCompressionETag.Validate())
+}
+
 func TestValidateEnvoyCompression(t *testing.T) {
 	require.NoError(t, (*contour_v1alpha1.EnvoyCompression)(nil).Validate())
 	require.NoError(t, (&contour_v1alpha1.EnvoyCompression{}).Validate())
@@ -44,8 +53,14 @@ func TestValidateEnvoyCompression(t *testing.T) {
 			contour_v1alpha1.GzipCompression,
 		},
 	}).Validate())
+	require.NoError(t, (&contour_v1alpha1.EnvoyCompression{ETag: contour_v1alpha1.WeakenCompressionETag}).Validate())
+	require.NoError(t, (&contour_v1alpha1.EnvoyCompression{
+		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.ZstdCompression},
+		ETag:       contour_v1alpha1.SkipCompressionETag,
+	}).Validate())
 
 	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{Algorithm: "bogus"}).Validate(), "invalid compression type")
+	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{ETag: "bogus"}).Validate(), "invalid compression etag action")
 	require.ErrorContains(t, (&contour_v1alpha1.EnvoyCompression{
 		Algorithm:  contour_v1alpha1.GzipCompression,
 		Algorithms: &[]contour_v1alpha1.CompressionAlgorithm{contour_v1alpha1.BrotliCompression},
